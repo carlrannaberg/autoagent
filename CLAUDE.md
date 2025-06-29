@@ -29,6 +29,7 @@ autoagent/
 ├── src/            # TypeScript source files
 │   ├── core/       # Core business logic
 │   ├── cli/        # CLI implementation
+│   ├── providers/  # AI provider implementations
 │   ├── utils/      # Utility functions
 │   └── types/      # TypeScript type definitions
 ├── test/           # Jest test files
@@ -103,3 +104,12 @@ autoagent/
   - Added AgentEvent type union and Status interface
   - Included JSDoc comments for all interfaces
   - All types compile successfully with TypeScript strict mode
+- **2025-06-30**: Completed provider abstraction and implementations (Issue #4)
+  - Created abstract Provider base class with common interface
+  - Implemented ClaudeProvider with checkAvailability and execute methods
+  - Implemented GeminiProvider with checkAvailability and execute methods
+  - Created provider factory function (createProvider)
+  - Added helper functions for provider availability checking
+  - Implemented proper error handling and process spawning
+  - Support for JSON output parsing (Claude) and standard output (Gemini)
+  - All provider code compiles and passes linting with only minor warnings
