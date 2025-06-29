@@ -3,7 +3,7 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #9]** Add utility functions for logging and retry - `issues/9-add-utility-functions-for-logging-and-retry.md`
+- [x] **[Issue #9]** Add utility functions for logging and retry - `issues/9-add-utility-functions-for-logging-and-retry.md`
 - [ ] **[Issue #10]** Implement git integration and auto-commit - `issues/10-implement-git-integration-and-auto-commit.md`
 - [ ] **[Issue #11]** Add provider learning system - `issues/11-add-provider-learning-system.md`
 - [ ] **[Issue #12]** Create templates and examples - `issues/12-create-templates-and-examples.md`

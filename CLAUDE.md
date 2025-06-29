@@ -178,3 +178,26 @@ autoagent/
   - Fixed TypeScript strict mode compilation errors
   - Updated UserConfig interface to include includeCoAuthoredBy property
   - Package.json already configured with bin entry for global installation
+- **2025-06-30**: Completed utility functions for logging and retry (Issue #9)
+  - Enhanced Logger class in src/utils/logger.ts with additional features:
+    - Added LogLevel type and LoggerOptions interface for configuration
+    - Support for message prefixing and timestamps
+    - Enhanced debug logging with configurable enable/disable
+    - Error method now accepts Error objects and shows stack traces in debug mode
+    - Added progress bar display method with percentage tracking
+    - Clear screen and newline utility methods
+    - All log methods now support optional formatting options
+  - Created comprehensive retry utility in src/utils/retry.ts:
+    - Implements exponential backoff algorithm for handling transient failures
+    - RateLimitError class for specific rate limit handling
+    - RetryError class for retry failure information
+    - Configurable retry options: maxAttempts, initialDelay, maxDelay, backoffMultiplier
+    - Intelligent error detection for rate limits (checks error messages and types)
+    - Support for custom retry logic via shouldRetry callback
+    - retryWithJitter function to prevent thundering herd problem
+    - createRetryableFunction wrapper for easy function decoration
+    - Helper functions: isRateLimitError, extractRetryAfter
+    - Automatic retry-after header extraction from error messages
+  - Exported all utilities from src/utils/index.ts for easy importing
+  - Both utilities compile successfully with TypeScript strict mode
+  - Ready for integration with existing provider and agent code
