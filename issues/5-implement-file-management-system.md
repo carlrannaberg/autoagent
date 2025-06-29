@@ -4,14 +4,14 @@
 Create the FileManager class that handles all file operations for issues, plans, todo lists, and provider instruction files (CLAUDE.md, GEMINI.md).
 
 ## Acceptance Criteria
-- [ ] FileManager class handles all file operations
-- [ ] Issue creation and reading functionality works
-- [ ] Plan creation and reading functionality works
-- [ ] Todo list management (read, update, check completion)
-- [ ] Provider instruction file operations (read, update, create)
-- [ ] Next issue number calculation works correctly
-- [ ] Directory creation is handled automatically
-- [ ] File parsing handles Markdown format properly
+- [x] FileManager class handles all file operations
+- [x] Issue creation and reading functionality works
+- [x] Plan creation and reading functionality works
+- [x] Todo list management (read, update, check completion)
+- [x] Provider instruction file operations (read, update, create)
+- [x] Next issue number calculation works correctly
+- [x] Directory creation is handled automatically
+- [x] File parsing handles Markdown format properly
 
 ## Technical Details
 - Use fs/promises for all file operations
