@@ -117,26 +117,24 @@ export interface AgentConfig {
  * User configuration stored in config files.
  */
 export interface UserConfig {
-  /** Default AI provider to use */
-  defaultProvider?: 'claude' | 'gemini';
-  /** List of providers to try if primary fails */
-  failoverProviders?: ('claude' | 'gemini')[];
-  /** Default auto-commit setting */
-  autoCommit?: boolean;
-  /** Default co-authored-by setting */
-  includeCoAuthoredBy?: boolean;
-  /** Default auto-update context setting */
-  autoUpdateContext?: boolean;
-  /** Default debug setting */
-  debug?: boolean;
+  /** List of providers in order of preference */
+  providers: ProviderName[];
+  /** Delay before trying failover provider (ms) */
+  failoverDelay: number;
   /** Number of retry attempts for failed operations */
-  retryAttempts?: number;
+  retryAttempts: number;
+  /** Maximum tokens for provider requests */
+  maxTokens: number;
   /** Cooldown period for rate-limited providers (ms) */
-  rateLimitCooldown?: number;
-  /** Path to custom templates directory */
-  customTemplatesPath?: string;
-  /** Default dry-run mode setting */
-  dryRun?: boolean;
+  rateLimitCooldown: number;
+  /** Whether to automatically commit changes */
+  gitAutoCommit: boolean;
+  /** Interval for git auto-commits (ms) */
+  gitCommitInterval: number;
+  /** Logging level */
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+  /** Custom instructions for providers */
+  customInstructions: string;
 }
 
 /**
@@ -164,4 +162,19 @@ export interface Status {
   availableProviders?: string[];
   /** List of rate-limited providers */
   rateLimitedProviders?: string[];
+}
+
+/**
+ * Provider name type
+ */
+export type ProviderName = 'claude' | 'gemini';
+
+/**
+ * Rate limit tracking data for a provider
+ */
+export interface RateLimitData {
+  /** Timestamp when provider was rate limited */
+  limitedAt?: number;
+  /** Number of rate limit attempts */
+  attempts?: number;
 }

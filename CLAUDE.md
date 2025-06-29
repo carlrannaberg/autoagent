@@ -124,3 +124,16 @@ autoagent/
   - Added unit tests with 100% code coverage for FileManager
   - Fixed all TypeScript strict mode errors and ESLint warnings
   - Created tsconfig.eslint.json to include test files in linting
+- **2025-06-30**: Completed configuration management with rate limiting (Issue #6)
+  - Created ConfigManager class in src/core/config-manager.ts
+  - Implemented multi-source configuration loading (global and local)
+  - Configuration precedence: defaults < global < local
+  - Global config stored at ~/.autoagent/config.json
+  - Local config stored at ./.autoagent/config.json
+  - Implemented rate limit tracking with separate JSON file storage
+  - Added provider availability checking based on rate limit status
+  - Support for cooldown periods (default 1 hour)
+  - Configuration updates can be scoped to global or local
+  - Added comprehensive unit tests with 94.28% code coverage
+  - Fixed all TypeScript strict mode and ESLint errors
+  - Configuration includes: providers, failoverDelay, retryAttempts, maxTokens, rateLimitCooldown, gitAutoCommit, gitCommitInterval, logLevel, customInstructions
