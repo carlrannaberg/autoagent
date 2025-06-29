@@ -40,6 +40,8 @@
   "files": [
     "dist",
     "bin",
+    "templates",
+    "examples",
     "README.md",
     "LICENSE"
   ],

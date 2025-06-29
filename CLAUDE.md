@@ -260,3 +260,23 @@ autoagent/
     - Identifying common failure patterns
     - Providing context-aware recommendations
     - Building project-specific knowledge base
+- **2025-06-30**: Completed templates and examples (Issue #12)
+  - Created comprehensive templates in templates/ directory:
+    - issue.md: Complete issue template with all sections and usage instructions
+    - plan.md: Detailed plan template with phases and technical approach
+  - Created extensive examples in examples/ directory:
+    - basic-usage.js: Simple example for getting started
+    - provider-failover.js: Demonstrates automatic failover between providers
+    - batch-execution.js: Shows batch processing with progress and cancellation
+    - configuration.js: Comprehensive configuration examples and validation
+    - custom-integration.js: Advanced examples for extending AutoAgent
+    - cli-usage.js: Complete CLI command reference with practical examples
+  - All examples include:
+    - Clear comments explaining functionality
+    - Error handling demonstrations
+    - Expected output examples
+    - Real-world use cases
+  - Updated README.md to reference and explain all examples
+  - Added examples/README.md for easier navigation
+  - Updated package.json to include templates and examples in npm package
+  - All examples pass syntax validation

@@ -288,31 +288,66 @@ Create a `CLAUDE.md` or `GEMINI.md` file in the root directory to provide projec
 
 ## Examples
 
-### Example 1: Web Development Project
-```bash
-# Create issues for a web app
-./scripts/create-issue.sh "Set up Express.js server with TypeScript"
-./scripts/create-issue.sh "Create user authentication endpoints"
-./scripts/create-issue.sh "Add PostgreSQL database integration"
+The `examples/` directory contains comprehensive examples demonstrating various usage patterns:
 
-# Run all issues with Gemini
-./scripts/run-agent.sh -p gemini --auto
+### Available Examples
+
+- **[basic-usage.js](examples/basic-usage.js)** - Simple example showing how to execute a single issue with progress tracking
+- **[provider-failover.js](examples/provider-failover.js)** - Demonstrates automatic provider failover when rate limits are hit
+- **[batch-execution.js](examples/batch-execution.js)** - Shows how to execute multiple issues with progress tracking and cancellation
+- **[configuration.js](examples/configuration.js)** - Comprehensive configuration examples and validation
+- **[custom-integration.js](examples/custom-integration.js)** - Advanced examples for extending AutoAgent with custom functionality
+- **[cli-usage.js](examples/cli-usage.js)** - Complete CLI command reference with practical examples
+
+### Running Examples
+
+```bash
+# Run any example directly
+node examples/basic-usage.js
+
+# Run the CLI usage demo
+node examples/cli-usage.js --demo
+
+# Run examples that demonstrate specific features
+node examples/provider-failover.js
+node examples/batch-execution.js
+node examples/configuration.js
 ```
 
-### Example 2: Data Processing Pipeline
-```bash
-# Create data pipeline issues
-./scripts/create-issue.sh "Parse CSV files from input directory"
-./scripts/create-issue.sh "Transform data according to schema"
-./scripts/create-issue.sh "Export results to JSON format"
+### Quick Example: Basic Usage
 
-# Run issues one by one with Claude
-./scripts/run-agent.sh -p claude
-# Review results...
-./scripts/run-agent.sh -p claude
-# Review results...
-./scripts/run-agent.sh -p claude
+```javascript
+const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent');
+
+async function main() {
+  const fileManager = new FileManager(process.cwd());
+  const configManager = new ConfigManager(process.cwd());
+  const agent = new AutonomousAgent(fileManager, configManager);
+
+  // Execute the next pending issue
+  const result = await agent.executeNext({
+    provider: 'claude',
+    onProgress: (percentage, message) => {
+      console.log(`${percentage}% - ${message}`);
+    }
+  });
+
+  if (result.success) {
+    console.log('Issue completed successfully!');
+  }
+}
+
+main().catch(console.error);
 ```
+
+### Example Templates
+
+The `templates/` directory contains starter templates for creating new issues and plans:
+
+- **[templates/issue.md](templates/issue.md)** - Template for creating new issues with all required sections
+- **[templates/plan.md](templates/plan.md)** - Template for creating implementation plans with phases and technical approach
+
+Use these templates when creating issues manually or reference them when building automation tools.
 
 ## Best Practices
 

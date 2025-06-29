@@ -4,14 +4,14 @@
 Create default templates for issues and plans, along with comprehensive examples demonstrating various usage patterns of the autoagent package.
 
 ## Acceptance Criteria
-- [ ] Default issue.md template is created
-- [ ] Default plan.md template is created
-- [ ] Basic usage example (basic-usage.js) is implemented
-- [ ] Advanced usage examples are provided
-- [ ] Examples demonstrate all major features
-- [ ] Templates follow consistent format
-- [ ] Examples include helpful comments
-- [ ] README references the examples
+- [x] Default issue.md template is created
+- [x] Default plan.md template is created
+- [x] Basic usage example (basic-usage.js) is implemented
+- [x] Advanced usage examples are provided
+- [x] Examples demonstrate all major features
+- [x] Templates follow consistent format
+- [x] Examples include helpful comments
+- [x] README references the examples
 
 ## Technical Details
 - Templates go in templates/ directory
