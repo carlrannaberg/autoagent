@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Stream Viewer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Claude Stream Viewer</h1>
+            <p>View and analyze autonomous agent execution logs</p>
+        </header>
+
+        <main>
+            <section class="logs-list">
+                <h2>Execution Logs</h2>
+                <div class="controls">
+                    <input type="text" id="search" placeholder="Search logs..." />
+                    <button id="refresh">Refresh</button>
+                    <div class="auto-refresh-controls">
+                        <label>
+                            <input type="checkbox" id="auto-refresh" checked />
+                            Auto-refresh
+                        </label>
+                        <select id="refresh-interval">
+                            <option value="2000">2s</option>
+                            <option value="5000" selected>5s</option>
+                            <option value="10000">10s</option>
+                            <option value="30000">30s</option>
+                            <option value="60000">1m</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="logs-container" class="logs-container">
+                    <p class="loading">Loading logs...</p>
+                </div>
+            </section>
+
+            <section class="log-viewer" id="log-viewer" style="display: none;">
+                <h2>Stream Details</h2>
+                <div class="viewer-controls">
+                    <button id="close-viewer" class="secondary">← Back to List</button>
+                    <button id="toggle-raw" class="secondary">Show Raw JSON</button>
+                    <button id="download-log" class="secondary">📥 Download</button>
+                </div>
+                <div id="stream-content" class="stream-content"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

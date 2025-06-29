@@ -1,0 +1,30 @@
+{
+  "name": "autonomous-agents-template",
+  "version": "1.0.0",
+  "description": "Template for creating autonomous AI agents with Claude or Gemini",
+  "scripts": {
+    "agent": "./scripts/run-agent.sh -p claude",
+    "agent:auto": "./scripts/run-agent.sh -p claude --auto",
+    "agent:gemini": "./scripts/run-agent.sh -p gemini",
+    "agent:gemini:auto": "./scripts/run-agent.sh -p gemini --auto",
+    "issue": "./scripts/create-issue.sh",
+    "bootstrap": "./scripts/create-bootstrap.sh",
+    "complete": "./scripts/complete-issue.sh",
+    "test": "./tests/run-tests.sh",
+    "test:unit": "./tests/run-tests.sh --no-integration"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "claude",
+    "gemini",
+    "automation",
+    "autonomous"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/autonomous-agents-template.git"
+  }
+}
