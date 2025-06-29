@@ -11,3 +11,18 @@ export {
   RetryError,
   RateLimitError
 } from './retry';
+export {
+  checkGitAvailable,
+  isGitRepository,
+  getGitStatus,
+  stageAllChanges,
+  createCommit,
+  getCurrentCommitHash,
+  getUncommittedChanges,
+  hasChangesToCommit,
+  revertToCommit,
+  getChangedFiles,
+  GitStatus,
+  CommitOptions,
+  GitCommitResult
+} from './git';

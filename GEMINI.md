@@ -187,3 +187,30 @@ autoagent/
   - Exported all utilities from src/utils/index.ts for easy importing
   - Both utilities compile successfully with TypeScript strict mode
   - Ready for integration with existing provider and agent code
+- **2025-06-30**: Claude completed git integration and auto-commit (Issue #10)
+  - Created comprehensive git utilities in src/utils/git.ts:
+    - Check git availability and repository status
+    - Get detailed git status including branch, ahead/behind, uncommitted changes
+    - Stage all changes and create commits with co-authorship
+    - Capture current commit hash and uncommitted changes for rollback
+    - Check for changes to commit and get list of changed files
+    - Revert to specific commits for rollback support
+  - Integrated git functionality into AutonomousAgent:
+    - Auto-commit after successful issue execution when enabled
+    - Proper co-authorship attribution (e.g., "Co-authored-by: Gemini <gemini@autoagent>")
+    - Git status checking before operations
+    - Capture pre-execution state for rollback support
+    - Store commit hash in ExecutionResult for potential rollback
+  - Added rollback capability:
+    - capturePreExecutionState method saves git commit and uncommitted changes
+    - rollback method can revert to previous commit or apply saved patches
+    - RollbackData interface includes gitCommit and fileBackups
+  - Git operations are gracefully handled:
+    - Check for git availability before attempting operations
+    - Handle various git states (clean, dirty, no commits, etc.)
+    - Git errors don't fail the execution, just skip git operations
+  - Added unit tests for all git utilities with comprehensive coverage
+  - Configuration options control git behavior:
+    - autoCommit: Enable/disable automatic commits
+    - includeCoAuthoredBy: Control co-authorship attribution
+    - enableRollback: Enable rollback data capture

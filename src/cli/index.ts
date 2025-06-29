@@ -5,6 +5,7 @@ import { AutonomousAgent } from '../core/autonomous-agent';
 import { createProvider } from '../providers';
 import { ConfigManager } from '../core/config-manager';
 import { Logger } from '../utils/logger';
+import { ProviderName } from '../types';
 import chalk from 'chalk';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -50,7 +51,7 @@ config
   .action(async (provider: string, options: { global?: boolean }) => {
     try {
       const configManager = new ConfigManager();
-      await configManager.setProvider(provider, options.global);
+      await configManager.setProvider(provider as ProviderName, options.global);
       Logger.success(`Default provider set to ${provider}`);
     } catch (error) {
       Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -163,7 +164,7 @@ program
       });
       
       const agent = new AutonomousAgent({
-        provider: options.provider,
+        provider: options.provider as ProviderName | undefined,
         workspace: options.workspace,
         debug: options.debug,
         autoCommit: options.commit !== undefined ? options.commit : undefined,
@@ -191,7 +192,7 @@ program
   .action(async (title: string, options: { provider?: string; workspace?: string }) => {
     try {
       const agent = new AutonomousAgent({
-        provider: options.provider,
+        provider: options.provider as ProviderName | undefined,
         workspace: options.workspace
       });
 
@@ -244,7 +245,7 @@ program
   .action(async (options: { provider?: string }) => {
     try {
       if (options.provider) {
-        const provider = createProvider(options.provider);
+        const provider = createProvider(options.provider as ProviderName);
         const available = await provider.checkAvailability();
 
         if (available) {
@@ -282,7 +283,7 @@ program
   .action(async (planFile: string | undefined, options: { provider?: string; workspace?: string }) => {
     try {
       const agent = new AutonomousAgent({
-        provider: options.provider,
+        provider: options.provider as ProviderName | undefined,
         workspace: options.workspace
       });
 

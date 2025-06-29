@@ -7,11 +7,22 @@ import {
   ExecutionResult, 
   Issue, 
   ProviderName,
-  Status
+  Status,
+  RollbackData
 } from '../types';
 import { ConfigManager } from './config-manager';
 import { FileManager } from '../utils/file-manager';
 import { Provider, createProvider, getFirstAvailableProvider } from '../providers';
+import {
+  checkGitAvailable,
+  isGitRepository,
+  stageAllChanges,
+  createCommit,
+  getCurrentCommitHash,
+  getUncommittedChanges,
+  hasChangesToCommit,
+  revertToCommit
+} from '../utils/git';
 
 const execAsync = promisify(exec);
 
@@ -92,6 +103,12 @@ export class AutonomousAgent extends EventEmitter {
       // Report initial progress
       this.reportProgress('Starting execution...', 0);
 
+      // Capture pre-execution state if rollback is enabled
+      let rollbackData;
+      if (this.config.enableRollback) {
+        rollbackData = await this.capturePreExecutionState();
+      }
+
       // Get available provider with failover
       const provider = await this.getAvailableProvider();
       if (!provider) {
@@ -110,6 +127,11 @@ export class AutonomousAgent extends EventEmitter {
         contextFiles,
         issueNumber
       );
+
+      // Add rollback data to result
+      if (rollbackData) {
+        result.rollbackData = rollbackData;
+      }
 
       // Handle post-execution tasks
       if (result.success && this.config.dryRun !== true) {
@@ -193,6 +215,59 @@ export class AutonomousAgent extends EventEmitter {
     }
 
     return this.executeIssue(nextIssue.number);
+  }
+
+  /**
+   * Rollback changes from a previous execution
+   */
+  async rollback(executionResult: ExecutionResult): Promise<boolean> {
+    if (!executionResult.rollbackData) {
+      this.reportProgress('No rollback data available', 0);
+      return false;
+    }
+
+    try {
+      const { gitCommit, fileBackups } = executionResult.rollbackData;
+
+      // If we have a git commit, revert to it
+      if (gitCommit) {
+        const success = await revertToCommit(gitCommit);
+        if (success) {
+          this.reportProgress(`Reverted to commit ${gitCommit}`, 100);
+          return true;
+        }
+      }
+
+      // Otherwise try to restore file backups
+      if (fileBackups && fileBackups.size > 0) {
+        // Handle uncommitted changes
+        if (fileBackups.has('__git_uncommitted_changes__')) {
+          const patch = fileBackups.get('__git_uncommitted_changes__');
+          if (patch) {
+            // Apply the patch using git apply
+            const fs = await import('fs/promises');
+            const patchFile = `/tmp/rollback-${Date.now()}.patch`;
+            await fs.writeFile(patchFile, patch);
+            
+            try {
+              await execAsync(`git apply ${patchFile}`);
+              await fs.unlink(patchFile);
+              this.reportProgress('Restored uncommitted changes', 100);
+              return true;
+            } catch (error) {
+              await fs.unlink(patchFile);
+              throw error;
+            }
+          }
+        }
+      }
+
+      this.reportProgress('Rollback failed: insufficient rollback data', 0);
+      return false;
+    } catch (error) {
+      this.reportProgress(`Rollback failed: ${error}`, 0);
+      return false;
+    }
   }
 
   /**
@@ -387,35 +462,53 @@ export class AutonomousAgent extends EventEmitter {
    */
   private async performGitCommit(issue: Issue, result: ExecutionResult): Promise<void> {
     try {
-      // Check if there are changes to commit
-      const { stdout: statusOutput } = await execAsync('git status --porcelain', {
-        cwd: this.config.workspace
-      });
+      // Check if git is available and we're in a repo
+      const gitAvailable = await checkGitAvailable();
+      const isRepo = await isGitRepository();
+      
+      if (!gitAvailable || !isRepo) {
+        if (this.config.debug) {
+          console.error(chalk.yellow('Git not available or not in a repository')); // eslint-disable-line no-console
+        }
+        return;
+      }
 
-      if (statusOutput.trim() === '') {
+      // Check if there are changes to commit
+      const hasChanges = await hasChangesToCommit();
+      if (!hasChanges) {
         return; // No changes to commit
       }
 
       // Stage all changes
-      await execAsync('git add -A', { cwd: this.config.workspace });
+      await stageAllChanges();
 
       // Create commit message
-      let commitMessage = `feat: Complete issue from issues/${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md`;
+      const issueName = `${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+      const commitMessage = `feat: Complete issue from issues/${issueName}.md`;
       
-      if (this.config.includeCoAuthoredBy === true && result.provider !== undefined) {
-        commitMessage += `\n\nCo-authored-by: ${result.provider} <${result.provider}@autoagent>`;
-      }
-
-      // Commit changes
-      await execAsync(`git commit -m "${commitMessage}"`, {
-        cwd: this.config.workspace
+      // Create commit with optional co-authorship
+      const commitResult = await createCommit({
+        message: commitMessage,
+        coAuthor: this.config.includeCoAuthoredBy && result.provider ? {
+          name: result.provider.charAt(0).toUpperCase() + result.provider.slice(1),
+          email: `${result.provider}@autoagent`
+        } : undefined
       });
 
-      this.reportProgress('Changes committed to git', 95);
+      if (commitResult.success) {
+        this.reportProgress('Changes committed to git', 95);
+        
+        // Store commit hash in result for potential rollback
+        if (commitResult.commitHash && result.rollbackData) {
+          result.rollbackData.gitCommit = commitResult.commitHash;
+        }
+      } else if (this.config.debug) {
+        console.error(chalk.yellow('Git commit failed:'), commitResult.error); // eslint-disable-line no-console
+      }
     } catch (error) {
       // Log error but don't fail the execution
       if (this.config.debug === true) {
-        console.error(chalk.yellow('Git commit failed:'), error); // eslint-disable-line no-console
+        console.error(chalk.yellow('Git commit error:'), error); // eslint-disable-line no-console
       }
     }
   }
@@ -694,5 +787,33 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
     // Fallback to first available provider
     const config = await this.configManager.loadConfig();
     return getFirstAvailableProvider(config.providers);
+  }
+
+
+  /**
+   * Capture pre-execution state for potential rollback
+   */
+  private async capturePreExecutionState(): Promise<RollbackData> {
+    const rollbackData: RollbackData = {};
+
+    try {
+      // Get current git commit hash
+      const commitHash = await getCurrentCommitHash();
+      if (commitHash) {
+        rollbackData.gitCommit = commitHash;
+      }
+
+      // Get uncommitted changes
+      const uncommittedChanges = await getUncommittedChanges();
+      if (uncommittedChanges) {
+        rollbackData.fileBackups = new Map([['__git_uncommitted_changes__', uncommittedChanges]]);
+      }
+    } catch (error) {
+      if (this.config.debug) {
+        console.error(chalk.yellow('Failed to capture pre-execution state:'), error); // eslint-disable-line no-console
+      }
+    }
+
+    return rollbackData;
   }
 }
