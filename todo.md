@@ -3,8 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [x] **[Issue #6]** Build configuration management with rate limiting - `issues/6-build-configuration-management-with-rate-limiting.md`
-- [ ] **[Issue #7]** Implement autonomous agent with failover logic - `issues/7-implement-autonomous-agent-with-failover-logic.md`
 - [ ] **[Issue #8]** Create CLI interface and commands - `issues/8-create-cli-interface-and-commands.md`
 - [ ] **[Issue #9]** Add utility functions for logging and retry - `issues/9-add-utility-functions-for-logging-and-retry.md`
 - [ ] **[Issue #10]** Implement git integration and auto-commit - `issues/10-implement-git-integration-and-auto-commit.md`
@@ -21,3 +19,5 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [x] **[Issue #3]** Implement type definitions and interfaces - `issues/3-implement-type-definitions-and-interfaces.md`
 - [x] **[Issue #4]** Create provider abstraction and implementations - `issues/4-create-provider-abstraction-and-implementations.md`
 - [x] **[Issue #5]** Implement file management system - `issues/5-implement-file-management-system.md`
+- [x] **[Issue #6]** Build configuration management with rate limiting - `issues/6-build-configuration-management-with-rate-limiting.md`
+- [x] **[Issue #7]** Implement autonomous agent with failover logic - `issues/7-implement-autonomous-agent-with-failover-logic.md`
