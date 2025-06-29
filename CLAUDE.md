@@ -228,3 +228,35 @@ autoagent/
     - autoCommit: Enable/disable automatic commits
     - includeCoAuthoredBy: Control co-authorship attribution
     - enableRollback: Enable rollback data capture
+- **2025-06-29**: Completed provider learning system (Issue #11)
+  - Created ProviderLearning class in src/core/provider-learning.ts:
+    - Automatically tracks execution history and updates CLAUDE.md/GEMINI.md files
+    - Calculates performance metrics (success rate, average duration, file types modified)
+    - Generates insights based on execution patterns
+    - Maintains separate learning data for each provider
+  - Created PatternAnalyzer class in src/core/pattern-analyzer.ts:
+    - Detects execution patterns (success rates, failure types, file changes, duration)
+    - Provides confidence levels for detected patterns
+    - Generates actionable recommendations based on patterns
+    - Tracks provider-specific performance characteristics
+  - Enhanced ExecutionResult type with additional fields:
+    - issueTitle: For better display in execution history
+    - filesModified: List of files changed during execution
+  - Integrated learning system with AutonomousAgent:
+    - Automatically captures file changes after successful executions
+    - Updates provider instruction files with comprehensive learnings
+    - Pattern detection runs continuously across executions
+  - Provider instruction files now include:
+    - Execution History: Timestamped list of all executions
+    - Performance Metrics: Success rates, duration statistics, file type analysis
+    - Learning Insights: Strengths, areas for improvement, best practices
+    - Detected Patterns: High and medium confidence patterns with occurrence counts
+  - Added comprehensive unit tests:
+    - ProviderLearning tests with persistent mock file updates
+    - PatternAnalyzer tests covering all pattern types
+    - All tests passing with good coverage
+  - Learning system helps providers improve over time by:
+    - Tracking what works well and what doesn't
+    - Identifying common failure patterns
+    - Providing context-aware recommendations
+    - Building project-specific knowledge base

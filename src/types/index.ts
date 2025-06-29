@@ -64,6 +64,10 @@ export interface ExecutionResult {
   filesChanged?: string[];
   /** Data needed for potential rollback */
   rollbackData?: RollbackData;
+  /** Title of the issue for display purposes */
+  issueTitle?: string;
+  /** List of files that were modified (full paths) */
+  filesModified?: string[];
 }
 
 /**

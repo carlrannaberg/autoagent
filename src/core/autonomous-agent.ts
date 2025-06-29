@@ -13,6 +13,7 @@ import {
 import { ConfigManager } from './config-manager';
 import { FileManager } from '../utils/file-manager';
 import { Provider, createProvider, getFirstAvailableProvider } from '../providers';
+import { ProviderLearning } from './provider-learning';
 import {
   checkGitAvailable,
   isGitRepository,
@@ -33,6 +34,7 @@ const execAsync = promisify(exec);
 export class AutonomousAgent extends EventEmitter {
   private configManager: ConfigManager;
   private fileManager: FileManager;
+  private providerLearning: ProviderLearning;
   private config: AgentConfig;
   private isExecuting: boolean = false;
   private abortController: AbortController | null = null;
@@ -53,6 +55,7 @@ export class AutonomousAgent extends EventEmitter {
 
     this.configManager = new ConfigManager(this.config.workspace);
     this.fileManager = new FileManager(this.config.workspace);
+    this.providerLearning = new ProviderLearning(this.fileManager, this.config.workspace);
 
     // Set up signal handlers for graceful shutdown
     if (!this.config.signal) {
@@ -131,6 +134,14 @@ export class AutonomousAgent extends EventEmitter {
       // Add rollback data to result
       if (rollbackData) {
         result.rollbackData = rollbackData;
+      }
+
+      // Add issue title to result
+      result.issueTitle = issue.title;
+
+      // Capture file changes if not in dry run
+      if (this.config.dryRun !== true && result.success) {
+        result.filesModified = await this.captureFileChanges();
       }
 
       // Handle post-execution tasks
@@ -432,29 +443,11 @@ export class AutonomousAgent extends EventEmitter {
   }
 
   /**
-   * Update provider instruction files with execution history
+   * Update provider instruction files with execution history and learnings
    */
   private async updateProviderInstructions(result: ExecutionResult): Promise<void> {
-    if (!result.provider) {
-      return;
-    }
-
-    const providerFile = result.provider.toUpperCase() as 'CLAUDE' | 'GEMINI';
-    const content = await this.fileManager.readProviderInstructions(providerFile);
-    
-    const date = new Date().toISOString().split('T')[0];
-    const updateMessage = `\n## Execution History\n- **${date}**: Successfully completed Issue #${result.issueNumber}`;
-    
-    if (content.includes('## Execution History') === false) {
-      await this.fileManager.updateProviderInstructions(providerFile, content + updateMessage);
-    } else {
-      // Insert after the execution history header
-      const updatedContent = content.replace(
-        '## Execution History',
-        `## Execution History\n- **${date}**: Successfully completed Issue #${result.issueNumber}`
-      );
-      await this.fileManager.updateProviderInstructions(providerFile, updatedContent);
-    }
+    // Use the comprehensive provider learning system
+    await this.providerLearning.updateProviderLearnings(result);
   }
 
   /**
@@ -590,6 +583,19 @@ export class AutonomousAgent extends EventEmitter {
     if (this.config.debug === true) {
       const progress = percentage !== undefined ? `[${percentage}%] ` : '';
       console.log(chalk.gray(`${progress}${message}`)); // eslint-disable-line no-console
+    }
+  }
+
+  /**
+   * Capture files that were modified during execution
+   */
+  private async captureFileChanges(): Promise<string[]> {
+    try {
+      const { getChangedFiles } = await import('../utils/git');
+      return await getChangedFiles();
+    } catch {
+      // If git is not available, return empty array
+      return [];
     }
   }
 
