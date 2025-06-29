@@ -178,26 +178,21 @@ export class AutonomousAgent extends EventEmitter {
   }
 
   /**
-   * Get the current status of the agent
+   * Execute the next pending issue
    */
-  async getStatus(): Promise<Status> {
-    const todos = await this.fileManager.readTodoList();
-    const completedTodos = todos.filter(todo => todo.includes('[x]'));
-    const pendingTodos = todos.filter(todo => !todo.includes('[x]'));
+  async executeNext(): Promise<ExecutionResult> {
+    const nextIssue = await this.fileManager.getNextIssue();
+    
+    if (!nextIssue) {
+      return {
+        success: false,
+        issueNumber: 0,
+        duration: 0,
+        error: 'No pending issues to execute'
+      };
+    }
 
-    const userConfig = this.configManager.getConfig();
-    const availableProviders = await this.configManager.getAvailableProviders();
-    const rateLimitedProviders = userConfig.providers.filter(
-      p => !availableProviders.includes(p)
-    );
-
-    return {
-      totalIssues: todos.length,
-      completedIssues: completedTodos.length,
-      pendingIssues: pendingTodos.length,
-      availableProviders: availableProviders as string[],
-      rateLimitedProviders: rateLimitedProviders as string[]
-    };
+    return this.executeIssue(nextIssue.number);
   }
 
   /**
@@ -521,5 +516,183 @@ export class AutonomousAgent extends EventEmitter {
    */
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Create a new issue
+   */
+  async createIssue(title: string): Promise<number> {
+    const provider = await this.getProviderForOperation();
+    if (!provider) {
+      throw new Error('No available providers for creating issue');
+    }
+
+    // Create prompt for provider
+    const prompt = `Create a detailed software development issue for the following task:
+Title: ${title}
+
+Generate a comprehensive issue document with:
+1. Clear requirements
+2. Specific acceptance criteria
+3. Technical details and considerations
+4. Resources needed
+
+Format as a proper issue document.`;
+
+    // Execute with provider
+    const result = await provider.execute(prompt, '');
+    
+    // Get next issue number
+    const nextNumber = await this.fileManager.getNextIssueNumber();
+    
+    // Create issue file
+    const issueContent = `# Issue ${nextNumber}: ${title}
+
+${result}`;
+
+    await this.fileManager.createIssue(nextNumber, title, issueContent);
+    
+    // Update todo list
+    const todoContent = await this.fileManager.readTodo();
+    const updatedTodo = todoContent.replace(
+      '## Pending Issues',
+      `## Pending Issues\n- [ ] **[Issue #${nextNumber}]** ${title} - \`issues/${nextNumber}-${title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md\``
+    );
+    await this.fileManager.updateTodo(updatedTodo);
+
+    return nextNumber;
+  }
+
+  /**
+   * Get current status
+   */
+  async getStatus(): Promise<Status> {
+    const config = await this.configManager.loadConfig();
+    const stats = await this.fileManager.getTodoStats();
+    const nextIssue = await this.fileManager.getNextIssue();
+    
+    // Check provider availability
+    const availableProviders: ProviderName[] = [];
+    const rateLimitedProviders: ProviderName[] = [];
+    
+    for (const providerName of config.providers) {
+      const isRateLimited = await this.configManager.isProviderRateLimited(providerName);
+      if (isRateLimited) {
+        rateLimitedProviders.push(providerName);
+      } else {
+        const provider = createProvider(providerName);
+        if (await provider.checkAvailability()) {
+          availableProviders.push(providerName);
+        }
+      }
+    }
+
+    return {
+      totalIssues: stats.total,
+      completedIssues: stats.completed,
+      pendingIssues: stats.pending,
+      currentIssue: nextIssue,
+      availableProviders,
+      rateLimitedProviders
+    };
+  }
+
+  /**
+   * Bootstrap from master plan
+   */
+  async bootstrap(masterPlanPath: string): Promise<void> {
+    const provider = await this.getProviderForOperation();
+    if (!provider) {
+      throw new Error('No available providers for bootstrap');
+    }
+
+    // Read master plan
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    
+    const fullPath = path.isAbsolute(masterPlanPath) 
+      ? masterPlanPath 
+      : path.join(this.config.workspace ?? process.cwd(), masterPlanPath);
+    
+    let masterPlanContent: string;
+    try {
+      masterPlanContent = await fs.readFile(fullPath, 'utf-8');
+    } catch (error) {
+      throw new Error(`Could not read master plan: ${masterPlanPath}`);
+    }
+
+    // Create prompt for bootstrapping
+    const prompt = `You are an expert project manager. Decompose the following master plan into individual, actionable issues.
+Each issue should be self-contained and independently executable.
+
+For each issue, provide:
+1. A clear title
+2. Detailed requirements
+3. Specific acceptance criteria
+4. Any technical details needed
+5. Dependencies on other issues (if any)
+
+Also create a todo.md file that lists all issues in order.
+
+Master Plan:
+${masterPlanContent}`;
+
+    // Execute with provider
+    const result = await provider.execute(prompt, '');
+    
+    // Create initial issue for bootstrapping
+    const issueNumber = 1;
+    const issueTitle = 'Bootstrap project from master-plan.md';
+    const issueContent = `# Issue ${issueNumber}: ${issueTitle}
+
+## Requirement
+Decompose the master plan into individual issues and create the initial project structure.
+
+## Acceptance Criteria
+- [ ] All issues are created and numbered
+- [ ] Each issue has clear requirements and acceptance criteria
+- [ ] Todo list is created with all issues
+- [ ] Issues are properly linked in the todo list
+
+## Technical Details
+This is the bootstrap issue that creates all other issues from the master plan.
+
+## Resources
+- Master Plan: \`${masterPlanPath}\`
+
+## Generated Issues
+
+${result}`;
+
+    await this.fileManager.createIssue(issueNumber, issueTitle, issueContent);
+    
+    // Create initial todo list
+    const todoContent = `# To-Do
+
+This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
+
+## Pending Issues
+- [ ] **[Issue #1]** Bootstrap project from master-plan.md - \`issues/1-bootstrap-project-from-master-plan-md.md\`
+
+## Completed Issues
+`;
+
+    await this.fileManager.updateTodo(todoContent);
+  }
+
+  /**
+   * Get provider for operation (with fallback to available provider)
+   */
+  private async getProviderForOperation(): Promise<Provider | null> {
+    if (this.config.provider) {
+      const provider = createProvider(this.config.provider);
+      if (await provider.checkAvailability()) {
+        return provider;
+      }
+    }
+
+    // Fallback to first available provider
+    const config = await this.configManager.loadConfig();
+    return getFirstAvailableProvider(config.providers);
   }
 }

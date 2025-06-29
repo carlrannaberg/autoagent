@@ -48,13 +48,24 @@ export class FileManager {
     }
   }
 
-  async createIssue(issue: Issue): Promise<string> {
+  async createIssue(issue: Issue): Promise<string>;
+  async createIssue(issueNumber: number, title: string, content: string): Promise<string>;
+  async createIssue(issueOrNumber: Issue | number, title?: string, content?: string): Promise<string> {
     await this.ensureDirectories();
     
-    const filename = `${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md`;
-    const filepath = path.join(this.issuesDir, filename);
-    
-    const content = `# Issue ${issue.number}: ${issue.title}
+    if (typeof issueOrNumber === 'number') {
+      // New signature for CLI usage
+      const filename = `${issueOrNumber}-${title!.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md`;
+      const filepath = path.join(this.issuesDir, filename);
+      await fs.writeFile(filepath, content!, 'utf-8');
+      return filepath;
+    } else {
+      // Original signature
+      const issue = issueOrNumber;
+      const filename = `${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md`;
+      const filepath = path.join(this.issuesDir, filename);
+      
+      const issueContent = `# Issue ${issue.number}: ${issue.title}
 
 ## Requirements
 ${issue.requirements}
@@ -67,9 +78,10 @@ ${issue.technicalDetails !== undefined ? issue.technicalDetails : 'No additional
 
 ## Resources
 ${issue.resources !== undefined && issue.resources.length > 0 ? issue.resources.map(r => `- ${r}`).join('\n') : 'No resources specified.'}`;
-    
-    await fs.writeFile(filepath, content, 'utf-8');
-    return filepath;
+      
+      await fs.writeFile(filepath, issueContent, 'utf-8');
+      return filepath;
+    }
   }
 
   async readIssue(filepath: string): Promise<Issue | null> {
@@ -332,5 +344,107 @@ This file contains project-specific instructions for Gemini. Customize this file
 `;
       await fs.writeFile(geminiPath, geminiTemplate, 'utf-8');
     }
+  }
+
+  async readTodo(): Promise<string> {
+    try {
+      return await fs.readFile(this.todoPath, 'utf-8');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return '';
+      }
+      throw error;
+    }
+  }
+
+  async updateTodo(content: string): Promise<void> {
+    await fs.writeFile(this.todoPath, content, 'utf-8');
+  }
+
+  async getTodoStats(): Promise<{ total: number; completed: number; pending: number }> {
+    const todos = await this.readTodoList();
+    const total = todos.length;
+    const completed = todos.filter(t => t.includes('[x]')).length;
+    const pending = total - completed;
+    
+    return { total, completed, pending };
+  }
+
+  async getNextIssue(): Promise<Issue | undefined> {
+    const todos = await this.readTodoList();
+    const pendingTodos = todos.filter(t => !t.includes('[x]'));
+    
+    if (pendingTodos.length === 0) {
+      return undefined;
+    }
+
+    // Parse the first pending todo to get issue details
+    const firstTodo = pendingTodos[0];
+    if (!firstTodo) {
+      return undefined;
+    }
+    
+    const match = firstTodo.match(/\*\*\[Issue #(\d+)\]\*\* (.+?) - `(.+?)`/);
+    
+    if (!match) {
+      return undefined;
+    }
+
+    const [, numberStr, title, file] = match;
+    if (!numberStr || !title || !file) {
+      return undefined;
+    }
+    
+    const issueNumber = parseInt(numberStr, 10);
+    
+    // Read the issue file to get full details
+    const issuePath = path.join(this.workspace, file);
+    const issueContent = await fs.readFile(issuePath, 'utf-8');
+    
+    return {
+      number: issueNumber,
+      title,
+      file,
+      requirements: this.extractSection(issueContent, 'Requirement'),
+      acceptanceCriteria: this.extractChecklist(issueContent, 'Acceptance Criteria')
+    };
+  }
+
+  private extractSection(content: string, sectionName: string): string {
+    const lines = content.split('\n');
+    let inSection = false;
+    let sectionContent: string[] = [];
+    
+    for (const line of lines) {
+      if (line.startsWith('## ') && line.substring(3).trim() === sectionName) {
+        inSection = true;
+        continue;
+      }
+      
+      if (inSection && line.startsWith('## ')) {
+        break;
+      }
+      
+      if (inSection && line.trim()) {
+        sectionContent.push(line);
+      }
+    }
+    
+    return sectionContent.join('\n').trim();
+  }
+
+  private extractChecklist(content: string, sectionName: string): string[] {
+    const sectionContent = this.extractSection(content, sectionName);
+    const lines = sectionContent.split('\n');
+    const checklist: string[] = [];
+    
+    for (const line of lines) {
+      const match = line.match(/^-\s*\[[x ]\]\s*(.+)$/);
+      if (match && match[1]) {
+        checklist.push(match[1]);
+      }
+    }
+    
+    return checklist;
   }
 }

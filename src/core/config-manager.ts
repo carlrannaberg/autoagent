@@ -207,6 +207,121 @@ export class ConfigManager {
   }
 
   /**
+   * Initialize configuration (create default config file)
+   */
+  async initConfig(global = false): Promise<void> {
+    const configPath = global ? this.globalConfigPath : this.localConfigPath;
+    await this.ensureDirectoryExists(path.dirname(configPath));
+    
+    // Check if config already exists
+    try {
+      await fs.access(configPath);
+      throw new Error(`Configuration already exists at ${configPath}`);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        // File doesn't exist - create it
+        await this.saveConfigFile(configPath, ConfigManager.DEFAULT_CONFIG);
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Set the default provider
+   */
+  async setProvider(provider: ProviderName, global = false): Promise<void> {
+    if (!['claude', 'gemini'].includes(provider)) {
+      throw new Error(`Invalid provider: ${provider}. Must be 'claude' or 'gemini'`);
+    }
+    
+    await this.updateConfig({ providers: [provider] }, global ? 'global' : 'local');
+  }
+
+  /**
+   * Set failover providers
+   */
+  async setFailoverProviders(providers: string[], global = false): Promise<void> {
+    const validProviders = providers.filter(p => ['claude', 'gemini'].includes(p)) as ProviderName[];
+    
+    if (validProviders.length === 0) {
+      throw new Error('No valid providers specified. Valid providers are: claude, gemini');
+    }
+    
+    await this.updateConfig({ providers: validProviders }, global ? 'global' : 'local');
+  }
+
+  /**
+   * Clear rate limit for a provider
+   */
+  async clearRateLimit(provider: ProviderName): Promise<void> {
+    const rateLimits = await this.loadRateLimits();
+    delete rateLimits[provider];
+    await this.saveRateLimits(rateLimits);
+  }
+
+  /**
+   * Save configuration
+   */
+  async saveConfig(config: UserConfig, global = false): Promise<void> {
+    const configPath = global ? this.globalConfigPath : this.localConfigPath;
+    await this.saveConfigFile(configPath, config);
+    await this.loadConfig(); // Reload to update internal state
+  }
+
+  /**
+   * Show current configuration
+   */
+  async showConfig(): Promise<void> {
+    await this.loadConfig();
+    
+    console.log('\n📋 Current Configuration:');
+    console.log('─'.repeat(40));
+    
+    // Show effective config
+    console.log('\nEffective Configuration:');
+    console.log(JSON.stringify(this.config, null, 2));
+    
+    // Show config sources
+    console.log('\n📁 Configuration Sources:');
+    
+    // Check global config
+    try {
+      const globalConfig = await this.loadConfigFile(this.globalConfigPath);
+      if (Object.keys(globalConfig).length > 0) {
+        console.log(`\nGlobal (${this.globalConfigPath}):`);
+        console.log(JSON.stringify(globalConfig, null, 2));
+      }
+    } catch {
+      console.log(`\nGlobal: Not configured`);
+    }
+    
+    // Check local config
+    try {
+      const localConfig = await this.loadConfigFile(this.localConfigPath);
+      if (Object.keys(localConfig).length > 0) {
+        console.log(`\nLocal (${this.localConfigPath}):`);
+        console.log(JSON.stringify(localConfig, null, 2));
+      }
+    } catch {
+      console.log(`\nLocal: Not configured`);
+    }
+    
+    // Show rate limit status
+    console.log('\n⏱️  Rate Limit Status:');
+    
+    for (const provider of ['claude', 'gemini'] as ProviderName[]) {
+      const status = await this.checkRateLimit(provider);
+      if (status.isLimited) {
+        const remainingTime = Math.ceil((status.timeRemaining ?? 0) / 1000 / 60);
+        console.log(`${provider}: Rate limited (${remainingTime} minutes remaining)`);
+      } else {
+        console.log(`${provider}: Available`);
+      }
+    }
+  }
+
+  /**
    * Ensure a directory exists
    */
   private async ensureDirectoryExists(dirPath: string): Promise<void> {

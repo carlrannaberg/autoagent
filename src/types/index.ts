@@ -135,6 +135,8 @@ export interface UserConfig {
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   /** Custom instructions for providers */
   customInstructions: string;
+  /** Include co-authored-by in commit messages */
+  includeCoAuthoredBy?: boolean;
 }
 
 /**

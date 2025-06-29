@@ -138,3 +138,29 @@ autoagent/
   - Comprehensive error handling with detailed error messages
   - Added unit tests with full coverage for all public methods
   - Integrates seamlessly with FileManager, ConfigManager, and Provider classes
+- **2025-06-30**: Claude completed CLI interface and commands (Issue #8)
+  - Created bin/autoagent CLI entry point with proper shebang and executable permissions
+  - Implemented src/cli/index.ts with full Commander.js integration
+  - Created comprehensive CLI with all required commands:
+    - `run`: Execute issues with options for provider override, workspace, debug, dry-run, and auto-commit control
+    - `create`: Generate new issues with AI assistance
+    - `status`: Display current project status including provider availability
+    - `config`: Command group for configuration management
+      - `config init`: Initialize configuration (global or local)
+      - `config set-provider`: Set default AI provider
+      - `config set-failover`: Configure failover provider order
+      - `config set-auto-commit`: Enable/disable automatic git commits
+      - `config set-co-authored-by`: Control co-authorship attribution
+      - `config show`: Display current configuration and rate limit status
+      - `config clear-limits`: Clear rate limit records
+    - `check`: Verify provider availability
+    - `bootstrap`: Create initial issue from master plan
+  - Added Logger utility (src/utils/logger.ts) for colored console output
+  - Implemented proper error handling with exit codes
+  - Support for graceful cancellation via SIGINT
+  - Added missing methods to AutonomousAgent: createIssue, getStatus, bootstrap, executeNext
+  - Enhanced FileManager with additional methods: readTodo, updateTodo, getTodoStats, getNextIssue
+  - Extended ConfigManager with CLI-specific methods: initConfig, setProvider, setFailoverProviders, clearRateLimit, showConfig
+  - Fixed TypeScript strict mode compilation errors
+  - Updated UserConfig interface to include includeCoAuthoredBy property
+  - Package.json already configured with bin entry for global installation
