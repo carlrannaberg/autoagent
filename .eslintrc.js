@@ -1,0 +1,44 @@
+module.exports = {
+  root: true,
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    ecmaVersion: 2020,
+    sourceType: 'module',
+    project: './tsconfig.json'
+  },
+  plugins: [
+    '@typescript-eslint'
+  ],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended-requiring-type-checking'
+  ],
+  env: {
+    node: true,
+    es2020: true,
+    jest: true
+  },
+  rules: {
+    '@typescript-eslint/explicit-function-return-type': 'error',
+    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+    '@typescript-eslint/no-non-null-assertion': 'error',
+    '@typescript-eslint/strict-boolean-expressions': 'error',
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    'prefer-const': 'error',
+    'no-var': 'error',
+    'eqeqeq': ['error', 'always'],
+    'curly': 'error',
+    'semi': ['error', 'always'],
+    'quotes': ['error', 'single', { avoidEscape: true }]
+  },
+  ignorePatterns: [
+    'dist/',
+    'node_modules/',
+    '*.js',
+    '!.eslintrc.js',
+    'coverage/'
+  ]
+};

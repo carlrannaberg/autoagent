@@ -1,0 +1,61 @@
+# Source files
+src/
+*.ts
+!dist/**/*.d.ts
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+coverage/
+.nyc_output/
+
+# Configuration files
+tsconfig.json
+.eslintrc.js
+.eslintignore
+jest.config.js
+.prettierrc
+
+# Documentation
+docs/
+*.md
+!README.md
+!LICENSE
+
+# Development files
+.vscode/
+.idea/
+*.log
+.env*
+.nvmrc
+
+# Scripts and tools
+scripts/
+ui/
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.travis.yml
+.circleci/
+
+# Examples
+examples/
+
+# Build files
+*.tsbuildinfo
+
+# Agent-specific
+issues/
+plans/
+logs/
+.agent-cache/
+.agent-history/
+master-plan.md
+todo.md

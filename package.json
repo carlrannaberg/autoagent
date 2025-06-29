@@ -1,17 +1,22 @@
 {
-  "name": "autonomous-agents-template",
-  "version": "1.0.0",
-  "description": "Template for creating autonomous AI agents with Claude or Gemini",
+  "name": "autoagent",
+  "version": "0.1.0",
+  "description": "Run autonomous AI agents using Claude or Gemini for task execution",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "autoagent": "./bin/autoagent"
+  },
   "scripts": {
-    "agent": "./scripts/run-agent.sh -p claude",
-    "agent:auto": "./scripts/run-agent.sh -p claude --auto",
-    "agent:gemini": "./scripts/run-agent.sh -p gemini",
-    "agent:gemini:auto": "./scripts/run-agent.sh -p gemini --auto",
-    "issue": "./scripts/create-issue.sh",
-    "bootstrap": "./scripts/create-bootstrap.sh",
-    "complete": "./scripts/complete-issue.sh",
-    "test": "./tests/run-tests.sh",
-    "test:unit": "./tests/run-tests.sh --no-integration"
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "ai",
@@ -19,12 +24,55 @@
     "claude",
     "gemini",
     "automation",
-    "autonomous"
+    "autonomous",
+    "cli",
+    "typescript"
   ],
   "author": "",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/autonomous-agents-template.git"
+    "url": "https://github.com/yourusername/autoagent.git"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.30",
+    "@typescript-eslint/eslint-plugin": "^7.3.1",
+    "@typescript-eslint/parser": "^7.3.1",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.4.3"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/test/**/*.test.ts"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/*.d.ts",
+      "!src/types/**"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ]
   }
 }

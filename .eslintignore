@@ -1,0 +1,8 @@
+dist/
+node_modules/
+coverage/
+*.d.ts
+jest.config.js
+scripts/
+tests/
+ui/
