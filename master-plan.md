@@ -266,7 +266,8 @@ export interface AgentConfig {
   provider?: 'claude' | 'gemini';
   workspace?: string;
   autoCommit?: boolean;
-  includeCoAuthoredBy?: boolean;  // NEW - runtime override
+  includeCoAuthoredBy?: boolean;
+  autoUpdateContext?: boolean;
   debug?: boolean;
 }
 
@@ -274,8 +275,8 @@ export interface UserConfig {
   defaultProvider?: 'claude' | 'gemini';
   failoverProviders?: ('claude' | 'gemini')[];
   autoCommit?: boolean;
-  includeCoAuthoredBy?: boolean;  // NEW - include AI attribution in commits
-  autoUpdateContext?: boolean;  // NEW - auto-update project context in provider files
+  includeCoAuthoredBy?: boolean;
+  autoUpdateContext?: boolean;
   debug?: boolean;
   retryAttempts?: number;
   rateLimitCooldown?: number;
@@ -673,7 +674,7 @@ export class ConfigManager {
     const defaultConfig: UserConfig = {
       defaultProvider: 'claude',
       failoverProviders: ['gemini'],
-      autoCommit: true,  // Default to true for automatic commits
+      autoCommit: false,
       includeCoAuthoredBy: true,  // Default to true for attribution
       autoUpdateContext: true,  // Default to true for context updates
       debug: false,
@@ -1046,7 +1047,7 @@ export class AutonomousAgent {
   }
 
   async executeNext(): Promise<ExecutionResult> {
-    await this.initializeProvider();  // NEW - Dynamic provider selection
+    await this.initializeProvider();
 
     const issue = await this.fileManager.getNextIssue();
 
@@ -1086,7 +1087,7 @@ Complete all requirements and acceptance criteria. Update todo.md when complete.
       try {
         await this.updateProviderInstructions(issue, provider, true);
         Logger.debug(`Updated ${provider.toUpperCase()}.md with execution history`, this.config.debug);
-        
+
         // Analyze and update project context using AI if enabled
         const userConfig = await this.configManager.loadConfig();
         if (userConfig.autoUpdateContext !== false) { // Default to true
@@ -1161,16 +1162,16 @@ Complete all requirements and acceptance criteria. Update todo.md when complete.
   private async analyzeAndUpdateProjectContext(provider: 'claude' | 'gemini'): Promise<void> {
     const fileName = provider === 'claude' ? 'CLAUDE.md' : 'GEMINI.md';
     const filePath = path.join(this.config.workspace || '.', fileName);
-    
+
     // Read current content
     let content = await this.fileManager.readFile(filePath);
-    
+
     // Create prompt for AI to analyze project
     const prompt = `You are analyzing a software project to update the project context documentation.
 Based on the files and structure in the workspace, update the following sections with accurate, specific information.
 Preserve the existing execution history section at the bottom.
 
-IMPORTANT: 
+IMPORTANT:
 - Replace placeholder comments with actual content
 - Be specific and detailed
 - Keep existing execution history intact
@@ -1194,7 +1195,7 @@ The sections to update are:
     const todoContent = await this.fileManager.readTodo();
     const packageJson = await this.getFileIfExists('package.json');
     const readme = await this.getFileIfExists('README.md');
-    
+
     const context = `Current ${fileName} content:
 ${content}
 
@@ -1211,7 +1212,7 @@ ${await this.getWorkspaceStructure()}`;
     // Execute with the current provider
     const aiProvider = createProvider(provider);
     const result = await aiProvider.execute(prompt, context);
-    
+
     // Write the updated content
     await this.fileManager.writeFile(filePath, result);
   }
@@ -1259,14 +1260,14 @@ ${await this.getWorkspaceStructure()}`;
   }
 
   private async updateProviderInstructions(
-    issue: Issue, 
-    provider: 'claude' | 'gemini', 
+    issue: Issue,
+    provider: 'claude' | 'gemini',
     success: boolean,
     errorMessage?: string
   ): Promise<void> {
     const fileName = provider === 'claude' ? 'CLAUDE.md' : 'GEMINI.md';
     const filePath = path.join(this.config.workspace || '.', fileName);
-    
+
     // Read existing content or create default
     let content = '';
     try {
@@ -1275,7 +1276,7 @@ ${await this.getWorkspaceStructure()}`;
       // Create default content if file doesn't exist
       content = `# ${provider.charAt(0).toUpperCase() + provider.slice(1)} Instructions
 
-This file contains project-specific instructions for ${provider.charAt(0).toUpperCase() + provider.slice(1)}. 
+This file contains project-specific instructions for ${provider.charAt(0).toUpperCase() + provider.slice(1)}.
 It is automatically updated with execution history and project context to help improve future task performance.
 
 ## Project Context
@@ -1311,7 +1312,7 @@ It is automatically updated with execution history and project context to help i
 ## Execution History
 `;
     }
-    
+
     // Add execution history entry
     const timestamp = new Date().toISOString();
     const historyEntry = `
@@ -1323,7 +1324,7 @@ ${!success && errorMessage ? `- **Error**: ${errorMessage}` : ''}
 ${success ? `- **Key Learnings**: Successfully completed task requirements` : ''}
 
 `;
-    
+
     // Find the execution history section and append
     if (content.includes('## Execution History')) {
       content = content.replace(
@@ -1334,7 +1335,7 @@ ${success ? `- **Key Learnings**: Successfully completed task requirements` : ''
       // Add execution history section if it doesn't exist
       content += `\n## Execution History\n${historyEntry}`;
     }
-    
+
     // Write updated content
     await this.fileManager.writeFile(filePath, content);
   }
