@@ -260,6 +260,17 @@ export interface ExecutionResult {
   output?: string;
   error?: string;
   provider?: 'claude' | 'gemini';
+  filesChanged?: string[];  // Track files modified during execution
+  rollbackData?: RollbackData;  // Data needed for rollback
+}
+
+export interface RollbackData {
+  gitCommit?: string;  // Git commit hash before changes
+  fileBackups?: Map<string, string>;  // Original file contents
+}
+
+export interface ProgressCallback {
+  (message: string, percentage?: number): void;
 }
 
 export interface AgentConfig {
@@ -269,6 +280,10 @@ export interface AgentConfig {
   includeCoAuthoredBy?: boolean;
   autoUpdateContext?: boolean;
   debug?: boolean;
+  dryRun?: boolean;  // Preview mode without making changes
+  signal?: AbortSignal;  // For cancellation support
+  onProgress?: ProgressCallback;  // Progress tracking callback
+  enableRollback?: boolean;  // Enable rollback capability
 }
 
 export interface UserConfig {
@@ -281,6 +296,7 @@ export interface UserConfig {
   retryAttempts?: number;
   rateLimitCooldown?: number;
   customTemplatesPath?: string;
+  dryRun?: boolean;  // Default dry-run mode setting
 }
 
 export type AgentEvent = 'issue-created' | 'execution-start' | 'execution-end' | 'error';
@@ -329,7 +345,7 @@ export class ClaudeProvider extends Provider {
         '-p', fullPrompt,
         '--dangerously-skip-permissions',
         '--output-format', 'json'
-      ], { shell: true });
+      ]);
 
       let output = '';
       let error = '';
@@ -385,7 +401,7 @@ export class GeminiProvider extends Provider {
         '-p', fullPrompt,
         '-y',
         '-d'
-      ], { shell: true });
+      ]);
 
       let output = '';
       let error = '';
@@ -674,7 +690,7 @@ export class ConfigManager {
     const defaultConfig: UserConfig = {
       defaultProvider: 'claude',
       failoverProviders: ['gemini'],
-      autoCommit: false,
+      autoCommit: true,  // Default to true for automatic commits
       includeCoAuthoredBy: true,  // Default to true for attribution
       autoUpdateContext: true,  // Default to true for context updates
       debug: false,
@@ -807,7 +823,7 @@ export class ConfigManager {
       const defaultConfig: UserConfig = {
         defaultProvider: 'claude',
         failoverProviders: ['gemini'],
-        autoCommit: false,
+        autoCommit: true,  // Default to true for automatic commits
         includeCoAuthoredBy: true,  // Default to true for attribution
         autoUpdateContext: true,  // Default to true for context updates
         debug: false,
@@ -965,17 +981,19 @@ export class RetryHandler {
 
 Create `src/core/agent.ts`:
 ```typescript
-import { AgentConfig, ExecutionResult, Issue, Status } from '../types';
+import { AgentConfig, ExecutionResult, Issue, Status, RollbackData } from '../types';
 import { createProvider, Provider } from './providers';
 import { FileManager } from './files';
 import { ConfigManager } from './config';
 import { Logger } from '../utils/logger';
 import { RetryHandler } from '../utils/retry';
 import * as path from 'path';
+import * as fs from 'fs/promises';
+import { spawn, execSync } from 'child_process';
 import chalk from 'chalk';
 
 export class AutonomousAgent {
-  private provider: Provider;
+  private provider?: Provider;
   private fileManager: FileManager;
   private configManager: ConfigManager;  // NEW
   private config: AgentConfig;
@@ -987,8 +1005,7 @@ export class AutonomousAgent {
     this.configManager = new ConfigManager(config.workspace);  // NEW
     this.retryHandler = new RetryHandler();  // NEW
 
-    // Provider will be set dynamically
-    this.provider = null!;
+    // Provider will be initialized before use
   }
 
   private async initializeProvider(): Promise<void> {
@@ -1022,6 +1039,11 @@ export class AutonomousAgent {
     }
 
     for (const providerName of allProviders) {
+      // Check for cancellation before each provider attempt
+      if (this.config.signal?.aborted) {
+        throw new Error('Operation cancelled by user');
+      }
+      
       try {
         const provider = createProvider(providerName);
         const result = await provider.execute(prompt, context);
@@ -1060,12 +1082,24 @@ export class AutonomousAgent {
       };
     }
 
-    console.log(chalk.cyan(`\n🤖 Executing Issue ${issue.number}: ${issue.title}`));
+    console.log(chalk.cyan(`\n🤖 ${this.config.dryRun ? '[DRY RUN] ' : ''}Executing Issue ${issue.number}: ${issue.title}`));
 
     const startTime = Date.now();
+    let rollbackData: RollbackData | undefined;
+    
+    // Check for cancellation
+    if (this.config.signal?.aborted) {
+      throw new Error('Operation cancelled by user');
+    }
 
     try {
+      // Capture rollback data if enabled
+      if (this.config.enableRollback && !this.config.dryRun) {
+        this.reportProgress('Capturing rollback data...', 10);
+        rollbackData = await this.captureRollbackData();
+      }
       // Build context from todo, issue, and plan files
+      this.reportProgress('Loading issue context...', 20);
       const todoContent = await this.fileManager.readTodo();
       const issueContent = await this.fileManager.readFile(issue.file);
       const planFile = issue.file.replace('/issues/', '/plans/').replace('issue-', 'plan-issue-');
@@ -1073,52 +1107,65 @@ export class AutonomousAgent {
 
       const context = `${todoContent}\n\n${issueContent}\n\n${planContent}`;
 
-      const prompt = `You are an autonomous AI agent. Execute the following issue according to the plan.
+      const prompt = `You are an autonomous AI agent. ${this.config.dryRun ? 'This is a DRY RUN - describe what you would do without making actual changes. ' : ''}Execute the following issue according to the plan.
 Complete all requirements and acceptance criteria. Update todo.md when complete.`;
 
+      this.reportProgress('Executing with AI provider...', 40);
       const { result, provider } = await this.executeWithFailover(prompt, context);  // NEW
 
-      await this.fileManager.markComplete(issue.number);
+      if (this.config.dryRun) {
+        console.log(chalk.yellow('\n📋 DRY RUN RESULTS:'));
+        console.log(result);
+        console.log(chalk.yellow('\n⚠️  No changes were made (dry run mode)'));
+      } else {
+        await this.fileManager.markComplete(issue.number);
+      }
 
       const duration = Date.now() - startTime;
       console.log(chalk.green(`✅ Completed in ${(duration / 1000).toFixed(1)}s using ${provider}`));
 
-      // Update provider instruction file with execution history and project context
-      try {
-        await this.updateProviderInstructions(issue, provider, true);
-        Logger.debug(`Updated ${provider.toUpperCase()}.md with execution history`, this.config.debug);
+      // Update provider instruction file with execution history and project context (skip in dry-run)
+      if (!this.config.dryRun) {
+        try {
+          await this.updateProviderInstructions(issue, provider, true);
+          Logger.debug(`Updated ${provider.toUpperCase()}.md with execution history`, this.config.debug);
 
-        // Analyze and update project context using AI if enabled
-        const userConfig = await this.configManager.loadConfig();
-        if (userConfig.autoUpdateContext !== false) { // Default to true
-          await this.analyzeAndUpdateProjectContext(provider);
-          Logger.info(`Updated ${provider.toUpperCase()}.md with latest project context`);
+          // Analyze and update project context using AI if enabled
+          const userConfig = await this.configManager.loadConfig();
+          if (userConfig.autoUpdateContext !== false) { // Default to true
+            await this.analyzeAndUpdateProjectContext(provider);
+            Logger.info(`Updated ${provider.toUpperCase()}.md with latest project context`);
+          }
+        } catch (updateError) {
+          Logger.debug(`Failed to update provider instructions: ${updateError.message}`, this.config.debug);
+          // Don't fail the execution if update fails
         }
-      } catch (updateError) {
-        Logger.debug(`Failed to update provider instructions: ${updateError.message}`, this.config.debug);
-        // Don't fail the execution if update fails
       }
 
-      // Auto-commit if enabled (check override first, then config)
-      const userConfig = await this.configManager.loadConfig();
-      const shouldCommit = this.config.autoCommit !== undefined ? this.config.autoCommit : userConfig.autoCommit;
+      // Auto-commit if enabled (check override first, then config) - skip in dry-run
+      if (!this.config.dryRun) {
+        const userConfig = await this.configManager.loadConfig();
+        const shouldCommit = this.config.autoCommit !== undefined ? this.config.autoCommit : userConfig.autoCommit;
 
-      if (shouldCommit) {
-        try {
-          await this.commitChanges(issue, provider);
-          Logger.success('Changes committed automatically');
-        } catch (commitError) {
-          Logger.warning(`Auto-commit failed: ${commitError.message}`);
+        if (shouldCommit) {
+          try {
+            await this.commitChanges(issue, provider);
+            Logger.success('Changes committed automatically');
+          } catch (commitError) {
+            Logger.warning(`Auto-commit failed: ${commitError.message}`);
           // Don't fail the execution if commit fails
         }
       }
 
+      this.reportProgress('Execution completed successfully', 100);
+      
       return {
         success: true,
         issueNumber: issue.number,
         duration,
         output: result,
-        provider  // NEW
+        provider,  // NEW
+        rollbackData  // Include rollback data for potential future use
       };
     } catch (error) {
       const duration = Date.now() - startTime;
@@ -1132,11 +1179,17 @@ Complete all requirements and acceptance criteria. Update todo.md when complete.
         Logger.debug(`Failed to update provider instructions: ${updateError.message}`, this.config.debug);
       }
 
+      // Offer rollback if we have rollback data and execution failed
+      if (rollbackData && this.config.enableRollback && !this.config.dryRun) {
+        this.reportProgress('Execution failed, rollback available', 0);
+      }
+      
       return {
         success: false,
         issueNumber: issue.number,
         duration,
-        error: error.message
+        error: error.message,
+        rollbackData  // Include rollback data so caller can trigger rollback
       };
     }
   }
@@ -1372,13 +1425,21 @@ ${success ? `- **Key Learnings**: Successfully completed task requirements` : ''
 
       Logger.debug(`Committed changes for issue #${issue.number}`, this.config.debug);
     } catch (error) {
-      // If not a git repo or no changes, that's okay
-      if (error.message.includes('not a git repository')) {
+      const errorMessage = error.message || error.toString();
+      
+      // Handle expected scenarios gracefully
+      if (errorMessage.includes('not a git repository') || errorMessage.includes('fatal: not a git repository')) {
         Logger.debug('Not a git repository, skipping commit', this.config.debug);
-      } else if (error.message.includes('nothing to commit')) {
+      } else if (errorMessage.includes('nothing to commit') || errorMessage.includes('working tree clean')) {
         Logger.debug('No changes to commit', this.config.debug);
+      } else if (errorMessage.includes('uncommitted changes') || errorMessage.includes('unmerged files')) {
+        Logger.warn('Uncommitted changes detected, skipping auto-commit to avoid conflicts');
+      } else if (errorMessage.includes('detached HEAD')) {
+        Logger.warn('Repository is in detached HEAD state, skipping commit');
       } else {
-        throw error;
+        // Log the error but don't fail the entire operation
+        Logger.error(`Git commit failed: ${errorMessage}`);
+        Logger.debug('Continuing despite git error...', this.config.debug);
       }
     }
   }
@@ -1420,8 +1481,13 @@ Respond in JSON format:
 
       Logger.info(`Bootstrap issue generated using ${provider}`);
 
-      // Parse AI response
-      const issueData = JSON.parse(result);
+      // Parse AI response with error handling
+      let issueData;
+      try {
+        issueData = JSON.parse(result);
+      } catch (error) {
+        throw new Error(`Failed to parse AI response: ${error.message}. Response: ${result.substring(0, 200)}...`);
+      }
 
       // Create the issue using FileManager (which handles file creation and todo update)
       const issue = await this.fileManager.createIssue(issueData.title);
@@ -1516,6 +1582,113 @@ All acceptance criteria are met and tests pass.
       rateLimitedProviders   // NEW
     };
   }
+
+  private async captureRollbackData(): Promise<RollbackData> {
+    const rollbackData: RollbackData = {
+      fileBackups: new Map()
+    };
+
+    // Capture git commit if in a git repo
+    try {
+      const gitCommit = execSync('git rev-parse HEAD', { 
+        cwd: this.config.workspace,
+        encoding: 'utf-8'
+      }).trim();
+      rollbackData.gitCommit = gitCommit;
+    } catch {
+      // Not a git repo or no commits yet
+    }
+
+    return rollbackData;
+  }
+
+  async rollback(rollbackData: RollbackData): Promise<void> {
+    if (!rollbackData) {
+      throw new Error('No rollback data available');
+    }
+
+    this.reportProgress('Starting rollback...', 0);
+
+    try {
+      // If we have a git commit, try git-based rollback first
+      if (rollbackData.gitCommit) {
+        try {
+          execSync(`git reset --hard ${rollbackData.gitCommit}`, {
+            cwd: this.config.workspace
+          });
+          this.reportProgress('Rollback completed via git', 100);
+          Logger.success('Successfully rolled back to previous git state');
+          return;
+        } catch (error) {
+          Logger.warn('Git rollback failed, falling back to file restoration');
+        }
+      }
+
+      // Fall back to file-based rollback
+      if (rollbackData.fileBackups && rollbackData.fileBackups.size > 0) {
+        let processed = 0;
+        const total = rollbackData.fileBackups.size;
+
+        for (const [filePath, content] of rollbackData.fileBackups) {
+          await fs.writeFile(filePath, content);
+          processed++;
+          this.reportProgress(`Restored ${path.basename(filePath)}`, (processed / total) * 100);
+        }
+
+        Logger.success('Successfully rolled back file changes');
+      } else {
+        throw new Error('No file backups available for rollback');
+      }
+    } catch (error) {
+      Logger.error(`Rollback failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  private reportProgress(message: string, percentage?: number): void {
+    if (this.config.onProgress) {
+      this.config.onProgress(message, percentage);
+    } else {
+      // Default progress reporting to console
+      if (percentage !== undefined) {
+        console.log(chalk.blue(`[${percentage.toFixed(0)}%] ${message}`));
+      } else {
+        console.log(chalk.blue(`➤ ${message}`));
+      }
+    }
+  }
+
+  private async trackFileChanges(action: () => Promise<void>): Promise<string[]> {
+    // Simple implementation - in production, use file watching
+    const filesBefore = new Set(await this.getWorkspaceFiles());
+    await action();
+    const filesAfter = new Set(await this.getWorkspaceFiles());
+    
+    const changed: string[] = [];
+    for (const file of filesAfter) {
+      if (!filesBefore.has(file)) {
+        changed.push(file);
+      }
+    }
+    
+    return changed;
+  }
+
+  private async getWorkspaceFiles(): Promise<string[]> {
+    // Simplified - in production, implement proper file traversal
+    const files: string[] = [];
+    try {
+      const entries = await fs.readdir(this.config.workspace || '.', { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isFile() && !entry.name.startsWith('.')) {
+          files.push(path.join(this.config.workspace || '.', entry.name));
+        }
+      }
+    } catch {
+      // Ignore errors
+    }
+    return files;
+  }
 }
 ```
 
@@ -1536,6 +1709,7 @@ import { AutonomousAgent } from '../core/agent';
 import { createProvider } from '../core/providers';
 import { ConfigManager } from '../core/config';
 import { Logger } from '../utils/logger';
+import chalk from 'chalk';
 
 const program = new Command();
 
@@ -1674,14 +1848,26 @@ program
   .option('--commit', 'Enable auto-commit for this run')
   .option('--no-co-author', 'Disable co-authorship for this run')
   .option('--co-author', 'Enable co-authorship for this run')
+  .option('--dry-run', 'Preview what would be done without making changes')
   .action(async (options) => {
     try {
+      // Create AbortController for cancellation support
+      const abortController = new AbortController();
+      
+      // Handle SIGINT (Ctrl+C) for graceful cancellation
+      process.on('SIGINT', () => {
+        console.log(chalk.yellow('\n⚠️  Cancelling operation...'));
+        abortController.abort();
+      });
+      
       const agent = new AutonomousAgent({
         provider: options.provider,  // Optional override
         workspace: options.workspace,
         debug: options.debug,
         autoCommit: options.commit !== undefined ? options.commit : undefined,  // Override if specified
-        includeCoAuthoredBy: options.coAuthor !== undefined ? options.coAuthor : undefined  // Override if specified
+        includeCoAuthoredBy: options.coAuthor !== undefined ? options.coAuthor : undefined,  // Override if specified
+        dryRun: options.dryRun,
+        signal: abortController.signal
       });
 
       if (options.all) {
