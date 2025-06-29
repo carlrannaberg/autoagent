@@ -275,6 +275,7 @@ export interface UserConfig {
   failoverProviders?: ('claude' | 'gemini')[];
   autoCommit?: boolean;
   includeCoAuthoredBy?: boolean;  // NEW - include AI attribution in commits
+  autoUpdateContext?: boolean;  // NEW - auto-update project context in provider files
   debug?: boolean;
   retryAttempts?: number;
   rateLimitCooldown?: number;
@@ -672,8 +673,9 @@ export class ConfigManager {
     const defaultConfig: UserConfig = {
       defaultProvider: 'claude',
       failoverProviders: ['gemini'],
-      autoCommit: false,
+      autoCommit: true,  // Default to true for automatic commits
       includeCoAuthoredBy: true,  // Default to true for attribution
+      autoUpdateContext: true,  // Default to true for context updates
       debug: false,
       retryAttempts: 3,
       rateLimitCooldown: 300000 // 5 minutes
@@ -806,6 +808,7 @@ export class ConfigManager {
         failoverProviders: ['gemini'],
         autoCommit: false,
         includeCoAuthoredBy: true,  // Default to true for attribution
+        autoUpdateContext: true,  // Default to true for context updates
         debug: false,
         retryAttempts: 3,
         rateLimitCooldown: 300000
@@ -967,6 +970,7 @@ import { FileManager } from './files';
 import { ConfigManager } from './config';
 import { Logger } from '../utils/logger';
 import { RetryHandler } from '../utils/retry';
+import * as path from 'path';
 import chalk from 'chalk';
 
 export class AutonomousAgent {
@@ -1078,6 +1082,22 @@ Complete all requirements and acceptance criteria. Update todo.md when complete.
       const duration = Date.now() - startTime;
       console.log(chalk.green(`✅ Completed in ${(duration / 1000).toFixed(1)}s using ${provider}`));
 
+      // Update provider instruction file with execution history and project context
+      try {
+        await this.updateProviderInstructions(issue, provider, true);
+        Logger.debug(`Updated ${provider.toUpperCase()}.md with execution history`, this.config.debug);
+        
+        // Analyze and update project context using AI if enabled
+        const userConfig = await this.configManager.loadConfig();
+        if (userConfig.autoUpdateContext !== false) { // Default to true
+          await this.analyzeAndUpdateProjectContext(provider);
+          Logger.info(`Updated ${provider.toUpperCase()}.md with latest project context`);
+        }
+      } catch (updateError) {
+        Logger.debug(`Failed to update provider instructions: ${updateError.message}`, this.config.debug);
+        // Don't fail the execution if update fails
+      }
+
       // Auto-commit if enabled (check override first, then config)
       const userConfig = await this.configManager.loadConfig();
       const shouldCommit = this.config.autoCommit !== undefined ? this.config.autoCommit : userConfig.autoCommit;
@@ -1102,6 +1122,14 @@ Complete all requirements and acceptance criteria. Update todo.md when complete.
     } catch (error) {
       const duration = Date.now() - startTime;
       console.log(chalk.red(`❌ Failed: ${error.message}`));
+
+      // Update provider instruction file with failure information
+      try {
+        await this.updateProviderInstructions(issue, this.provider?.name as 'claude' | 'gemini', false, error.message);
+        Logger.debug(`Updated provider instructions with failure information`, this.config.debug);
+      } catch (updateError) {
+        Logger.debug(`Failed to update provider instructions: ${updateError.message}`, this.config.debug);
+      }
 
       return {
         success: false,
@@ -1128,6 +1156,187 @@ Complete all requirements and acceptance criteria. Update todo.md when complete.
     }
 
     return results;
+  }
+
+  private async analyzeAndUpdateProjectContext(provider: 'claude' | 'gemini'): Promise<void> {
+    const fileName = provider === 'claude' ? 'CLAUDE.md' : 'GEMINI.md';
+    const filePath = path.join(this.config.workspace || '.', fileName);
+    
+    // Read current content
+    let content = await this.fileManager.readFile(filePath);
+    
+    // Create prompt for AI to analyze project
+    const prompt = `You are analyzing a software project to update the project context documentation.
+Based on the files and structure in the workspace, update the following sections with accurate, specific information.
+Preserve the existing execution history section at the bottom.
+
+IMPORTANT: 
+- Replace placeholder comments with actual content
+- Be specific and detailed
+- Keep existing execution history intact
+- Use markdown formatting
+
+The sections to update are:
+1. Project Context - architecture, purpose, and key components
+2. Technology Stack - main technologies, frameworks, and tools
+3. Coding Standards - conventions, style guides, best practices observed
+4. Directory Structure - project organization
+5. Key Dependencies - important libraries and their purposes
+6. Environment Setup - environment variables or configuration
+7. Testing Requirements - how code should be tested
+8. Security Considerations - security requirements or sensitive data handling
+9. Performance Guidelines - performance requirements or optimizations
+10. Additional Notes - any other important information`;
+
+    // Get workspace files for context
+    const issuesContent = await this.getDirectoryOverview('issues');
+    const plansContent = await this.getDirectoryOverview('plans');
+    const todoContent = await this.fileManager.readTodo();
+    const packageJson = await this.getFileIfExists('package.json');
+    const readme = await this.getFileIfExists('README.md');
+    
+    const context = `Current ${fileName} content:
+${content}
+
+Project files overview:
+- Issues: ${issuesContent}
+- Plans: ${plansContent}
+- Todo: ${todoContent}
+${packageJson ? `- package.json: ${packageJson}` : ''}
+${readme ? `- README.md: ${readme}` : ''}
+
+Workspace structure:
+${await this.getWorkspaceStructure()}`;
+
+    // Execute with the current provider
+    const aiProvider = createProvider(provider);
+    const result = await aiProvider.execute(prompt, context);
+    
+    // Write the updated content
+    await this.fileManager.writeFile(filePath, result);
+  }
+
+  private async getDirectoryOverview(dir: string): Promise<string> {
+    try {
+      const dirPath = path.join(this.config.workspace || '.', dir);
+      const files = await require('fs').promises.readdir(dirPath);
+      return files.join(', ');
+    } catch {
+      return 'Directory not found';
+    }
+  }
+
+  private async getFileIfExists(fileName: string): Promise<string | null> {
+    try {
+      const content = await this.fileManager.readFile(path.join(this.config.workspace || '.', fileName));
+      return content.substring(0, 500) + (content.length > 500 ? '...' : ''); // First 500 chars
+    } catch {
+      return null;
+    }
+  }
+
+  private async getWorkspaceStructure(): Promise<string> {
+    const { execSync } = require('child_process');
+    try {
+      // Use tree command if available, otherwise ls
+      const structure = execSync('tree -L 2 -I node_modules --filesfirst', {
+        cwd: this.config.workspace || '.',
+        encoding: 'utf-8'
+      });
+      return structure;
+    } catch {
+      // Fallback to ls if tree is not available
+      try {
+        const structure = execSync('ls -la', {
+          cwd: this.config.workspace || '.',
+          encoding: 'utf-8'
+        });
+        return structure;
+      } catch {
+        return 'Unable to get directory structure';
+      }
+    }
+  }
+
+  private async updateProviderInstructions(
+    issue: Issue, 
+    provider: 'claude' | 'gemini', 
+    success: boolean,
+    errorMessage?: string
+  ): Promise<void> {
+    const fileName = provider === 'claude' ? 'CLAUDE.md' : 'GEMINI.md';
+    const filePath = path.join(this.config.workspace || '.', fileName);
+    
+    // Read existing content or create default
+    let content = '';
+    try {
+      content = await this.fileManager.readFile(filePath);
+    } catch {
+      // Create default content if file doesn't exist
+      content = `# ${provider.charAt(0).toUpperCase() + provider.slice(1)} Instructions
+
+This file contains project-specific instructions for ${provider.charAt(0).toUpperCase() + provider.slice(1)}. 
+It is automatically updated with execution history and project context to help improve future task performance.
+
+## Project Context
+<!-- Describe your project architecture, purpose, and key components -->
+
+## Technology Stack
+<!-- List the main technologies, frameworks, and tools used -->
+
+## Coding Standards
+<!-- Define coding conventions, style guides, and best practices -->
+
+## Directory Structure
+<!-- Explain the project's directory organization -->
+
+## Key Dependencies
+<!-- List important libraries and their purposes -->
+
+## Environment Setup
+<!-- Describe any environment variables or configuration needed -->
+
+## Testing Requirements
+<!-- Specify how code should be tested -->
+
+## Security Considerations
+<!-- Any security requirements or sensitive data handling -->
+
+## Performance Guidelines
+<!-- Performance requirements or optimization guidelines -->
+
+## Additional Notes
+<!-- Any other important information for the agent -->
+
+## Execution History
+`;
+    }
+    
+    // Add execution history entry
+    const timestamp = new Date().toISOString();
+    const historyEntry = `
+### Issue #${issue.number}: ${issue.title}
+- **Date**: ${timestamp}
+- **Status**: ${success ? '✅ Success' : '❌ Failed'}
+- **Duration**: ${success ? 'See execution logs' : 'N/A'}
+${!success && errorMessage ? `- **Error**: ${errorMessage}` : ''}
+${success ? `- **Key Learnings**: Successfully completed task requirements` : ''}
+
+`;
+    
+    // Find the execution history section and append
+    if (content.includes('## Execution History')) {
+      content = content.replace(
+        '## Execution History\n',
+        `## Execution History\n${historyEntry}`
+      );
+    } else {
+      // Add execution history section if it doesn't exist
+      content += `\n## Execution History\n${historyEntry}`;
+    }
+    
+    // Write updated content
+    await this.fileManager.writeFile(filePath, content);
   }
 
   private async commitChanges(issue: Issue, provider: 'claude' | 'gemini'): Promise<void> {
@@ -1906,7 +2115,9 @@ my-project/
 ├── issues/          # Issue definitions
 ├── plans/           # Implementation plans
 ├── todo.md          # Issue tracking
-└── CLAUDE.md        # Optional: Claude-specific instructions
+├── CLAUDE.md        # Claude-specific instructions (auto-updated)
+├── GEMINI.md        # Gemini-specific instructions (auto-updated)
+└── .autoagent/      # Configuration files
 ```
 
 ## Development
@@ -2327,6 +2538,29 @@ This attribution:
 - Follows Git co-authorship conventions
 - Can be disabled globally or per-run
 
+### Provider Instruction Files
+
+AutoAgent automatically maintains `CLAUDE.md` and `GEMINI.md` files with:
+- Project-specific instructions for each AI provider
+- Execution history tracking successes and failures
+- Timestamps and error messages for debugging
+- Learning insights for improved performance
+
+Example entry in CLAUDE.md:
+```markdown
+### Issue #1: Add user authentication
+- **Date**: 2024-01-15T10:30:00.000Z
+- **Status**: ✅ Success
+- **Duration**: See execution logs
+- **Key Learnings**: Successfully completed task requirements
+```
+
+These files help:
+- Track provider performance over time
+- Debug provider-specific issues
+- Provide context for future executions
+- Build provider-specific knowledge base
+
 ## Environment Variables
 
 You can also configure AutoAgent using environment variables:
@@ -2634,14 +2868,15 @@ This implementation provides a solid foundation that can be extended in future v
 
 ## Summary of Key Changes
 
-1. **Type Definitions**: Add failover and rate limit fields
+1. **Type Definitions**: Add failover and rate limit fields, co-authorship configuration
 2. **Config Management**: Replace with enhanced version
-3. **Agent Class**: Add failover execution logic with support for CLI overrides, bootstrap method, and configurable auto-commit
-4. **CLI**: Add config command group, bootstrap command, auto-commit settings, and preserve `--provider` flag for ad-hoc overrides
-5. **FileManager**: Add writeFile method to support bootstrap functionality
-6. **Auto-commit**: Configurable git commit after successful issue completion with CLI overrides
-7. **Examples**: Show configuration usage and bootstrap
-8. **Tests**: Add comprehensive config tests
-9. **Documentation**: Add configuration guides
+3. **Agent Class**: Add failover execution logic with support for CLI overrides, bootstrap method, configurable auto-commit, and provider instruction updates
+4. **CLI**: Add config command group, bootstrap command, auto-commit settings, co-authorship settings, and preserve `--provider` flag for ad-hoc overrides
+5. **FileManager**: Add writeFile method to support bootstrap functionality and provider instruction updates
+6. **Auto-commit**: Configurable git commit with AI co-authorship attribution
+7. **Provider Instructions**: Automatic updates to CLAUDE.md/GEMINI.md with execution history
+8. **Examples**: Show configuration usage and bootstrap
+9. **Tests**: Add comprehensive config tests
+10. **Documentation**: Add configuration guides and provider instruction documentation
 
-The core file management, providers, and project structure remain unchanged. The main additions are around configuration management, intelligent provider selection, bootstrap functionality, and automated git commits.
+The core file management, providers, and project structure remain unchanged. The main additions are around configuration management, intelligent provider selection, bootstrap functionality, automated git commits with attribution, and provider-specific learning tracking.
