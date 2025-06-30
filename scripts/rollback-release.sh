@@ -151,23 +151,18 @@ if [ "$CAN_UNDO_COMMIT" = true ]; then
         
         # Revert CHANGELOG.md
         echo "Reverting CHANGELOG.md..."
+        echo "Using Claude to move changelog entries back to [Unreleased]..."
         # Use Claude to intelligently move the changelog entries
-        claude --dangerously-skip-permissions -p "$(cat << EOF
-Please edit the CHANGELOG.md file to move all entries under the [${VERSION}] section back to [Unreleased].
-
-Current CHANGELOG.md content:
-$(cat CHANGELOG.md)
+        claude --add-dir . --dangerously-skip-permissions -p "Please edit the CHANGELOG.md file to move all entries under the [$VERSION] section back to [Unreleased].
 
 Requirements:
-1. Find the [${VERSION}] section
+1. Find the [$VERSION] section in CHANGELOG.md
 2. Move all its content to [Unreleased] section (create it if it doesn't exist)
-3. Remove the [${VERSION}] section header and date
+3. Remove the [$VERSION] section header and date
 4. Preserve all other content exactly as is
 5. Write the updated content to CHANGELOG.md
 
-Do not add any new content or explanations, just restructure the existing content.
-EOF
-)" --add-dir .
+Do not add any new content or explanations, just restructure the existing content."
         
         # Stage changes
         git add package.json CHANGELOG.md
