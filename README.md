@@ -206,9 +206,20 @@ autoagent check claude
 Create initial issue from master plan.
 
 ```bash
-# Create bootstrap issue from master-plan.md
+# Create bootstrap issue from default master-plan.md
 autoagent bootstrap
+
+# Use a custom plan file
+autoagent bootstrap project-roadmap.md
+
+# Specify provider
+autoagent bootstrap --provider gemini my-plan.md
+
+# Use in different workspace
+autoagent bootstrap --workspace /path/to/project
 ```
+
+The bootstrap command reads your master plan (markdown file) and creates the first actionable issue from it.
 
 ### Command Options
 
