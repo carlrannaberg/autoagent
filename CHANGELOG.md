@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes yet._
 
+## [0.0.5] - 2025-07-01
+
+### Fixed
+- Removed unused top-level path import in autonomous-agent.ts that was causing @typescript-eslint/no-unused-vars lint error
+- Bootstrap command now creates both issue AND plan files (previously missing plan file creation)
+  - Fixes "Plan for issue #1 not found" error when running bootstrap workflow
+  - Plan includes structured phases for master plan decomposition
+  - Enables complete bootstrap → run workflow functionality
+
 ## [0.0.4] - 2025-06-30
 
 ### Fixed
