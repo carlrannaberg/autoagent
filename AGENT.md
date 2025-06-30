@@ -30,6 +30,7 @@ npm run clean        # Clean build output
 npm run release:patch # Prepare a patch release (0.0.1 -> 0.0.2)
 npm run release:minor # Prepare a minor release (0.0.1 -> 0.1.0)
 npm run release:major # Prepare a major release (0.0.1 -> 1.0.0)
+npm run release:rollback v0.0.2 # Rollback a release that wasn't published
 ```
 
 Always run tests before committing changes to ensure code quality.

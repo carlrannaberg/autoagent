@@ -23,7 +23,8 @@
     "prepublishOnly": "npm run build",
     "release:patch": "./scripts/prepare-release.sh patch",
     "release:minor": "./scripts/prepare-release.sh minor",
-    "release:major": "./scripts/prepare-release.sh major"
+    "release:major": "./scripts/prepare-release.sh major",
+    "release:rollback": "./scripts/rollback-release.sh"
   },
   "keywords": [
     "ai",
