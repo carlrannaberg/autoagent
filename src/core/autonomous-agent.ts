@@ -1,11 +1,10 @@
 import { EventEmitter } from 'events';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import * as path from 'path';
-import { 
-  AgentConfig, 
-  ExecutionResult, 
-  Issue, 
+import {
+  AgentConfig,
+  ExecutionResult,
+  Issue,
   ProviderName,
   Status,
   RollbackData
@@ -159,10 +158,10 @@ export class AutonomousAgent extends EventEmitter {
         duration: 0,
         error: error instanceof Error ? error.message : String(error)
       };
-      
+
       this.emit('error', error);
       this.emit('execution-end', errorResult);
-      
+
       return errorResult;
     } finally {
       this.isExecuting = false;
@@ -182,12 +181,12 @@ export class AutonomousAgent extends EventEmitter {
       if (todo === undefined || todo === '') {
         continue;
       }
-      
+
       const match = todo.match(/Issue #(\d+)/);
-      
+
       if (match !== null && match[1] !== undefined) {
         const issueNumber = parseInt(match[1], 10);
-        
+
         // Report overall progress
         const percentage = Math.round((i / pendingTodos.length) * 100);
         this.reportProgress(`Processing issue #${issueNumber}`, percentage);
@@ -215,7 +214,7 @@ export class AutonomousAgent extends EventEmitter {
    */
   async executeNext(): Promise<ExecutionResult> {
     const nextIssue = await this.fileManager.getNextIssue();
-    
+
     if (!nextIssue) {
       return {
         success: false,
@@ -259,7 +258,7 @@ export class AutonomousAgent extends EventEmitter {
             const fs = await import('fs/promises');
             const patchFile = `/tmp/rollback-${Date.now()}.patch`;
             await fs.writeFile(patchFile, patch);
-            
+
             try {
               await execAsync(`git apply ${patchFile}`);
               await fs.unlink(patchFile);
@@ -289,7 +288,7 @@ export class AutonomousAgent extends EventEmitter {
     if (this.config.provider) {
       const provider = createProvider(this.config.provider);
       const isRateLimited = await this.configManager.isProviderRateLimited(this.config.provider);
-      
+
       if (isRateLimited === false && await provider.checkAvailability()) {
         return provider;
       }
@@ -302,7 +301,7 @@ export class AutonomousAgent extends EventEmitter {
     if (provider === null) {
       // All providers are rate limited
       this.reportProgress('All providers are rate limited. Waiting for cooldown...', 0);
-      
+
       // Find the provider with the shortest remaining cooldown
       let shortestCooldown = Infinity;
       let nextProvider: ProviderName | null = null;
@@ -362,7 +361,7 @@ export class AutonomousAgent extends EventEmitter {
         // Check for rate limiting
         if (result.error !== undefined && result.error.toLowerCase().includes('rate limit')) {
           await this.configManager.updateRateLimit(provider.name as ProviderName, true);
-          
+
           // Try failover if available
           const alternativeProvider = await this.tryFailover(provider.name as ProviderName);
           if (alternativeProvider) {
@@ -381,7 +380,7 @@ export class AutonomousAgent extends EventEmitter {
 
       } catch (error) {
         lastError = error as Error;
-        
+
         // Exponential backoff
         if (attempt < userConfig.retryAttempts) {
           const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
@@ -400,14 +399,14 @@ export class AutonomousAgent extends EventEmitter {
   private async tryFailover(currentProvider: ProviderName): Promise<Provider | null> {
     const userConfig = this.configManager.getConfig();
     const availableProviders = await this.configManager.getAvailableProviders();
-    
+
     // Find next available provider
     const alternativeProviders = availableProviders.filter(p => p !== currentProvider);
-    
+
     if (alternativeProviders.length > 0) {
       // Wait for failover delay
       await this.delay(userConfig.failoverDelay);
-      
+
       const provider = await getFirstAvailableProvider(alternativeProviders);
       return provider;
     }
@@ -458,7 +457,7 @@ export class AutonomousAgent extends EventEmitter {
       // Check if git is available and we're in a repo
       const gitAvailable = await checkGitAvailable();
       const isRepo = await isGitRepository();
-      
+
       if (gitAvailable !== true || isRepo !== true) {
         if (this.config.debug === true) {
           this.reportProgress('Git not available or not in a repository', 0);
@@ -478,7 +477,7 @@ export class AutonomousAgent extends EventEmitter {
       // Create commit message
       const issueName = `${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
       const commitMessage = `feat: Complete issue from issues/${issueName}.md`;
-      
+
       // Create commit with optional co-authorship
       const commitResult = await createCommit({
         message: commitMessage,
@@ -490,7 +489,7 @@ export class AutonomousAgent extends EventEmitter {
 
       if (commitResult.success) {
         this.reportProgress('Changes committed to git', 95);
-        
+
         // Store commit hash in result for potential rollback
         if (commitResult.commitHash !== undefined && commitResult.commitHash !== '' && result.rollbackData !== undefined) {
           result.rollbackData.gitCommit = commitResult.commitHash;
@@ -511,7 +510,7 @@ export class AutonomousAgent extends EventEmitter {
    */
   private async prepareContextFiles(provider: ProviderName): Promise<string[]> {
     const contextFiles: string[] = [];
-    
+
     // Add common agent instructions file
     const agentInstructionsPath = `${this.config.workspace}/AGENT.md`;
     try {
@@ -520,11 +519,11 @@ export class AutonomousAgent extends EventEmitter {
     } catch {
       // Agent instructions file doesn't exist, skip it
     }
-    
+
     // Add provider-specific instruction file
     const providerFile = provider.toUpperCase() as 'CLAUDE' | 'GEMINI';
     const instructionPath = `${this.config.workspace}/${providerFile}.md`;
-    
+
     try {
       await this.fileManager.readProviderInstructions(providerFile);
       contextFiles.push(instructionPath);
@@ -541,13 +540,13 @@ export class AutonomousAgent extends EventEmitter {
   private async findIssueFile(issueNumber: number): Promise<string | null> {
     const fs = await import('fs/promises');
     const path = await import('path');
-    
+
     const issuesDir = path.join(this.config.workspace ?? process.cwd(), 'issues');
-    
+
     try {
       const files = await fs.readdir(issuesDir);
       const issueFile = files.find(f => f.startsWith(`${issueNumber}-`) && f.endsWith('.md'));
-      
+
       if (issueFile !== undefined) {
         return path.join(issuesDir, issueFile);
       }
@@ -564,13 +563,13 @@ export class AutonomousAgent extends EventEmitter {
   private async findPlanFile(issueNumber: number): Promise<string | null> {
     const fs = await import('fs/promises');
     const path = await import('path');
-    
+
     const plansDir = path.join(this.config.workspace ?? process.cwd(), 'plans');
-    
+
     try {
       const files = await fs.readdir(plansDir);
       const planFile = files.find(f => f.startsWith(`${issueNumber}-`) && f.endsWith('.md'));
-      
+
       if (planFile !== undefined) {
         return path.join(plansDir, planFile);
       }
@@ -649,17 +648,17 @@ Format as a proper issue document.`;
 
     // Execute with provider
     const result = await provider.execute(prompt, '');
-    
+
     // Get next issue number
     const nextNumber = await this.fileManager.getNextIssueNumber();
-    
+
     // Create issue file
     const issueContent = `# Issue ${nextNumber}: ${title}
 
 ${result.output ?? 'Success'}`;
 
     await this.fileManager.createIssue(nextNumber, title, issueContent);
-    
+
     // Update todo list
     const todoContent = await this.fileManager.readTodo();
     const updatedTodo = todoContent.replace(
@@ -678,11 +677,11 @@ ${result.output ?? 'Success'}`;
     const config = await this.configManager.loadConfig();
     const stats = await this.fileManager.getTodoStats();
     const nextIssue = await this.fileManager.getNextIssue();
-    
+
     // Check provider availability
     const availableProviders: ProviderName[] = [];
     const rateLimitedProviders: ProviderName[] = [];
-    
+
     for (const providerName of config.providers) {
       const isRateLimited = await this.configManager.isProviderRateLimited(providerName);
       if (isRateLimited === true) {
@@ -717,11 +716,11 @@ ${result.output ?? 'Success'}`;
     // Read master plan
     const fs = await import('fs/promises');
     const path = await import('path');
-    
-    const fullPath = path.isAbsolute(masterPlanPath) 
-      ? masterPlanPath 
+
+    const fullPath = path.isAbsolute(masterPlanPath)
+      ? masterPlanPath
       : path.join(this.config.workspace ?? process.cwd(), masterPlanPath);
-    
+
     let masterPlanContent: string;
     try {
       masterPlanContent = await fs.readFile(fullPath, 'utf-8');
@@ -747,7 +746,7 @@ ${masterPlanContent}`;
 
     // Execute with provider
     const result = await provider.execute(prompt, '');
-    
+
     // Create initial issue for bootstrapping
     const issueNumber = 1;
     const planBasename = path.basename(masterPlanPath, path.extname(masterPlanPath));
@@ -774,7 +773,7 @@ This issue decomposes the plan into individual actionable tasks for implementati
 ${result.output ?? 'Success'}`;
 
     await this.fileManager.createIssue(issueNumber, issueTitle, issueContent);
-    
+
     // Create initial todo list
     const issueFilename = `${issueNumber}-${issueTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '').replace(/\.+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '')}.md`;
     const todoContent = `# To-Do
