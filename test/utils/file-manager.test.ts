@@ -90,8 +90,8 @@ describe('FileManager', () => {
       // Test various problematic titles
       const testCases = [
         { 
-          title: 'Bootstrap project from master-plan.md',
-          expected: '1-bootstrap-project-from-master-plan-md.md'
+          title: 'Implement plan from vitest-migration',
+          expected: '1-implement-plan-from-vitest-migration.md'
         },
         {
           title: 'Fix issue with config.json parsing',

@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import * as path from 'path';
 import { 
   AgentConfig, 
   ExecutionResult, 
@@ -749,11 +750,12 @@ ${masterPlanContent}`;
     
     // Create initial issue for bootstrapping
     const issueNumber = 1;
-    const issueTitle = 'Bootstrap project from master-plan.md';
+    const planBasename = path.basename(masterPlanPath, path.extname(masterPlanPath));
+    const issueTitle = `Implement plan from ${planBasename}`;
     const issueContent = `# Issue ${issueNumber}: ${issueTitle}
 
 ## Requirement
-Decompose the master plan into individual issues and create the initial project structure.
+Decompose the plan into individual actionable issues and implement the required changes.
 
 ## Acceptance Criteria
 - [ ] All issues are created and numbered
@@ -762,7 +764,7 @@ Decompose the master plan into individual issues and create the initial project 
 - [ ] Issues are properly linked in the todo list
 
 ## Technical Details
-This is the bootstrap issue that creates all other issues from the master plan.
+This issue decomposes the plan into individual actionable tasks for implementation.
 
 ## Resources
 - Master Plan: \`${masterPlanPath}\`
@@ -774,12 +776,13 @@ ${result.output ?? 'Success'}`;
     await this.fileManager.createIssue(issueNumber, issueTitle, issueContent);
     
     // Create initial todo list
+    const issueFilename = `${issueNumber}-${issueTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '').replace(/\.+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '')}.md`;
     const todoContent = `# To-Do
 
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #1]** Bootstrap project from master-plan.md - \`issues/1-bootstrap-project-from-master-plan-md.md\`
+- [ ] **[Issue #${issueNumber}]** ${issueTitle} - \`issues/${issueFilename}\`
 
 ## Completed Issues
 `;
