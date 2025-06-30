@@ -7,49 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- Provider availability check now works correctly with different CLI version outputs
-  - Claude CLI detection is now case-insensitive
-  - Gemini CLI detection only checks exit code
-- Resolved all ESLint strict-boolean-expressions errors (240+ errors fixed)
-- Fixed TypeScript compilation errors from strict type checking
-- Fixed failing tests and improved test coverage
-- Fixed provider implementations to use correct CLI commands according to official documentation
-  - Claude now uses `-p` flag and `--add-dir` for directory access
-  - Gemini now uses positional arguments and `--include-all` flag
+_No unreleased changes yet._
 
-### Changed
-- Adopted AGENT.md standard for provider instructions
-  - CLAUDE.md and GEMINI.md are now symlinks/stubs pointing to AGENT.md
-  - Consolidated all provider instructions into a single source of truth
-- Enhanced AGENT.md with comprehensive guidelines:
-  - Added Building and Running section with actual npm scripts
-  - Added detailed TypeScript/JavaScript coding standards
-  - Added comprehensive Jest testing conventions
-  - Added comments policy
-  - Added AI CLI Reference section with accurate command documentation
-- Updated commander dependency to v12.1.0
-- Completely rewrote provider implementations to use actual CLI interfaces
+## [0.0.2] - 2025-06-30
+
+### Fixed
+- Add verbose flag back to release scripts
+- Stream Claude output in rollback script
+- Stream Claude output in release script
+- Add --dangerously-skip-permissions to release scripts
+- Add required flags for autonomous operation
+- Provider implementations now use correct CLI commands
+- Provider availability check for different CLI version outputs
+- Update tests for AGENT.md refactoring
+- Update Dependabot configuration and CODEOWNERS
 
 ### Added
-- Added `npm run typecheck` script to catch TypeScript errors early
-- Added `npm run check` script that runs typecheck, lint, and tests concurrently
-- Added npm-run-all dev dependency for concurrent task execution
-- Added extractFilesChanged method to base Provider class
+- Release rollback script for undoing releases that weren't published
+- Automated release preparation script
+
+### Changed
+- Add directory access and verbose mode to release script
+- Enhance release script with better git log analysis
+- Adopt AGENT.md standard for provider instructions
+- Consolidate provider instructions into common file
+- Update dependencies and fix Dependabot configuration
 
 ### Removed
-- Removed redundant Execution History section from AGENT.md (tracked in CHANGELOG.md)
-- Removed provider instruction symlinks from git repository (auto-generated locally)
-- Removed NPM token setup guide (no longer needed)
-- Removed non-existent `autonomous`, `--issue`, `--plan`, `--context` commands from providers
+- NPM token setup guide
+- Unnecessary markdown file
+- Provider symlinks from git repository
 
 ### Documentation
-- Fixed all placeholder content (yourusername → carlrannaberg)
-- Updated all GitHub URLs to use correct username
-- Removed non-existent support email and documentation website references
-- Enhanced documentation accuracy throughout
-- Fixed documentation references to non-existent auth commands
-- Updated troubleshooting examples to use correct CLI flags
+- Replace all yourusername placeholders with carlrannaberg
+- Fix placeholder content in README and remove execution history from AGENT.md
+- Enhance AGENT.md with comprehensive guidelines
+- Update CLAUDE.md and GEMINI.md
+- Add PROVIDER_INSTRUCTIONS_README.md
 
 ## [0.0.1] - 2025-06-30
 
