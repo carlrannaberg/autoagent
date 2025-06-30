@@ -47,7 +47,7 @@ We are committed to providing a welcoming and inspiring community for all. Pleas
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/autoagent.git
+   git clone https://github.com/carlrannaberg/autoagent.git
    cd autoagent
    ```
 

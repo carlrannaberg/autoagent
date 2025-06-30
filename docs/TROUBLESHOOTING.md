@@ -1,6 +1,6 @@
 # AutoAgent Troubleshooting Guide
 
-This guide helps you resolve common issues when using AutoAgent. If you can't find a solution here, please [open an issue](https://github.com/yourusername/autoagent/issues) on GitHub.
+This guide helps you resolve common issues when using AutoAgent. If you can't find a solution here, please [open an issue](https://github.com/carlrannaberg/autoagent/issues) on GitHub.
 
 ## Table of Contents
 
@@ -643,9 +643,8 @@ autoagent run
 
 Still having issues? Please:
 
-1. Check our [GitHub Issues](https://github.com/yourusername/autoagent/issues)
-2. Join our [Discord Community](https://discord.gg/autoagent)
-3. Email support: support@autoagent.dev
+1. Check our [GitHub Issues](https://github.com/carlrannaberg/autoagent/issues)
+2. Open a [GitHub Discussion](https://github.com/carlrannaberg/autoagent/discussions)
 
 When reporting issues, include:
 - AutoAgent version: `autoagent --version`

@@ -78,7 +78,7 @@ For publishing to GitHub Packages instead of npm:
 1. No additional setup needed
 2. Change registry in `.npmrc`:
    ```
-   @yourusername:registry=https://npm.pkg.github.com
+   @carlrannaberg:registry=https://npm.pkg.github.com
    ```
 3. Update workflow to use `GITHUB_TOKEN`
 

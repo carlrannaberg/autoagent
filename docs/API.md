@@ -917,4 +917,4 @@ autoagent/
 
 ---
 
-For more examples and use cases, check out the [examples directory](https://github.com/yourusername/autoagent/tree/main/examples) in the repository.
+For more examples and use cases, check out the [examples directory](https://github.com/carlrannaberg/autoagent/tree/master/examples) in the repository.

@@ -3,8 +3,8 @@
 > Autonomous AI agent runner for executing tasks with Claude or Gemini, featuring automatic failover and comprehensive task management.
 
 [![npm version](https://img.shields.io/npm/v/autoagent-cli.svg)](https://www.npmjs.com/package/autoagent-cli)
-[![Test and Lint](https://github.com/yourusername/autoagent/actions/workflows/test.yaml/badge.svg)](https://github.com/yourusername/autoagent/actions/workflows/test.yaml)
-[![Release](https://github.com/yourusername/autoagent/actions/workflows/release.yaml/badge.svg)](https://github.com/yourusername/autoagent/actions/workflows/release.yaml)
+[![Test and Lint](https://github.com/carlrannaberg/autoagent/actions/workflows/test.yaml/badge.svg)](https://github.com/carlrannaberg/autoagent/actions/workflows/test.yaml)
+[![Release](https://github.com/carlrannaberg/autoagent/actions/workflows/release.yaml/badge.svg)](https://github.com/carlrannaberg/autoagent/actions/workflows/release.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/node/v/autoagent-cli.svg)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue)](https://www.typescriptlang.org/)
@@ -62,7 +62,7 @@ npm install autoagent-cli
 ### From Source
 
 ```bash
-git clone https://github.com/yourusername/autoagent.git
+git clone https://github.com/carlrannaberg/autoagent.git
 cd autoagent
 npm install
 npm run build
