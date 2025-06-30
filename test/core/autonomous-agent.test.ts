@@ -491,16 +491,15 @@ describe('AutonomousAgent', () => {
       jest.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
       jest.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const debugSpy = jest.fn();
+      agent.on('debug', debugSpy);
 
       await agent.executeIssue(1);
 
       expect(gitUtils.createCommit).not.toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(debugSpy).toHaveBeenCalledWith(
         expect.stringContaining('Git not available')
       );
-
-      consoleSpy.mockRestore();
     });
   });
 

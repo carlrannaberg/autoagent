@@ -89,7 +89,7 @@ export class ProviderLearning {
   private extractOrInitializeMetrics(
     provider: 'CLAUDE' | 'GEMINI',
     content: string
-  ): Promise<ExecutionMetrics> {
+  ): ExecutionMetrics {
     // Check cache first
     const cached = this.metricsCache.get(provider.toLowerCase() as ProviderName);
     if (cached) {

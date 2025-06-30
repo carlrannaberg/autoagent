@@ -17,7 +17,6 @@ jest.mock('../../src/providers', () => ({
 describe('CLI Integration Tests', () => {
   let mockConfigManager: jest.Mocked<ConfigManager>;
   let mockAgent: jest.Mocked<AutonomousAgent>;
-  let mockLogger: typeof Logger;
   let processExitSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
   let consoleErrorSpy: jest.SpyInstance;
@@ -34,18 +33,15 @@ describe('CLI Integration Tests', () => {
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     
-    // Mock Logger
-    mockLogger = {
-      info: jest.fn(),
-      success: jest.fn(),
-      error: jest.fn(),
-      warning: jest.fn(),
-      debug: jest.fn(),
-      progress: jest.fn(),
-      clear: jest.fn(),
-      newline: jest.fn()
-    };
-    Object.assign(Logger, mockLogger);
+    // Mock Logger static methods
+    jest.spyOn(Logger, 'info').mockImplementation();
+    jest.spyOn(Logger, 'success').mockImplementation();
+    jest.spyOn(Logger, 'error').mockImplementation();
+    jest.spyOn(Logger, 'warning').mockImplementation();
+    jest.spyOn(Logger, 'debug').mockImplementation();
+    jest.spyOn(Logger, 'progress').mockImplementation();
+    jest.spyOn(Logger, 'clear').mockImplementation();
+    jest.spyOn(Logger, 'newline').mockImplementation();
     
     mockConfigManager = {
       initConfig: jest.fn().mockResolvedValue(undefined),
