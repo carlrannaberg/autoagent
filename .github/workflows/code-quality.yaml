@@ -1,0 +1,177 @@
+name: Code Quality
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main, master]
+
+jobs:
+  quality-checks:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: TypeScript type checking
+      run: |
+        echo "## 🔍 TypeScript Type Checking" >> $GITHUB_STEP_SUMMARY
+        npx tsc --noEmit --pretty 2>&1 | tee tsc-output.txt || true
+        
+        if [ -s tsc-output.txt ] && grep -q "error" tsc-output.txt; then
+          echo "❌ TypeScript errors found" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat tsc-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          exit 1
+        else
+          echo "✅ No TypeScript errors" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: Check for console logs
+      run: |
+        echo "## 🔍 Console Log Check" >> $GITHUB_STEP_SUMMARY
+        
+        # Find console.log statements (excluding test files)
+        CONSOLE_LOGS=$(find src -name "*.ts" -not -path "*/test/*" -exec grep -Hn "console\.\(log\|error\|warn\|info\)" {} \; || true)
+        
+        if [ -n "$CONSOLE_LOGS" ]; then
+          echo "⚠️ Console statements found (consider using Logger utility instead):" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$CONSOLE_LOGS" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✅ No console statements found" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: Check for TODO comments
+      run: |
+        echo "## 📝 TODO Comments" >> $GITHUB_STEP_SUMMARY
+        
+        # Find TODO/FIXME comments
+        TODOS=$(find src -name "*.ts" -exec grep -Hn "TODO\|FIXME\|HACK\|XXX" {} \; || true)
+        
+        if [ -n "$TODOS" ]; then
+          echo "Found the following TODO comments:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$TODOS" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✅ No TODO comments found" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: License header check
+      run: |
+        echo "## 📄 License Header Check" >> $GITHUB_STEP_SUMMARY
+        
+        # Check if source files have license headers (optional)
+        FILES_WITHOUT_LICENSE=$(find src -name "*.ts" -exec grep -L "MIT License\|Copyright" {} \; || true)
+        
+        if [ -n "$FILES_WITHOUT_LICENSE" ]; then
+          COUNT=$(echo "$FILES_WITHOUT_LICENSE" | wc -l)
+          echo "ℹ️ $COUNT files without license headers (optional)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✅ All files have license headers" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: Import organization
+      run: |
+        echo "## 📦 Import Organization" >> $GITHUB_STEP_SUMMARY
+        
+        # Check for proper import ordering (external, internal, relative)
+        IMPORT_ISSUES=$(find src -name "*.ts" -exec awk '
+          BEGIN { in_imports=0; last_type=""; issues=0 }
+          /^import/ { 
+            in_imports=1
+            if ($0 ~ /^import.*from ["'"'"'][.\/]/) type="relative"
+            else if ($0 ~ /^import.*from ["'"'"']@/) type="internal"
+            else type="external"
+            
+            if (last_type == "relative" && type != "relative") {
+              print FILENAME ":" NR ": " type " import after relative import"
+              issues++
+            }
+            if (last_type == "internal" && type == "external") {
+              print FILENAME ":" NR ": external import after internal import"
+              issues++
+            }
+            last_type=type
+          }
+          /^[^import]/ && in_imports { in_imports=0; last_type="" }
+          END { exit issues > 0 ? 1 : 0 }
+        ' {} \; 2>&1 || true)
+        
+        if [ -n "$IMPORT_ISSUES" ]; then
+          echo "⚠️ Import ordering issues found:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$IMPORT_ISSUES" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✅ Imports are properly organized" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: Code complexity check
+      run: |
+        echo "## 📊 Code Complexity" >> $GITHUB_STEP_SUMMARY
+        
+        # Find functions that might be too complex (>50 lines)
+        COMPLEX_FUNCTIONS=$(find src -name "*.ts" -exec awk '
+          /^[[:space:]]*(async[[:space:]]+)?function|^[[:space:]]*(public|private|protected)?[[:space:]]*(async[[:space:]]+)?[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\(/ {
+            start=NR; name=$0; gsub(/^[[:space:]]*/, "", name); gsub(/[[:space:]]*{.*$/, "", name)
+          }
+          /{/ && start { depth++ }
+          /}/ && start { depth--; if (depth == 0) { if (NR - start > 50) print FILENAME ":" start "-" NR " (" NR-start " lines): " name; start=0 } }
+        ' {} \; || true)
+        
+        if [ -n "$COMPLEX_FUNCTIONS" ]; then
+          echo "⚠️ Complex functions found (>50 lines):" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$COMPLEX_FUNCTIONS" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Consider breaking these down into smaller functions." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✅ All functions are reasonably sized" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: Documentation coverage
+      run: |
+        echo "## 📚 Documentation Coverage" >> $GITHUB_STEP_SUMMARY
+        
+        # Check for JSDoc comments on exported functions
+        UNDOCUMENTED=$(find src -name "*.ts" -not -path "*/test/*" -exec awk '
+          /^export.*(function|class|interface|type|const)/ {
+            if (prev !~ /\/\*\*/) {
+              gsub(/export[[:space:]]+/, ""); 
+              gsub(/[[:space:]]*{.*$/, "");
+              print FILENAME ":" NR ": " $0
+            }
+          }
+          { prev = $0 }
+        ' {} \; || true)
+        
+        if [ -n "$UNDOCUMENTED" ]; then
+          COUNT=$(echo "$UNDOCUMENTED" | wc -l)
+          echo "ℹ️ $COUNT exported items without JSDoc comments" >> $GITHUB_STEP_SUMMARY
+          
+          if [ $COUNT -lt 10 ]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$UNDOCUMENTED" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "✅ All exports are documented" >> $GITHUB_STEP_SUMMARY
+        fi

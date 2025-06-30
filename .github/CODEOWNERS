@@ -1,0 +1,28 @@
+# This file defines code ownership for automatic review assignment
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything
+* @yourusername
+
+# Documentation
+*.md @yourusername
+docs/ @yourusername
+README.md @yourusername
+
+# Source code
+src/ @yourusername
+src/core/ @yourusername
+src/providers/ @yourusername
+
+# Tests
+test/ @yourusername
+*.test.ts @yourusername
+
+# Configuration files
+.github/ @yourusername
+package.json @yourusername
+tsconfig.json @yourusername
+.eslintrc.js @yourusername
+
+# CI/CD workflows need careful review
+.github/workflows/ @yourusername

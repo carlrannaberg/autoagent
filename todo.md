@@ -3,10 +3,10 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #15]** Set up CI/CD and GitHub Actions - `issues/15-set-up-ci-cd-and-github-actions.md`
 - [ ] **[Issue #16]** Prepare for npm package publication - `issues/16-prepare-for-npm-package-publication.md`
 
 ## Completed Issues
+- [x] **[Issue #15]** Set up CI/CD and GitHub Actions - `issues/15-set-up-ci-cd-and-github-actions.md`
 - [x] **[Issue #1]** Bootstrap project from master-plan.md - `issues/1-bootstrap-project-from-master-plan-md.md`
 - [x] **[Issue #2]** Set up project structure and initial configuration - `issues/2-set-up-project-structure-and-initial-configuration.md`
 - [x] **[Issue #3]** Implement type definitions and interfaces - `issues/3-implement-type-definitions-and-interfaces.md`

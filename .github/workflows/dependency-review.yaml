@@ -1,0 +1,41 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v3
+      with:
+        fail-on-severity: high
+        allow-licenses: MIT, Apache-2.0, BSD-3-Clause, BSD-2-Clause, ISC
+        deny-licenses: GPL-3.0, AGPL-3.0
+        comment-summary-in-pr: true
+    
+    - name: Check dependency size impact
+      run: |
+        # Install dependencies and check bundle size
+        npm ci
+        npm run build
+        
+        # Get size of dist directory
+        DIST_SIZE=$(du -sh dist | cut -f1)
+        echo "Build size: $DIST_SIZE"
+        
+        # Check if package is under 15KB gzipped (as per requirements)
+        TAR_SIZE=$(tar czf - dist | wc -c | awk '{print $1/1024 "KB"}')
+        echo "Gzipped size: $TAR_SIZE"

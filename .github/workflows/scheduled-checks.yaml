@@ -1,0 +1,146 @@
+name: Scheduled Checks
+
+on:
+  schedule:
+    # Run every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  dependency-updates:
+    name: Check for Dependency Updates
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'npm'
+    
+    - name: Check for outdated dependencies
+      run: |
+        npm outdated --json > outdated.json || true
+        
+        if [ -s outdated.json ] && [ "$(cat outdated.json)" != "{}" ]; then
+          echo "## Outdated Dependencies Found" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Package | Current | Wanted | Latest |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          
+          node -e "
+            const outdated = require('./outdated.json');
+            Object.entries(outdated).forEach(([pkg, info]) => {
+              console.log(\`| \${pkg} | \${info.current} | \${info.wanted} | \${info.latest} |\`);
+            });
+          " >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✅ All dependencies are up to date!" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: Security audit
+      run: |
+        npm audit --json > audit.json || true
+        
+        if [ -s audit.json ]; then
+          VULNS=$(node -p "JSON.parse(require('fs').readFileSync('audit.json', 'utf8')).metadata.vulnerabilities")
+          
+          echo "## Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Vulnerabilities found: $VULNS" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  link-checker:
+    name: Check Documentation Links
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Link Checker
+      uses: lycheeverse/lychee-action@v1
+      with:
+        args: >
+          --verbose
+          --no-progress
+          --accept 200,201,204,301,302
+          --exclude-mail
+          "**/*.md"
+          "README.md"
+        fail: false
+    
+    - name: Create issue if links are broken
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = '🔗 Broken links detected in documentation';
+          const body = `The scheduled link checker has found broken links in the documentation.
+          
+          Please check the [workflow run](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}) for details.
+          
+          This issue was automatically created by the Scheduled Checks workflow.`;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['documentation', 'automated']
+          });
+
+  performance-check:
+    name: Performance and Size Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18.x
+        cache: 'npm'
+    
+    - name: Install and build
+      run: |
+        npm ci
+        npm run build
+    
+    - name: Check package size
+      run: |
+        # Create a test package
+        npm pack --dry-run > pack-output.txt 2>&1
+        
+        # Extract size information
+        SIZE=$(grep "npm notice" pack-output.txt | grep "package size" | awk '{print $5 " " $6}')
+        UNPACKED=$(grep "npm notice" pack-output.txt | grep "unpacked size" | awk '{print $5 " " $6}')
+        
+        echo "## 📦 Package Size Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Package size**: $SIZE" >> $GITHUB_STEP_SUMMARY
+        echo "- **Unpacked size**: $UNPACKED" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Check if it meets the < 15KB gzipped requirement
+        GZIPPED_SIZE=$(tar czf - dist | wc -c)
+        GZIPPED_KB=$((GZIPPED_SIZE / 1024))
+        
+        echo "- **Gzipped dist size**: ${GZIPPED_KB}KB" >> $GITHUB_STEP_SUMMARY
+        
+        if [ $GZIPPED_KB -gt 15 ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Warning**: Gzipped size exceeds 15KB target!" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Package size is within the 15KB target!" >> $GITHUB_STEP_SUMMARY
+        fi
