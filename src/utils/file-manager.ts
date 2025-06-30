@@ -55,14 +55,14 @@ export class FileManager {
     
     if (typeof issueOrNumber === 'number') {
       // New signature for CLI usage
-      const filename = `${issueOrNumber}-${(title ?? '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md`;
+      const filename = `${issueOrNumber}-${(title ?? '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '').replace(/\.+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '')}.md`;
       const filepath = path.join(this.issuesDir, filename);
       await fs.writeFile(filepath, content ?? '', 'utf-8');
       return filepath;
     } else {
       // Original signature
       const issue = issueOrNumber;
-      const filename = `${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md`;
+      const filename = `${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '').replace(/\.+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '')}.md`;
       const filepath = path.join(this.issuesDir, filename);
       
       const issueContent = `# Issue ${issue.number}: ${issue.title}

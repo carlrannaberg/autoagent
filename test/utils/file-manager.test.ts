@@ -82,6 +82,60 @@ describe('FileManager', () => {
         'utf-8'
       );
     });
+
+    it('should handle special characters and dots in titles correctly', async () => {
+      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
+      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      
+      // Test various problematic titles
+      const testCases = [
+        { 
+          title: 'Bootstrap project from master-plan.md',
+          expected: '1-bootstrap-project-from-master-plan-md.md'
+        },
+        {
+          title: 'Fix issue with config.json parsing',
+          expected: '2-fix-issue-with-config-json-parsing.md'
+        },
+        {
+          title: 'Add test.spec.ts files',
+          expected: '3-add-test-spec-ts-files.md'
+        },
+        {
+          title: 'Handle .env file loading',
+          expected: '4-handle-env-file-loading.md'
+        },
+        {
+          title: 'Special chars: !@#$%^&*()',
+          expected: '5-special-chars.md'
+        }
+      ];
+
+      for (let i = 0; i < testCases.length; i++) {
+        const testCase = testCases[i];
+        if (testCase) {
+          const issueNumber = i + 1;
+          
+          const filepath = await fileManager.createIssue(issueNumber, testCase.title, 'test content');
+          
+          expect(filepath).toBe(path.join(mockWorkspace, 'issues', testCase.expected));
+        }
+      }
+    });
+
+    it('should create issue with CLI signature (number, title, content)', async () => {
+      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
+      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      
+      const filepath = await fileManager.createIssue(1, 'Test CLI Issue', 'Content here');
+      
+      expect(filepath).toBe(path.join(mockWorkspace, 'issues', '1-test-cli-issue.md'));
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        filepath,
+        'Content here',
+        'utf-8'
+      );
+    });
   });
   
   describe('readIssue', () => {
