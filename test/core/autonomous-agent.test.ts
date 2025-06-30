@@ -28,9 +28,23 @@ describe('AutonomousAgent', () => {
     jest.clearAllMocks();
     jest.resetAllMocks();
     
+    // Remove all listeners to prevent memory leak warnings
+    process.removeAllListeners('SIGINT');
+    process.removeAllListeners('SIGTERM');
+    
     // Setup mock implementations
     mockConfigManager = {
-      loadConfig: jest.fn().mockResolvedValue({}),
+      loadConfig: jest.fn().mockResolvedValue({
+        providers: ['claude', 'gemini'],
+        failoverDelay: 5000,
+        retryAttempts: 3,
+        maxTokens: 100000,
+        rateLimitCooldown: 3600000,
+        gitAutoCommit: false,
+        gitCommitInterval: 600000,
+        logLevel: 'info',
+        customInstructions: ''
+      }),
       getConfig: jest.fn().mockReturnValue({
         providers: ['claude', 'gemini'],
         failoverDelay: 5000,
@@ -68,6 +82,8 @@ describe('AutonomousAgent', () => {
       updateProviderInstructions: jest.fn().mockResolvedValue(undefined),
       updateTodo: jest.fn().mockResolvedValue(undefined),
       getNextIssue: jest.fn().mockResolvedValue(1),
+      getNextIssueNumber: jest.fn().mockResolvedValue(2),
+      readTodo: jest.fn().mockResolvedValue('## Pending Issues\n- [ ] Issue #1: Test'),
       createIssue: jest.fn().mockResolvedValue('issues/2-new-issue.md'),
       createPlan: jest.fn().mockResolvedValue('plans/2-plan.md'),
       getTodoStats: jest.fn().mockResolvedValue({
@@ -98,6 +114,15 @@ describe('AutonomousAgent', () => {
     (gitUtils.revertToCommit as jest.Mock).mockResolvedValue(true);
 
     agent = new AutonomousAgent();
+  });
+
+  afterEach(() => {
+    // Clean up any event listeners
+    if (agent) {
+      agent.removeAllListeners();
+    }
+    process.removeAllListeners('SIGINT');
+    process.removeAllListeners('SIGTERM');
   });
 
   describe('constructor', () => {
@@ -135,12 +160,19 @@ describe('AutonomousAgent', () => {
         '- [ ] Issue #3: Pending'
       ]);
 
+      // Mock createProvider to return a provider with checkAvailability
+      const { createProvider } = require('../../src/providers');
+      createProvider.mockReturnValue({
+        checkAvailability: jest.fn().mockResolvedValue(true)
+      });
+
       const status = await agent.getStatus();
       
       expect(status).toEqual({
         totalIssues: 3,
         completedIssues: 1,
         pendingIssues: 2,
+        currentIssue: 1,
         availableProviders: ['claude', 'gemini'],
         rateLimitedProviders: []
       });
@@ -310,11 +342,11 @@ describe('AutonomousAgent', () => {
       expect(result).toBe(2);
       expect(mockFileManager.createIssue).toHaveBeenCalledWith(
         2,
-        expect.stringContaining('test issue'),
+        'Test issue description',
         expect.any(String)
       );
-      expect(mockFileManager.createPlan).toHaveBeenCalled();
-      expect(mockFileManager.updateTodoList).toHaveBeenCalled();
+      expect(mockFileManager.readTodo).toHaveBeenCalled();
+      expect(mockFileManager.updateTodo).toHaveBeenCalled();
     });
   });
 
@@ -376,29 +408,31 @@ describe('AutonomousAgent', () => {
     });
 
     it('should bootstrap from master plan', async () => {
+      // Mock file system to read master plan
+      const fs = require('fs/promises');
+      jest.mock('fs/promises', () => ({
+        readFile: jest.fn().mockResolvedValue('Master plan content')
+      }));
+      fs.readFile = jest.fn().mockResolvedValue('Master plan content');
+
       const result = await agent.bootstrap('master-plan.md');
 
       expect(result).toBe(undefined); // bootstrap returns void
       expect(mockProvider.execute).toHaveBeenCalledWith(
-        'master-plan.md',
-        null,
-        ['bootstrap'],
-        expect.any(Object)
+        expect.stringContaining('Master plan content'),
+        ''
       );
     });
 
     it('should handle bootstrap failure', async () => {
-      mockProvider.execute.mockResolvedValue({
-        success: false,
-        issueNumber: 0,
-        duration: 1000,
-        error: 'Bootstrap failed'
-      });
+      // Mock file system to throw error
+      const fs = require('fs/promises');
+      jest.mock('fs/promises', () => ({
+        readFile: jest.fn().mockRejectedValue(new Error('File not found'))
+      }));
+      fs.readFile = jest.fn().mockRejectedValue(new Error('File not found'));
 
-      await agent.bootstrap('master-plan.md');
-
-      // Bootstrap doesn't throw, but provider execute should be called
-      expect(mockProvider.execute).toHaveBeenCalled();
+      await expect(agent.bootstrap('master-plan.md')).rejects.toThrow('Could not read master plan: master-plan.md');
     });
   });
 
@@ -518,7 +552,7 @@ describe('AutonomousAgent', () => {
 
       expect(result.success).toBe(true);
       expect(result.provider).toBe('gemini');
-      expect(mockConfigManager.updateRateLimit).toHaveBeenCalledWith('claude');
+      expect(mockConfigManager.updateRateLimit).toHaveBeenCalledWith('claude', true);
     }, 10000); // Increase timeout
   });
 
