@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes yet._
 
+## [0.0.3] - 2025-06-30
+
+### Fixed
+- Issue filename generation now properly handles dots and special characters
+  - Dots in titles (e.g., "config.json") are converted to hyphens for valid filenames
+  - Multiple consecutive hyphens are collapsed to single hyphens
+  - Leading and trailing hyphens are removed from filenames
+
+### Changed
+- Release preparation script enhanced with better debugging information
+  - Shows commit count since last release
+  - Displays Claude command being executed
+  - Properly handles Claude CLI exit codes
+
+### Documentation
+- Expanded bootstrap command documentation in README
+  - Added examples for custom plan files
+  - Documented provider and workspace options
+  - Clarified that bootstrap reads markdown files to create first actionable issue
+
 ## [0.0.2] - 2025-06-30
 
 ### Fixed
