@@ -7,7 +7,7 @@
  * customize AutoAgent behavior for different use cases.
  */
 
-const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent');
+const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent-cli');
 const path = require('path');
 
 async function configurationExamples() {

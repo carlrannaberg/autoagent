@@ -7,7 +7,7 @@
  * progress tracking, cancellation support, and summary reporting.
  */
 
-const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent');
+const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent-cli');
 const readline = require('readline');
 
 async function batchExecution() {

@@ -49,10 +49,10 @@ Make sure you have AutoAgent installed:
 
 ```bash
 # Install globally
-npm install -g autoagent
+npm install -g autoagent-cli
 
 # Or install locally
-npm install autoagent
+npm install autoagent-cli
 ```
 
 ## Example Structure
@@ -67,7 +67,7 @@ Each example is self-contained and includes:
 
 ### 1. Basic Setup
 ```javascript
-const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent');
+const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent-cli');
 
 const fileManager = new FileManager(process.cwd());
 const configManager = new ConfigManager(process.cwd());

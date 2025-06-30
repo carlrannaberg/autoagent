@@ -7,7 +7,7 @@
  * rate limits are hit or providers are unavailable.
  */
 
-const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent');
+const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent-cli');
 
 async function demonstrateFailover() {
   const workingDir = process.cwd();

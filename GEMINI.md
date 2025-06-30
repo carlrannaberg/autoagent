@@ -197,7 +197,7 @@ autoagent/
     - Revert to specific commits for rollback support
   - Integrated git functionality into AutonomousAgent:
     - Auto-commit after successful issue execution when enabled
-    - Proper co-authorship attribution (e.g., "Co-authored-by: Gemini <gemini@autoagent>")
+    - Proper co-authorship attribution (e.g., "Co-authored-by: Gemini <gemini@autoagent-cli>")
     - Git status checking before operations
     - Capture pre-execution state for rollback support
     - Store commit hash in ExecutionResult for potential rollback

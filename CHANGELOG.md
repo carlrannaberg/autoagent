@@ -44,7 +44,7 @@ This is the first beta release of AutoAgent, a powerful npm package that enables
 
 ### Package Information
 
-- **npm Package**: `autoagent`
+- **npm Package**: `autoagent-cli`
 - **Package Size**: ~30KB (gzipped)
 - **License**: MIT
 - **Repository**: https://github.com/autoagent/autoagent

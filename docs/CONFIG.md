@@ -249,7 +249,7 @@ When `gitAutoCommit` is enabled, commits are created with:
 ```
 feat: Complete issue from issues/5-add-authentication.md
 
-Co-authored-by: Claude <claude@autoagent>
+Co-authored-by: Claude <claude@autoagent-cli>
 ```
 
 ## Logging Configuration

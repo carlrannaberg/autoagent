@@ -24,7 +24,7 @@ This document provides comprehensive documentation for using AutoAgent programma
 ## Installation
 
 ```bash
-npm install autoagent
+npm install autoagent-cli
 ```
 
 ## Quick Start
@@ -32,7 +32,7 @@ npm install autoagent
 ### Basic Usage
 
 ```typescript
-import { AutonomousAgent, ConfigManager, FileManager } from 'autoagent';
+import { AutonomousAgent, ConfigManager, FileManager } from 'autoagent-cli';
 
 async function main() {
   // Initialize managers
@@ -62,7 +62,7 @@ import {
   FileManager,
   ExecutionResult,
   ExecutionOptions 
-} from 'autoagent';
+} from 'autoagent-cli';
 
 async function executeWithOptions(): Promise<ExecutionResult> {
   const config = new ConfigManager('./my-project');
@@ -392,7 +392,7 @@ async getNextIssue(): Promise<{
 #### Creating Providers
 
 ```typescript
-import { createProvider, Provider } from 'autoagent';
+import { createProvider, Provider } from 'autoagent-cli';
 
 // Create a provider instance
 const provider = createProvider('claude');
@@ -409,7 +409,7 @@ if (available) {
 #### Custom Provider Implementation
 
 ```typescript
-import { Provider, ProviderType } from 'autoagent';
+import { Provider, ProviderType } from 'autoagent-cli';
 
 class CustomProvider extends Provider {
   name: ProviderType = 'custom' as ProviderType;
@@ -448,7 +448,7 @@ class CustomProvider extends Provider {
 Provides formatted console output with color support.
 
 ```typescript
-import { Logger } from 'autoagent';
+import { Logger } from 'autoagent-cli';
 
 const logger = new Logger({
   prefix: '[AutoAgent]',
@@ -482,7 +482,7 @@ import {
   createCommit,
   hasChangesToCommit,
   getChangedFiles 
-} from 'autoagent';
+} from 'autoagent-cli';
 
 // Check git status
 const status = await getGitStatus();
@@ -494,7 +494,7 @@ if (await hasChangesToCommit()) {
   const files = await getChangedFiles();
   await createCommit(
     'feat: Add authentication',
-    'Claude <claude@autoagent>'
+    'Claude <claude@autoagent-cli>'
   );
 }
 ```
@@ -509,7 +509,7 @@ import {
   retryWithJitter,
   createRetryableFunction,
   isRateLimitError 
-} from 'autoagent';
+} from 'autoagent-cli';
 
 // Basic retry
 const result = await retry(
@@ -721,7 +721,7 @@ import {
   RateLimitError, 
   RetryError, 
   ProviderError 
-} from 'autoagent';
+} from 'autoagent-cli';
 
 try {
   await agent.executeNext();
@@ -760,7 +760,7 @@ try {
 ### Batch Processing with Concurrency
 
 ```typescript
-import { AutonomousAgent, ConfigManager, FileManager } from 'autoagent';
+import { AutonomousAgent, ConfigManager, FileManager } from 'autoagent-cli';
 
 async function batchProcess() {
   const config = new ConfigManager();
@@ -831,7 +831,7 @@ agent.on('execution-complete', (result) => {
 ### Provider Learning Integration
 
 ```typescript
-import { ProviderLearning } from 'autoagent';
+import { ProviderLearning } from 'autoagent-cli';
 
 const learning = new ProviderLearning('./my-project');
 
@@ -851,7 +851,7 @@ console.log('Provider insights:', insights);
 ### Rollback Support
 
 ```typescript
-import { capturePreExecutionState, rollback } from 'autoagent';
+import { capturePreExecutionState, rollback } from 'autoagent-cli';
 
 // Capture state before execution
 const rollbackData = await capturePreExecutionState();

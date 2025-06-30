@@ -27,14 +27,14 @@ This guide helps you resolve common issues when using AutoAgent. If you can't fi
 1. **Permission errors on global install:**
    ```bash
    # Use npm with sudo (not recommended)
-   sudo npm install -g autoagent
+   sudo npm install -g autoagent-cli
    
    # Better: Change npm's default directory
    mkdir ~/.npm-global
    npm config set prefix '~/.npm-global'
    echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
    source ~/.bashrc
-   npm install -g autoagent
+   npm install -g autoagent-cli
    ```
 
 2. **Network/proxy issues:**
@@ -50,7 +50,7 @@ This guide helps you resolve common issues when using AutoAgent. If you can't fi
 3. **Clear npm cache:**
    ```bash
    npm cache clean --force
-   npm install autoagent
+   npm install autoagent-cli
    ```
 
 ### Command not found after installation
@@ -67,8 +67,8 @@ This guide helps you resolve common issues when using AutoAgent. If you can't fi
 
 2. **Reinstall globally:**
    ```bash
-   npm uninstall -g autoagent
-   npm install -g autoagent
+   npm uninstall -g autoagent-cli
+   npm install -g autoagent-cli
    ```
 
 3. **Use npx instead:**
@@ -472,19 +472,19 @@ This guide helps you resolve common issues when using AutoAgent. If you can't fi
 
 ### Module not found errors
 
-**Problem:** Cannot find module 'autoagent' errors.
+**Problem:** Cannot find module 'autoagent-cli' errors.
 
 **Solutions:**
 
 1. **Reinstall:**
    ```bash
-   npm uninstall autoagent
-   npm install autoagent
+   npm uninstall autoagent-cli
+   npm install autoagent-cli
    ```
 
 2. **Check node_modules:**
    ```bash
-   ls node_modules/autoagent
+   ls node_modules/autoagent-cli
    ```
 
 3. **Clear module cache:**
@@ -624,7 +624,7 @@ await agent.executeAll({ concurrency: 1 });
 
 **A:** Your existing issues and plans work as-is. Just install and run:
 ```bash
-npm install -g autoagent
+npm install -g autoagent-cli
 autoagent run
 ```
 

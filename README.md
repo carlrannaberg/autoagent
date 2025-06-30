@@ -2,11 +2,11 @@
 
 > Autonomous AI agent runner for executing tasks with Claude or Gemini, featuring automatic failover and comprehensive task management.
 
-[![npm version](https://img.shields.io/npm/v/autoagent.svg)](https://www.npmjs.com/package/autoagent)
+[![npm version](https://img.shields.io/npm/v/autoagent-cli.svg)](https://www.npmjs.com/package/autoagent-cli)
 [![Test and Lint](https://github.com/yourusername/autoagent/actions/workflows/test.yaml/badge.svg)](https://github.com/yourusername/autoagent/actions/workflows/test.yaml)
 [![Release](https://github.com/yourusername/autoagent/actions/workflows/release.yaml/badge.svg)](https://github.com/yourusername/autoagent/actions/workflows/release.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/node/v/autoagent.svg)](https://nodejs.org)
+[![Node.js Version](https://img.shields.io/node/v/autoagent-cli.svg)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue)](https://www.typescriptlang.org/)
 
 ## Overview
@@ -50,13 +50,13 @@ AutoAgent is a powerful npm package that enables running autonomous AI agents us
 ### Global Installation
 
 ```bash
-npm install -g autoagent
+npm install -g autoagent-cli
 ```
 
 ### Local Installation
 
 ```bash
-npm install autoagent
+npm install autoagent-cli
 ```
 
 ### From Source
@@ -351,7 +351,7 @@ For detailed configuration documentation, see [docs/CONFIG.md](docs/CONFIG.md).
 ### Example 1: Batch Processing
 
 ```javascript
-const { AutonomousAgent, ConfigManager, FileManager } = require('autoagent');
+const { AutonomousAgent, ConfigManager, FileManager } = require('autoagent-cli');
 
 async function processBatch() {
   const config = new ConfigManager();
@@ -372,7 +372,7 @@ async function processBatch() {
 ### Example 2: Provider Failover
 
 ```javascript
-const { createProvider, isProviderAvailable } = require('autoagent');
+const { createProvider, isProviderAvailable } = require('autoagent-cli');
 
 async function executeWithFailover() {
   const providers = ['claude', 'gemini'];

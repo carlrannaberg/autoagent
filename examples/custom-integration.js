@@ -7,7 +7,7 @@
  * extend functionality, and create specialized workflows.
  */
 
-const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent');
+const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent-cli');
 const { EventEmitter } = require('events');
 const fs = require('fs').promises;
 const path = require('path');

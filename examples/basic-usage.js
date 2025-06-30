@@ -7,7 +7,7 @@
  * It shows how to set up the agent, handle progress updates, and process results.
  */
 
-const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent');
+const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent-cli');
 const path = require('path');
 
 async function main() {

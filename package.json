@@ -1,5 +1,5 @@
 {
-  "name": "autoagent",
+  "name": "autoagent-cli",
   "version": "0.0.1",
   "description": "Run autonomous AI agents using Claude or Gemini for task execution",
   "main": "dist/index.js",
