@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.2] - 2025-06-30
+
+### Fixed
+- Provider availability check now works correctly with different CLI version outputs
+  - Claude CLI detection is now case-insensitive
+  - Gemini CLI detection only checks exit code
+- Resolved all ESLint strict-boolean-expressions errors (240+ errors fixed)
+- Fixed TypeScript compilation errors from strict type checking
+- Fixed failing tests and improved test coverage
+
+### Changed
+- Adopted AGENT.md standard for provider instructions
+  - CLAUDE.md and GEMINI.md are now symlinks/stubs pointing to AGENT.md
+  - Consolidated all provider instructions into a single source of truth
+- Enhanced AGENT.md with comprehensive guidelines:
+  - Added Building and Running section with actual npm scripts
+  - Added detailed TypeScript/JavaScript coding standards
+  - Added comprehensive Jest testing conventions
+  - Added comments policy
+- Updated commander dependency to v12.1.0
+
+### Removed
+- Removed redundant Execution History section from AGENT.md (tracked in CHANGELOG.md)
+- Removed provider instruction symlinks from git repository (auto-generated locally)
+- Removed NPM token setup guide (no longer needed)
+
+### Documentation
+- Fixed all placeholder content (yourusername → carlrannaberg)
+- Updated all GitHub URLs to use correct username
+- Removed non-existent support email and documentation website references
+- Enhanced documentation accuracy throughout
+
 ## [0.0.1] - 2025-06-30
 
 ### 🎉 Initial Beta Release
