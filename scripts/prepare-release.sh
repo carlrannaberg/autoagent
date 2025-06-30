@@ -58,18 +58,19 @@ Current version: $CURRENT_VERSION
 
 Please do the following:
 1. Find the last release tag using: git describe --tags --abbrev=0
-2. Get all commits since that tag using: git log <last-tag>..HEAD --oneline
-3. Analyze these commits and categorize them as:
-   - Fixed: bug fixes
-   - Added: new features
-   - Changed: changes to existing functionality
-   - Removed: removed features
+2. Get the actual changes since that tag using: git diff <last-tag>..HEAD --stat and git diff <last-tag>..HEAD
+3. Analyze the ACTUAL CODE CHANGES (not just commit messages) and write accurate changelog entries:
+   - Fixed: bug fixes (what was actually fixed in the code)
+   - Added: new features (what new functionality was added)
+   - Changed: changes to existing functionality (what behavior changed)
+   - Removed: removed features (what was deleted)
    - Security: security fixes
    - Documentation: documentation only changes
-4. Update CHANGELOG.md with a new section for the new version, organizing changes by category
-5. Update the version in package.json using: npm version $RELEASE_TYPE --no-git-tag-version
-6. Create a git commit with message \"chore: prepare for vX.X.X release\" where X.X.X is the new version
-7. Create an annotated git tag using: git tag -a vX.X.X -m \"Release vX.X.X\"
+4. DO NOT just copy commit messages. Look at what files changed and what the changes actually do.
+5. Update CHANGELOG.md with a new section for the new version, organizing changes by category
+6. Update the version in package.json using: npm version $RELEASE_TYPE --no-git-tag-version
+7. Create a git commit with message \"chore: prepare for vX.X.X release\" where X.X.X is the new version
+8. Create an annotated git tag using: git tag -a vX.X.X -m \"Release vX.X.X\"
 
 Follow the Keep a Changelog format and include the date. Only include categories that have changes."
 

@@ -12,38 +12,45 @@ _No unreleased changes yet._
 ## [0.0.2] - 2025-06-30
 
 ### Fixed
-- Add verbose flag back to release scripts
-- Stream Claude output in rollback script
-- Stream Claude output in release script
-- Add --dangerously-skip-permissions to release scripts
-- Add required flags for autonomous operation
-- Provider implementations now use correct CLI commands
-- Provider availability check for different CLI version outputs
-- Update tests for AGENT.md refactoring
-- Update Dependabot configuration and CODEOWNERS
+- Provider implementations now use correct CLI commands according to official documentation
+  - ClaudeProvider uses `-p` flag with `--add-dir` and `--dangerously-skip-permissions`
+  - GeminiProvider uses positional arguments with `--include-all` and `--yolo`
+  - Both providers now work autonomously without user interaction
+- Provider availability detection for different CLI version outputs
+  - Claude CLI detection is now case-insensitive
+  - Gemini CLI only checks exit code (doesn't require specific output)
+- Release and rollback scripts now properly stream Claude output to console
+- All TypeScript strict mode and ESLint errors resolved (240+ errors fixed)
+- Test failures after AGENT.md refactoring
 
 ### Added
-- Release rollback script for undoing releases that weren't published
-- Automated release preparation script
+- `npm run typecheck` script to catch TypeScript errors early
+- `npm run check` script for concurrent validation (typecheck, lint, test)
+- `npm run release:rollback` script to undo unpublished releases
+  - Checks npm registry to prevent rolling back published versions
+  - Handles tag deletion, version revert, and CHANGELOG updates
+- AI CLI Reference section in AGENT.md with accurate command documentation
+- `extractFilesChanged` method to base Provider class
+- npm-run-all dev dependency for concurrent task execution
 
 ### Changed
-- Add directory access and verbose mode to release script
-- Enhance release script with better git log analysis
-- Adopt AGENT.md standard for provider instructions
-- Consolidate provider instructions into common file
-- Update dependencies and fix Dependabot configuration
+- Adopted AGENT.md standard for provider instructions
+  - CLAUDE.md and GEMINI.md now point to unified AGENT.md
+  - Consolidated all provider instructions into single source of truth
+- Enhanced AGENT.md with comprehensive sections:
+  - Building and Running with actual npm scripts
+  - TypeScript/JavaScript coding standards
+  - Jest testing conventions
+  - Comments policy
+- Updated commander dependency from v11.1.0 to v12.1.0
+- Completely rewrote provider implementations to use actual CLI interfaces
 
 ### Removed
-- NPM token setup guide
-- Unnecessary markdown file
-- Provider symlinks from git repository
-
-### Documentation
-- Replace all yourusername placeholders with carlrannaberg
-- Fix placeholder content in README and remove execution history from AGENT.md
-- Enhance AGENT.md with comprehensive guidelines
-- Update CLAUDE.md and GEMINI.md
-- Add PROVIDER_INSTRUCTIONS_README.md
+- Non-existent `autonomous`, `--issue`, `--plan`, `--context` commands from providers
+- Redundant Execution History section from AGENT.md (tracked in CHANGELOG)
+- Provider instruction symlinks from git repository (auto-generated locally)
+- NPM token setup guide (no longer needed)
+- Incorrect placeholder content and email addresses throughout documentation
 
 ## [0.0.1] - 2025-06-30
 
