@@ -21,7 +21,7 @@ export class ClaudeProvider extends Provider {
   async checkAvailability(): Promise<boolean> {
     try {
       const { stdout, code } = await this.spawnProcess('claude', ['--version']);
-      return code === 0 && stdout.includes('claude');
+      return code === 0 && stdout.toLowerCase().includes('claude');
     } catch (error) {
       return false;
     }

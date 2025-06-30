@@ -19,8 +19,8 @@ export class GeminiProvider extends Provider {
    */
   async checkAvailability(): Promise<boolean> {
     try {
-      const { stdout, code } = await this.spawnProcess('gemini', ['--version']);
-      return code === 0 && stdout.includes('gemini');
+      const { code } = await this.spawnProcess('gemini', ['--version']);
+      return code === 0;
     } catch (error) {
       return false;
     }

@@ -33,8 +33,8 @@ describe('GeminiProvider', () => {
       process.env.AUTOAGENT_SILENT = 'true';
       const availabilityPromise = provider.checkAvailability();
 
-      // Simulate successful output
-      mockProcess.stdout.emit('data', 'gemini version 1.0.0');
+      // Simulate successful output (matches actual gemini --version output)
+      mockProcess.stdout.emit('data', '0.1.7');
       mockProcess.emit('close', 0);
 
       const result = await availabilityPromise;

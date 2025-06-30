@@ -33,8 +33,8 @@ describe('ClaudeProvider', () => {
       process.env.AUTOAGENT_SILENT = 'true';
       const availabilityPromise = provider.checkAvailability();
 
-      // Simulate successful output
-      mockProcess.stdout.emit('data', 'claude version 1.0.0');
+      // Simulate successful output (matches actual claude --version output)
+      mockProcess.stdout.emit('data', '1.0.35 (Claude Code)');
       mockProcess.emit('close', 0);
 
       const result = await availabilityPromise;
