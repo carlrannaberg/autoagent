@@ -2,27 +2,27 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Default owners for everything
-* @yourusername
+* @carlrannaberg
 
 # Documentation
-*.md @yourusername
-docs/ @yourusername
-README.md @yourusername
+*.md @carlrannaberg
+docs/ @carlrannaberg
+README.md @carlrannaberg
 
 # Source code
-src/ @yourusername
-src/core/ @yourusername
-src/providers/ @yourusername
+src/ @carlrannaberg
+src/core/ @carlrannaberg
+src/providers/ @carlrannaberg
 
 # Tests
-test/ @yourusername
-*.test.ts @yourusername
+test/ @carlrannaberg
+*.test.ts @carlrannaberg
 
 # Configuration files
-.github/ @yourusername
-package.json @yourusername
-tsconfig.json @yourusername
-.eslintrc.js @yourusername
+.github/ @carlrannaberg
+package.json @carlrannaberg
+tsconfig.json @carlrannaberg
+.eslintrc.js @carlrannaberg
 
 # CI/CD workflows need careful review
-.github/workflows/ @yourusername
+.github/workflows/ @carlrannaberg

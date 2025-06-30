@@ -8,11 +8,8 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
-    reviewers:
-      - "yourusername"
     labels:
       - "dependencies"
-      - "automated"
     commit-message:
       prefix: "chore"
       prefix-development: "chore"
@@ -50,7 +47,6 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
-      - "automated"
     commit-message:
       prefix: "ci"
       include: "scope"
