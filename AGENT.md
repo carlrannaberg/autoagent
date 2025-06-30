@@ -21,6 +21,11 @@ npm run build:dev    # Build with source maps
 npm run test:watch   # Run tests in watch mode
 npm run test:coverage # Run tests with coverage report
 npm run clean        # Clean build output
+
+# Release commands (uses Claude to prepare releases)
+npm run release:patch # Prepare a patch release (0.0.1 -> 0.0.2)
+npm run release:minor # Prepare a minor release (0.0.1 -> 0.1.0)
+npm run release:major # Prepare a major release (0.0.1 -> 1.0.0)
 ```
 
 Always run tests before committing changes to ensure code quality.

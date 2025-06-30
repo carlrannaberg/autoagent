@@ -17,7 +17,10 @@
     "test:coverage": "jest --coverage",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "release:patch": "./scripts/prepare-release.sh patch",
+    "release:minor": "./scripts/prepare-release.sh minor",
+    "release:major": "./scripts/prepare-release.sh major"
   },
   "keywords": [
     "ai",
