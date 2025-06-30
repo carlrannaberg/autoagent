@@ -43,7 +43,7 @@ AutoAgent is a powerful npm package that enables running autonomous AI agents us
 
 ### Prerequisites
 
-- Node.js >= 14.0.0 (Recommended: 18.0.0)
+- Node.js >= 22.0.0
 - npm or yarn
 - Claude CLI (`claude`) or Gemini CLI (`gemini`) installed and authenticated
 

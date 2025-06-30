@@ -40,7 +40,7 @@ This is the first official release of AutoAgent, a powerful npm package that ena
 - Minimal dependencies (chalk and commander only)
 - Comprehensive test coverage
 - Cross-platform compatibility (Windows, macOS, Linux)
-- Node.js 14.0.0+ support
+- Node.js 22.0.0+ support
 
 ### Package Information
 

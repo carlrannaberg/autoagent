@@ -7,7 +7,7 @@ AutoAgent is an npm package that enables running autonomous AI agents using Clau
 
 ## Technology Stack
 - **Language**: TypeScript (targeting ES2020)
-- **Runtime**: Node.js >= 14.0.0 (development on 18.0.0)
+- **Runtime**: Node.js >= 22.0.0
 - **Build**: TypeScript compiler (tsc)
 - **Testing**: Jest with ts-jest
 - **CLI Framework**: Commander.js
@@ -45,7 +45,7 @@ autoagent/
 - Development dependencies include TypeScript, Jest, ESLint
 
 ## Environment Setup
-- Node.js version specified in `.nvmrc` (18.0.0)
+- Node.js version specified in `.nvmrc` (22.0.0)
 - TypeScript configuration in `tsconfig.json`
 - Jest configuration in `package.json`
 - ESLint configuration in `.eslintrc.js`

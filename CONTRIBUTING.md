@@ -38,7 +38,7 @@ We are committed to providing a welcoming and inspiring community for all. Pleas
 
 ### Prerequisites
 
-- Node.js >= 14.0.0 (Recommended: 18.0.0)
+- Node.js >= 22.0.0
 - npm >= 6.0.0
 - Git
 - Claude CLI or Gemini CLI (for testing)

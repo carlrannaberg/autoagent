@@ -7,7 +7,7 @@ AutoAgent is an npm package that enables running autonomous AI agents using Clau
 
 ## Technology Stack
 - **Language**: TypeScript (targeting ES2020)
-- **Runtime**: Node.js >= 14.0.0 (development on 18.0.0)
+- **Runtime**: Node.js >= 22.0.0
 - **Build**: TypeScript compiler (tsc)
 - **Testing**: Jest with ts-jest
 - **CLI Framework**: Commander.js
@@ -45,7 +45,7 @@ autoagent/
 - Development dependencies include TypeScript, Jest, ESLint
 
 ## Environment Setup
-- Node.js version specified in `.nvmrc` (18.0.0)
+- Node.js version specified in `.nvmrc` (22.0.0)
 - TypeScript configuration in `tsconfig.json`
 - Jest configuration in `package.json`
 - ESLint configuration in `.eslintrc.js`
@@ -325,7 +325,26 @@ autoagent/
     - Code examples with syntax highlighting
     - Cross-references between documents
     - Troubleshooting for common scenarios
-- **2025-06-30**: Completed npm package publication preparation (Issue #16)
+- **2025-06-30**: Claude completed CI/CD and GitHub Actions setup (Issue #15)
+  - Created comprehensive GitHub Actions workflows in .github/workflows/:
+    - test.yaml: Runs tests, linting, and security checks on PRs and pushes
+    - release.yaml: Automates npm package publishing with version tag creation
+    - dependency-review.yaml: Reviews dependency changes for security and licensing
+    - version-bump.yaml: Automates version bumping with PR creation
+    - scheduled-checks.yaml: Weekly maintenance checks for dependencies and documentation
+    - code-quality.yaml: Comprehensive code quality checks including complexity analysis
+  - Implemented multi-Node.js version testing (14.x, 16.x, 18.x)
+  - Added automatic version change detection in PRs
+  - Configured secure npm publishing with NPM_TOKEN secret
+  - Set up Dependabot for automated dependency updates
+  - Created CODEOWNERS file for automatic review assignment
+  - Added security vulnerability scanning with npm audit
+  - Implemented build size validation to ensure < 15KB gzipped requirement
+  - Created comprehensive workflow documentation in .github/workflows/README.md
+  - Added setup guide for NPM_TOKEN configuration
+  - Integrated CI/CD badges into main README.md
+  - All workflows follow GitHub Actions best practices and security guidelines
+- **2025-06-30**: Claude completed npm package publication preparation (Issue #16)
   - Updated package.json with all required metadata fields
   - Set version to 1.0.0 for initial release
   - Updated LICENSE file with correct year and attribution
