@@ -59,7 +59,7 @@ echo "Command: claude --add-dir . --dangerously-skip-permissions --verbose -p [p
 
 # Temporarily disable exit on error for Claude command
 set +e
-claude --add-dir . --dangerously-skip-permissions --verbose -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
+claude --add-dir . --dangerously-skip-permissions --output-format stream-json --verbose -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 
 Current version: $CURRENT_VERSION
 
