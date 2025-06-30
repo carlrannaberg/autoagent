@@ -44,8 +44,10 @@ fi
 
 # Show recent commits
 echo
-echo "Commits since last release:"
+echo "Commits since last release ($LAST_TAG):"
 echo "==========================="
+COMMIT_COUNT=$(git rev-list ${LAST_TAG}..HEAD --count)
+echo "Found $COMMIT_COUNT commits since $LAST_TAG"
 git log ${LAST_TAG}..HEAD --oneline | head -20
 echo
 echo "Using Claude to analyze changes and prepare release..."
