@@ -70,13 +70,14 @@ Please do the following:
 5. Update CHANGELOG.md with a new section for the new version, organizing changes by category
 6. Update the version in package.json using: npm version $RELEASE_TYPE --no-git-tag-version
 7. Create a git commit with message \"chore: prepare for vX.X.X release\" where X.X.X is the new version
-8. Create an annotated git tag using: git tag -a vX.X.X -m \"Release vX.X.X\"
 
-Follow the Keep a Changelog format and include the date. Only include categories that have changes."
+Follow the Keep a Changelog format and include the date. Only include categories that have changes.
+
+DO NOT create a git tag - the GitHub Actions workflow will create it during the release process."
 
 echo
 echo "Release preparation complete!"
 echo "Next steps:"
 echo "1. Review the changes: git diff HEAD~1"
-echo "2. Push to GitHub: git push origin master && git push origin --tags"
-echo "3. The GitHub Actions release workflow will automatically publish to npm"
+echo "2. Push to GitHub: git push origin master"
+echo "3. The GitHub Actions will create the tag and publish to npm"
