@@ -774,6 +774,18 @@ ${result.output ?? 'Success'}`;
 
     await this.fileManager.createIssue(issueNumber, issueTitle, issueContent);
 
+    // Create corresponding plan file
+    await this.fileManager.createPlan(issueNumber, { 
+      issueNumber, 
+      file: '', 
+      phases: [
+        { name: 'Analysis and Decomposition', tasks: ['Analyze master plan', 'Create issues'] },
+        { name: 'Implementation Setup', tasks: ['Update todo list', 'Validate issues'] }
+      ],
+      technicalApproach: 'AI-assisted decomposition of master plan',
+      challenges: ['Ensuring task independence', 'Managing dependencies']
+    }, issueTitle);
+
     // Create initial todo list
     const issueFilename = `${issueNumber}-${issueTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '').replace(/\.+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '')}.md`;
     const todoContent = `# To-Do
