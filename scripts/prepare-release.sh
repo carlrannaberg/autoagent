@@ -54,6 +54,11 @@ echo "Using Claude to analyze changes and prepare release..."
 
 # Use Claude to prepare the release
 # Add current directory access and let output stream to console
+echo "Executing Claude command..."
+echo "Command: claude --add-dir . --dangerously-skip-permissions --verbose -p [prompt]"
+
+# Temporarily disable exit on error for Claude command
+set +e
 claude --add-dir . --dangerously-skip-permissions --verbose -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 
 Current version: $CURRENT_VERSION
@@ -76,6 +81,14 @@ Please do the following:
 Follow the Keep a Changelog format and include the date. Only include categories that have changes.
 
 DO NOT create a git tag - the GitHub Actions workflow will create it during the release process."
+
+CLAUDE_EXIT_CODE=$?
+set -e  # Re-enable exit on error
+
+if [ $CLAUDE_EXIT_CODE -ne 0 ]; then
+    echo "Error: Claude command failed with exit code $CLAUDE_EXIT_CODE"
+    exit 1
+fi
 
 echo
 echo "Release preparation complete!"
