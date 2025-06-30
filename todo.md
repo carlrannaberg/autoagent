@@ -3,8 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [x] **[Issue #13]** Write unit tests for all components - `issues/13-write-unit-tests-for-all-components.md`
-- [ ] **[Issue #14]** Create comprehensive documentation - `issues/14-create-comprehensive-documentation.md`
 - [ ] **[Issue #15]** Set up CI/CD and GitHub Actions - `issues/15-set-up-ci-cd-and-github-actions.md`
 - [ ] **[Issue #16]** Prepare for npm package publication - `issues/16-prepare-for-npm-package-publication.md`
 
@@ -21,3 +19,5 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [x] **[Issue #10]** Implement git integration and auto-commit - `issues/10-implement-git-integration-and-auto-commit.md`
 - [x] **[Issue #11]** Add provider learning system - `issues/11-add-provider-learning-system.md`
 - [x] **[Issue #12]** Create templates and examples - `issues/12-create-templates-and-examples.md`
+- [x] **[Issue #13]** Write unit tests for all components - `issues/13-write-unit-tests-for-all-components.md`
+- [x] **[Issue #14]** Create comprehensive documentation - `issues/14-create-comprehensive-documentation.md`

@@ -1,381 +1,501 @@
-# Autonomous Agents Template
+# AutoAgent
 
-A template repository for creating autonomous AI agents using Claude. This template provides scripts and structure for task-based autonomous agent workflows.
+> Autonomous AI agent runner for executing tasks with Claude or Gemini, featuring automatic failover and comprehensive task management.
 
-## Features
+[![npm version](https://img.shields.io/npm/v/autoagent.svg)](https://www.npmjs.com/package/autoagent)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/node/v/autoagent.svg)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue)](https://www.typescriptlang.org/)
 
-- 🤖 Autonomous task execution with Claude or Gemini
-- 📋 Issue and plan management system with todo tracking
-- 🎨 Beautiful formatted output with progress tracking
-- 🔄 Single task or continuous execution modes
-- 📝 Structured issue and plan templates
+## Overview
 
-## Prerequisites
+AutoAgent is a powerful npm package that enables running autonomous AI agents using Claude or Gemini for task execution. It converts complex bash scripts into a robust TypeScript-based solution with both CLI and programmatic APIs.
 
-- [Claude CLI](https://claude.ai/code) or [Gemini CLI](https://ai.google.dev/docs/gemini_cli) installed and configured
-- Bash shell (macOS/Linux)
-- `jq` for JSON parsing (install with `brew install jq` or `apt-get install jq`)
+### Key Features
 
-## Available Commands
+- 🤖 **Multiple AI Providers**: Support for Claude (Anthropic) and Gemini (Google)
+- 🔄 **Automatic Failover**: Seamlessly switches between providers on rate limits
+- 📋 **Task Management**: Comprehensive issue and plan tracking system
+- 🔧 **Git Integration**: Automatic commits with co-authorship attribution
+- 📊 **Provider Learning**: Tracks performance and learns from execution patterns
+- ⚡ **Async Execution**: Efficient async/await based architecture
+- 🛡️ **TypeScript**: Full type safety and IntelliSense support
+- 🎯 **Retry Logic**: Intelligent retry with exponential backoff
+- 📁 **Template System**: Pre-built templates for issues and plans
+- 🚀 **CLI & API**: Use as a command-line tool or programmatically
 
-This template provides npm scripts for all operations:
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [CLI Usage](#cli-usage)
+- [Programmatic Usage](#programmatic-usage)
+- [Configuration](#configuration)
+- [Examples](#examples)
+- [Architecture](#architecture)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Installation
+
+### Prerequisites
+
+- Node.js >= 14.0.0 (Recommended: 18.0.0)
+- npm or yarn
+- Claude CLI (`claude`) or Gemini CLI (`gemini`) installed and authenticated
+
+### Global Installation
 
 ```bash
-# Claude commands
-npm run agent               # Run Claude agent for one task
-npm run agent:auto          # Run Claude agent continuously for all tasks
+npm install -g autoagent
+```
 
-# Gemini commands
-npm run agent:gemini        # Run Gemini agent for one task
-npm run agent:gemini:auto   # Run Gemini agent continuously for all tasks
+### Local Installation
 
-# Other commands
-npm run issue         # Create a new issue
-npm run bootstrap     # Create a bootstrap issue from master plan
-npm run complete      # Manually mark an issue as complete
-npm run test          # Run all tests
-npm run test:unit     # Run unit tests only
+```bash
+npm install autoagent
+```
+
+### From Source
+
+```bash
+git clone https://github.com/yourusername/autoagent.git
+cd autoagent
+npm install
+npm run build
+npm link  # For global CLI access
 ```
 
 ## Quick Start
 
-1. **Clone this template**
-   ```bash
-   git clone <your-repo-url>
-   cd autonomous-agents-template
-   ```
-
-2. **Create your first issue**
-   ```bash
-   npm run issue "Build a REST API for user management"
-   ```
-
-3. **Run the agent**
-   ```bash
-   # Run a single task with Claude
-   npm run agent
-
-   # Run all tasks continuously with Gemini
-   npm run agent:gemini:auto
-   ```
-
-## Bootstrapping from a Master Plan
-
-When you have a comprehensive plan or specification document, you can bootstrap your entire project structure:
-
-### 1. **Create Master Plan**
-First, create a detailed plan document:
-```bash
-echo "Your comprehensive project plan..." > master-plan.md
-```
-
-### 2. **Create Bootstrap Issue**
-
-#### Using the Bootstrap Command (Recommended)
-```bash
-# Create bootstrap issue with default master-plan.md
-npm run bootstrap
-
-# Or specify a custom plan file
-npm run bootstrap -- --plan my-project-spec.md
-
-# Open in editor after creation
-npm run bootstrap -- --editor
-```
-
-#### Manual Method
-```bash
-npm run issue "Bootstrap Project from Master Plan"
-# Then manually edit the issue to add bootstrap instructions
-```
-
-The `create-bootstrap.sh` command automatically creates a properly formatted bootstrap issue that instructs the AI to:
-- Read and analyze your master plan document
-- Decompose it into individual, actionable issues
-- Create implementation plans for each issue
-- Update todo.md with all new tasks in proper sequence
-
-### 3. **Run the Agent**
-```bash
-# Run with Claude
-npm run agent
-
-# Or run with Gemini
-npm run agent:gemini
-```
-
-The AI will read your master plan and automatically:
-- Break it down into logical issues
-- Create detailed implementation plans
-- Set up the entire project structure
-- Prepare everything for autonomous execution
-
-### 4. **Execute the Generated Issues**
-Once bootstrapping is complete:
-```bash
-# Review the generated issues and plans
-ls issues/
-ls plans/
-
-# Run all issues autonomously
-npm run agent:auto # or agent:gemini:auto
-```
-
-This bootstrapping approach is perfect for:
-- Large projects with detailed specifications
-- Converting existing documentation into actionable tasks
-- Migrating from other project management systems
-- Setting up complex multi-phase implementations
-
-## Project Structure
-
-```
-autonomous-agents-template/
-├── scripts/
-│   ├── run-agent.sh      # Main agent runner
-│   ├── create-issue.sh   # Create new issues with plans
-│   ├── create-bootstrap.sh # Create bootstrap issue from master plan
-│   └── complete-issue.sh # Manually mark issues as complete
-├── issues/               # Issue definitions (created automatically)
-├── plans/                # Implementation plans (created automatically)
-├── docs/                 # Documentation
-├── examples/             # Example issues and workflows
-├── todo.md              # Issue tracking file
-├── CLAUDE.md            # Claude-specific project instructions
-├── GEMINI.md            # Gemini-specific project instructions
-└── README.md            # This file
-```
-
-## Scripts
-
-All scripts can be run via npm commands. Use `npm run <command>` instead of calling shell scripts directly.
-
-### `run-agent.sh` (via `npm run agent` or `npm run agent:gemini`)
-The main script that runs the AI on your tasks.
-
-**Usage:**
-```bash
-# Run with Claude
-npm run agent
-npm run agent:auto
-
-# Run with Gemini
-npm run agent:gemini
-npm run agent:gemini:auto
-```
-
-**Options:**
-- `--auto`: Run all pending issues continuously
-- `-p, --provider`: Specify the AI provider ('claude' or 'gemini'). Defaults to 'claude'.
-
-### `create-issue.sh` (via `npm run issue`)
-Creates a new issue file with corresponding plan and adds it to todo.md.
-
-**Usage:**
-```bash
-npm run issue [-- --editor] "Issue title"
-```
-
-**Options:**
-- `--editor`: Open the created issue in your $EDITOR
-
-**Example:**
-```bash
-npm run issue -- --editor "Implement authentication system"
-```
-
-### `create-bootstrap.sh` (via `npm run bootstrap`)
-Create a bootstrap issue that decomposes a master plan into individual tasks.
-
-**Usage:**
-```bash
-npm run bootstrap [-- [--plan <plan-file>] [--editor]]
-```
-
-**Options:**
-- `--plan <file>`: Path to the plan markdown file (default: master-plan.md)
-- `--editor`: Open the created bootstrap issue in your $EDITOR
-- `-h, --help`: Show help message
-
-**Examples:**
-```bash
-# Use default master-plan.md
-npm run bootstrap
-
-# Use custom plan file
-npm run bootstrap -- --plan docs/project-spec.md
-
-# Open in editor after creation
-npm run bootstrap -- --editor
-```
-
-### `complete-issue.sh` (via `npm run complete`)
-Manually mark an issue as complete (useful if an issue was completed outside the agent).
-
-**Usage:**
-```bash
-npm run complete <issue_number>
-```
-
-**Example:**
-```bash
-npm run complete 3
-```
-
-## Issue and Plan Format
-
-### Issues
-Issues are markdown files in the `issues/` directory:
-
-```markdown
-# Issue N: Title
-
-## Requirement
-[Main requirement or problem to solve]
-
-## Acceptance Criteria
-- [ ] Specific criterion 1
-- [ ] Specific criterion 2
-
-## Technical Details
-[Technical constraints or notes]
-
-## Resources
-[Documentation or references]
-```
-
-### Plans
-Each issue has a corresponding plan in the `plans/` directory:
-
-```markdown
-# Plan for Issue N: Title
-
-## Implementation Plan
-### Phase 1: Setup
-- [ ] Initial tasks
-
-### Phase 2: Core Implementation
-- [ ] Main implementation tasks
-
-### Phase 3: Testing & Validation
-- [ ] Testing tasks
-
-## Technical Approach
-[Architecture decisions]
-
-## Potential Challenges
-[Anticipated issues]
-```
-
-## Customization
-
-### AI Instructions
-Create a `CLAUDE.md` or `GEMINI.md` file in the root directory to provide project-specific instructions:
-
-```markdown
-# Project Context
-- Architecture: [Your architecture]
-- Tech stack: [Your technologies]
-- Conventions: [Your coding standards]
-
-# Special Instructions
-[Any specific guidelines for the agent]
-```
-
-### Environment Variables
-- `AUTO_COMMIT`: Set to "true" to auto-commit after each issue completion (requires git)
-- `EDITOR`: Your preferred text editor for the --editor flag
-
-## Examples
-
-The `examples/` directory contains comprehensive examples demonstrating various usage patterns:
-
-### Available Examples
-
-- **[basic-usage.js](examples/basic-usage.js)** - Simple example showing how to execute a single issue with progress tracking
-- **[provider-failover.js](examples/provider-failover.js)** - Demonstrates automatic provider failover when rate limits are hit
-- **[batch-execution.js](examples/batch-execution.js)** - Shows how to execute multiple issues with progress tracking and cancellation
-- **[configuration.js](examples/configuration.js)** - Comprehensive configuration examples and validation
-- **[custom-integration.js](examples/custom-integration.js)** - Advanced examples for extending AutoAgent with custom functionality
-- **[cli-usage.js](examples/cli-usage.js)** - Complete CLI command reference with practical examples
-
-### Running Examples
+### 1. Initialize Configuration
 
 ```bash
-# Run any example directly
-node examples/basic-usage.js
+# Create a local configuration
+autoagent config init
 
-# Run the CLI usage demo
-node examples/cli-usage.js --demo
-
-# Run examples that demonstrate specific features
-node examples/provider-failover.js
-node examples/batch-execution.js
-node examples/configuration.js
+# Or create a global configuration
+autoagent config init --global
 ```
 
-### Quick Example: Basic Usage
+### 2. Create Your First Issue
 
-```javascript
-const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent');
+```bash
+# Create an issue with AI assistance
+autoagent create "Add user authentication to the API"
 
-async function main() {
-  const fileManager = new FileManager(process.cwd());
-  const configManager = new ConfigManager(process.cwd());
-  const agent = new AutonomousAgent(fileManager, configManager);
+# Or manually create an issue file
+echo "# Issue: Add Authentication
 
-  // Execute the next pending issue
-  const result = await agent.executeNext({
-    provider: 'claude',
-    onProgress: (percentage, message) => {
-      console.log(`${percentage}% - ${message}`);
-    }
-  });
+## Description
+Implement JWT-based authentication for the REST API.
 
+## Requirements
+- User login endpoint
+- Token generation
+- Middleware for protected routes" > issues/1-add-authentication.md
+```
+
+### 3. Execute the Issue
+
+```bash
+# Execute with default provider
+autoagent run
+
+# Execute with specific provider
+autoagent run --provider gemini
+
+# Execute a specific issue
+autoagent run issues/1-add-authentication.md
+```
+
+## CLI Usage
+
+### Core Commands
+
+#### `autoagent run [issue]`
+Execute one or all pending issues.
+
+```bash
+# Run next pending issue
+autoagent run
+
+# Run specific issue
+autoagent run issues/5-update-dependencies.md
+
+# Run all pending issues
+autoagent run --all
+
+# Dry run (preview without execution)
+autoagent run --dry-run
+
+# Override provider
+autoagent run --provider gemini
+
+# Disable auto-commit
+autoagent run --no-auto-commit
+```
+
+#### `autoagent create <description>`
+Create a new issue with AI assistance.
+
+```bash
+# Basic usage
+autoagent create "Implement user profile page"
+
+# With specific provider
+autoagent create "Add caching layer" --provider claude
+```
+
+#### `autoagent status`
+Display project status and pending issues.
+
+```bash
+autoagent status
+```
+
+Output:
+```
+AutoAgent Status
+================
+Provider: claude (available)
+Pending Issues: 3
+Completed Issues: 12
+Next Issue: #16 - Add error handling
+Git: main branch (clean)
+```
+
+#### `autoagent config`
+Manage configuration settings.
+
+```bash
+# Initialize configuration
+autoagent config init [--global]
+
+# Set default provider
+autoagent config set-provider gemini
+
+# Set failover order
+autoagent config set-failover claude,gemini
+
+# Enable/disable auto-commit
+autoagent config set-auto-commit true
+
+# Show current configuration
+autoagent config show
+
+# Clear rate limits
+autoagent config clear-limits
+```
+
+#### `autoagent check`
+Verify provider availability.
+
+```bash
+# Check all providers
+autoagent check
+
+# Check specific provider
+autoagent check claude
+```
+
+#### `autoagent bootstrap`
+Create initial issue from master plan.
+
+```bash
+# Create bootstrap issue from master-plan.md
+autoagent bootstrap
+```
+
+### Command Options
+
+Most commands support these common options:
+
+- `--workspace, -w <path>`: Set working directory
+- `--debug, -d`: Enable debug logging
+- `--provider, -p <name>`: Override provider
+- `--help, -h`: Show help
+
+## Programmatic Usage
+
+### Basic Example
+
+```typescript
+import { AutonomousAgent, ConfigManager, FileManager } from 'autoagent';
+
+async function runAgent() {
+  // Initialize components
+  const configManager = new ConfigManager();
+  const fileManager = new FileManager();
+  
+  // Create agent instance
+  const agent = new AutonomousAgent(configManager, fileManager);
+  
+  // Execute a single issue
+  const result = await agent.executeIssue('issues/1-setup-project.md');
+  
   if (result.success) {
     console.log('Issue completed successfully!');
   }
 }
-
-main().catch(console.error);
 ```
 
-### Example Templates
+### Advanced Usage
 
-The `templates/` directory contains starter templates for creating new issues and plans:
+```typescript
+import { 
+  AutonomousAgent, 
+  ConfigManager, 
+  FileManager,
+  createProvider 
+} from 'autoagent';
 
-- **[templates/issue.md](templates/issue.md)** - Template for creating new issues with all required sections
-- **[templates/plan.md](templates/plan.md)** - Template for creating implementation plans with phases and technical approach
+async function advancedExample() {
+  const config = new ConfigManager('./my-project');
+  const files = new FileManager('./my-project');
+  const agent = new AutonomousAgent(config, files);
+  
+  // Listen to progress events
+  agent.on('progress', (data) => {
+    console.log(`Progress: ${data.percentage}% - ${data.message}`);
+  });
+  
+  // Execute all pending issues
+  const results = await agent.executeAll({
+    onProgress: (percent, message) => {
+      console.log(`[${percent}%] ${message}`);
+    },
+    dryRun: false,
+    autoCommit: true
+  });
+  
+  // Check results
+  results.forEach(result => {
+    if (result.success) {
+      console.log(`✓ ${result.issueNumber}: ${result.issueTitle}`);
+    } else {
+      console.log(`✗ ${result.issueNumber}: ${result.error}`);
+    }
+  });
+}
+```
 
-Use these templates when creating issues manually or reference them when building automation tools.
+### Custom Provider Integration
 
-## Best Practices
+```typescript
+import { Provider, ProviderType } from 'autoagent';
 
-1. **Clear Issue Definitions**: Be specific about requirements and acceptance criteria
-2. **Detailed Plans**: Create comprehensive implementation plans
-3. **Incremental Issues**: Break large projects into smaller, testable issues
-4. **Context Matters**: Include relevant project context in `CLAUDE.md` or `GEMINI.md`
-5. **Review Output**: In non-auto mode, review agent output before proceeding
-6. **Version Control**: Commit your issues, plans, and todo.md for tracking
+class CustomProvider extends Provider {
+  name: ProviderType = 'custom' as ProviderType;
+  
+  async checkAvailability(): Promise<boolean> {
+    // Implement availability check
+    return true;
+  }
+  
+  async execute(
+    issueFile: string, 
+    signal?: AbortSignal
+  ): Promise<void> {
+    // Implement execution logic
+  }
+}
+```
+
+For detailed API documentation, see [docs/API.md](docs/API.md).
+
+## Configuration
+
+AutoAgent uses a layered configuration system:
+
+1. **Default Configuration** (built-in)
+2. **Global Configuration** (`~/.autoagent/config.json`)
+3. **Local Configuration** (`./.autoagent/config.json`)
+
+### Configuration Options
+
+```json
+{
+  "defaultProvider": "claude",
+  "providers": {
+    "claude": {
+      "enabled": true,
+      "maxTokens": 100000
+    },
+    "gemini": {
+      "enabled": true,
+      "maxTokens": 100000
+    }
+  },
+  "failoverProviders": ["claude", "gemini"],
+  "failoverDelay": 2000,
+  "retryAttempts": 3,
+  "retryDelay": 1000,
+  "maxTokens": 100000,
+  "rateLimitCooldown": 3600000,
+  "gitAutoCommit": true,
+  "gitCommitInterval": 300000,
+  "includeCoAuthoredBy": true,
+  "logLevel": "info",
+  "customInstructions": ""
+}
+```
+
+For detailed configuration documentation, see [docs/CONFIG.md](docs/CONFIG.md).
+
+## Examples
+
+### Example 1: Batch Processing
+
+```javascript
+const { AutonomousAgent, ConfigManager, FileManager } = require('autoagent');
+
+async function processBatch() {
+  const config = new ConfigManager();
+  const files = new FileManager();
+  const agent = new AutonomousAgent(config, files);
+  
+  // Process all issues with progress tracking
+  const results = await agent.executeAll({
+    onProgress: (percent, message) => {
+      process.stdout.write(`\r[${percent}%] ${message}`);
+    }
+  });
+  
+  console.log(`\nCompleted ${results.length} issues`);
+}
+```
+
+### Example 2: Provider Failover
+
+```javascript
+const { createProvider, isProviderAvailable } = require('autoagent');
+
+async function executeWithFailover() {
+  const providers = ['claude', 'gemini'];
+  
+  for (const providerName of providers) {
+    if (await isProviderAvailable(providerName)) {
+      const provider = createProvider(providerName);
+      try {
+        await provider.execute('issues/current.md');
+        console.log(`Success with ${providerName}`);
+        break;
+      } catch (error) {
+        console.log(`Failed with ${providerName}, trying next...`);
+      }
+    }
+  }
+}
+```
+
+More examples available in the [examples/](examples/) directory:
+- [basic-usage.js](examples/basic-usage.js) - Getting started
+- [provider-failover.js](examples/provider-failover.js) - Failover handling
+- [batch-execution.js](examples/batch-execution.js) - Batch processing
+- [configuration.js](examples/configuration.js) - Configuration management
+- [custom-integration.js](examples/custom-integration.js) - Advanced integration
+
+## Architecture
+
+```
+┌─────────────────┐     ┌──────────────────┐
+│   CLI Interface │────▶│ Autonomous Agent │
+└─────────────────┘     └────────┬─────────┘
+                                 │
+        ┌────────────────────────┼────────────────────────┐
+        │                        │                        │
+ ┌──────▼────────┐     ┌────────▼─────────┐    ┌────────▼────────┐
+ │ File Manager  │     │ Config Manager   │    │    Providers    │
+ │               │     │                  │    │                 │
+ │ • Issues      │     │ • User Config    │    │ • Claude        │
+ │ • Plans       │     │ • Rate Limits    │    │ • Gemini        │
+ │ • Todo List   │     │ • Preferences    │    │ • Failover      │
+ └───────────────┘     └──────────────────┘    └─────────────────┘
+```
+
+### Core Components
+
+- **AutonomousAgent**: Main orchestrator for task execution
+- **Providers**: AI provider implementations (Claude, Gemini)
+- **FileManager**: Handles issue, plan, and todo file operations
+- **ConfigManager**: Manages configuration and rate limits
+- **Logger**: Provides formatted console output
+- **Git Integration**: Handles automatic commits and rollbacks
 
 ## Troubleshooting
 
-**"claude: command not found"** or **"gemini: command not found"**
-- Install the required CLI from its official source.
+### Common Issues
 
-**"jq: command not found"**
-- macOS: `brew install jq`
-- Ubuntu/Debian: `sudo apt-get install jq`
-- Other: See https://stedolan.github.io/jq/download/
+**Provider not available**
+```bash
+# Check provider status
+autoagent check
 
-**Issue not being marked complete**
-- Check that the agent successfully completed the issue
-- Use `./scripts/complete-issue.sh N` to manually mark complete
+# Clear rate limits if needed
+autoagent config clear-limits
+```
+
+**Git auto-commit not working**
+```bash
+# Ensure git is initialized
+git init
+
+# Check git configuration
+autoagent config show
+
+# Enable auto-commit
+autoagent config set-auto-commit true
+```
+
+**TypeScript compilation errors**
+```bash
+# Clean and rebuild
+rm -rf dist
+npm run build
+```
+
+For more troubleshooting help, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Contributing
 
-This is a template repository. Fork it and customize for your needs!
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/autoagent.git
+cd autoagent
+
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Run in watch mode
+npm run test:watch
+
+# Build the project
+npm run build
+
+# Lint the code
+npm run lint
+```
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Support
+
+- 📧 Email: support@autoagent.dev
+- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/autoagent/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/autoagent/discussions)
+- 📖 Documentation: [Full Documentation](https://autoagent.dev/docs)
+
+---
+
+Made with ❤️ by the AutoAgent team
