@@ -24,7 +24,7 @@ describe('GeminiProvider', () => {
     provider = new GeminiProvider();
     mockProcess = new MockChildProcess();
     mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
-    mockSpawn.mockReturnValue(mockProcess as any);
+    mockSpawn.mockReturnValue(mockProcess as unknown as ReturnType<typeof spawn>);
   });
 
   describe('checkAvailability', () => {
@@ -81,7 +81,7 @@ describe('GeminiProvider', () => {
 
       expect(result).toEqual({
         success: true,
-        output: expect.stringContaining('Task completed successfully'),
+        output: 'Processing task...\nTask completed successfully\n',
         provider: 'gemini',
         issueNumber: 0,
         duration: expect.any(Number),
@@ -162,7 +162,7 @@ describe('GeminiProvider', () => {
       const result = await executePromise;
 
       expect(result.success).toBe(true);
-      expect(result.output!.length).toBeGreaterThan(9000);
+      expect(result.output?.length ?? 0).toBeGreaterThan(9000);
     });
 
     it('should handle spawn errors during execution', async () => {

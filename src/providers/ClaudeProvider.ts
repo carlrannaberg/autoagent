@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+// Chalk import removed - use Logger instead
 import { Provider } from './Provider';
 import { ExecutionResult } from '../types';
 
@@ -61,9 +61,7 @@ export class ClaudeProvider extends Provider {
       }
 
       // Log execution start if not in silent mode
-      if (process.env.AUTOAGENT_SILENT !== 'true') {
-        console.log(chalk.blue(`Executing with Claude: Issue #${issueNumber}`));
-      }
+      // Logging handled by caller
       
       const { stdout, stderr, code } = await this.spawnProcess('claude', args, signal);
 

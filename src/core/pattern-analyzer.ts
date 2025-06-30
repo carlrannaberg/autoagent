@@ -57,7 +57,7 @@ export class PatternAnalyzer {
     const successfulExecutions = this.executionHistory.filter(e => e.success);
     const totalExecutions = this.executionHistory.length;
 
-    if (totalExecutions === 0) return;
+    if (totalExecutions === 0) {return;}
 
     const successRate = successfulExecutions.length / totalExecutions;
 
@@ -88,9 +88,9 @@ export class PatternAnalyzer {
     const errorTypes: Map<string, number> = new Map();
     
     failures.forEach(failure => {
-      if (failure.error) {
+      if (failure.error !== undefined && failure.error !== '') {
         const errorType = this.categorizeError(failure.error);
-        errorTypes.set(errorType, (errorTypes.get(errorType) || 0) + 1);
+        errorTypes.set(errorType, (errorTypes.get(errorType) ?? 0) + 1);
       }
     });
 
@@ -134,7 +134,7 @@ export class PatternAnalyzer {
   private analyzeFileChangePatterns(): void {
     const executionsWithFiles = this.executionHistory.filter(e => e.filesModified && e.filesModified.length > 0);
     
-    if (executionsWithFiles.length < 3) return;
+    if (executionsWithFiles.length < 3) {return;}
 
     // Track file extensions
     const extensionCounts: Map<string, number> = new Map();
@@ -144,7 +144,7 @@ export class PatternAnalyzer {
       execution.filesModified?.forEach(file => {
         totalFiles++;
         const ext = this.getFileExtension(file);
-        extensionCounts.set(ext, (extensionCounts.get(ext) || 0) + 1);
+        extensionCounts.set(ext, (extensionCounts.get(ext) ?? 0) + 1);
       });
     });
 
@@ -184,7 +184,7 @@ export class PatternAnalyzer {
       .filter(e => e.duration > 0)
       .map(e => e.duration);
 
-    if (durations.length < 5) return;
+    if (durations.length < 5) {return;}
 
     const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length;
     const stdDev = Math.sqrt(
@@ -221,9 +221,9 @@ export class PatternAnalyzer {
 
     this.executionHistory.forEach(execution => {
       if (execution.provider) {
-        providerCounts.set(execution.provider, (providerCounts.get(execution.provider) || 0) + 1);
+        providerCounts.set(execution.provider, (providerCounts.get(execution.provider) ?? 0) + 1);
         if (execution.success) {
-          providerSuccesses.set(execution.provider, (providerSuccesses.get(execution.provider) || 0) + 1);
+          providerSuccesses.set(execution.provider, (providerSuccesses.get(execution.provider) ?? 0) + 1);
         }
       }
     });
@@ -243,7 +243,7 @@ export class PatternAnalyzer {
       }
 
       // Check provider-specific success rates
-      const successes = providerSuccesses.get(provider) || 0;
+      const successes = providerSuccesses.get(provider) ?? 0;
       const successRate = successes / count;
 
       if (count >= 5 && successRate < 0.6) {
@@ -262,7 +262,7 @@ export class PatternAnalyzer {
    */
   private getFileExtension(filePath: string): string {
     const parts = filePath.split('.');
-    return parts.length > 1 ? parts[parts.length - 1] || 'no-ext' : 'no-ext';
+    return parts.length > 1 ? (parts[parts.length - 1] ?? 'no-ext') : 'no-ext';
   }
 
   /**

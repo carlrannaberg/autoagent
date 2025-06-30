@@ -101,7 +101,7 @@ export async function retry<T>(
       let delay = opts.initialDelay * Math.pow(opts.backoffMultiplier, attempt - 1);
       
       // Handle rate limit errors with specific retry-after
-      if (lastError instanceof RateLimitError && lastError.retryAfter) {
+      if (lastError instanceof RateLimitError && lastError.retryAfter !== undefined && lastError.retryAfter !== null && lastError.retryAfter > 0) {
         delay = lastError.retryAfter * 1000; // Convert seconds to milliseconds
       }
       
@@ -144,7 +144,7 @@ export async function retryWithJitter<T>(
   }, jitteredOptions);
 }
 
-export function createRetryableFunction<T extends (...args: any[]) => Promise<any>>(
+export function createRetryableFunction<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   options?: RetryOptions
 ): T {
@@ -171,7 +171,7 @@ export function extractRetryAfter(error: Error): number | undefined {
   
   // Try to extract retry-after from error message
   const match = error.message.match(/retry[- ]?after[: ]+(\d+)/i);
-  if (match && match[1]) {
+  if (match !== null && match[1] !== undefined && match[1] !== '') {
     return parseInt(match[1], 10);
   }
   

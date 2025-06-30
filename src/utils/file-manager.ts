@@ -55,9 +55,9 @@ export class FileManager {
     
     if (typeof issueOrNumber === 'number') {
       // New signature for CLI usage
-      const filename = `${issueOrNumber}-${title!.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md`;
+      const filename = `${issueOrNumber}-${(title ?? '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md`;
       const filepath = path.join(this.issuesDir, filename);
-      await fs.writeFile(filepath, content!, 'utf-8');
+      await fs.writeFile(filepath, content ?? '', 'utf-8');
       return filepath;
     } else {
       // Original signature
@@ -74,10 +74,10 @@ ${issue.requirements}
 ${issue.acceptanceCriteria.map(ac => `- [ ] ${ac}`).join('\n')}
 
 ## Technical Details
-${issue.technicalDetails !== undefined ? issue.technicalDetails : 'No additional technical details.'}
+${issue.technicalDetails ?? 'No additional technical details.'}
 
 ## Resources
-${issue.resources !== undefined && issue.resources.length > 0 ? issue.resources.map(r => `- ${r}`).join('\n') : 'No resources specified.'}`;
+${(issue.resources !== undefined && issue.resources.length > 0) ? issue.resources.map(r => `- ${r}`).join('\n') : 'No resources specified.'}`;
       
       await fs.writeFile(filepath, issueContent, 'utf-8');
       return filepath;
@@ -106,7 +106,7 @@ ${issue.resources !== undefined && issue.resources.length > 0 ? issue.resources.
         if (line.startsWith('## ')) {
           currentSection = line.substring(3).trim();
           sections[currentSection] = [];
-        } else if (currentSection && line.trim()) {
+        } else if (currentSection !== '' && line.trim() !== '') {
           if (!sections[currentSection]) {
             sections[currentSection] = [];
           }
@@ -165,10 +165,10 @@ This document outlines the step-by-step plan to complete \`issues/${issueNumber}
 ${phasesContent}
 
 ## Technical Approach
-${plan.technicalApproach !== undefined ? plan.technicalApproach : 'Technical approach to be determined.'}
+${plan.technicalApproach ?? 'Technical approach to be determined.'}
 
 ## Potential Challenges
-${plan.challenges !== undefined && plan.challenges.length > 0 ? plan.challenges.map(c => `- ${c}`).join('\n') : '- No specific challenges identified.'}`;
+${(plan.challenges !== undefined && plan.challenges.length > 0) ? plan.challenges.map(c => `- ${c}`).join('\n') : '- No specific challenges identified.'}`;
     
     await fs.writeFile(filepath, content, 'utf-8');
     return filepath;
@@ -380,7 +380,7 @@ This file contains project-specific instructions for Gemini. Customize this file
 
     // Parse the first pending todo to get issue details
     const firstTodo = pendingTodos[0];
-    if (!firstTodo) {
+    if (firstTodo === undefined || firstTodo === '') {
       return undefined;
     }
     
@@ -391,7 +391,7 @@ This file contains project-specific instructions for Gemini. Customize this file
     }
 
     const [, numberStr, title, file] = match;
-    if (!numberStr || !title || !file) {
+    if (numberStr === undefined || numberStr === '' || title === undefined || title === '' || file === undefined || file === '') {
       return undefined;
     }
     
@@ -413,7 +413,7 @@ This file contains project-specific instructions for Gemini. Customize this file
   private extractSection(content: string, sectionName: string): string {
     const lines = content.split('\n');
     let inSection = false;
-    let sectionContent: string[] = [];
+    const sectionContent: string[] = [];
     
     for (const line of lines) {
       if (line.startsWith('## ') && line.substring(3).trim() === sectionName) {
@@ -425,7 +425,7 @@ This file contains project-specific instructions for Gemini. Customize this file
         break;
       }
       
-      if (inSection && line.trim()) {
+      if (inSection && line.trim() !== '') {
         sectionContent.push(line);
       }
     }
@@ -440,7 +440,7 @@ This file contains project-specific instructions for Gemini. Customize this file
     
     for (const line of lines) {
       const match = line.match(/^-\s*\[[x ]\]\s*(.+)$/);
-      if (match && match[1]) {
+      if (match !== null && match[1] !== undefined && match[1] !== '') {
         checklist.push(match[1]);
       }
     }

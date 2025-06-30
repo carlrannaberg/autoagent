@@ -27,11 +27,11 @@ export class Logger {
     const opts = { ...Logger.defaultOptions, ...options };
     let formatted = message;
 
-    if (opts.prefix) {
+    if (opts.prefix !== undefined && opts.prefix !== '') {
       formatted = `[${opts.prefix}] ${formatted}`;
     }
 
-    if (opts.timestamp) {
+    if (opts.timestamp === true) {
       const timestamp = new Date().toISOString();
       formatted = `[${timestamp}] ${formatted}`;
     }
@@ -56,13 +56,13 @@ export class Logger {
     console.error(chalk.red(`✗ ${Logger.formatMessage(errorMessage, options)}`));
     
     if (message instanceof Error && Logger.debugEnabled) {
-      console.error(chalk.gray(message.stack || ''));
+      console.error(chalk.gray(message.stack ?? ''));
     }
   }
 
   static debug(message: string, options?: LoggerOptions): void {
     const debugOptions = { ...options, debugEnabled: options?.debugEnabled ?? Logger.debugEnabled };
-    if (debugOptions.debugEnabled || Logger.defaultOptions.debugEnabled) {
+    if (debugOptions.debugEnabled === true || Logger.defaultOptions.debugEnabled === true) {
       console.log(chalk.gray(`[DEBUG] ${Logger.formatMessage(message, options)}`));
     }
   }

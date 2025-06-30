@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { Provider } from './Provider';
 import { ExecutionResult } from '../types';
 
@@ -59,10 +58,7 @@ export class GeminiProvider extends Provider {
         });
       }
 
-      // Log execution start if not in silent mode
-      if (process.env.AUTOAGENT_SILENT !== 'true') {
-        console.log(chalk.green(`Executing with Gemini: Issue #${issueNumber}`));
-      }
+      // Logging handled by caller
       
       const { stdout, stderr, code } = await this.spawnProcess('gemini', args, signal);
 

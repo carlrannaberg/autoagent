@@ -81,9 +81,10 @@ TypeScript strict mode`;
       let currentContent = '# Claude Instructions';
       
       // Mock to simulate persistent file updates
-      mockFileManager.readProviderInstructions.mockImplementation(async () => currentContent);
-      mockFileManager.updateProviderInstructions.mockImplementation(async (_provider, content) => {
+      mockFileManager.readProviderInstructions.mockImplementation(() => Promise.resolve(currentContent));
+      mockFileManager.updateProviderInstructions.mockImplementation((_provider, content) => {
         currentContent = content;
+        return Promise.resolve();
       });
 
       // First execution
@@ -133,9 +134,10 @@ TypeScript strict mode`;
       let currentContent = '# Claude Instructions';
       
       // Mock to simulate persistent file updates
-      mockFileManager.readProviderInstructions.mockImplementation(async () => currentContent);
-      mockFileManager.updateProviderInstructions.mockImplementation(async (_provider, content) => {
+      mockFileManager.readProviderInstructions.mockImplementation(() => Promise.resolve(currentContent));
+      mockFileManager.updateProviderInstructions.mockImplementation((_provider, content) => {
         currentContent = content;
+        return Promise.resolve();
       });
 
       // Simulate multiple successful executions

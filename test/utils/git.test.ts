@@ -6,7 +6,7 @@ jest.mock('child_process');
 
 // Mock util module to return our mock exec when promisified
 jest.mock('util', () => {
-  const actualUtil = jest.requireActual('util');
+  const actualUtil = jest.requireActual<typeof import('util')>('util');
   return {
     ...actualUtil,
     promisify: jest.fn(() => mockExec)
@@ -146,7 +146,7 @@ describe('Git Utilities', () => {
 
       expect(result.success).toBe(true);
       expect(mockExec).toHaveBeenCalledWith(
-        `git commit -m "Test commit\n\nCo-authored-by: Claude <claude@autoagent>"`
+        'git commit -m "Test commit\n\nCo-authored-by: Claude <claude@autoagent>"'
       );
     });
 

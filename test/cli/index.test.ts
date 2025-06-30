@@ -17,7 +17,7 @@ jest.mock('../../src/providers', () => ({
 describe('CLI Integration Tests', () => {
   let mockConfigManager: jest.Mocked<ConfigManager>;
   let mockAgent: jest.Mocked<AutonomousAgent>;
-  let mockLogger: any;
+  let mockLogger: typeof Logger;
   let processExitSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
   let consoleErrorSpy: jest.SpyInstance;
@@ -26,9 +26,9 @@ describe('CLI Integration Tests', () => {
     jest.clearAllMocks();
     
     // Mock process.exit to prevent test runner from exiting
-    processExitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {
+    processExitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {
       throw new Error('process.exit called');
-    });
+    }) as any);
     
     // Mock console methods
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
@@ -67,7 +67,7 @@ describe('CLI Integration Tests', () => {
         customInstructions: ''
       }),
       getAvailableProviders: jest.fn().mockResolvedValue(['claude', 'gemini'])
-    } as any;
+    } as unknown as jest.Mocked<ConfigManager>;
 
     mockAgent = {
       initialize: jest.fn().mockResolvedValue(undefined),
@@ -93,7 +93,7 @@ describe('CLI Integration Tests', () => {
         rateLimitedProviders: []
       }),
       bootstrap: jest.fn().mockResolvedValue(undefined)
-    } as any;
+    } as unknown as jest.Mocked<AutonomousAgent>;
 
     (ConfigManager as unknown as jest.Mock).mockImplementation(() => mockConfigManager);
     (AutonomousAgent as unknown as jest.Mock).mockImplementation(() => mockAgent);

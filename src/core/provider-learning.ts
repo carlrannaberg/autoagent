@@ -57,7 +57,7 @@ export class ProviderLearning {
     const existingContent = await this.fileManager.readProviderInstructions(provider);
     
     // Extract current metrics from the file or initialize new ones
-    const metrics = await this.extractOrInitializeMetrics(provider, existingContent);
+    const metrics = this.extractOrInitializeMetrics(provider, existingContent);
     
     // Update metrics with new execution
     this.updateMetrics(metrics, result);
@@ -86,7 +86,7 @@ export class ProviderLearning {
   /**
    * Extract existing metrics from provider file or initialize new ones
    */
-  private async extractOrInitializeMetrics(
+  private extractOrInitializeMetrics(
     provider: 'CLAUDE' | 'GEMINI',
     content: string
   ): Promise<ExecutionMetrics> {
@@ -104,7 +104,7 @@ export class ProviderLearning {
       averageDuration: 0,
       fileTypesModified: {},
       commonPatterns: [],
-      lastExecutionDate: new Date().toISOString().split('T')[0] || ''
+      lastExecutionDate: new Date().toISOString().split('T')[0] ?? ''
     };
 
     // Count executions from history
@@ -119,7 +119,7 @@ export class ProviderLearning {
       const fileTypeLines = fileTypeMatch[0].match(/- `\.(\w+)`: (\d+) files?/g) || [];
       fileTypeLines.forEach(line => {
         const match = line.match(/- `\.(\w+)`: (\d+)/);
-        if (match && match[1] && match[2]) {
+        if (match !== null && match[1] !== undefined && match[1] !== '' && match[2] !== undefined && match[2] !== '') {
           metrics.fileTypesModified[match[1]] = parseInt(match[2], 10);
         }
       });
@@ -151,11 +151,11 @@ export class ProviderLearning {
     if (result.filesModified) {
       result.filesModified.forEach(file => {
         const ext = path.extname(file).substring(1) || 'no-ext';
-        metrics.fileTypesModified[ext] = (metrics.fileTypesModified[ext] || 0) + 1;
+        metrics.fileTypesModified[ext] = (metrics.fileTypesModified[ext] ?? 0) + 1;
       });
     }
 
-    metrics.lastExecutionDate = new Date().toISOString().split('T')[0] || '';
+    metrics.lastExecutionDate = new Date().toISOString().split('T')[0] ?? '';
   }
 
   /**
@@ -228,7 +228,7 @@ export class ProviderLearning {
     result: ExecutionResult
   ): string {
     const date = new Date().toISOString().split('T')[0];
-    const issueTitle = result.issueTitle || `Issue #${result.issueNumber}`;
+    const issueTitle = result.issueTitle ?? `Issue #${result.issueNumber}`;
     
     // Preserve the original content structure but update specific sections
     let content = existingContent;
@@ -378,7 +378,7 @@ export class ProviderLearning {
   /**
    * Analyze file changes to detect patterns
    */
-  async analyzeFileChanges(result: ExecutionResult): Promise<string[]> {
+  analyzeFileChanges(result: ExecutionResult): string[] {
     const patterns: string[] = [];
     
     if (!result.filesModified || result.filesModified.length === 0) {

@@ -2,6 +2,7 @@ import { createProvider, getFirstAvailableProvider } from '../../src/providers';
 import { ClaudeProvider } from '../../src/providers/ClaudeProvider';
 import { GeminiProvider } from '../../src/providers/GeminiProvider';
 import { Provider } from '../../src/providers/Provider';
+import { ProviderName } from '../../src/types';
 
 jest.mock('../../src/providers/ClaudeProvider');
 jest.mock('../../src/providers/GeminiProvider');
@@ -23,7 +24,7 @@ describe('Provider factory functions', () => {
     });
 
     it('should throw error for unknown provider', () => {
-      expect(() => createProvider('unknown' as any))
+      expect(() => createProvider('unknown' as unknown as ProviderName))
         .toThrow('Invalid provider type: unknown');
     });
   });
@@ -37,13 +38,13 @@ describe('Provider factory functions', () => {
         name: 'claude',
         checkAvailability: jest.fn(),
         execute: jest.fn()
-      } as any;
+      } as unknown as jest.Mocked<Provider>;
 
       mockGeminiProvider = {
         name: 'gemini',
         checkAvailability: jest.fn(),
         execute: jest.fn()
-      } as any;
+      } as unknown as jest.Mocked<Provider>;
 
       (ClaudeProvider as jest.Mock).mockImplementation(() => mockClaudeProvider);
       (GeminiProvider as jest.Mock).mockImplementation(() => mockGeminiProvider);

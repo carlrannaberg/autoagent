@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { UserConfig, ProviderName, RateLimitData } from '../types';
+import { Logger } from '../utils/logger';
 
 export class ConfigManager {
   private static readonly DEFAULT_CONFIG: UserConfig = {
@@ -275,48 +276,48 @@ export class ConfigManager {
   async showConfig(): Promise<void> {
     await this.loadConfig();
     
-    console.log('\n📋 Current Configuration:');
-    console.log('─'.repeat(40));
+    Logger.info('\n📋 Current Configuration:');
+    Logger.info('─'.repeat(40));
     
     // Show effective config
-    console.log('\nEffective Configuration:');
-    console.log(JSON.stringify(this.config, null, 2));
+    Logger.info('\nEffective Configuration:');
+    Logger.info(JSON.stringify(this.config, null, 2));
     
     // Show config sources
-    console.log('\n📁 Configuration Sources:');
+    Logger.info('\n📁 Configuration Sources:');
     
     // Check global config
     try {
       const globalConfig = await this.loadConfigFile(this.globalConfigPath);
       if (Object.keys(globalConfig).length > 0) {
-        console.log(`\nGlobal (${this.globalConfigPath}):`);
-        console.log(JSON.stringify(globalConfig, null, 2));
+        Logger.info(`\nGlobal (${this.globalConfigPath}):`);
+        Logger.info(JSON.stringify(globalConfig, null, 2));
       }
     } catch {
-      console.log(`\nGlobal: Not configured`);
+      Logger.info('\nGlobal: Not configured');
     }
     
     // Check local config
     try {
       const localConfig = await this.loadConfigFile(this.localConfigPath);
       if (Object.keys(localConfig).length > 0) {
-        console.log(`\nLocal (${this.localConfigPath}):`);
-        console.log(JSON.stringify(localConfig, null, 2));
+        Logger.info(`\nLocal (${this.localConfigPath}):`);
+        Logger.info(JSON.stringify(localConfig, null, 2));
       }
     } catch {
-      console.log(`\nLocal: Not configured`);
+      Logger.info('\nLocal: Not configured');
     }
     
     // Show rate limit status
-    console.log('\n⏱️  Rate Limit Status:');
+    Logger.info('\n⏱️  Rate Limit Status:');
     
     for (const provider of ['claude', 'gemini'] as ProviderName[]) {
       const status = await this.checkRateLimit(provider);
-      if (status.isLimited) {
+      if (status.isLimited === true) {
         const remainingTime = Math.ceil((status.timeRemaining ?? 0) / 1000 / 60);
-        console.log(`${provider}: Rate limited (${remainingTime} minutes remaining)`);
+        Logger.info(`${provider}: Rate limited (${remainingTime} minutes remaining)`);
       } else {
-        console.log(`${provider}: Available`);
+        Logger.info(`${provider}: Available`);
       }
     }
   }

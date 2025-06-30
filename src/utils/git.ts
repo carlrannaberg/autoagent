@@ -79,11 +79,11 @@ export async function getGitStatus(): Promise<GitStatus> {
 
     // Check for uncommitted changes
     const { stdout: diffStatus } = await execAsync('git diff --stat');
-    status.hasUncommitted = diffStatus.trim().length > 0;
+    status.hasUncommitted = diffStatus.trim() !== '';
 
     // Check for untracked files
     const { stdout: untrackedFiles } = await execAsync('git ls-files --others --exclude-standard');
-    status.hasUntracked = untrackedFiles.trim().length > 0;
+    status.hasUntracked = untrackedFiles.trim() !== '';
 
     // Check if working directory is dirty
     try {
@@ -95,10 +95,10 @@ export async function getGitStatus(): Promise<GitStatus> {
 
     // Get ahead/behind status
     try {
-      const { stdout: revList } = await execAsync(`git rev-list --left-right --count HEAD...@{upstream}`);
+      const { stdout: revList } = await execAsync('git rev-list --left-right --count HEAD...@{upstream}');
       const [ahead, behind] = revList.trim().split('\t').map(n => parseInt(n, 10));
-      status.ahead = ahead || 0;
-      status.behind = behind || 0;
+      status.ahead = ahead ?? 0;
+      status.behind = behind ?? 0;
     } catch {
       // No upstream configured
     }
@@ -132,7 +132,7 @@ export async function createCommit(options: CommitOptions): Promise<GitCommitRes
 
     // Build git commit command
     let command = `git commit -m "${fullMessage.replace(/"/g, '\\"')}"`;
-    if (signoff) {
+    if (signoff === true) {
       command += ' --signoff';
     }
 
@@ -185,19 +185,19 @@ export async function hasChangesToCommit(): Promise<boolean> {
   try {
     // Check for staged changes
     const { stdout: staged } = await execAsync('git diff --cached --stat');
-    if (staged.trim()) {
+    if (staged.trim() !== '') {
       return true;
     }
 
     // Check for unstaged changes
     const { stdout: unstaged } = await execAsync('git diff --stat');
-    if (unstaged.trim()) {
+    if (unstaged.trim() !== '') {
       return true;
     }
 
     // Check for untracked files
     const { stdout: untracked } = await execAsync('git ls-files --others --exclude-standard');
-    return untracked.trim().length > 0;
+    return untracked.trim() !== '';
   } catch {
     return false;
   }
@@ -225,19 +225,19 @@ export async function getChangedFiles(): Promise<string[]> {
 
     // Get staged files
     const { stdout: staged } = await execAsync('git diff --cached --name-only');
-    if (staged.trim()) {
+    if (staged.trim() !== '') {
       files.push(...staged.trim().split('\n'));
     }
 
     // Get unstaged files
     const { stdout: unstaged } = await execAsync('git diff --name-only');
-    if (unstaged.trim()) {
+    if (unstaged.trim() !== '') {
       files.push(...unstaged.trim().split('\n'));
     }
 
     // Get untracked files
     const { stdout: untracked } = await execAsync('git ls-files --others --exclude-standard');
-    if (untracked.trim()) {
+    if (untracked.trim() !== '') {
       files.push(...untracked.trim().split('\n'));
     }
 

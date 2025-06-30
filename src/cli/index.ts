@@ -6,7 +6,6 @@ import { createProvider } from '../providers';
 import { ConfigManager } from '../core/config-manager';
 import { Logger } from '../utils/logger';
 import { ProviderName } from '../types';
-import chalk from 'chalk';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -37,7 +36,7 @@ config
     try {
       const configManager = new ConfigManager();
       await configManager.initConfig(options.global);
-      Logger.success(`Configuration initialized ${options.global ? 'globally' : 'locally'}`);
+      Logger.success(`Configuration initialized ${options.global === true ? 'globally' : 'locally'}`);
     } catch (error) {
       Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
@@ -128,7 +127,7 @@ config
   .action(async (options: { provider?: string }) => {
     try {
       const configManager = new ConfigManager();
-      if (options.provider) {
+      if (options.provider !== undefined && options.provider !== '') {
         await configManager.clearRateLimit(options.provider as 'claude' | 'gemini');
         Logger.success(`Rate limit cleared for ${options.provider}`);
       } else {
@@ -159,7 +158,7 @@ program
       const abortController = new AbortController();
       
       process.on('SIGINT', () => {
-        console.log(chalk.yellow('\n⚠️  Cancelling operation...'));
+        Logger.warning('\n⚠️  Cancelling operation...');
         abortController.abort();
       });
       
@@ -173,7 +172,7 @@ program
         signal: abortController.signal
       });
 
-      if (options.all) {
+      if (options.all === true) {
         await agent.executeAll();
       } else {
         await agent.executeNext();
@@ -218,19 +217,19 @@ program
       const status = await agent.getStatus();
 
       Logger.info('\n📊 Status Report\n');
-      console.log(`Total Issues:     ${status.totalIssues}`);
-      console.log(`Completed:        ${status.completedIssues}`);
-      console.log(`Pending:          ${status.pendingIssues}`);
+      Logger.info(`Total Issues:     ${status.totalIssues}`);
+      Logger.info(`Completed:        ${status.completedIssues}`);
+      Logger.info(`Pending:          ${status.pendingIssues}`);
 
-      if (status.currentIssue) {
-        console.log(`\nNext Issue:       #${status.currentIssue.number}: ${status.currentIssue.title}`);
+      if (status.currentIssue !== null && status.currentIssue !== undefined) {
+        Logger.info(`\nNext Issue:       #${status.currentIssue.number}: ${status.currentIssue.title}`);
       }
 
-      if (status.availableProviders?.length) {
-        console.log(`\n✅ Available Providers: ${status.availableProviders.join(', ')}`);
+      if (status.availableProviders !== undefined && status.availableProviders.length > 0) {
+        Logger.info(`\n✅ Available Providers: ${status.availableProviders.join(', ')}`);
       }
-      if (status.rateLimitedProviders?.length) {
-        console.log(`⏱️  Rate Limited: ${status.rateLimitedProviders.join(', ')}`);
+      if (status.rateLimitedProviders !== undefined && status.rateLimitedProviders.length > 0) {
+        Logger.info(`⏱️  Rate Limited: ${status.rateLimitedProviders.join(', ')}`);
       }
     } catch (error) {
       Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -244,7 +243,7 @@ program
   .option('-p, --provider <provider>', 'AI provider to check')
   .action(async (options: { provider?: string }) => {
     try {
-      if (options.provider) {
+      if (options.provider !== undefined && options.provider !== '') {
         const provider = createProvider(options.provider as ProviderName);
         const available = await provider.checkAvailability();
 
@@ -287,7 +286,7 @@ program
         workspace: options.workspace
       });
 
-      const masterPlanPath = planFile || 'master-plan.md';
+      const masterPlanPath = (planFile !== undefined && planFile !== '') ? planFile : 'master-plan.md';
 
       await agent.bootstrap(masterPlanPath);
       Logger.success('Bootstrap issue created successfully');

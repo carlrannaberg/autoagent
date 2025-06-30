@@ -1,7 +1,6 @@
 import { EventEmitter } from 'events';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import chalk from 'chalk';
 import { 
   AgentConfig, 
   ExecutionResult, 
@@ -108,7 +107,7 @@ export class AutonomousAgent extends EventEmitter {
 
       // Capture pre-execution state if rollback is enabled
       let rollbackData;
-      if (this.config.enableRollback) {
+      if (this.config.enableRollback === true) {
         rollbackData = await this.capturePreExecutionState();
       }
 
@@ -241,7 +240,7 @@ export class AutonomousAgent extends EventEmitter {
       const { gitCommit, fileBackups } = executionResult.rollbackData;
 
       // If we have a git commit, revert to it
-      if (gitCommit) {
+      if (gitCommit !== undefined && gitCommit !== '') {
         const success = await revertToCommit(gitCommit);
         if (success) {
           this.reportProgress(`Reverted to commit ${gitCommit}`, 100);
@@ -254,7 +253,7 @@ export class AutonomousAgent extends EventEmitter {
         // Handle uncommitted changes
         if (fileBackups.has('__git_uncommitted_changes__')) {
           const patch = fileBackups.get('__git_uncommitted_changes__');
-          if (patch) {
+          if (patch !== undefined && patch !== '') {
             // Apply the patch using git apply
             const fs = await import('fs/promises');
             const patchFile = `/tmp/rollback-${Date.now()}.patch`;
@@ -276,7 +275,7 @@ export class AutonomousAgent extends EventEmitter {
       this.reportProgress('Rollback failed: insufficient rollback data', 0);
       return false;
     } catch (error) {
-      this.reportProgress(`Rollback failed: ${error}`, 0);
+      this.reportProgress(`Rollback failed: ${String(error)}`, 0);
       return false;
     }
   }
@@ -459,9 +458,9 @@ export class AutonomousAgent extends EventEmitter {
       const gitAvailable = await checkGitAvailable();
       const isRepo = await isGitRepository();
       
-      if (!gitAvailable || !isRepo) {
-        if (this.config.debug) {
-          console.error(chalk.yellow('Git not available or not in a repository')); // eslint-disable-line no-console
+      if (gitAvailable !== true || isRepo !== true) {
+        if (this.config.debug === true) {
+          this.reportProgress('Git not available or not in a repository', 0);
         }
         return;
       }
@@ -482,7 +481,7 @@ export class AutonomousAgent extends EventEmitter {
       // Create commit with optional co-authorship
       const commitResult = await createCommit({
         message: commitMessage,
-        coAuthor: this.config.includeCoAuthoredBy && result.provider ? {
+        coAuthor: (this.config.includeCoAuthoredBy === true && result.provider !== undefined) ? {
           name: result.provider.charAt(0).toUpperCase() + result.provider.slice(1),
           email: `${result.provider}@autoagent`
         } : undefined
@@ -492,16 +491,16 @@ export class AutonomousAgent extends EventEmitter {
         this.reportProgress('Changes committed to git', 95);
         
         // Store commit hash in result for potential rollback
-        if (commitResult.commitHash && result.rollbackData) {
+        if (commitResult.commitHash !== undefined && commitResult.commitHash !== '' && result.rollbackData !== undefined) {
           result.rollbackData.gitCommit = commitResult.commitHash;
         }
-      } else if (this.config.debug) {
-        console.error(chalk.yellow('Git commit failed:'), commitResult.error); // eslint-disable-line no-console
+      } else if (this.config.debug === true) {
+        this.reportProgress(`Git commit failed: ${commitResult.error ?? 'Unknown error'}`, 0);
       }
     } catch (error) {
       // Log error but don't fail the execution
       if (this.config.debug === true) {
-        console.error(chalk.yellow('Git commit error:'), error); // eslint-disable-line no-console
+        this.reportProgress(`Git commit error: ${error instanceof Error ? error.message : String(error)}`, 0);
       }
     }
   }
@@ -582,7 +581,7 @@ export class AutonomousAgent extends EventEmitter {
 
     if (this.config.debug === true) {
       const progress = percentage !== undefined ? `[${percentage}%] ` : '';
-      console.log(chalk.gray(`${progress}${message}`)); // eslint-disable-line no-console
+      this.emit('debug', `${progress}${message}`);
     }
   }
 
@@ -604,7 +603,7 @@ export class AutonomousAgent extends EventEmitter {
    */
   private handleInterrupt(): void {
     if (this.isExecuting) {
-      console.log(chalk.yellow('\nInterrupting execution...')); // eslint-disable-line no-console
+      this.emit('interrupt', 'Interrupting execution...');
       this.abortController?.abort();
     }
     process.exit(0);
@@ -647,7 +646,7 @@ Format as a proper issue document.`;
     // Create issue file
     const issueContent = `# Issue ${nextNumber}: ${title}
 
-${result}`;
+${result.output ?? 'Success'}`;
 
     await this.fileManager.createIssue(nextNumber, title, issueContent);
     
@@ -676,7 +675,7 @@ ${result}`;
     
     for (const providerName of config.providers) {
       const isRateLimited = await this.configManager.isProviderRateLimited(providerName);
-      if (isRateLimited) {
+      if (isRateLimited === true) {
         rateLimitedProviders.push(providerName);
       } else {
         const provider = createProvider(providerName);
@@ -761,7 +760,7 @@ This is the bootstrap issue that creates all other issues from the master plan.
 
 ## Generated Issues
 
-${result}`;
+${result.output ?? 'Success'}`;
 
     await this.fileManager.createIssue(issueNumber, issueTitle, issueContent);
     
@@ -805,18 +804,18 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
     try {
       // Get current git commit hash
       const commitHash = await getCurrentCommitHash();
-      if (commitHash) {
+      if (commitHash !== null && commitHash !== '') {
         rollbackData.gitCommit = commitHash;
       }
 
       // Get uncommitted changes
       const uncommittedChanges = await getUncommittedChanges();
-      if (uncommittedChanges) {
+      if (uncommittedChanges !== null && uncommittedChanges !== '') {
         rollbackData.fileBackups = new Map([['__git_uncommitted_changes__', uncommittedChanges]]);
       }
     } catch (error) {
-      if (this.config.debug) {
-        console.error(chalk.yellow('Failed to capture pre-execution state:'), error); // eslint-disable-line no-console
+      if (this.config.debug === true) {
+        this.reportProgress(`Failed to capture pre-execution state: ${error instanceof Error ? error.message : String(error)}`, 0);
       }
     }
 

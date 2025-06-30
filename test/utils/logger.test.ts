@@ -101,7 +101,7 @@ describe('Logger', () => {
 
     it('should support timestamps', () => {
       const mockDate = new Date('2023-01-01T12:00:00Z');
-      jest.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
+      jest.spyOn(global, 'Date').mockImplementation(() => mockDate as unknown as Date);
 
       Logger.info('Message', { timestamp: true });
       expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('[BLUE][2023-01-01T12:00:00.000Z] Message[/BLUE]'));
