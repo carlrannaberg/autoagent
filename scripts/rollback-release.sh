@@ -153,7 +153,7 @@ if [ "$CAN_UNDO_COMMIT" = true ]; then
         echo "Reverting CHANGELOG.md..."
         echo "Using Claude to move changelog entries back to [Unreleased]..."
         # Use Claude to intelligently move the changelog entries
-        claude --add-dir . --dangerously-skip-permissions -p "Please edit the CHANGELOG.md file to move all entries under the [$VERSION] section back to [Unreleased].
+        claude --add-dir . --dangerously-skip-permissions --verbose -p "Please edit the CHANGELOG.md file to move all entries under the [$VERSION] section back to [Unreleased].
 
 Requirements:
 1. Find the [$VERSION] section in CHANGELOG.md

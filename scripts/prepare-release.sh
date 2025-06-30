@@ -52,7 +52,7 @@ echo "Using Claude to analyze changes and prepare release..."
 
 # Use Claude to prepare the release
 # Add current directory access and let output stream to console
-claude --add-dir . --dangerously-skip-permissions -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
+claude --add-dir . --dangerously-skip-permissions --verbose -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 
 Current version: $CURRENT_VERSION
 
