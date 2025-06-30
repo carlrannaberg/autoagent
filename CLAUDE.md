@@ -40,8 +40,8 @@ autoagent/
 ```
 
 ## Key Dependencies
-- **chalk@4.1.2**: Terminal color output
-- **commander@11.0.0**: CLI framework
+- **chalk**: Terminal color output
+- **commander**: CLI framework
 - Development dependencies include TypeScript, Jest, ESLint
 
 ## Environment Setup
@@ -89,7 +89,7 @@ autoagent/
   - Set up TypeScript with strict ES2020 configuration
   - Configured ESLint with TypeScript support and strict rules
   - Configured Jest with ts-jest for unit testing
-  - Installed all required dependencies (chalk@4.1.2, commander@11.0.0)
+  - Installed all required dependencies (chalk, commander)
   - Created .nvmrc, .gitignore, .npmignore, and .eslintignore files
   - Set up package.json with proper npm scripts and configuration
   - Created basic placeholder files to verify build process
@@ -347,7 +347,7 @@ autoagent/
     - version-bump.yaml: Automates version bumping with PR creation
     - scheduled-checks.yaml: Weekly maintenance checks for dependencies and documentation
     - code-quality.yaml: Comprehensive code quality checks including complexity analysis
-  - Implemented multi-Node.js version testing (14.x, 16.x, 18.x)
+  - Implemented multi-Node.js version testing (22.x)
   - Added automatic version change detection in PRs
   - Configured secure npm publishing with NPM_TOKEN secret
   - Set up Dependabot for automated dependency updates
@@ -370,3 +370,13 @@ autoagent/
   - Added .npmrc for clean publishing configuration
   - Validated package structure with npm pack
   - Package is ready for publication to npm registry
+- **2025-06-30**: Package preparation and release updates
+  - Renamed package from "autoagent" to "autoagent-cli" due to npm naming conflict
+  - Maintained "autoagent" as the CLI command for local use
+  - Updated Node.js requirement to version 22 across all files
+  - Cleaned up legacy bash script implementation (removed 57 files, 8,568 deletions)
+  - Downgraded version to 0.0.1 for initial beta release
+  - Fixed all ESLint strict-boolean-expressions errors (240 errors resolved)
+  - Updated commander dependency to latest version
+  - Fixed Dependabot configuration and CODEOWNERS
+  - Clarified check command vs config show output for better UX

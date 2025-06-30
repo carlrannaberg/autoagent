@@ -317,7 +317,7 @@ export class ConfigManager {
         const remainingTime = Math.ceil((status.timeRemaining ?? 0) / 1000 / 60);
         Logger.info(`${provider}: Rate limited (${remainingTime} minutes remaining)`);
       } else {
-        Logger.info(`${provider}: Available`);
+        Logger.info(`${provider}: Not rate limited`);
       }
     }
   }

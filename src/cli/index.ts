@@ -247,25 +247,42 @@ program
         const provider = createProvider(options.provider as ProviderName);
         const available = await provider.checkAvailability();
 
+        Logger.info(`\n🔍 Checking ${provider.name} CLI...\n`);
+        
         if (available) {
-          Logger.success(`${provider.name} is available`);
+          Logger.success(`${provider.name} CLI is installed`);
         } else {
-          Logger.error(`${provider.name} is not available`);
-          Logger.warning(`Install from: https://${provider.name}.ai/code`);
+          Logger.error(`${provider.name} CLI is not installed`);
+          Logger.newline();
+          Logger.info(`💡 To install ${provider.name} CLI:`);
+          if (provider.name === 'claude') {
+            Logger.info('   Visit: https://claude.ai/code');
+          } else {
+            Logger.info('   Visit: https://ai.google.dev/gemini-api/docs/quickstart');
+          }
         }
       } else {
         const providers = ['claude', 'gemini'];
-        Logger.info('\n🔍 Checking all providers...\n');
+        Logger.info('\n🔍 Checking provider CLI tools...\n');
 
+        let anyAvailable = false;
         for (const providerName of providers) {
           const provider = createProvider(providerName as 'claude' | 'gemini');
           const available = await provider.checkAvailability();
 
           if (available) {
-            Logger.success(`${provider.name} is available`);
+            Logger.success(`${provider.name} CLI is installed`);
+            anyAvailable = true;
           } else {
-            Logger.error(`${provider.name} is not available`);
+            Logger.error(`${provider.name} CLI is not installed`);
           }
+        }
+
+        if (!anyAvailable) {
+          Logger.newline();
+          Logger.info('💡 To install provider CLIs:');
+          Logger.info('   Claude: https://claude.ai/code');
+          Logger.info('   Gemini: https://ai.google.dev/gemini-api/docs/quickstart');
         }
       }
     } catch (error) {
