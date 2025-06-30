@@ -346,7 +346,7 @@ autoagent/
   - All workflows follow GitHub Actions best practices and security guidelines
 - **2025-06-30**: Claude completed npm package publication preparation (Issue #16)
   - Updated package.json with all required metadata fields
-  - Set version to 1.0.0 for initial release
+  - Set version to 0.0.1 for initial beta release
   - Updated LICENSE file with correct year and attribution
   - Created production build configuration (tsconfig.prod.json) without source maps
   - Optimized package size by excluding unnecessary files (reduced from 62KB to 30KB)

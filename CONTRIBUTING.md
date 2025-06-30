@@ -250,7 +250,7 @@ enum LogLevel {
  * @returns Execution result
  */
 async function executeIssue(
-  issuePath: string, 
+  issuePath: string,
   options?: ExecutionOptions
 ): Promise<ExecutionResult> {
   // Implementation
@@ -294,30 +294,30 @@ import { AutonomousAgent } from '../src/core/autonomous-agent';
 
 describe('AutonomousAgent', () => {
   let agent: AutonomousAgent;
-  
+
   beforeEach(() => {
     // Setup
     agent = new AutonomousAgent(mockConfig, mockFiles);
   });
-  
+
   afterEach(() => {
     // Cleanup
     jest.clearAllMocks();
   });
-  
+
   describe('executeNext', () => {
     it('should execute the next pending issue', async () => {
       // Arrange
       const mockIssue = createMockIssue();
-      
+
       // Act
       const result = await agent.executeNext();
-      
+
       // Assert
       expect(result.success).toBe(true);
       expect(result.issueNumber).toBe(mockIssue.number);
     });
-    
+
     it('should handle errors gracefully', async () => {
       // Test error scenarios
     });
@@ -360,11 +360,11 @@ npm run test:watch
 ```typescript
 /**
  * Creates a new issue with AI assistance
- * 
+ *
  * @param description - Brief description of the issue
  * @param options - Optional configuration
  * @returns Object containing issue and plan paths
- * 
+ *
  * @example
  * ```typescript
  * const { issuePath, planPath } = await agent.createIssue(
@@ -471,4 +471,4 @@ We follow [Semantic Versioning](https://semver.org/):
 
 Thank you for contributing to AutoAgent! Your efforts help make this project better for everyone.
 
-Questions? Feel free to ask in [GitHub Discussions](https://github.com/yourusername/autoagent/discussions) or on [Discord](https://discord.gg/autoagent).
+Questions? Feel free to ask in [GitHub Discussions](https://github.com/carlrannaberg/autoagent/discussions).
