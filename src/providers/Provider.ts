@@ -88,4 +88,37 @@ export abstract class Provider {
     }
     return 'Unknown error occurred';
   }
+
+  /**
+   * Extract list of changed files from provider output.
+   * @param output - Provider output text
+   * @returns Array of file paths that were changed
+   */
+  protected extractFilesChanged(output: string): string[] {
+    const files: string[] = [];
+    
+    // Common patterns for file modifications
+    const patterns = [
+      /Modified:\s+(.+)/gi,
+      /Created:\s+(.+)/gi,
+      /Updated:\s+(.+)/gi,
+      /Changed:\s+(.+)/gi,
+      /File changed:\s+(.+)/gi,
+      /Wrote to:\s+(.+)/gi,
+      /Writing to:\s+(.+)/gi,
+      /Saved:\s+(.+)/gi
+    ];
+    
+    for (const pattern of patterns) {
+      let match;
+      while ((match = pattern.exec(output)) !== null) {
+        const file = match[1]?.trim();
+        if (file !== undefined && file !== '' && !files.includes(file)) {
+          files.push(file);
+        }
+      }
+    }
+    
+    return files;
+  }
 }

@@ -1,5 +1,7 @@
 import { Provider } from './Provider';
 import { ExecutionResult } from '../types';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 /**
  * Gemini provider implementation.
@@ -44,21 +46,45 @@ export class GeminiProvider extends Provider {
     const issueNumber = this.extractIssueNumber(issueFile);
 
     try {
-      // Build command arguments
-      const args = [
-        'autonomous',
-        '--issue', issueFile,
-        '--plan', planFile
-      ];
+      // Read issue and plan files
+      const issueContent = await fs.readFile(issueFile, 'utf-8');
+      const planContent = await fs.readFile(planFile, 'utf-8');
+      
+      // Build the prompt
+      let prompt = `You are an autonomous AI agent tasked with completing the following issue and plan.
 
+## Issue
+
+${issueContent}
+
+## Plan
+
+${planContent}
+
+Please execute the plan to complete the issue. Make all necessary code changes, create files as needed, and ensure all acceptance criteria are met.
+
+When you make changes to files, please clearly indicate which files were modified.`;
+      
       // Add context files if provided
       if (contextFiles && contextFiles.length > 0) {
-        contextFiles.forEach(file => {
-          args.push('--context', file);
-        });
+        prompt += '\n\n## Additional Context Files\n';
+        for (const file of contextFiles) {
+          try {
+            const content = await fs.readFile(file, 'utf-8');
+            const filename = path.basename(file);
+            prompt += `\n### ${filename}\n\n${content}\n`;
+          } catch (err) {
+            // Skip files that can't be read
+          }
+        }
       }
-
-      // Logging handled by caller
+      
+      // Build command arguments
+      // Gemini uses positional argument for prompt
+      const args = [prompt];
+      
+      // Add include-all flag to give access to current directory
+      args.push('--include-all');
       
       const { stdout, stderr, code } = await this.spawnProcess('gemini', args, signal);
 
@@ -101,62 +127,22 @@ export class GeminiProvider extends Provider {
   }
 
   /**
-   * Extract files changed from Gemini output.
-   * @param output - Gemini stdout output
-   * @returns Array of file paths that were changed
-   */
-  private extractFilesChanged(output: string): string[] {
-    const files: string[] = [];
-    const lines = output.split('\n');
-    
-    // Look for common file modification indicators
-    lines.forEach(line => {
-      // Match patterns like "Modified: path/to/file.ts"
-      const modifiedMatch = line.match(/Modified:\s+(.+)/);
-      if (modifiedMatch !== null && modifiedMatch[1] !== undefined) {
-        files.push(modifiedMatch[1].trim());
-      }
-      
-      // Match patterns like "Created: path/to/file.ts"
-      const createdMatch = line.match(/Created:\s+(.+)/);
-      if (createdMatch !== null && createdMatch[1] !== undefined) {
-        files.push(createdMatch[1].trim());
-      }
-      
-      // Match patterns like "Updated: path/to/file.ts"
-      const updatedMatch = line.match(/Updated:\s+(.+)/);
-      if (updatedMatch !== null && updatedMatch[1] !== undefined) {
-        files.push(updatedMatch[1].trim());
-      }
-    });
-
-    return [...new Set(files)]; // Remove duplicates
-  }
-
-  /**
    * Determine if execution was successful based on output.
    * @param stdout - Standard output
    * @param stderr - Standard error
    * @param code - Exit code
-   * @returns True if execution was successful
+   * @returns True if successful
    */
-  private determineSuccess(stdout: string, stderr: string, code: number | null): boolean {
-    // First check exit code
+  private determineSuccess(stdout: string, stderr: string, code: number): boolean {
+    // Exit code 0 is success
     if (code !== 0) {
       return false;
     }
-
+    
     // Check for error indicators in output
-    const errorIndicators = [
-      'error:',
-      'failed:',
-      'exception:',
-      'fatal:',
-      'could not',
-      'unable to'
-    ];
-
-    const outputLower = stdout.toLowerCase() + stderr.toLowerCase();
+    const errorIndicators = ['error:', 'failed:', 'exception:', 'traceback:'];
+    const outputLower = (stdout + stderr).toLowerCase();
+    
     return !errorIndicators.some(indicator => outputLower.includes(indicator));
   }
 }

@@ -51,7 +51,7 @@ echo
 echo "Using Claude to analyze changes and prepare release..."
 
 # Use Claude to prepare the release
-claude --no-conversation << EOF
+claude -p "$(cat << EOF
 You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 
 Current version: $CURRENT_VERSION
@@ -73,6 +73,7 @@ Please do the following:
 
 Follow the Keep a Changelog format and include the date. Only include categories that have changes.
 EOF
+)"
 
 echo
 echo "Release preparation complete!"

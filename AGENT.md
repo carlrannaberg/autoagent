@@ -10,9 +10,13 @@ AutoAgent is an npm package that enables running autonomous AI agents using Clau
 Before submitting any changes, validate them by running the full test suite. The following commands ensure your changes meet all quality requirements:
 
 ```bash
-# Run the complete validation suite
+# Run complete validation (recommended before commits)
+npm run check        # Runs typecheck, lint, and tests in sequence
+
+# Individual validation commands
 npm test             # Run all tests
 npm run build        # Build the project (production)
+npm run typecheck    # Check TypeScript types without building
 npm run lint         # Check code style
 npm run lint:fix     # Fix code style issues
 
@@ -29,6 +33,8 @@ npm run release:major # Prepare a major release (0.0.1 -> 1.0.0)
 ```
 
 Always run tests before committing changes to ensure code quality.
+
+**Tip:** Run `npm run check` before pushing to catch type errors, linting issues, and test failures early. This runs all validations concurrently for faster feedback.
 
 ## Technology Stack
 - **Language**: TypeScript (targeting ES2020)
@@ -153,4 +159,71 @@ Only write high-value comments when necessary. Avoid redundant comments that sim
 - Complex algorithms or business logic
 - Workarounds or temporary solutions
 - Important warnings or gotchas
+
+## AI CLI Reference
+
+### Claude CLI Flags
+
+Common flags used when invoking `claude`:
+- `-p, --print`: Print response without interactive mode
+- `--add-dir <dirs...>`: Add working directories for Claude to access
+- `--model <name>`: Set model for current session (e.g., claude-sonnet-4-20250514)
+- `--continue`: Load most recent conversation
+- `--resume <id>`: Resume specific session
+- `--max-turns <n>`: Limit agentic turns in non-interactive mode
+- `--output-format <format>`: Specify output format (text, json, stream-json)
+- `--verbose`: Enable detailed logging
+- `--permission-mode <mode>`: Begin in specified permission mode (e.g., plan)
+- `--allowedTools <tools...>`: Specify tools to allow without prompting
+- `--disallowedTools <tools...>`: Specify tools to disallow without prompting
+- `--dangerously-skip-permissions`: Skip all permission prompts (use with caution)
+- `-h, --help`: Show help information
+
+Example usage:
+```bash
+# Direct prompt
+claude -p "Explain this code: $(cat file.js)"
+
+# Add multiple directories and run query
+claude --add-dir ../apps ../lib -p "Analyze the codebase structure"
+
+# Continue previous conversation
+claude --continue "What about error handling?"
+
+# With specific model and JSON output
+claude --model claude-sonnet-4-20250514 --output-format json -p "Generate API docs"
+
+# Allow specific tools without prompting
+claude --allowedTools "Bash(git log:*)" "Read" -p "Show recent changes"
+```
+
+### Gemini CLI Flags
+
+Common flags used when invoking `gemini` (official Google CLI):
+- `<prompt>`: Pass a prompt directly (positional argument)
+- `--sandbox, -s`: Enable sandbox mode for this session
+- `--sandbox-image <uri>`: Set the sandbox image URI
+- `--debug`: Enable debug mode with verbose output
+- `--include-all`: Recursively include all files in current directory as context
+- `--memory`: Display current memory usage
+- `--yolo`: Enable YOLO mode (auto-approve all tool calls, enables sandbox by default)
+- `--checkpointing`: Enable checkpointing for session recovery
+- `--telemetry`: Enable telemetry
+- `--version`: Display version information
+- `--help`: Display help information
+
+Example usage:
+```bash
+# Direct prompt (non-interactive mode)
+gemini "Explain quantum computing"
+
+# Enable sandbox mode
+gemini --sandbox "Run this Python script safely"
+
+# Debug mode with all files as context
+gemini --debug --include-all "Analyze this project structure"
+
+# YOLO mode for automated workflows
+gemini --yolo "Fix all linting errors in the project"
+```
 

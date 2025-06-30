@@ -1,6 +1,8 @@
 // Chalk import removed - use Logger instead
 import { Provider } from './Provider';
 import { ExecutionResult } from '../types';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 /**
  * Claude provider implementation.
@@ -45,23 +47,50 @@ export class ClaudeProvider extends Provider {
     const issueNumber = this.extractIssueNumber(issueFile);
 
     try {
-      // Build command arguments
-      const args = [
-        'autonomous',
-        '--json',
-        '--issue', issueFile,
-        '--plan', planFile
-      ];
+      // Read issue and plan files
+      const issueContent = await fs.readFile(issueFile, 'utf-8');
+      const planContent = await fs.readFile(planFile, 'utf-8');
+      
+      // Build the prompt
+      let prompt = `You are an autonomous AI agent tasked with completing the following issue and plan.
 
+## Issue
+
+${issueContent}
+
+## Plan
+
+${planContent}
+
+Please execute the plan to complete the issue. Make all necessary code changes, create files as needed, and ensure all acceptance criteria are met.
+
+When you make changes to files, please clearly indicate which files were modified.`;
+      
       // Add context files if provided
       if (contextFiles && contextFiles.length > 0) {
-        contextFiles.forEach(file => {
-          args.push('--context', file);
-        });
+        prompt += '\n\n## Additional Context Files\n';
+        for (const file of contextFiles) {
+          try {
+            const content = await fs.readFile(file, 'utf-8');
+            const filename = path.basename(file);
+            prompt += `\n### ${filename}\n\n${content}\n`;
+          } catch (err) {
+            // Skip files that can't be read
+          }
+        }
       }
-
-      // Log execution start if not in silent mode
-      // Logging handled by caller
+      
+      // Build command arguments
+      const args = [
+        '-p', prompt
+      ];
+      
+      // Add directory access for the current working directory
+      const cwd = process.cwd();
+      args.unshift('--add-dir', cwd);
+      
+      // Use JSON output format if available
+      args.push('--output-format', 'json');
       
       const { stdout, stderr, code } = await this.spawnProcess('claude', args, signal);
 
@@ -69,28 +98,37 @@ export class ClaudeProvider extends Provider {
         throw new Error(`Claude execution failed with code ${code}: ${stderr}`);
       }
 
-      // Parse JSON output
-      let result: Partial<ExecutionResult> = {};
+      // Try to parse JSON output
+      let filesChanged: string[] = [];
+      let output = stdout;
+      
       try {
-        const parsed = JSON.parse(stdout) as Partial<ExecutionResult>;
-        result = parsed;
+        const parsed = JSON.parse(stdout) as unknown;
+        // Claude's JSON output structure might vary
+        if (typeof parsed === 'object' && parsed !== null) {
+          const obj = parsed as Record<string, unknown>;
+          if (typeof obj.content === 'string') {
+            output = obj.content;
+          } else if (typeof obj.output === 'string') {
+            output = obj.output;
+          }
+        } else if (typeof parsed === 'string') {
+          output = parsed;
+        }
       } catch (parseError) {
-        // If JSON parsing fails, treat as plain text output
-        result = {
-          success: true,
-          output: stdout
-        };
+        // Not JSON or failed to parse, use raw output
       }
 
+      // Extract files changed from output
+      filesChanged = this.extractFilesChanged(output);
+
       return {
-        success: result.success !== false,
+        success: true,
         issueNumber,
         duration: Date.now() - startTime,
-        output: result.output,
-        error: result.error,
+        output,
         provider: 'claude',
-        filesChanged: result.filesChanged,
-        rollbackData: result.rollbackData
+        filesChanged: filesChanged.length > 0 ? filesChanged : undefined
       };
     } catch (error) {
       return {

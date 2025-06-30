@@ -1,8 +1,12 @@
 import { ClaudeProvider } from '../../src/providers/ClaudeProvider';
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 jest.mock('child_process');
+jest.mock('fs/promises');
+jest.mock('path');
 
 class MockChildProcess extends EventEmitter {
   stdout = new EventEmitter();
@@ -25,6 +29,15 @@ describe('ClaudeProvider', () => {
     mockProcess = new MockChildProcess();
     mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
     mockSpawn.mockReturnValue(mockProcess as unknown as ReturnType<typeof spawn>);
+    
+    // Mock fs.readFile
+    (fs.readFile as jest.Mock).mockResolvedValue('File content');
+    
+    // Mock path.basename
+    (path.basename as jest.Mock).mockReturnValue('filename.txt');
+    
+    // Mock process.cwd
+    jest.spyOn(process, 'cwd').mockReturnValue('/test/dir');
   });
 
   describe('checkAvailability', () => {
@@ -65,6 +78,11 @@ describe('ClaudeProvider', () => {
   describe('execute', () => {
     it('should execute successfully with JSON output', async () => {
       const abortController = new AbortController();
+      (fs.readFile as jest.Mock)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content')
+        .mockResolvedValueOnce('Context file content');
+      
       const executePromise = provider.execute(
         'issue.md',
         'plan.md',
@@ -72,35 +90,44 @@ describe('ClaudeProvider', () => {
         abortController.signal
       );
 
-      // Simulate claude output
-      mockProcess.stdout.emit('data', 'Processing...\n');
-      mockProcess.stdout.emit('data', JSON.stringify({
-        type: 'result',
-        is_error: false,
-        content: 'Task completed successfully'
-      }));
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
+      // Simulate claude output with JSON
+      const jsonOutput = JSON.stringify({
+        content: 'Task completed successfully\nModified: src/file.ts'
+      });
+      mockProcess.stdout.emit('data', jsonOutput);
       mockProcess.emit('close', 0);
 
       const result = await executePromise;
 
       expect(result).toEqual({
         success: true,
-        output: expect.any(String) as string,
+        output: 'Task completed successfully\nModified: src/file.ts',
         provider: 'claude',
         issueNumber: 0,
         duration: expect.any(Number),
-        error: undefined,
-        filesChanged: undefined,
-        rollbackData: undefined
+        filesChanged: ['src/file.ts']
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'claude',
-        ['autonomous', '--json', '--issue', 'issue.md', '--plan', 'plan.md', '--context', 'option1']
-      );
+      // Check spawn was called with correct arguments
+      expect(mockSpawn).toHaveBeenCalled();
+      const callArgs = mockSpawn.mock.calls[0];
+      expect(callArgs).toBeDefined();
+      expect(callArgs![0]).toBe('claude');
+      expect(callArgs![1]).toContain('--add-dir');
+      expect(callArgs![1]).toContain('/test/dir');
+      expect(callArgs![1]).toContain('-p');
+      expect(callArgs![1]).toContain('--output-format');
+      expect(callArgs![1]).toContain('json');
     });
 
     it('should handle execution errors', async () => {
+      (fs.readFile as jest.Mock)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content');
+      
       const executePromise = provider.execute(
         'issue.md',
         'plan.md',
@@ -108,6 +135,9 @@ describe('ClaudeProvider', () => {
         undefined
       );
 
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
       mockProcess.stderr.emit('data', 'Error: Rate limit exceeded');
       mockProcess.emit('close', 1);
 
@@ -116,27 +146,49 @@ describe('ClaudeProvider', () => {
       expect(result.error).toContain('Rate limit exceeded');
     });
 
-    it('should handle JSON error responses', async () => {
+    it('should handle context files correctly', async () => {
+      (fs.readFile as jest.Mock)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content')
+        .mockResolvedValueOnce('Context 1')
+        .mockResolvedValueOnce('Context 2');
+      
+      (path.basename as jest.Mock)
+        .mockReturnValueOnce('context1.md')
+        .mockReturnValueOnce('context2.md');
+        
       const executePromise = provider.execute(
         'issue.md',
         'plan.md',
-        [],
+        ['context1.md', 'context2.md'],
         undefined
       );
 
-      mockProcess.stdout.emit('data', JSON.stringify({
-        type: 'result',
-        is_error: true,
-        error: 'Task failed'
-      }));
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
+      mockProcess.stdout.emit('data', 'Success');
       mockProcess.emit('close', 0);
 
-      const result = await executePromise;
-      expect(result.success).toBe(true);
-      expect(result.error).toBe('Task failed');
+      await executePromise;
+      
+      // Check that the prompt includes context files
+      expect(mockSpawn.mock.calls[0]).toBeDefined();
+      const spawnArgs = mockSpawn.mock.calls[0]![1] as string[];
+      const promptIndex = spawnArgs.indexOf('-p');
+      expect(promptIndex).toBeGreaterThan(-1);
+      const prompt = spawnArgs[promptIndex + 1];
+      expect(prompt).toContain('Context 1');
+      expect(prompt).toContain('Context 2');
+      expect(prompt).toContain('context1.md');
+      expect(prompt).toContain('context2.md');
     });
 
     it('should handle non-JSON output', async () => {
+      (fs.readFile as jest.Mock)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content');
+        
       const executePromise = provider.execute(
         'issue.md',
         'plan.md',
@@ -144,17 +196,25 @@ describe('ClaudeProvider', () => {
         undefined
       );
 
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
       mockProcess.stdout.emit('data', 'Regular output without JSON\n');
-      mockProcess.stdout.emit('data', 'More output\n');
+      mockProcess.stdout.emit('data', 'Modified: src/test.ts\n');
       mockProcess.emit('close', 0);
 
       const result = await executePromise;
 
       expect(result.success).toBe(true);
       expect(result.output).toContain('Regular output without JSON');
+      expect(result.filesChanged).toEqual(['src/test.ts']);
     });
 
     it('should handle signal abort', async () => {
+      (fs.readFile as jest.Mock)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content');
+        
       const abortController = new AbortController();
       const executePromise = provider.execute(
         'issue.md',
@@ -163,6 +223,9 @@ describe('ClaudeProvider', () => {
         abortController.signal
       );
 
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
       // Abort the execution
       abortController.abort();
       mockProcess.emit('close', 1);

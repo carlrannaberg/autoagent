@@ -83,10 +83,10 @@ export class PatternAnalyzer {
    */
   private analyzeFailurePatterns(): void {
     const failures = this.executionHistory.filter(e => !e.success && e.error);
-    
+
     // Group failures by error type
     const errorTypes: Map<string, number> = new Map();
-    
+
     failures.forEach(failure => {
       if (failure.error !== undefined && failure.error !== '') {
         const errorType = this.categorizeError(failure.error);
@@ -112,7 +112,7 @@ export class PatternAnalyzer {
    */
   private categorizeError(error: string): string {
     const lowerError = error.toLowerCase();
-    
+
     if (lowerError.includes('rate limit')) {
       return 'rate-limit';
     } else if (lowerError.includes('timeout')) {
@@ -133,7 +133,7 @@ export class PatternAnalyzer {
    */
   private analyzeFileChangePatterns(): void {
     const executionsWithFiles = this.executionHistory.filter(e => e.filesModified && e.filesModified.length > 0);
-    
+
     if (executionsWithFiles.length < 3) {return;}
 
     // Track file extensions
@@ -162,7 +162,7 @@ export class PatternAnalyzer {
     });
 
     // Check for test file patterns
-    const testFiles = this.executionHistory.filter(e => 
+    const testFiles = this.executionHistory.filter(e =>
       e.filesModified?.some(f => f.includes('test') || f.includes('spec'))
     ).length;
 
@@ -232,7 +232,7 @@ export class PatternAnalyzer {
     providerCounts.forEach((count, provider) => {
       const totalExecutions = this.executionHistory.length;
       const usage = count / totalExecutions;
-      
+
       if (usage > 0.8) {
         this.addPattern({
           name: `${provider}-dominant`,
@@ -290,7 +290,7 @@ export class PatternAnalyzer {
     patterns.forEach(pattern => {
       switch (pattern.name) {
         case 'high-failure-rate':
-          recommendations.push('Consider reviewing error logs and adjusting provider instructions');
+          recommendations.push('Consider reviewing error logs and adjusting AGENT.md instructions');
           break;
         case 'frequent-rate-limit':
           recommendations.push('Implement better rate limit handling or increase delay between requests');

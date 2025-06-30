@@ -1,8 +1,12 @@
 import { GeminiProvider } from '../../src/providers/GeminiProvider';
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 jest.mock('child_process');
+jest.mock('fs/promises');
+jest.mock('path');
 
 class MockChildProcess extends EventEmitter {
   stdout = new EventEmitter();
@@ -25,6 +29,12 @@ describe('GeminiProvider', () => {
     mockProcess = new MockChildProcess();
     mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
     mockSpawn.mockReturnValue(mockProcess as unknown as ReturnType<typeof spawn>);
+    
+    // Mock fs.readFile
+    (fs.readFile as jest.Mock).mockResolvedValue('File content');
+    
+    // Mock path.basename
+    (path.basename as jest.Mock).mockReturnValue('filename.txt');
   });
 
   describe('checkAvailability', () => {
@@ -65,6 +75,11 @@ describe('GeminiProvider', () => {
   describe('execute', () => {
     it('should execute successfully', async () => {
       const abortController = new AbortController();
+      (fs.readFile as jest.Mock)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content')
+        .mockResolvedValueOnce('Context file content');
+      
       const executePromise = provider.execute(
         'issue.md',
         'plan.md',
@@ -72,8 +87,12 @@ describe('GeminiProvider', () => {
         abortController.signal
       );
 
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
       // Simulate gemini output
       mockProcess.stdout.emit('data', 'Processing task...\n');
+      mockProcess.stdout.emit('data', 'Modified: src/file.ts\n');
       mockProcess.stdout.emit('data', 'Task completed successfully\n');
       mockProcess.emit('close', 0);
 
@@ -81,21 +100,30 @@ describe('GeminiProvider', () => {
 
       expect(result).toEqual({
         success: true,
-        output: 'Processing task...\nTask completed successfully\n',
+        output: 'Processing task...\nModified: src/file.ts\nTask completed successfully\n',
         provider: 'gemini',
         issueNumber: 0,
         duration: expect.any(Number),
         error: undefined,
-        filesChanged: undefined
+        filesChanged: ['src/file.ts']
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'gemini',
-        ['autonomous', '--issue', 'issue.md', '--plan', 'plan.md', '--context', 'option1']
-      );
+      // Gemini uses positional argument for prompt and --include-all flag
+      expect(mockSpawn).toHaveBeenCalled();
+      const callArgs = mockSpawn.mock.calls[0];
+      expect(callArgs).toBeDefined();
+      expect(callArgs![0]).toBe('gemini');
+      const commandArgs = callArgs![1] as string[];
+      expect(commandArgs[0]).toContain('Issue content');
+      expect(commandArgs[0]).toContain('Plan content');
+      expect(commandArgs).toContain('--include-all');
     });
 
     it('should handle execution errors', async () => {
+      (fs.readFile as jest.Mock)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content');
+        
       const executePromise = provider.execute(
         'issue.md',
         'plan.md',
@@ -103,6 +131,9 @@ describe('GeminiProvider', () => {
         undefined
       );
 
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
       mockProcess.stderr.emit('data', 'Error: Rate limit exceeded');
       mockProcess.emit('close', 1);
 
@@ -112,6 +143,10 @@ describe('GeminiProvider', () => {
     });
 
     it('should collect stderr output', async () => {
+      (fs.readFile as jest.Mock)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content');
+        
       const executePromise = provider.execute(
         'issue.md',
         'plan.md',
@@ -119,6 +154,9 @@ describe('GeminiProvider', () => {
         undefined
       );
 
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
       mockProcess.stderr.emit('data', 'Warning: Low quota\n');
       mockProcess.stderr.emit('data', 'Error: Failed to process\n');
       mockProcess.emit('close', 1);
@@ -129,6 +167,10 @@ describe('GeminiProvider', () => {
     });
 
     it('should handle signal abort', async () => {
+      (fs.readFile as jest.Mock)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content');
+        
       const abortController = new AbortController();
       const executePromise = provider.execute(
         'issue.md',
@@ -137,6 +179,9 @@ describe('GeminiProvider', () => {
         abortController.signal
       );
 
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
       // Abort the execution
       abortController.abort();
       mockProcess.emit('close', 1);
@@ -146,7 +191,11 @@ describe('GeminiProvider', () => {
       expect(result.error).toContain('aborted');
     });
 
-    it('should handle large output chunks', async () => {
+    it('should detect errors in output', async () => {
+      (fs.readFile as jest.Mock)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content');
+        
       const executePromise = provider.execute(
         'issue.md',
         'plan.md',
@@ -154,15 +203,18 @@ describe('GeminiProvider', () => {
         undefined
       );
 
-      // Simulate a large chunk of data
-      const largeData = 'x'.repeat(10000) + '\n';
-      mockProcess.stdout.emit('data', largeData);
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
+      // Simulate output with error
+      mockProcess.stdout.emit('data', 'Starting task...\n');
+      mockProcess.stdout.emit('data', 'Error: Failed to process file\n');
       mockProcess.emit('close', 0);
 
       const result = await executePromise;
 
-      expect(result.success).toBe(true);
-      expect(result.output?.length ?? 0).toBeGreaterThan(9000);
+      expect(result.success).toBe(false);
+      expect(result.output).toContain('Error: Failed to process');
     });
 
     it('should handle spawn errors during execution', async () => {
@@ -176,6 +228,10 @@ describe('GeminiProvider', () => {
     });
 
     it('should handle empty output', async () => {
+      (fs.readFile as jest.Mock)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content');
+        
       const executePromise = provider.execute(
         'issue.md',
         'plan.md',
@@ -183,6 +239,9 @@ describe('GeminiProvider', () => {
         undefined
       );
 
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
       // No output, just close with success
       mockProcess.emit('close', 0);
 

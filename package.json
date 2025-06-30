@@ -1,6 +1,6 @@
 {
   "name": "autoagent-cli",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "description": "Run autonomous AI agents using Claude or Gemini for task execution",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,8 +15,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "check": "run-p typecheck lint test",
+    "check:sequential": "npm run typecheck && npm run lint && npm test",
     "prepublishOnly": "npm run build",
     "release:patch": "./scripts/prepare-release.sh patch",
     "release:minor": "./scripts/prepare-release.sh minor",
@@ -63,6 +66,7 @@
     "@typescript-eslint/parser": "^7.3.1",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
+    "npm-run-all": "^4.1.5",
     "ts-jest": "^29.1.2",
     "typescript": "^5.4.3"
   },

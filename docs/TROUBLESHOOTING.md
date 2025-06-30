@@ -561,11 +561,14 @@ const logger = new Logger({ logLevel: 'debug' });
 ### Inspect provider output
 
 ```bash
-# Run provider directly
-claude --json < issues/1-setup.md
+# Run provider directly with issue content
+claude -p "$(cat issues/1-setup.md)"
 
-# Save output for inspection
-claude --json < issues/1-setup.md > output.json
+# Save output for inspection with JSON format
+claude -p "$(cat issues/1-setup.md)" --output-format json > output.json
+
+# For Gemini (uses positional argument)
+gemini "$(cat issues/1-setup.md)"
 ```
 
 ### Check file contents

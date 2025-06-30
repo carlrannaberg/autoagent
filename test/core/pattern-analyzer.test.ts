@@ -141,7 +141,7 @@ describe('PatternAnalyzer', () => {
 
       const recommendations = analyzer.getRecommendations();
       
-      expect(recommendations).toContain('Consider reviewing error logs and adjusting provider instructions');
+      expect(recommendations).toContain('Consider reviewing error logs and adjusting AGENT.md instructions');
     });
 
     it('should provide recommendations for rate limits', () => {

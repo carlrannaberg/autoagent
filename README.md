@@ -489,17 +489,18 @@ cd autoagent
 # Install dependencies
 npm install
 
-# Run tests
-npm test
+# Run all checks (recommended)
+npm run check
 
-# Run in watch mode
-npm run test:watch
+# Individual commands
+npm test              # Run tests
+npm run typecheck     # Check TypeScript types
+npm run lint          # Check code style
+npm run build         # Build the project
 
-# Build the project
-npm run build
-
-# Lint the code
-npm run lint
+# Development commands
+npm run test:watch    # Run tests in watch mode
+npm run lint:fix      # Auto-fix linting issues
 ```
 
 ## License
