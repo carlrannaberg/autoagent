@@ -54,9 +54,14 @@ export async function getFirstAvailableProvider(
   const checkOrder = preferredProviders || ['claude', 'gemini'];
 
   for (const providerType of checkOrder) {
-    const provider = createProvider(providerType);
-    if (await provider.checkAvailability()) {
-      return provider;
+    try {
+      const provider = createProvider(providerType);
+      if (await provider.checkAvailability()) {
+        return provider;
+      }
+    } catch (error) {
+      // Continue to next provider if creation or check fails
+      continue;
     }
   }
 

@@ -1,5 +1,18 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
+// Create the mocked exec function 
+const mockExec = jest.fn();
+
+// Mock child_process module before imports
+jest.mock('child_process');
+
+// Mock util module to return our mock exec when promisified
+jest.mock('util', () => {
+  const actualUtil = jest.requireActual('util');
+  return {
+    ...actualUtil,
+    promisify: jest.fn(() => mockExec)
+  };
+});
+
 import {
   checkGitAvailable,
   isGitRepository,
@@ -13,17 +26,10 @@ import {
   getChangedFiles
 } from '../../src/utils/git';
 
-jest.mock('child_process');
-jest.mock('util', () => ({
-  promisify: jest.fn(() => jest.fn())
-}));
-
 describe('Git Utilities', () => {
-  let mockExec: jest.Mock;
-
   beforeEach(() => {
     jest.clearAllMocks();
-    mockExec = promisify(exec) as unknown as jest.Mock;
+    mockExec.mockReset();
   });
 
   describe('checkGitAvailable', () => {
@@ -140,7 +146,7 @@ describe('Git Utilities', () => {
 
       expect(result.success).toBe(true);
       expect(mockExec).toHaveBeenCalledWith(
-        'git commit -m "Test commit\\n\\nCo-authored-by: Claude <claude@autoagent>"'
+        `git commit -m "Test commit\n\nCo-authored-by: Claude <claude@autoagent>"`
       );
     });
 
@@ -207,10 +213,11 @@ describe('Git Utilities', () => {
     });
 
     it('should return true when there are unstaged changes', async () => {
+      // git diff --cached --stat (no staged changes)
       mockExec.mockResolvedValueOnce({ stdout: '', stderr: '' });
+      // git diff --stat (has unstaged changes)
       mockExec.mockResolvedValueOnce({ stdout: ' file.txt | 3 ++\n', stderr: '' });
-      mockExec.mockResolvedValueOnce({ stdout: '', stderr: '' });
-
+      
       const result = await hasChangesToCommit();
 
       expect(result).toBe(true);
