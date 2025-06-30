@@ -483,7 +483,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/autoagent.git
+git clone https://github.com/carlrannaberg/autoagent.git
 cd autoagent
 
 # Install dependencies
@@ -508,11 +508,10 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- 📧 Email: support@autoagent.dev
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/autoagent/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/yourusername/autoagent/discussions)
-- 📖 Documentation: [Full Documentation](https://autoagent.dev/docs)
+- 🐛 Issues: [GitHub Issues](https://github.com/carlrannaberg/autoagent/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/carlrannaberg/autoagent/discussions)
+- 📖 Documentation: See the `docs/` directory for detailed guides
 
 ---
 
-Made with ❤️ by the AutoAgent team
+Made with ❤️ by Carl Rannaberg
