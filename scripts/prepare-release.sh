@@ -51,9 +51,8 @@ echo
 echo "Using Claude to analyze changes and prepare release..."
 
 # Use Claude to prepare the release
-# Add current directory access and verbose mode to see what's happening
-claude --add-dir . --dangerously-skip-permissions --verbose -p "$(cat << EOF
-You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
+# Add current directory access and let output stream to console
+claude --add-dir . --dangerously-skip-permissions -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 
 Current version: $CURRENT_VERSION
 
@@ -69,12 +68,10 @@ Please do the following:
    - Documentation: documentation only changes
 4. Update CHANGELOG.md with a new section for the new version, organizing changes by category
 5. Update the version in package.json using: npm version $RELEASE_TYPE --no-git-tag-version
-6. Create a git commit with message "chore: prepare for vX.X.X release" where X.X.X is the new version
-7. Create an annotated git tag using: git tag -a vX.X.X -m "Release vX.X.X"
+6. Create a git commit with message \"chore: prepare for vX.X.X release\" where X.X.X is the new version
+7. Create an annotated git tag using: git tag -a vX.X.X -m \"Release vX.X.X\"
 
-Follow the Keep a Changelog format and include the date. Only include categories that have changes.
-EOF
-)"
+Follow the Keep a Changelog format and include the date. Only include categories that have changes."
 
 echo
 echo "Release preparation complete!"
