@@ -296,6 +296,10 @@ ${todos.filter(t => t.includes('[x]')).join('\n')}`;
     }
   }
 
+  async readFile(filepath: string): Promise<string> {
+    return await fs.readFile(filepath, 'utf-8');
+  }
+
   async updateProviderInstructions(provider: 'CLAUDE' | 'GEMINI', content: string): Promise<void> {
     const filename = `${provider}.md`;
     const filepath = path.join(this.workspace, filename);
@@ -312,16 +316,11 @@ ${todos.filter(t => t.includes('[x]')).join('\n')}`;
     } catch {
       const claudeTemplate = `# Claude Instructions
 
-This file contains project-specific instructions for Claude. Customize this file to provide context about your project, coding standards, and any special requirements that Claude should follow when working on tasks.
+This file includes all provider instructions from PROVIDER_INSTRUCTIONS.md.
 
-## Project Context
-[Describe your project here]
+Provider-specific note: When executing tasks, Claude should use the \`claude\` CLI command with the \`--json\` flag for structured output.
 
-## Coding Standards
-[List your coding standards]
-
-## Additional Notes
-[Any other important information]
+Co-authorship attribution: "Co-authored-by: Claude <claude@autoagent-cli>"
 `;
       await fs.writeFile(claudePath, claudeTemplate, 'utf-8');
     }
@@ -331,16 +330,11 @@ This file contains project-specific instructions for Claude. Customize this file
     } catch {
       const geminiTemplate = `# Gemini Instructions
 
-This file contains project-specific instructions for Gemini. Customize this file to provide context about your project, coding standards, and any special requirements that Gemini should follow when working on tasks.
+This file includes all provider instructions from PROVIDER_INSTRUCTIONS.md.
 
-## Project Context
-[Describe your project here]
+Provider-specific note: When executing tasks, Gemini should use the \`gemini\` CLI command for task execution.
 
-## Coding Standards
-[List your coding standards]
-
-## Additional Notes
-[Any other important information]
+Co-authorship attribution: "Co-authored-by: Gemini <gemini@autoagent-cli>"
 `;
       await fs.writeFile(geminiPath, geminiTemplate, 'utf-8');
     }

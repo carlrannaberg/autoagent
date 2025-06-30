@@ -511,7 +511,16 @@ export class AutonomousAgent extends EventEmitter {
   private async prepareContextFiles(provider: ProviderName): Promise<string[]> {
     const contextFiles: string[] = [];
     
-    // Add provider instruction file
+    // Add common provider instructions file
+    const commonInstructionsPath = `${this.config.workspace}/PROVIDER_INSTRUCTIONS.md`;
+    try {
+      await this.fileManager.readFile(commonInstructionsPath);
+      contextFiles.push(commonInstructionsPath);
+    } catch {
+      // Common instructions file doesn't exist, skip it
+    }
+    
+    // Add provider-specific instruction file
     const providerFile = provider.toUpperCase() as 'CLAUDE' | 'GEMINI';
     const instructionPath = `${this.config.workspace}/${providerFile}.md`;
     
