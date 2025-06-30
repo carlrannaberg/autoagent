@@ -231,10 +231,47 @@ Technical details
     it('should create missing instruction files', async () => {
       (fs.access as jest.Mock).mockRejectedValue(new Error('Not found'));
       (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.symlink as jest.Mock).mockResolvedValue(undefined);
       
       await fileManager.createProviderInstructionsIfMissing();
       
-      expect(fs.writeFile).toHaveBeenCalledTimes(2);
+      // Should create AGENT.md and try to create symlinks for CLAUDE.md and GEMINI.md
+      expect(fs.writeFile).toHaveBeenCalledTimes(1);
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        path.join(mockWorkspace, 'AGENT.md'),
+        expect.stringContaining('# Agent Instructions'),
+        'utf-8'
+      );
+      
+      // Should attempt to create symlinks
+      expect(fs.symlink).toHaveBeenCalledTimes(2);
+      expect(fs.symlink).toHaveBeenCalledWith('AGENT.md', path.join(mockWorkspace, 'CLAUDE.md'));
+      expect(fs.symlink).toHaveBeenCalledWith('AGENT.md', path.join(mockWorkspace, 'GEMINI.md'));
+    });
+    
+    it('should not create existing files', async () => {
+      (fs.access as jest.Mock).mockResolvedValue(undefined);
+      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      
+      await fileManager.createProviderInstructionsIfMissing();
+      
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it('should create stub files when symlinks fail', async () => {
+      (fs.access as jest.Mock).mockRejectedValue(new Error('Not found'));
+      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.symlink as jest.Mock).mockRejectedValue(new Error('Symlinks not supported'));
+      
+      await fileManager.createProviderInstructionsIfMissing();
+      
+      // Should create AGENT.md plus stub files for CLAUDE.md and GEMINI.md
+      expect(fs.writeFile).toHaveBeenCalledTimes(3);
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        path.join(mockWorkspace, 'AGENT.md'),
+        expect.stringContaining('# Agent Instructions'),
+        'utf-8'
+      );
       expect(fs.writeFile).toHaveBeenCalledWith(
         path.join(mockWorkspace, 'CLAUDE.md'),
         expect.stringContaining('# Claude Instructions'),
@@ -246,14 +283,52 @@ Technical details
         'utf-8'
       );
     });
-    
-    it('should not create existing files', async () => {
-      (fs.access as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  describe('readFile', () => {
+    it('should read file with relative path', async () => {
+      (fs.readFile as jest.Mock).mockResolvedValue('file content');
+      
+      const content = await fileManager.readFile('test.md');
+      
+      expect(fs.readFile).toHaveBeenCalledWith(
+        path.join(mockWorkspace, 'test.md'),
+        'utf-8'
+      );
+      expect(content).toBe('file content');
+    });
+
+    it('should read file with absolute path', async () => {
+      (fs.readFile as jest.Mock).mockResolvedValue('file content');
+      
+      const absolutePath = '/absolute/path/test.md';
+      const content = await fileManager.readFile(absolutePath);
+      
+      expect(fs.readFile).toHaveBeenCalledWith(absolutePath, 'utf-8');
+      expect(content).toBe('file content');
+    });
+  });
+
+  describe('writeFile', () => {
+    it('should write file with relative path', async () => {
       (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
       
-      await fileManager.createProviderInstructionsIfMissing();
+      await fileManager.writeFile('test.md', 'content');
       
-      expect(fs.writeFile).not.toHaveBeenCalled();
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        path.join(mockWorkspace, 'test.md'),
+        'content',
+        'utf-8'
+      );
+    });
+
+    it('should write file with absolute path', async () => {
+      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      
+      const absolutePath = '/absolute/path/test.md';
+      await fileManager.writeFile(absolutePath, 'content');
+      
+      expect(fs.writeFile).toHaveBeenCalledWith(absolutePath, 'content', 'utf-8');
     });
   });
 });

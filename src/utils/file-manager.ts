@@ -345,7 +345,8 @@ This file gives guidance to agentic coding tools on codebase structure, build/te
     }
     
     // Create symlinks or stub files for backward compatibility
-    for (const [providerPath, providerName] of [[claudePath, 'Claude'], [geminiPath, 'Gemini']]) {
+    const providers: Array<[string, string]> = [[claudePath, 'Claude'], [geminiPath, 'Gemini']];
+    for (const [providerPath, providerName] of providers) {
       try {
         await fs.access(providerPath);
       } catch {

@@ -29,7 +29,7 @@ Test project
 TypeScript strict mode`;
 
       mockFileManager.readProviderInstructions.mockResolvedValue(existingContent);
-      mockFileManager.updateProviderInstructions.mockResolvedValue(undefined);
+      mockFileManager.writeFile.mockResolvedValue(undefined);
 
       const executionResult: ExecutionResult = {
         success: true,
@@ -45,14 +45,14 @@ TypeScript strict mode`;
       // Verify file was read
       expect(mockFileManager.readProviderInstructions).toHaveBeenCalledWith('CLAUDE');
 
-      // Verify file was updated
-      expect(mockFileManager.updateProviderInstructions).toHaveBeenCalledWith(
-        'CLAUDE',
+      // Verify file was updated (now uses writeFile for AGENT.md)
+      expect(mockFileManager.writeFile).toHaveBeenCalledWith(
+        'AGENT.md',
         expect.any(String)
       );
 
       // Check the updated content includes execution history
-      const updatedContent = mockFileManager.updateProviderInstructions.mock.calls[0]?.[1];
+      const updatedContent = mockFileManager.writeFile.mock.calls[0]?.[1];
       expect(updatedContent).toContain('## Execution History');
       expect(updatedContent).toContain('Successfully completed Issue #1: Test Issue');
       expect(updatedContent).toContain('## Performance Metrics');
@@ -61,7 +61,7 @@ TypeScript strict mode`;
 
     it('should handle failed executions', async () => {
       mockFileManager.readProviderInstructions.mockResolvedValue('# Gemini Instructions');
-      mockFileManager.updateProviderInstructions.mockResolvedValue(undefined);
+      mockFileManager.writeFile.mockResolvedValue(undefined);
 
       const executionResult: ExecutionResult = {
         success: false,
@@ -73,7 +73,7 @@ TypeScript strict mode`;
 
       await providerLearning.updateProviderLearnings(executionResult);
 
-      const updatedContent = mockFileManager.updateProviderInstructions.mock.calls[0]?.[1];
+      const updatedContent = mockFileManager.writeFile.mock.calls[0]?.[1];
       expect(updatedContent).toContain('Failed Issue #2');
     });
 
@@ -82,8 +82,10 @@ TypeScript strict mode`;
       
       // Mock to simulate persistent file updates
       mockFileManager.readProviderInstructions.mockImplementation(() => Promise.resolve(currentContent));
-      mockFileManager.updateProviderInstructions.mockImplementation((_provider, content) => {
-        currentContent = content;
+      mockFileManager.writeFile.mockImplementation((_path, content) => {
+        if (_path === 'AGENT.md') {
+          currentContent = content;
+        }
         return Promise.resolve();
       });
 
@@ -135,8 +137,10 @@ TypeScript strict mode`;
       
       // Mock to simulate persistent file updates
       mockFileManager.readProviderInstructions.mockImplementation(() => Promise.resolve(currentContent));
-      mockFileManager.updateProviderInstructions.mockImplementation((_provider, content) => {
-        currentContent = content;
+      mockFileManager.writeFile.mockImplementation((_path, content) => {
+        if (_path === 'AGENT.md') {
+          currentContent = content;
+        }
         return Promise.resolve();
       });
 
@@ -161,7 +165,7 @@ TypeScript strict mode`;
     it('should clear cache for specific provider', async () => {
       // Populate cache
       mockFileManager.readProviderInstructions.mockResolvedValue('# Claude Instructions');
-      mockFileManager.updateProviderInstructions.mockResolvedValue(undefined);
+      mockFileManager.writeFile.mockResolvedValue(undefined);
 
       await providerLearning.updateProviderLearnings({
         success: true,

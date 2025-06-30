@@ -469,7 +469,7 @@ describe('AutonomousAgent', () => {
         message: expect.stringContaining('feat: Complete issue'),
         coAuthor: expect.objectContaining({
           name: 'Claude',
-          email: 'claude@autoagent'
+          email: 'claude@autoagent-cli'
         })
       });
     });
