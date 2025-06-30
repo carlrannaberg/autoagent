@@ -92,6 +92,9 @@ When you make changes to files, please clearly indicate which files were modifie
       // Use JSON output format if available
       args.push('--output-format', 'json');
       
+      // Skip permission prompts for autonomous operation
+      args.push('--dangerously-skip-permissions');
+      
       const { stdout, stderr, code } = await this.spawnProcess('claude', args, signal);
 
       if (code !== 0) {

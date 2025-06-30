@@ -121,6 +121,7 @@ describe('ClaudeProvider', () => {
       expect(callArgs![1]).toContain('-p');
       expect(callArgs![1]).toContain('--output-format');
       expect(callArgs![1]).toContain('json');
+      expect(callArgs![1]).toContain('--dangerously-skip-permissions');
     });
 
     it('should handle execution errors', async () => {

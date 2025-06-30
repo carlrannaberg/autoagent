@@ -86,6 +86,9 @@ When you make changes to files, please clearly indicate which files were modifie
       // Add include-all flag to give access to current directory
       args.push('--include-all');
       
+      // Enable YOLO mode for autonomous operation (auto-approve all tool calls)
+      args.push('--yolo');
+      
       const { stdout, stderr, code } = await this.spawnProcess('gemini', args, signal);
 
       if (code !== 0) {
