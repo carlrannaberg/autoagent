@@ -3,7 +3,7 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #16]** Prepare for npm package publication - `issues/16-prepare-for-npm-package-publication.md`
+- [x] **[Issue #16]** Prepare for npm package publication - `issues/16-prepare-for-npm-package-publication.md`
 
 ## Completed Issues
 - [x] **[Issue #15]** Set up CI/CD and GitHub Actions - `issues/15-set-up-ci-cd-and-github-actions.md`

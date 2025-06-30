@@ -1,6 +1,6 @@
 {
   "name": "autoagent",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Run autonomous AI agents using Claude or Gemini for task execution",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,7 +8,8 @@
     "autoagent": "./bin/autoagent"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.prod.json",
+    "build:dev": "tsc",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
     "test": "jest",
@@ -28,20 +29,23 @@
     "cli",
     "typescript"
   ],
-  "author": "",
+  "author": "AutoAgent Contributors",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/autoagent.git"
+    "url": "https://github.com/autoagent/autoagent.git"
   },
+  "bugs": {
+    "url": "https://github.com/autoagent/autoagent/issues"
+  },
+  "homepage": "https://github.com/autoagent/autoagent#readme",
   "engines": {
     "node": ">=14.0.0"
   },
   "files": [
-    "dist",
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
     "bin",
-    "templates",
-    "examples",
     "README.md",
     "LICENSE"
   ],
