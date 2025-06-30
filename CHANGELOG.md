@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes yet._
 
+## [0.0.4] - 2025-06-30
+
+### Fixed
+- Added streaming output format to Claude commands in release scripts for better visibility during release preparation
+
+### Changed
+- Improved bootstrap issue generation with more descriptive titles and language
+  - Bootstrap issue titles now reference the specific plan file being implemented
+  - Updated issue content to use clearer terminology ("implement" instead of "bootstrap")
+
+### Documentation
+- Added critical release safety guidelines to AGENT.md to prevent accidental tag modifications for published versions
+
 ## [0.0.3] - 2025-06-30
 
 ### Fixed
