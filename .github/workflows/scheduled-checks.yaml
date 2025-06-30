@@ -23,7 +23,7 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 22.x
-        cache: 'npm'
+        
     
     - name: Check for outdated dependencies
       run: |
@@ -109,11 +109,11 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 22.x
-        cache: 'npm'
+        
     
     - name: Install and build
       run: |
-        npm ci
+        npm install
         npm run build
     
     - name: Check package size
