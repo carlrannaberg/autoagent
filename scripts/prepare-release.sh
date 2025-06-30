@@ -33,6 +33,23 @@ echo "Preparing $RELEASE_TYPE release..."
 CURRENT_VERSION=$(node -p "require('./package.json').version")
 echo "Current version: $CURRENT_VERSION"
 
+# Get the last tag
+LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+if [ -z "$LAST_TAG" ]; then
+    echo "No previous tags found. This will be the first tagged release."
+    LAST_TAG="HEAD"
+else
+    echo "Last release tag: $LAST_TAG"
+fi
+
+# Show recent commits
+echo
+echo "Commits since last release:"
+echo "==========================="
+git log ${LAST_TAG}..HEAD --oneline | head -20
+echo
+echo "Using Claude to analyze changes and prepare release..."
+
 # Use Claude to prepare the release
 claude --no-conversation << EOF
 You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
@@ -40,13 +57,21 @@ You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 Current version: $CURRENT_VERSION
 
 Please do the following:
-1. Look at the git log to see what changed since the last release
-2. Update CHANGELOG.md with a new section for the new version
-3. Update the version in package.json using npm version $RELEASE_TYPE --no-git-tag-version
-4. Create a git commit with message "chore: prepare for vX.X.X release"
-5. Create an annotated git tag for the release
+1. Find the last release tag using: git describe --tags --abbrev=0
+2. Get all commits since that tag using: git log <last-tag>..HEAD --oneline
+3. Analyze these commits and categorize them as:
+   - Fixed: bug fixes
+   - Added: new features
+   - Changed: changes to existing functionality
+   - Removed: removed features
+   - Security: security fixes
+   - Documentation: documentation only changes
+4. Update CHANGELOG.md with a new section for the new version, organizing changes by category
+5. Update the version in package.json using: npm version $RELEASE_TYPE --no-git-tag-version
+6. Create a git commit with message "chore: prepare for vX.X.X release" where X.X.X is the new version
+7. Create an annotated git tag using: git tag -a vX.X.X -m "Release vX.X.X"
 
-Make sure to include all relevant changes in the CHANGELOG.md based on the commit history.
+Follow the Keep a Changelog format and include the date. Only include categories that have changes.
 EOF
 
 echo
