@@ -152,7 +152,7 @@ if [ "$CAN_UNDO_COMMIT" = true ]; then
         # Revert CHANGELOG.md
         echo "Reverting CHANGELOG.md..."
         # Use Claude to intelligently move the changelog entries
-        claude -p "$(cat << EOF
+        claude --dangerously-skip-permissions -p "$(cat << EOF
 Please edit the CHANGELOG.md file to move all entries under the [${VERSION}] section back to [Unreleased].
 
 Current CHANGELOG.md content:

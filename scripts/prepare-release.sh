@@ -51,7 +51,7 @@ echo
 echo "Using Claude to analyze changes and prepare release..."
 
 # Use Claude to prepare the release
-claude -p "$(cat << EOF
+claude --dangerously-skip-permissions -p "$(cat << EOF
 You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 
 Current version: $CURRENT_VERSION
