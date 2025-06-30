@@ -71,7 +71,7 @@ export class ProviderLearning {
       insights.bestPractices.push(...patternRecommendations);
     }
     
-    // Update the provider instruction file
+    // Update the AGENT.md file (provider files are symlinks to it)
     const updatedContent = this.formatProviderFile(
       provider,
       existingContent,
@@ -80,7 +80,8 @@ export class ProviderLearning {
       result
     );
     
-    await this.fileManager.updateProviderInstructions(provider, updatedContent);
+    // Write to AGENT.md instead of provider-specific files
+    await this.fileManager.writeFile('AGENT.md', updatedContent);
   }
 
   /**

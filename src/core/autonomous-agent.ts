@@ -483,7 +483,7 @@ export class AutonomousAgent extends EventEmitter {
         message: commitMessage,
         coAuthor: (this.config.includeCoAuthoredBy === true && result.provider !== undefined) ? {
           name: result.provider.charAt(0).toUpperCase() + result.provider.slice(1),
-          email: `${result.provider}@autoagent`
+          email: `${result.provider}@autoagent-cli`
         } : undefined
       });
 
@@ -511,13 +511,13 @@ export class AutonomousAgent extends EventEmitter {
   private async prepareContextFiles(provider: ProviderName): Promise<string[]> {
     const contextFiles: string[] = [];
     
-    // Add common provider instructions file
-    const commonInstructionsPath = `${this.config.workspace}/PROVIDER_INSTRUCTIONS.md`;
+    // Add common agent instructions file
+    const agentInstructionsPath = `${this.config.workspace}/AGENT.md`;
     try {
-      await this.fileManager.readFile(commonInstructionsPath);
-      contextFiles.push(commonInstructionsPath);
+      await this.fileManager.readFile(agentInstructionsPath);
+      contextFiles.push(agentInstructionsPath);
     } catch {
-      // Common instructions file doesn't exist, skip it
+      // Agent instructions file doesn't exist, skip it
     }
     
     // Add provider-specific instruction file

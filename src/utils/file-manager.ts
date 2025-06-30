@@ -297,7 +297,13 @@ ${todos.filter(t => t.includes('[x]')).join('\n')}`;
   }
 
   async readFile(filepath: string): Promise<string> {
-    return await fs.readFile(filepath, 'utf-8');
+    const fullPath = path.isAbsolute(filepath) ? filepath : path.join(this.workspace, filepath);
+    return await fs.readFile(fullPath, 'utf-8');
+  }
+
+  async writeFile(filepath: string, content: string): Promise<void> {
+    const fullPath = path.isAbsolute(filepath) ? filepath : path.join(this.workspace, filepath);
+    await fs.writeFile(fullPath, content, 'utf-8');
   }
 
   async updateProviderInstructions(provider: 'CLAUDE' | 'GEMINI', content: string): Promise<void> {
@@ -308,35 +314,55 @@ ${todos.filter(t => t.includes('[x]')).join('\n')}`;
   }
 
   async createProviderInstructionsIfMissing(): Promise<void> {
+    const agentPath = path.join(this.workspace, 'AGENT.md');
     const claudePath = path.join(this.workspace, 'CLAUDE.md');
     const geminiPath = path.join(this.workspace, 'GEMINI.md');
     
+    // Create AGENT.md if it doesn't exist
     try {
-      await fs.access(claudePath);
+      await fs.access(agentPath);
     } catch {
-      const claudeTemplate = `# Claude Instructions
+      const agentTemplate = `# Agent Instructions
 
-This file includes all provider instructions from PROVIDER_INSTRUCTIONS.md.
+This file gives guidance to agentic coding tools on codebase structure, build/test commands, architecture, etc.
 
-Provider-specific note: When executing tasks, Claude should use the \`claude\` CLI command with the \`--json\` flag for structured output.
+## Project Context
+[Describe your project here]
 
-Co-authorship attribution: "Co-authored-by: Claude <claude@autoagent-cli>"
+## Technology Stack
+[List your technology stack]
+
+## Coding Standards
+[List your coding standards]
+
+## Build and Test Commands
+[List your build and test commands]
+
+## Additional Notes
+[Any other important information]
 `;
-      await fs.writeFile(claudePath, claudeTemplate, 'utf-8');
+      await fs.writeFile(agentPath, agentTemplate, 'utf-8');
     }
     
-    try {
-      await fs.access(geminiPath);
-    } catch {
-      const geminiTemplate = `# Gemini Instructions
+    // Create symlinks or stub files for backward compatibility
+    for (const [providerPath, providerName] of [[claudePath, 'Claude'], [geminiPath, 'Gemini']]) {
+      try {
+        await fs.access(providerPath);
+      } catch {
+        // Try to create symlink first
+        try {
+          await fs.symlink('AGENT.md', providerPath);
+        } catch {
+          // If symlink fails (e.g., on Windows or permission issues), create a stub file
+          const stubContent = `# ${providerName} Instructions
 
-This file includes all provider instructions from PROVIDER_INSTRUCTIONS.md.
+This file is for backward compatibility. All agent instructions are in AGENT.md.
 
-Provider-specific note: When executing tasks, Gemini should use the \`gemini\` CLI command for task execution.
-
-Co-authorship attribution: "Co-authored-by: Gemini <gemini@autoagent-cli>"
+Please see AGENT.md for the actual instructions.
 `;
-      await fs.writeFile(geminiPath, geminiTemplate, 'utf-8');
+          await fs.writeFile(providerPath, stubContent, 'utf-8');
+        }
+      }
     }
   }
 

@@ -346,6 +346,21 @@ AutoAgent uses a layered configuration system:
 
 For detailed configuration documentation, see [docs/CONFIG.md](docs/CONFIG.md).
 
+## Agent Instructions (AGENT.md)
+
+AutoAgent uses the `AGENT.md` file to provide context to AI providers about your project. This file gives guidance to agentic coding tools on codebase structure, build/test commands, architecture, etc.
+
+The `AGENT.md` file is automatically created when you run AutoAgent for the first time. It includes:
+- Project context and description
+- Technology stack
+- Coding standards
+- Build and test commands
+- Execution history (automatically updated)
+
+For backward compatibility, `CLAUDE.md` and `GEMINI.md` are created as symlinks to `AGENT.md` (or stub files on systems that don't support symlinks).
+
+Learn more about the AGENT.md standard at [https://agent.md](https://agent.md).
+
 ## Examples
 
 ### Example 1: Batch Processing
