@@ -35,6 +35,25 @@ npm run release:rollback v0.0.2 # Rollback a release that wasn't published
 
 Always run tests before committing changes to ensure code quality.
 
+## Release Safety Guidelines
+
+**CRITICAL: NEVER modify tags for published releases!**
+
+Before making ANY tag changes, always check if the version is already published:
+```bash
+# Check if version exists on npm
+npm view autoagent-cli@x.x.x
+
+# If published, DO NOT move the tag - create a new version instead
+# Only rollback tags for unpublished releases
+```
+
+**Release Process Rules:**
+1. **Check npm first**: Always verify if a version is published before touching tags
+2. **No tag modifications**: Never delete/move tags for published versions 
+3. **Forward only**: If you need to include more changes, bump to next version
+4. **Rollback safely**: Only use `npm run release:rollback` for unpublished versions
+
 **Tip:** Run `npm run check` before pushing to catch type errors, linting issues, and test failures early. This runs all validations concurrently for faster feedback.
 
 ## Technology Stack
