@@ -282,9 +282,9 @@ ${todos.filter(t => t.includes('[x]')).join('\n')}`;
     await fs.writeFile(this.todoPath, content, 'utf-8');
   }
 
-  async readProviderInstructions(provider: 'CLAUDE' | 'GEMINI'): Promise<string> {
-    const filename = `${provider}.md`;
-    const filepath = path.join(this.workspace, filename);
+  async readProviderInstructions(_provider: 'CLAUDE' | 'GEMINI'): Promise<string> {
+    // Always read from AGENT.md now - provider parameter kept for backward compatibility
+    const filepath = path.join(this.workspace, 'AGENT.md');
     
     try {
       return await fs.readFile(filepath, 'utf-8');

@@ -273,6 +273,13 @@ export class PatternAnalyzer {
   }
 
   /**
+   * Get execution count
+   */
+  getExecutionCount(): number {
+    return this.executionHistory.length;
+  }
+
+  /**
    * Get detected patterns
    */
   getPatterns(): Pattern[] {

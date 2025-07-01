@@ -16,19 +16,15 @@ describe('ProviderLearning', () => {
   });
 
   describe('updateProviderLearnings', () => {
-    it('should update provider instructions with execution results', async () => {
-      // Mock existing provider file content
-      const existingContent = `# Claude Instructions
+    it('should update AGENT.md with insights but no execution history', async () => {
+      const existingContent = `# Agent Instructions
 
-This file contains project-specific instructions for Claude.
+This file gives guidance to agentic coding tools.
 
 ## Project Context
-Test project
-
-## Coding Standards
-TypeScript strict mode`;
-
-      mockFileManager.readProviderInstructions.mockResolvedValue(existingContent);
+Test project`;
+      
+      mockFileManager.readFile.mockResolvedValue(existingContent);
       mockFileManager.writeFile.mockResolvedValue(undefined);
 
       const executionResult: ExecutionResult = {
@@ -42,27 +38,25 @@ TypeScript strict mode`;
 
       await providerLearning.updateProviderLearnings(executionResult);
 
-      // Verify file was read
-      expect(mockFileManager.readProviderInstructions).toHaveBeenCalledWith('CLAUDE');
-
-      // Verify file was updated (now uses writeFile for AGENT.md)
+      // Verify AGENT.md was read and written
+      expect(mockFileManager.readFile).toHaveBeenCalledWith('AGENT.md');
       expect(mockFileManager.writeFile).toHaveBeenCalledWith(
         'AGENT.md',
         expect.any(String)
       );
-
-      // Check the updated content includes execution history
+      
+      // Verify no execution history is added
       const updatedContent = mockFileManager.writeFile.mock.calls[0]?.[1];
-      expect(updatedContent).toContain('## Execution History');
-      expect(updatedContent).toContain('Successfully completed Issue #1: Test Issue');
-      expect(updatedContent).toContain('## Performance Metrics');
+      expect(updatedContent).not.toContain('## Execution History');
+      expect(updatedContent).not.toContain('## Performance Metrics');
+      expect(updatedContent).not.toContain('## Detected Patterns');
       expect(updatedContent).toContain('## Learning Insights');
     });
 
-    it('should handle failed executions', async () => {
-      mockFileManager.readProviderInstructions.mockResolvedValue('# Gemini Instructions');
+    it('should handle failed executions and update insights', async () => {
+      mockFileManager.readFile.mockResolvedValue('# Agent Instructions');
       mockFileManager.writeFile.mockResolvedValue(undefined);
-
+      
       const executionResult: ExecutionResult = {
         success: false,
         issueNumber: 2,
@@ -73,49 +67,34 @@ TypeScript strict mode`;
 
       await providerLearning.updateProviderLearnings(executionResult);
 
-      const updatedContent = mockFileManager.writeFile.mock.calls[0]?.[1];
-      expect(updatedContent).toContain('Failed Issue #2');
+      // Verify file was updated
+      expect(mockFileManager.writeFile).toHaveBeenCalledWith('AGENT.md', expect.any(String));
     });
 
-    it('should calculate metrics correctly over multiple executions', async () => {
-      let currentContent = '# Claude Instructions';
+    it('should accumulate insights over multiple executions', async () => {
+      let currentContent = '# Agent Instructions';
       
-      // Mock to simulate persistent file updates
-      mockFileManager.readProviderInstructions.mockImplementation(() => Promise.resolve(currentContent));
+      // Mock to simulate file updates
+      mockFileManager.readFile.mockImplementation(() => Promise.resolve(currentContent));
       mockFileManager.writeFile.mockImplementation((_path, content) => {
-        if (_path === 'AGENT.md') {
-          currentContent = content;
-        }
+        currentContent = content;
         return Promise.resolve();
       });
 
-      // First execution
-      await providerLearning.updateProviderLearnings({
-        success: true,
-        issueNumber: 1,
-        duration: 30000,
-        provider: 'claude'
-      });
+      // Multiple executions
+      for (let i = 1; i <= 3; i++) {
+        await providerLearning.updateProviderLearnings({
+          success: i !== 3,
+          issueNumber: i,
+          duration: 30000 + (i * 10000),
+          provider: 'claude'
+        });
+      }
 
-      // Second execution
-      await providerLearning.updateProviderLearnings({
-        success: true,
-        issueNumber: 2,
-        duration: 40000,
-        provider: 'claude'
-      });
-
-      // Third execution (failure)
-      await providerLearning.updateProviderLearnings({
-        success: false,
-        issueNumber: 3,
-        duration: 20000,
-        provider: 'claude'
-      });
-
-      expect(currentContent).toContain('Total Executions**: 3');
-      expect(currentContent).toContain('Success Rate**: 66.7%');
-      expect(currentContent).toContain('2 successful, 1 failed');
+      // Verify insights are generated but no history
+      expect(currentContent).toContain('## Learning Insights');
+      expect(currentContent).not.toContain('## Execution History');
+      expect(currentContent).not.toContain('Total Executions');
     });
 
     it('should ignore executions without provider', async () => {
@@ -132,18 +111,10 @@ TypeScript strict mode`;
       expect(mockFileManager.updateProviderInstructions).not.toHaveBeenCalled();
     });
 
-    it('should detect patterns after multiple executions', async () => {
-      let currentContent = '# Claude Instructions';
+    it('should generate insights from patterns', async () => {
+      mockFileManager.readFile.mockResolvedValue('# Agent Instructions');
+      mockFileManager.writeFile.mockResolvedValue(undefined);
       
-      // Mock to simulate persistent file updates
-      mockFileManager.readProviderInstructions.mockImplementation(() => Promise.resolve(currentContent));
-      mockFileManager.writeFile.mockImplementation((_path, content) => {
-        if (_path === 'AGENT.md') {
-          currentContent = content;
-        }
-        return Promise.resolve();
-      });
-
       // Simulate multiple successful executions
       for (let i = 1; i <= 10; i++) {
         await providerLearning.updateProviderLearnings({
@@ -155,18 +126,20 @@ TypeScript strict mode`;
         });
       }
 
-      expect(currentContent).toContain('## Detected Patterns');
-      expect(currentContent).toContain('High Confidence Patterns');
-      expect(currentContent).toContain('Consistently successful execution pattern');
+      // Get the last written content
+      const lastCall = mockFileManager.writeFile.mock.calls[mockFileManager.writeFile.mock.calls.length - 1];
+      const finalContent = lastCall?.[1];
+      
+      // Verify insights are present but no patterns section
+      expect(finalContent).toContain('## Learning Insights');
+      expect(finalContent).toContain('Best Practices');
+      expect(finalContent).not.toContain('## Detected Patterns');
     });
   });
 
   describe('clearCache', () => {
     it('should clear cache for specific provider', async () => {
-      // Populate cache
-      mockFileManager.readProviderInstructions.mockResolvedValue('# Claude Instructions');
-      mockFileManager.writeFile.mockResolvedValue(undefined);
-
+      // Populate pattern analyzer with data
       await providerLearning.updateProviderLearnings({
         success: true,
         issueNumber: 1,
@@ -177,7 +150,7 @@ TypeScript strict mode`;
       // Clear cache
       providerLearning.clearCache('claude');
 
-      // Next update should re-read metrics
+      // Next update should work without errors
       await providerLearning.updateProviderLearnings({
         success: true,
         issueNumber: 2,
@@ -185,8 +158,9 @@ TypeScript strict mode`;
         provider: 'claude'
       });
 
-      // Should have read the file twice (once for each update after cache clear)
-      expect(mockFileManager.readProviderInstructions).toHaveBeenCalledTimes(2);
+      // Verify no files were read or written
+      expect(mockFileManager.readProviderInstructions).not.toHaveBeenCalled();
+      expect(mockFileManager.writeFile).not.toHaveBeenCalled();
     });
 
     it('should clear all caches when no provider specified', () => {
