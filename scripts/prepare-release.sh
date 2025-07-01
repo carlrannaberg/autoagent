@@ -54,10 +54,6 @@ echo "Using Claude to analyze changes and prepare release..."
 echo "This process typically takes 3-5 minutes as Claude analyzes the codebase..."
 
 # Use Claude to prepare the release
-# Add current directory access and let output stream to console
-echo "Executing Claude command..."
-echo "Command: claude --add-dir . --dangerously-skip-permissions --verbose --max-turns 30 -p [prompt]"
-
 # Temporarily disable exit on error for Claude command
 set +e
 claude --add-dir . --dangerously-skip-permissions --output-format stream-json --verbose --max-turns 30 -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
