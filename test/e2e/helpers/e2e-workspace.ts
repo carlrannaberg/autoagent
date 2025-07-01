@@ -17,11 +17,11 @@ export class E2EWorkspace {
   }
 
   async cleanup(): Promise<void> {
-    if (this.workspace) {
+    if (this.workspace !== null) {
       try {
         await fs.rm(this.workspace, { recursive: true, force: true });
       } catch (error) {
-        console.warn(`Failed to cleanup workspace: ${error}`);
+        console.warn(`Failed to cleanup workspace: ${error as string}`);
       }
       this.workspace = null;
       this.gitInitialized = false;
@@ -29,7 +29,7 @@ export class E2EWorkspace {
   }
 
   async initGit(): Promise<void> {
-    if (!this.workspace) {
+    if (this.workspace === null) {
       throw new Error('Workspace not created');
     }
 
@@ -40,7 +40,7 @@ export class E2EWorkspace {
   }
 
   async createFile(relativePath: string, content: string): Promise<void> {
-    if (!this.workspace) {
+    if (this.workspace === null) {
       throw new Error('Workspace not created');
     }
 
@@ -58,7 +58,7 @@ export class E2EWorkspace {
   }
 
   async readFile(relativePath: string): Promise<string> {
-    if (!this.workspace) {
+    if (this.workspace === null) {
       throw new Error('Workspace not created');
     }
 
@@ -66,7 +66,7 @@ export class E2EWorkspace {
   }
 
   async fileExists(relativePath: string): Promise<boolean> {
-    if (!this.workspace) {
+    if (this.workspace === null) {
       throw new Error('Workspace not created');
     }
 
@@ -79,7 +79,7 @@ export class E2EWorkspace {
   }
 
   async listFiles(relativePath = '.'): Promise<string[]> {
-    if (!this.workspace) {
+    if (this.workspace === null) {
       throw new Error('Workspace not created');
     }
 
@@ -92,7 +92,7 @@ export class E2EWorkspace {
   }
 
   async commit(message: string): Promise<void> {
-    if (!this.workspace || !this.gitInitialized) {
+    if (this.workspace === null || !this.gitInitialized) {
       throw new Error('Git not initialized');
     }
 
@@ -101,7 +101,7 @@ export class E2EWorkspace {
   }
 
   getPath(): string {
-    if (!this.workspace) {
+    if (this.workspace === null) {
       throw new Error('Workspace not created');
     }
     return this.workspace;

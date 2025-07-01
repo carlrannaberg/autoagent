@@ -1,5 +1,5 @@
 import type { AIProvider } from '@/types/ai-provider';
-import type { ExecutionResult } from '@/types/execution';
+// import type { ExecutionResult } from '@/types/execution';
 
 export interface ProviderSimulatorOptions {
   name: string;
@@ -27,13 +27,13 @@ export class ProviderSimulator implements AIProvider {
 
   constructor(options: ProviderSimulatorOptions) {
     this.name = options.name;
-    this.rateLimitThreshold = options.rateLimitThreshold || Infinity;
-    this.errorRate = options.errorRate || 0;
-    this.responseDelay = options.responseDelay || 100;
-    this.customResponses = options.customResponses || new Map();
+    this.rateLimitThreshold = options.rateLimitThreshold ?? Infinity;
+    this.errorRate = options.errorRate ?? 0;
+    this.responseDelay = options.responseDelay ?? 100;
+    this.customResponses = options.customResponses ?? new Map();
   }
 
-  async execute(prompt: string, options: any = {}): Promise<string> {
+  async execute(prompt: string, _options: any = {}): Promise<string> {
     const startTime = Date.now();
     this.callCount++;
 
@@ -75,7 +75,7 @@ export class ProviderSimulator implements AIProvider {
       throw customResponse;
     }
 
-    const response = customResponse || this.generateDefaultResponse(prompt);
+    const response = customResponse ?? this.generateDefaultResponse(prompt);
     this.executionHistory.push({
       prompt,
       response,
@@ -171,7 +171,7 @@ export class ProviderFailoverSimulator {
         });
         
         if (i === this.providers.length - 1) {
-          throw new Error(`All providers failed. Last error: ${error}`);
+          throw new Error(`All providers failed. Last error: ${error as string}`);
         }
       }
     }

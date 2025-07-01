@@ -55,10 +55,10 @@ describe('Provider Performance Benchmarks', () => {
       const timer = new BenchmarkTimer();
       
       timer.mark('claude-init');
-      const claude = createProvider('claude', config);
+      createProvider('claude', config);
       
       timer.mark('gemini-init');
-      const gemini = createProvider('gemini', config);
+      createProvider('gemini', config);
       
       timer.mark('complete');
     });
@@ -139,7 +139,9 @@ describe('Provider Performance Benchmarks', () => {
         // Simulate hitting rate limit
         try {
           await provider.execute('prompt', { simulateRateLimit: true });
-        } catch {}
+        } catch {
+          // Expected rate limit error
+        }
         
         // Check if still rate limited
         for (let i = 0; i < 10; i++) {

@@ -57,10 +57,10 @@ export class OutputParser {
     const completedMatch = output.match(/completed:\s*(\d+)/i);
     const failedMatch = output.match(/failed:\s*(\d+)/i);
 
-    if (pendingMatch) counts.pending = parseInt(pendingMatch[1], 10);
-    if (runningMatch) counts.running = parseInt(runningMatch[1], 10);
-    if (completedMatch) counts.completed = parseInt(completedMatch[1], 10);
-    if (failedMatch) counts.failed = parseInt(failedMatch[1], 10);
+    if (pendingMatch) {counts.pending = parseInt(pendingMatch[1], 10);}
+    if (runningMatch) {counts.running = parseInt(runningMatch[1], 10);}
+    if (completedMatch) {counts.completed = parseInt(completedMatch[1], 10);}
+    if (failedMatch) {counts.failed = parseInt(failedMatch[1], 10);}
 
     return counts;
   }

@@ -5,7 +5,7 @@ import * as os from 'node:os';
 import type { ExecutionResult, Issue, TodoItem, Configuration } from '../src/types/index.js';
 
 declare module 'vitest' {
-  interface Assertion<T = any> {
+  interface Assertion {
     toBeSuccessfulExecution(): void;
     toHaveProviderHistory(expectedProviders: string[]): void;
     toBeValidIssue(): void;
@@ -37,9 +37,9 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
   
-  if (consoleSpies.log) {consoleSpies.log.mockRestore();}
-  if (consoleSpies.error) {consoleSpies.error.mockRestore();}
-  if (consoleSpies.warn) {consoleSpies.warn.mockRestore();}
+  if (consoleSpies.log !== undefined) {consoleSpies.log.mockRestore();}
+  if (consoleSpies.error !== undefined) {consoleSpies.error.mockRestore();}
+  if (consoleSpies.warn !== undefined) {consoleSpies.warn.mockRestore();}
 });
 
 expect.extend({
@@ -48,35 +48,35 @@ expect.extend({
     
     if (pass) {
       return {
-        message: () => 'expected execution not to be successful',
+        message: (): string => 'expected execution not to be successful',
         pass: true
       };
     } else {
       return {
-        message: () => 
+        message: (): string => 
           'expected execution to be successful, but got:\n' +
-          `  success: ${received.success}\n` +
-          `  error: ${received.error?.message || 'none'}`,
+          `  success: ${String(received.success)}\n` +
+          `  error: ${received.error?.message ?? 'none'}`,
         pass: false
       };
     }
   },
 
   toHaveProviderHistory(received: ExecutionResult, expectedProviders: string[]) {
-    const actualProviders = received.providerHistory || [];
+    const actualProviders = received.providerHistory ?? [];
     const pass = 
       actualProviders.length === expectedProviders.length &&
       actualProviders.every((provider, index) => provider === expectedProviders[index]);
     
-    if (pass) {
+    if (pass === true) {
       return {
-        message: () => 
+        message: (): string => 
           `expected provider history not to be [${expectedProviders.join(', ')}]`,
         pass: true
       };
     } else {
       return {
-        message: () => 
+        message: (): string => 
           `expected provider history to be [${expectedProviders.join(', ')}], ` +
           `but got [${actualProviders.join(', ')}]`,
         pass: false
@@ -87,11 +87,11 @@ expect.extend({
   toBeValidIssue(received: Issue) {
     const errors: string[] = [];
     
-    if (!received.title || received.title.trim().length === 0) {
+    if (received.title === undefined || received.title.trim().length === 0) {
       errors.push('title is missing or empty');
     }
     
-    if (!received.requirement || received.requirement.trim().length === 0) {
+    if (received.requirement === undefined || received.requirement.trim().length === 0) {
       errors.push('requirement is missing or empty');
     }
     
@@ -103,12 +103,12 @@ expect.extend({
     
     if (pass) {
       return {
-        message: () => 'expected issue not to be valid',
+        message: (): string => 'expected issue not to be valid',
         pass: true
       };
     } else {
       return {
-        message: () => 
+        message: (): string => 
           'expected issue to be valid, but found errors:\n' +
           errors.map(e => `  - ${e}`).join('\n'),
         pass: false
@@ -127,13 +127,13 @@ expect.extend({
     
     if (pass) {
       return {
-        message: () => 
+        message: (): string => 
           `expected todos not to contain item matching ${JSON.stringify(expectedTodo)}`,
         pass: true
       };
     } else {
       return {
-        message: () => 
+        message: (): string => 
           `expected todos to contain item matching ${JSON.stringify(expectedTodo)}, ` +
           `but got:\n${JSON.stringify(received, null, 2)}`,
         pass: false

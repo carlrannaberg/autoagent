@@ -10,7 +10,7 @@ vi.mock('child_process');
 
 // Mock util module to return our mock exec when promisified
 vi.mock('util', () => ({
-  promisify: () => mockExec
+  promisify: (): typeof mockExec => mockExec
 }));
 
 import {

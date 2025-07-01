@@ -173,36 +173,66 @@ export class AutonomousAgent extends EventEmitter {
    */
   async executeAll(): Promise<ExecutionResult[]> {
     const results: ExecutionResult[] = [];
-    const todos = await this.fileManager.readTodoList();
-    const pendingTodos = todos.filter(todo => !todo.includes('[x]'));
 
-    for (let i = 0; i < pendingTodos.length; i++) {
-      const todo = pendingTodos[i];
-      if (todo === undefined || todo === '') {
-        continue;
+    // Keep checking for new tasks until no more pending tasks exist
+    let hasMoreTasks = true;
+    while (hasMoreTasks) {
+      // Reload the todo list to check for new tasks
+      const todos = await this.fileManager.readTodoList();
+      const pendingTodos = todos.filter(todo => !todo.includes('[x]'));
+
+      // If no pending todos, we're done
+      if (pendingTodos.length === 0) {
+        hasMoreTasks = false;
+        break;
       }
 
-      const match = todo.match(/Issue #(\d+)/);
-
-      if (match !== null && match[1] !== undefined) {
-        const issueNumber = parseInt(match[1], 10);
-
-        // Report overall progress
-        const percentage = Math.round((i / pendingTodos.length) * 100);
-        this.reportProgress(`Processing issue #${issueNumber}`, percentage);
-
-        const result = await this.executeIssue(issueNumber);
-        results.push(result);
-
-        // Stop on failure unless configured otherwise
-        if (!result.success && this.config.debug !== true) {
-          break;
+      // Find the next unprocessed todo
+      let foundNextTodo = false;
+      
+      for (const todo of pendingTodos) {
+        if (todo === undefined || todo === '') {
+          continue;
         }
 
-        // Check for cancellation
-        if (this.config.signal?.aborted === true) {
+        const match = todo.match(/Issue #(\d+)/);
+
+        if (match !== null && match[1] !== undefined) {
+          const issueNumber = parseInt(match[1], 10);
+
+          // Check if we've already processed this issue
+          const alreadyProcessed = results.some(r => r.issueNumber === issueNumber);
+          if (alreadyProcessed) {
+            continue;
+          }
+
+          foundNextTodo = true;
+
+          // Report overall progress based on what we've processed so far
+          this.reportProgress(`Processing issue #${issueNumber}`, 0);
+
+          const result = await this.executeIssue(issueNumber);
+          results.push(result);
+
+          // Stop on failure unless configured otherwise
+          if (!result.success && this.config.debug !== true) {
+            return results;
+          }
+
+          // Check for cancellation
+          if (this.config.signal?.aborted === true) {
+            return results;
+          }
+
+          // After processing one issue, break to reload the todo list
+          // This ensures we pick up any new tasks created during execution
           break;
         }
+      }
+
+      // If we didn't find any new todos to process, we're done
+      if (!foundNextTodo) {
+        hasMoreTasks = false;
       }
     }
 

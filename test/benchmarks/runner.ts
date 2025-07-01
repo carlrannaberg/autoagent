@@ -6,7 +6,7 @@ import * as path from 'path';
 import { generateBenchmarkReport } from './utils/reporter';
 import type { BenchmarkResult } from './utils/reporter';
 
-async function runBenchmarks() {
+async function runBenchmarks(): Promise<void> {
   console.log('🚀 Running performance benchmarks...\n');
   
   try {

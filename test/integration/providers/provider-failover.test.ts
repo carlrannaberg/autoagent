@@ -8,7 +8,7 @@ import type { Issue } from '@/types/issue';
 
 describe('Provider Failover Integration Tests', () => {
   let context: IntegrationTestContext;
-  let agent: AutonomousAgent;
+  // let agent: AutonomousAgent;
   let configManager: ConfigManager;
   let claudeSimulator: ProviderSimulator;
   let geminiSimulator: ProviderSimulator;
@@ -157,7 +157,7 @@ describe('Provider Failover Integration Tests', () => {
         name: 'claude'
       });
       
-      claudeSimulator.execute = async function(prompt: string) {
+      claudeSimulator.execute = function(_prompt: string) {
         callCount++;
         if (callCount <= 2) {
           throw new Error('Temporary network error');
@@ -165,7 +165,7 @@ describe('Provider Failover Integration Tests', () => {
         return `Success on attempt ${callCount}`;
       } as any;
 
-      const result = await (async () => {
+      const result = await (async (): Promise<string> => {
         for (let i = 0; i < 3; i++) {
           try {
             return await claudeSimulator.execute('Test prompt');
@@ -200,12 +200,12 @@ describe('Provider Failover Integration Tests', () => {
 
       let stepCount = 0;
       claudeSimulator.setCustomResponse('Step 1: Create file', 'File created successfully');
-      claudeSimulator.execute = async function(prompt: string) {
+      claudeSimulator.execute = function(this: ProviderSimulator, _prompt: string): string {
         stepCount++;
         if (stepCount === 2) {
           throw new Error('Provider failure');
         }
-        return this.generateDefaultResponse(prompt);
+        return this.generateDefaultResponse(_prompt);
       }.bind(claudeSimulator) as any;
 
       geminiSimulator.setCustomResponse('Step 2: Update file', 'File updated successfully');
@@ -241,11 +241,11 @@ describe('Provider Failover Integration Tests', () => {
         rateLimitThreshold: 3
       });
 
-      claudeSimulator.execute = async function(prompt: string) {
-        const result = await ProviderSimulator.prototype.execute.call(this, prompt);
-        if (prompt.includes('step')) {
-          executionState.completedSteps.push(prompt);
-          executionState.currentStep = prompt;
+      claudeSimulator.execute = async function(this: ProviderSimulator, _prompt: string): Promise<string> {
+        const result = await ProviderSimulator.prototype.execute.call(this, _prompt);
+        if (_prompt.includes('step')) {
+          executionState.completedSteps.push(_prompt);
+          executionState.currentStep = _prompt;
         }
         return result;
       } as any;
@@ -313,7 +313,7 @@ describe('Provider Failover Integration Tests', () => {
     });
 
     it('should respect provider-specific retry policies', async () => {
-      const retryDelays = { claude: 1000, gemini: 2000 };
+      // const retryDelays = { claude: 1000, gemini: 2000 };
       
       claudeSimulator = new ProviderSimulator({
         name: 'claude',

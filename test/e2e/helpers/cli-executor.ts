@@ -38,11 +38,12 @@ export class CliExecutor {
         stderr,
         exitCode: 0,
       };
-    } catch (error: any) {
+    } catch (error) {
+      const execError = error as any;
       return {
-        stdout: error.stdout || '',
-        stderr: error.stderr || '',
-        exitCode: error.code || 1,
+        stdout: execError.stdout !== undefined ? execError.stdout : '',
+        stderr: execError.stderr !== undefined ? execError.stderr : '',
+        exitCode: execError.code !== undefined ? execError.code : 1,
       };
     }
   }

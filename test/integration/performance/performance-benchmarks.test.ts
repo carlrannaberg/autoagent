@@ -108,7 +108,7 @@ describe('Performance Integration Tests', () => {
       let switchStartTime = 0;
 
       for (let i = 0; i < 10; i++) {
-        const startTime = Date.now();
+        // const startTime = Date.now();
         
         const result = await failoverSim.executeWithFailover(`Request ${i}`);
         
@@ -133,14 +133,14 @@ describe('Performance Integration Tests', () => {
       const switches = measurements.filter(m => m.switchTime !== undefined);
       expect(switches.length).toBeGreaterThan(0);
       
-      const avgSwitchTime = switches.reduce((sum, m) => sum + (m.switchTime || 0), 0) / switches.length;
+      const avgSwitchTime = switches.reduce((sum, m) => sum + (m.switchTime ?? 0), 0) / switches.length;
       expect(avgSwitchTime).toBeLessThan(100);
     });
 
     it('should optimize provider selection based on performance', async () => {
       const performanceHistory: Map<string, Array<number>> = new Map();
 
-      for (const [name, provider] of providers) {
+      for (const [name] of providers) {
         performanceHistory.set(name, []);
       }
 
@@ -182,7 +182,7 @@ describe('Performance Integration Tests', () => {
           technicalDetails: ''
         }));
 
-        const { result: _, duration } = await measureExecutionTime(async () => {
+        const { duration } = await measureExecutionTime(async () => {
           const completed = [];
           for (const issue of issues) {
             await createTestIssue(context.workspace, issue);
@@ -225,7 +225,7 @@ describe('Performance Integration Tests', () => {
               await fs.mkdir(path.dirname(filePath), { recursive: true });
               await fs.writeFile(filePath, `Content ${i}`);
             }
-          } else if (op.type === 'batched' && op.batchSize) {
+          } else if (op.type === 'batched' && op.batchSize !== undefined && op.batchSize > 0) {
             const batches = Math.ceil(op.count / op.batchSize);
             for (let b = 0; b < batches; b++) {
               const batchPromises = [];
@@ -256,10 +256,10 @@ describe('Performance Integration Tests', () => {
   });
 
   describe('Memory Usage Patterns', () => {
-    it('should monitor memory usage during execution', async () => {
+    it('should monitor memory usage during execution', () => {
       const memorySnapshots: Array<{ stage: string; heapUsed: number }> = [];
       
-      const takeSnapshot = (stage: string) => {
+      const takeSnapshot = (stage: string): void => {
         if (global.gc) {global.gc();}
         const usage = process.memoryUsage();
         memorySnapshots.push({
@@ -380,7 +380,7 @@ describe('Performance Integration Tests', () => {
       expect(cache.size).toBeLessThanOrEqual(20);
     });
 
-    it('should implement effective cache eviction', async () => {
+    it('should implement effective cache eviction', () => {
       class LRUCache<K, V> {
         private cache = new Map<K, V>();
         private usage = new Map<K, number>();

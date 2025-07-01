@@ -27,8 +27,8 @@ class MockChildProcess extends EventEmitter implements Partial<ChildProcess> {
     this.pid = Math.floor(Math.random() * 10000);
   }
   
-  async simulate() {
-    if (this.options.delay) {
+  async simulate(): Promise<void> {
+    if (this.options.delay !== undefined && this.options.delay > 0) {
       await new Promise(resolve => setTimeout(resolve, this.options.delay));
     }
     
@@ -37,18 +37,18 @@ class MockChildProcess extends EventEmitter implements Partial<ChildProcess> {
       return;
     }
     
-    if (this.options.stdout && this.stdout) {
+    if (this.options.stdout !== undefined && this.stdout !== null) {
       this.stdout.emit('data', Buffer.from(this.options.stdout));
     }
     
-    if (this.options.stderr && this.stderr) {
+    if (this.options.stderr !== undefined && this.stderr !== null) {
       this.stderr.emit('data', Buffer.from(this.options.stderr));
     }
     
     if (this.options.signal) {
       this.emit('close', null, this.options.signal);
     } else {
-      this.emit('close', this.options.exitCode || 0);
+      this.emit('close', this.options.exitCode ?? 0);
     }
   }
   
@@ -59,9 +59,9 @@ class MockChildProcess extends EventEmitter implements Partial<ChildProcess> {
   }
 }
 
-export function createMockSpawn(scenarios: Record<string, MockProcessOptions> = {}) {
-  const spawn: MockedFunction<any> = vi.fn((command: string, args?: readonly string[], options?: any) => {
-    const cmdString = `${command} ${args?.join(' ') || ''}`.trim();
+export function createMockSpawn(scenarios: Record<string, MockProcessOptions> = {}): MockedFunction<any> {
+  const spawn: MockedFunction<any> = vi.fn((command: string, args?: readonly string[], _options?: any) => {
+    const cmdString = `${command} ${args?.join(' ') ?? ''}`.trim();
     
     const scenario = Object.entries(scenarios).find(([pattern]) => {
       return cmdString.includes(pattern) || new RegExp(pattern).test(cmdString);
@@ -70,7 +70,7 @@ export function createMockSpawn(scenarios: Record<string, MockProcessOptions> = 
     const processOptions = scenario ? scenario[1] : { stdout: '', exitCode: 0 };
     const mockProcess = new MockChildProcess(processOptions);
     
-    setTimeout(() => mockProcess.simulate(), 0);
+    setTimeout(() => { void mockProcess.simulate(); }, 0);
     
     return mockProcess as any;
   });
@@ -78,29 +78,29 @@ export function createMockSpawn(scenarios: Record<string, MockProcessOptions> = 
   return spawn;
 }
 
-export function createMockExec() {
-  const exec: MockedFunction<any> = vi.fn((command: string, options: any, callback?: any) => {
-    const cb = callback || (typeof options === 'function' ? options : undefined);
+export function createMockExec(): MockedFunction<any> {
+  const exec: MockedFunction<any> = vi.fn((command: string, options: unknown, callback?: unknown) => {
+    const cb = callback !== undefined ? callback : (typeof options === 'function' ? options : undefined);
     
-    if (command.includes('git')) {
+    if (typeof cb === 'function' && command.includes('git')) {
       if (command.includes('git status')) {
-        cb?.(null, 'On branch main\nnothing to commit', '');
+        (cb as any)(null, 'On branch main\nnothing to commit', '');
       } else if (command.includes('git log')) {
-        cb?.(null, 'commit abc123\nAuthor: Test\nDate: Today\n\n    Test commit', '');
+        (cb as any)(null, 'commit abc123\nAuthor: Test\nDate: Today\n\n    Test commit', '');
       } else {
-        cb?.(null, '', '');
+        (cb as any)(null, '', '');
       }
-    } else {
-      cb?.(null, '', '');
+    } else if (typeof cb === 'function') {
+      (cb as any)(null, '', '');
     }
   });
   
   return exec;
 }
 
-export function mockChildProcessModule(spawn?: any, exec?: any) {
-  const mockSpawn = spawn || createMockSpawn();
-  const mockExec = exec || createMockExec();
+export function mockChildProcessModule(spawn?: any, exec?: any): { spawn: MockedFunction<any>; exec: MockedFunction<any> } {
+  const mockSpawn = spawn !== undefined ? spawn : createMockSpawn();
+  const mockExec = exec !== undefined ? exec : createMockExec();
   
   vi.doMock('node:child_process', () => ({
     spawn: mockSpawn,
@@ -115,7 +115,7 @@ export function mockChildProcessModule(spawn?: any, exec?: any) {
   return { spawn: mockSpawn, exec: mockExec };
 }
 
-export function createProcessScenarios() {
+export function createProcessScenarios(): Record<string, Record<string, MockProcessOptions>> {
   return {
     gitSuccess: {
       'git status': { stdout: 'On branch main\nnothing to commit', exitCode: 0 },

@@ -17,7 +17,7 @@ export function createBenchmark(
   name: string,
   fn: () => void | Promise<void>,
   options: BenchmarkOptions = {}
-) {
+): void {
   const defaultOptions = {
     iterations: 100,
     time: 2000,
@@ -79,7 +79,7 @@ export class BenchmarkTimer {
 
   getMark(name: string): number {
     const mark = this.marks.get(name);
-    if (!mark) {
+    if (mark === undefined) {
       throw new Error(`Mark "${name}" not found`);
     }
     return Number(mark - this.startTime) / 1_000_000;

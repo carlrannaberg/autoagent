@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { AutonomousAgent } from '@/core/autonomous-agent';
 import { ConfigManager } from '@/core/config-manager';
-import { ProviderSimulator } from '../utils/provider-simulator';
+// import { ProviderSimulator } from '../utils/provider-simulator';
 import { createIntegrationContext, cleanupIntegrationContext, createTestIssue, measureExecutionTime } from '../utils/integration-helpers';
 import type { IntegrationTestContext } from '../utils/integration-helpers';
 import type { Issue } from '@/types/issue';
@@ -11,7 +11,7 @@ import type { TodoItem } from '@/types/todo';
 
 describe('Batch Execution Integration Tests', () => {
   let context: IntegrationTestContext;
-  let agent: AutonomousAgent;
+  // let agent: AutonomousAgent;
   let configManager: ConfigManager;
 
   beforeEach(async () => {
@@ -156,14 +156,19 @@ export const parse = (str: string) => new Date(str);`;
     });
 
     it('should respect priority order in batch execution', async () => {
-      const prioritizedIssues: Array<Issue & { priority: 'high' | 'medium' | 'low' }> = [
+      interface PrioritizedIssue {
+        id: string;
+        title: string;
+        requirement: string;
+        acceptanceCriteria: string[];
+        priority: 'high' | 'medium' | 'low';
+      }
+      const prioritizedIssues: PrioritizedIssue[] = [
         {
           id: 'low-priority',
           title: 'Low Priority Task',
           requirement: 'Can be done later',
           acceptanceCriteria: [],
-          dependencies: [],
-          technicalDetails: '',
           priority: 'low'
         },
         {
@@ -171,8 +176,6 @@ export const parse = (str: string) => new Date(str);`;
           title: 'High Priority Task',
           requirement: 'Must be done first',
           acceptanceCriteria: [],
-          dependencies: [],
-          technicalDetails: '',
           priority: 'high'
         },
         {
@@ -180,8 +183,6 @@ export const parse = (str: string) => new Date(str);`;
           title: 'Medium Priority Task',
           requirement: 'Should be done soon',
           acceptanceCriteria: [],
-          dependencies: [],
-          technicalDetails: '',
           priority: 'medium'
         }
       ];
@@ -247,7 +248,7 @@ export const parse = (str: string) => new Date(str);`;
       expect(finalTodos.every((t: TodoItem) => t.status === 'completed')).toBe(true);
     });
 
-    it('should handle TODO dependencies', async () => {
+    it('should handle TODO dependencies', () => {
       const todos: TodoItem[] = [
         {
           id: '1',
@@ -287,7 +288,7 @@ export const parse = (str: string) => new Date(str);`;
       const completed = new Set<string>();
 
       const canExecute = (todo: TodoItem): boolean => {
-        if (!todo.dependencies) {return true;}
+        if (todo.dependencies === undefined || todo.dependencies.length === 0) {return true;}
         return todo.dependencies.every(dep => completed.has(dep));
       };
 
@@ -296,7 +297,7 @@ export const parse = (str: string) => new Date(str);`;
           todo => !completed.has(todo.id) && canExecute(todo)
         );
         
-        if (executable) {
+        if (executable !== undefined) {
           executionOrder.push(executable.id);
           completed.add(executable.id);
         }
@@ -310,7 +311,7 @@ export const parse = (str: string) => new Date(str);`;
   });
 
   describe('Progress Tracking', () => {
-    it('should track execution progress accurately', async () => {
+    it('should track execution progress accurately', () => {
       const totalIssues = 10;
       const progressUpdates: Array<{ completed: number; percentage: number }> = [];
 
@@ -334,7 +335,7 @@ export const parse = (str: string) => new Date(str);`;
       expect(isMonotonic).toBe(true);
     });
 
-    it('should generate execution summary report', async () => {
+    it('should generate execution summary report', () => {
       const executionResults = [
         { issueId: 'issue-1', status: 'completed', duration: 1500, provider: 'claude' },
         { issueId: 'issue-2', status: 'completed', duration: 2000, provider: 'gemini' },
@@ -350,7 +351,7 @@ export const parse = (str: string) => new Date(str);`;
         totalDuration: executionResults.reduce((sum, r) => sum + r.duration, 0),
         averageDuration: 0,
         providerUsage: {} as Record<string, number>,
-        errors: executionResults.filter(r => r.error).map(r => ({
+        errors: executionResults.filter(r => r.error !== undefined).map(r => ({
           issueId: r.issueId,
           error: r.error
         }))
@@ -360,7 +361,7 @@ export const parse = (str: string) => new Date(str);`;
 
       for (const result of executionResults) {
         summary.providerUsage[result.provider] = 
-          (summary.providerUsage[result.provider] || 0) + 1;
+          (summary.providerUsage[result.provider] ?? 0) + 1;
       }
 
       expect(summary.completed).toBe(4);
@@ -400,7 +401,7 @@ export const parse = (str: string) => new Date(str);`;
         loadedState.remainingIssues = loadedState.remainingIssues.filter(
           (id: string) => id !== issueId
         );
-        loadedState.currentIssue = loadedState.remainingIssues[0] || null;
+        loadedState.currentIssue = loadedState.remainingIssues[0] ?? null;
       }
 
       expect(loadedState.completedIssues).toHaveLength(5);

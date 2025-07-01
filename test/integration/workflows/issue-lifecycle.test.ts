@@ -11,7 +11,7 @@ import type { Issue } from '@/types/issue';
 
 describe('Issue Lifecycle Integration Tests', () => {
   let context: IntegrationTestContext;
-  let agent: AutonomousAgent;
+  // let agent: AutonomousAgent;
   let configManager: ConfigManager;
   let gitSimulator: GitSimulator;
   let claudeProvider: ProviderSimulator;
@@ -220,9 +220,9 @@ describe('UserService', () => {
 
       const executionOrder: string[] = [];
       
-      const executeInOrder = async (issueId: string) => {
+      const executeInOrder = async (issueId: string): Promise<void> => {
         const issue = issues.find(i => i.id === issueId);
-        if (!issue) {return;}
+        if (issue === undefined) {return;}
 
         for (const depId of issue.dependencies) {
           if (!executionOrder.includes(depId)) {
@@ -282,7 +282,7 @@ describe('UserService', () => {
         stack.add(issueId);
 
         const issue = issues.find(i => i.id === issueId);
-        if (issue) {
+        if (issue !== undefined) {
           for (const depId of issue.dependencies) {
             if (detectCircular(depId, visited, stack)) {
               return true;

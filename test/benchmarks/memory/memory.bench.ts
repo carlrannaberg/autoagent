@@ -92,7 +92,7 @@ describe('Memory Usage Benchmarks', () => {
       
       // Calculate memory per issue
       const avgMemoryPerIssue = measurements.reduce((sum, m, i) => {
-        if (i === 0) return sum;
+        if (i === 0) {return sum;}
         const memoryDiff = m.memory - measurements[i - 1].memory;
         const countDiff = m.count - measurements[i - 1].count;
         return sum + (memoryDiff / countDiff);
@@ -193,13 +193,13 @@ describe('Memory Usage Benchmarks', () => {
       const measurements: number[] = [];
       
       for (let i = 0; i < 10; i++) {
-        if (global.gc) global.gc();
+        if (global.gc) {global.gc();}
         const beforeMemory = measureMemory();
         
         const issue = parseIssue(issues[0].content, issues[0].path);
         await executeIssues([issue], config, { dryRun: true });
         
-        if (global.gc) global.gc();
+        if (global.gc) {global.gc();}
         const afterMemory = measureMemory();
         
         measurements.push(afterMemory.heapUsed - beforeMemory.heapUsed);

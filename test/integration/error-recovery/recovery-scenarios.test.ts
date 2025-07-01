@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { spawn } from 'child_process';
+// import { spawn } from 'child_process';
 import { AutonomousAgent } from '@/core/autonomous-agent';
 import { ConfigManager } from '@/core/config-manager';
 import { ProviderSimulator } from '../utils/provider-simulator';
 import { GitSimulator } from '../utils/git-simulator';
-import { createIntegrationContext, cleanupIntegrationContext, simulateFileSystemError } from '../utils/integration-helpers';
+import { createIntegrationContext, cleanupIntegrationContext } from '../utils/integration-helpers';
 import type { IntegrationTestContext } from '../utils/integration-helpers';
 
 describe('Error Recovery Integration Tests', () => {
   let context: IntegrationTestContext;
-  let agent: AutonomousAgent;
+  // let agent: AutonomousAgent;
   let configManager: ConfigManager;
   let claudeProvider: ProviderSimulator;
   let geminiProvider: ProviderSimulator;
@@ -44,7 +44,7 @@ describe('Error Recovery Integration Tests', () => {
       let attemptCount = 0;
       const maxRetries = 3;
       
-      claudeProvider.execute = async function(prompt: string) {
+      claudeProvider.execute = function(_prompt: string) {
         attemptCount++;
         if (attemptCount < maxRetries) {
           throw new Error('Network timeout: Connection reset');
@@ -53,7 +53,7 @@ describe('Error Recovery Integration Tests', () => {
       } as any;
 
       let result: string | null = null;
-      let lastError: Error | null = null;
+      // let lastError: Error | null = null;
 
       for (let i = 0; i < maxRetries; i++) {
         try {
@@ -98,7 +98,7 @@ describe('Error Recovery Integration Tests', () => {
       const retryDelays: number[] = [];
       let lastAttemptTime = Date.now();
 
-      claudeProvider.execute = async function(prompt: string) {
+      claudeProvider.execute = function(_prompt: string) {
         const currentTime = Date.now();
         const delay = currentTime - lastAttemptTime;
         retryDelays.push(delay);
@@ -257,7 +257,7 @@ describe('Error Recovery Integration Tests', () => {
       const gitSimulator = new GitSimulator(context.workspace.rootPath);
       await gitSimulator.init();
 
-      const commit1 = await gitSimulator.createCommit('First commit', {
+      await gitSimulator.createCommit('First commit', {
         'file1.txt': 'Content 1'
       });
 
@@ -309,7 +309,7 @@ pick ${mockRebaseState.remainingCommits[1]} Last commit`
     it('should handle operation timeouts gracefully', async () => {
       const timeoutMs = 1000;
       
-      claudeProvider.execute = async function(prompt: string) {
+      claudeProvider.execute = async function(_prompt: string) {
         await new Promise(resolve => setTimeout(resolve, timeoutMs + 500));
         return 'Should timeout';
       } as any;
@@ -344,7 +344,7 @@ pick ${mockRebaseState.remainingCommits[1]} Last commit`
       const timeoutMultipliers = [1, 2, 4];
       const results: Array<{ attempt: number; timeout: number; success: boolean }> = [];
 
-      claudeProvider.execute = async function(prompt: string) {
+      claudeProvider.execute = async function(_prompt: string) {
         await new Promise(resolve => setTimeout(resolve, 3000));
         return 'Eventually succeeds';
       } as any;

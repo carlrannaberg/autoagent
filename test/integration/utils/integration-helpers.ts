@@ -4,7 +4,7 @@ import * as path from 'path';
 import { TestWorkspace } from '@test/utils/test-workspace';
 import type { AIProvider } from '@/types/ai-provider';
 import type { Issue } from '@/types/issue';
-import type { ExecutionResult } from '@/types/execution';
+// import type { ExecutionResult } from '@/types/execution';
 import type { Configuration } from '@/types/config';
 
 export interface IntegrationTestContext {
@@ -30,16 +30,16 @@ export class MockProvider implements AIProvider {
   } = {}) {
     this.name = name;
     this.responses = options.responses || new Map();
-    this.shouldFail = options.shouldFail || false;
-    this.failAfter = options.failAfter || Infinity;
-    this.responseDelay = options.responseDelay || 0;
+    this.shouldFail = options.shouldFail ?? false;
+    this.failAfter = options.failAfter ?? Infinity;
+    this.responseDelay = options.responseDelay ?? 0;
     this.callCount = new Map();
     this.calls = [];
   }
 
   async execute(prompt: string, options: any = {}): Promise<string> {
     const methodKey = 'execute';
-    const count = (this.callCount.get(methodKey) || 0) + 1;
+    const count = (this.callCount.get(methodKey) ?? 0) + 1;
     this.callCount.set(methodKey, count);
     this.calls.push({ method: methodKey, args: [prompt, options] });
 
@@ -52,7 +52,7 @@ export class MockProvider implements AIProvider {
     }
 
     const defaultResponse = `Executed by ${this.name}: ${prompt.slice(0, 50)}...`;
-    return this.responses.get(prompt) || defaultResponse;
+    return this.responses.get(prompt) ?? defaultResponse;
   }
 
   setResponse(prompt: string, response: string): void {
@@ -68,7 +68,7 @@ export class MockProvider implements AIProvider {
   }
 
   getCallCount(method: string = 'execute'): number {
-    return this.callCount.get(method) || 0;
+    return this.callCount.get(method) ?? 0;
   }
 
   reset(): void {
@@ -118,7 +118,7 @@ export async function runAutoAgent(args: string[], cwd?: string): Promise<{
     };
 
     const proc = spawn(nodePath, [scriptPath, ...args], {
-      cwd: cwd || process.cwd(),
+      cwd: cwd ?? process.cwd(),
       env
     });
 
@@ -137,7 +137,7 @@ export async function runAutoAgent(args: string[], cwd?: string): Promise<{
       resolve({
         stdout,
         stderr,
-        exitCode: code || 0
+        exitCode: code ?? 0
       });
     });
 
@@ -146,16 +146,16 @@ export async function runAutoAgent(args: string[], cwd?: string): Promise<{
 }
 
 export async function createTestIssue(workspace: TestWorkspace, issue: Partial<Issue>): Promise<string> {
-  const issueContent = `# ${issue.title || 'Test Issue'}
+  const issueContent = `# ${issue.title ?? 'Test Issue'}
 
 ## Requirement
-${issue.requirement || 'Test requirement'}
+${issue.requirement ?? 'Test requirement'}
 
 ## Acceptance Criteria
-${(issue.acceptanceCriteria || ['Test criteria']).map(c => `- [ ] ${c}`).join('\n')}
+${(issue.acceptanceCriteria ?? ['Test criteria']).map(c => `- [ ] ${c}`).join('\n')}
 `;
 
-  const issuePath = path.join(workspace.rootPath, 'issues', `${issue.id || 'test-issue'}.md`);
+  const issuePath = path.join(workspace.rootPath, 'issues', `${issue.id ?? 'test-issue'}.md`);
   await fs.mkdir(path.dirname(issuePath), { recursive: true });
   await fs.writeFile(issuePath, issueContent);
   return issuePath;
@@ -195,14 +195,14 @@ export function createProviderWithBehavior(name: string, behavior: {
   responses?: Record<string, string>;
 }): MockProvider {
   const provider = new MockProvider(name, {
-    responseDelay: behavior.responseTime || 0,
-    failAfter: behavior.rateLimitAfter || Infinity,
+    responseDelay: behavior.responseTime ?? 0,
+    failAfter: behavior.rateLimitAfter ?? Infinity,
     responses: behavior.responses ? new Map(Object.entries(behavior.responses)) : undefined
   });
 
-  if (behavior.failureRate && behavior.failureRate > 0) {
+  if (behavior.failureRate !== undefined && behavior.failureRate > 0) {
     const originalExecute = provider.execute.bind(provider);
-    provider.execute = async function(prompt: string, options: any) {
+    provider.execute = async function(prompt: string, options: any): Promise<string> {
       if (Math.random() < behavior.failureRate!) {
         throw new Error(`${name} provider failed: Random failure`);
       }

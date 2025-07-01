@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { setupE2ETest, initializeProject } from '../helpers/setup';
-import { OutputParser } from '../helpers/output-parser';
+// import { OutputParser } from '../helpers/output-parser';
 
 describe('autoagent config', () => {
   const { workspace, cli } = setupE2ETest();

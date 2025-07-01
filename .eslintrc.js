@@ -60,6 +60,12 @@ module.exports = {
       rules: {
         'no-console': 'off'
       }
+    },
+    {
+      files: ['test/benchmarks/**/*.ts'],
+      rules: {
+        'no-console': 'off'
+      }
     }
   ]
 };

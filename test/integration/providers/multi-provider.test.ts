@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ProviderSimulator } from '../utils/provider-simulator';
-import { createIntegrationContext, cleanupIntegrationContext, createTestIssue, waitForCondition } from '../utils/integration-helpers';
+import { createIntegrationContext, cleanupIntegrationContext } from '../utils/integration-helpers';
 import type { IntegrationTestContext } from '../utils/integration-helpers';
-import type { Issue } from '@/types/issue';
+// import type { Issue } from '@/types/issue';
 
 describe('Multi-Provider Integration Tests', () => {
   let context: IntegrationTestContext;
@@ -157,7 +157,7 @@ describe('Multi-Provider Integration Tests', () => {
 
       while (totalCost < budget) {
         const availableProviders = Object.entries(providerCosts)
-          .filter(([name, cost]) => totalCost + cost <= budget)
+          .filter(([_name, cost]) => totalCost + cost <= budget)
           .sort(([, a], [, b]) => a - b);
 
         if (availableProviders.length === 0) {break;}
@@ -237,7 +237,7 @@ describe('Multi-Provider Integration Tests', () => {
       };
 
       for (const [name, provider] of providers) {
-        provider.execute = async function(prompt: string) {
+        provider.execute = function(_prompt: string) {
           sharedState.counter++;
           sharedState.lastProvider = name;
           sharedState.operations.push({ provider: name, value: sharedState.counter });
@@ -258,7 +258,7 @@ describe('Multi-Provider Integration Tests', () => {
       expect(sharedState.operations[4]).toEqual({ provider: 'gemini', value: 5 });
     });
 
-    it('should handle provider-specific capabilities', async () => {
+    it('should handle provider-specific capabilities', () => {
       const capabilities = {
         claude: ['code', 'analysis', 'documentation'],
         gemini: ['code', 'testing'],
@@ -272,7 +272,7 @@ describe('Multi-Provider Integration Tests', () => {
         { task: 'Full implementation', required: ['code', 'testing', 'documentation'] }
       ];
 
-      for (const { task, required } of taskRequirements) {
+      for (const { required } of taskRequirements) {
         const capableProviders = Object.entries(capabilities)
           .filter(([, caps]) => required.every(req => caps.includes(req)))
           .map(([name]) => name);

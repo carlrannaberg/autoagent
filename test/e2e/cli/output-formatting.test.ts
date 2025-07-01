@@ -141,7 +141,8 @@ describe('Output Formatting E2E', () => {
 
       expect(result.exitCode).toBe(0);
       // Check for ANSI color codes
-      expect(result.stdout).toMatch(/\u001b\[\d+m/);
+      // eslint-disable-next-line no-control-regex
+      expect(result.stdout).toMatch(/\x1b\[\d+m/);
     });
 
     it('should disable colors when requested', async () => {
@@ -152,7 +153,8 @@ describe('Output Formatting E2E', () => {
 
       expect(result.exitCode).toBe(0);
       // Should not contain ANSI color codes
-      expect(result.stdout).not.toMatch(/\u001b\[\d+m/);
+      // eslint-disable-next-line no-control-regex
+      expect(result.stdout).not.toMatch(/\x1b\[\d+m/);
     });
   });
 

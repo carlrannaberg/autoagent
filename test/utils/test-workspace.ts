@@ -15,7 +15,7 @@ export class TestWorkspace {
   private _cleanup: boolean = true;
   
   constructor(options: TestWorkspaceOptions = {}) {
-    const prefix = options.prefix || 'autoagent-test';
+    const prefix = options.prefix ?? 'autoagent-test';
     this._path = path.join(os.tmpdir(), `${prefix}-${Date.now()}-${Math.random().toString(36).substring(7)}`);
   }
   
@@ -30,8 +30,8 @@ export class TestWorkspace {
       await this.createFiles(options.files);
     }
     
-    if (options.initGit) {
-      await this.initGit();
+    if (options.initGit === true) {
+      this.initGit();
     }
   }
   
@@ -56,18 +56,18 @@ export class TestWorkspace {
       `# Issue ${issueNumber}: ${issue.title}`,
       '',
       '## Requirement',
-      issue.requirement,
+      issue.requirements,
       '',
       '## Acceptance Criteria',
       ...issue.acceptanceCriteria.map(criterion => `- [ ] ${criterion}`),
     ];
     
-    if (issue.technicalDetails) {
+    if (issue.technicalDetails !== undefined) {
       content.push('', '## Technical Details', issue.technicalDetails);
     }
     
-    if (issue.dependencies && issue.dependencies.length > 0) {
-      content.push('', '## Dependencies', ...issue.dependencies.map(dep => `- ${dep}`));
+    if (issue.resources !== undefined && issue.resources.length > 0) {
+      content.push('', '## Resources', ...issue.resources.map((resource: string) => `- ${resource}`));
     }
     
     await fs.writeFile(filePath, content.join('\n'));
@@ -115,7 +115,7 @@ export class TestWorkspace {
     return files;
   }
   
-  private async initGit(): Promise<void> {
+  private initGit(): void {
     const cwd = this._path;
     execSync('git init', { cwd });
     execSync('git config user.name "Test User"', { cwd });
@@ -129,13 +129,13 @@ export class TestWorkspace {
       try {
         await fs.rm(this._path, { recursive: true, force: true });
       } catch (error) {
-        console.warn(`Failed to cleanup test workspace: ${error}`);
+        console.warn(`Failed to cleanup test workspace: ${error as string}`);
       }
     }
   }
   
   preventCleanup(): void {
     this._cleanup = false;
-    console.log(`Test workspace preserved at: ${this._path}`);
+    // console.log(`Test workspace preserved at: ${this._path}`);
   }
 }

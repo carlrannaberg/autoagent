@@ -8,11 +8,15 @@ export interface MockFileSystemOptions {
   workingDirectory?: string;
 }
 
-export function createMockFileSystem(options: MockFileSystemOptions = {}) {
+export function createMockFileSystem(options: MockFileSystemOptions = {}): {
+  fs: IFs;
+  volume: Volume;
+  reset: () => void;
+} {
   const volume = new Volume();
   const fs = createFsFromVolume(volume) as unknown as IFs;
   
-  if (options.workingDirectory) {
+  if (options.workingDirectory !== undefined) {
     fs.mkdirSync(options.workingDirectory, { recursive: true });
   }
   
@@ -27,46 +31,46 @@ export function createMockFileSystem(options: MockFileSystemOptions = {}) {
   return {
     fs,
     volume,
-    reset: () => {
+    reset: (): void => {
       volume.reset();
-      if (options.workingDirectory) {
+      if (options.workingDirectory !== undefined) {
         fs.mkdirSync(options.workingDirectory, { recursive: true });
       }
     }
   };
 }
 
-export function mockFsModule(mockFs: IFs) {
+export function mockFsModule(mockFs: IFs): { fs: IFs; promises: any } {
   vi.doMock('node:fs', () => mockFs);
   vi.doMock('fs', () => mockFs);
   
   const promisesApi = {
-    readFile: vi.fn(async (path: string, encoding?: BufferEncoding) => {
+    readFile: vi.fn((path: string, encoding?: BufferEncoding) => {
       return mockFs.readFileSync(path, encoding || 'utf-8');
     }),
-    writeFile: vi.fn(async (path: string, data: string | Buffer, encoding?: BufferEncoding) => {
+    writeFile: vi.fn((path: string, data: string | Buffer, encoding?: BufferEncoding) => {
       mockFs.writeFileSync(path, data, encoding || 'utf-8');
     }),
-    mkdir: vi.fn(async (path: string, options?: any) => {
+    mkdir: vi.fn((path: string, options?: any) => {
       mockFs.mkdirSync(path, options);
     }),
-    readdir: vi.fn(async (path: string, options?: any) => {
+    readdir: vi.fn((path: string, options?: any) => {
       return mockFs.readdirSync(path, options);
     }),
-    stat: vi.fn(async (path: string) => {
+    stat: vi.fn((path: string) => {
       return mockFs.statSync(path);
     }),
-    access: vi.fn(async (path: string, mode?: number) => {
+    access: vi.fn((path: string, mode?: number) => {
       mockFs.accessSync(path, mode);
     }),
-    rm: vi.fn(async (path: string, options?: any) => {
-      if (options?.recursive) {
+    rm: vi.fn((path: string, options?: any) => {
+      if (options?.recursive === true) {
         mockFs.rmSync(path, options);
       } else {
         mockFs.unlinkSync(path);
       }
     }),
-    unlink: vi.fn(async (path: string) => {
+    unlink: vi.fn((path: string) => {
       mockFs.unlinkSync(path);
     })
   };
@@ -77,7 +81,7 @@ export function mockFsModule(mockFs: IFs) {
   return { fs: mockFs, promises: promisesApi };
 }
 
-export function createTestFiles() {
+export function createTestFiles(): Record<string, Record<string, string>> {
   return {
     simpleIssue: {
       'issues/1-test-issue.md': `# Issue 1: Test Issue

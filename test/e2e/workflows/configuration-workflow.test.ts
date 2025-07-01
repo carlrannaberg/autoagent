@@ -10,7 +10,8 @@ describe('Configuration Workflow E2E', () => {
     await cli.execute(['init']);
 
     // Set global config
-    const globalConfigPath = path.join(process.env.HOME || '', '.autoagent', 'config.json');
+    const homeDir = process.env.HOME;
+    const globalConfigPath = homeDir !== undefined ? path.join(homeDir, '.autoagent', 'config.json') : path.join('/', '.autoagent', 'config.json');
     cli.setEnv('AUTOAGENT_CONFIG_PATH', globalConfigPath);
 
     let result = await cli.execute(['config', 'set', 'provider', 'gemini', '--global']);

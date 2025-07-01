@@ -7,7 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No unreleased changes yet._
+### Fixed
+- Fix TypeScript type errors in provider-learning.test.ts by replacing `vi.Mock` with proper type assertions
+- Fix all lint errors across test files (159 errors and 16 warnings resolved)
+  - Added proper return types to all functions
+  - Fixed nullable value checks with explicit comparisons
+  - Removed unused variables or prefixed with underscore
+  - Added ESLint configuration to allow console.log in benchmark files
+  - Fixed async functions without await statements
+  - Replaced `any` types with proper types or `unknown`
+
+### Changed
+- Update mock providers in tests to use proper TypeScript types instead of `any`
+
+### Added
+- Add git instructions to AGENT.md for updating CHANGELOG.md before commits
+
+## [0.1.3] - 2025-07-01
+
+### Changed
+- Provider learning system now uses AI to intelligently update AGENT.md instead of manual metrics tracking
+  - Removed execution history, performance metrics, and pattern sections from provider files
+  - Provider learning now runs after each task completion to capture insights in real-time
+  - AI analyzes git diffs and actual code changes to determine valuable learnings
+  - Only updates AGENT.md when there are meaningful insights to add
+
+### Fixed
+- Fixed handling of nullable error strings in provider learning to prevent potential runtime errors
+
+### Added
+- Added `getExecutionCount()` method to PatternAnalyzer for tracking execution history
+
+## [0.1.2] - 2025-07-01
+
+### Fixed
+- Fixed `autoagent run --all` command to properly detect dynamically created tasks
+  - The command now reloads the todo list after each issue execution
+  - Processes any new tasks that were created during execution
+  - Prevents skipping of tasks that are added to TODO.md while the agent is running
 
 ## [0.1.1] - 2025-07-01
 

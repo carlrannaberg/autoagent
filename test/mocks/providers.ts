@@ -20,19 +20,19 @@ export function createMockProvider(options: MockProviderOptions): AIProvider {
     
     switch (options.behavior) {
       case 'failure':
-        if (options.failAfter && callCount >= options.failAfter) {
+        if (options.failAfter !== undefined && callCount >= options.failAfter) {
           throw new Error(`Provider ${options.name} failed`);
         }
         break;
         
       case 'rate-limit':
-        if (options.rateLimitAfter && callCount >= options.rateLimitAfter) {
+        if (options.rateLimitAfter !== undefined && callCount >= options.rateLimitAfter) {
           throw new Error('Rate limit exceeded');
         }
         break;
         
       case 'timeout':
-        if (options.timeoutAfter && callCount >= options.timeoutAfter) {
+        if (options.timeoutAfter !== undefined && callCount >= options.timeoutAfter) {
           await new Promise(resolve => setTimeout(resolve, 30000));
           throw new Error('Request timeout');
         }
@@ -53,7 +53,7 @@ export function createMockProvider(options: MockProviderOptions): AIProvider {
     return `Mock response from ${options.name} for: ${prompt}`;
   });
   
-  const checkAvailability: MockedFunction<AIProvider['checkAvailability']> = vi.fn(async () => {
+  const checkAvailability: MockedFunction<AIProvider['checkAvailability']> = vi.fn(() => {
     return options.behavior !== 'failure';
   });
   
@@ -64,7 +64,7 @@ export function createMockProvider(options: MockProviderOptions): AIProvider {
   };
 }
 
-export function createProviderScenarios() {
+export function createProviderScenarios(): Record<string, AIProvider> & { withPredefinedResponses: (responses: string[]) => AIProvider } {
   return {
     alwaysSuccessful: createMockProvider({
       name: 'always-successful',
@@ -92,7 +92,7 @@ export function createProviderScenarios() {
     intermittentFailure: createMockProvider({
       name: 'intermittent',
       behavior: 'custom',
-      customImplementation: async (prompt: string) => {
+      customImplementation: (prompt: string) => {
         const shouldFail = Math.random() < 0.3;
         if (shouldFail) {
           throw new Error('Intermittent failure');
@@ -101,7 +101,7 @@ export function createProviderScenarios() {
       }
     }),
     
-    withPredefinedResponses: (responses: string[]) => createMockProvider({
+    withPredefinedResponses: (responses: string[]): AIProvider => createMockProvider({
       name: 'predefined',
       behavior: 'success',
       responses
@@ -109,7 +109,7 @@ export function createProviderScenarios() {
   };
 }
 
-export function mockProviderModule(providers: Record<string, AIProvider>) {
+export function mockProviderModule(providers: Record<string, AIProvider>): void {
   vi.doMock('../../src/providers/index.js', () => ({
     getProvider: vi.fn((name: string) => providers[name]),
     listProviders: vi.fn(() => Object.keys(providers))

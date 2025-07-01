@@ -56,7 +56,7 @@ export class BenchmarkReporter {
       comparisons: this.compareWithBaselines()
     };
 
-    if (outputPath) {
+    if (outputPath !== undefined && outputPath !== '') {
       await this.saveReport(report, outputPath);
     }
 
