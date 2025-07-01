@@ -504,13 +504,15 @@ npm install
 npm run check
 
 # Individual commands
-npm test              # Run tests
+npm test              # Run tests with Vitest
 npm run typecheck     # Check TypeScript types
 npm run lint          # Check code style
 npm run build         # Build the project
 
 # Development commands
-npm run test:watch    # Run tests in watch mode
+npm run test:watch    # Run tests in watch mode with Vitest
+npm run test:ui       # Run tests with Vitest UI
+npm run test:coverage # Run tests with coverage report
 npm run lint:fix      # Auto-fix linting issues
 ```
 

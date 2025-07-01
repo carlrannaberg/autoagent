@@ -16,8 +16,7 @@ module.exports = {
   ],
   env: {
     node: true,
-    es2020: true,
-    jest: true
+    es2020: true
   },
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'error',
