@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { AutonomousAgent } from '@/core/autonomous-agent';
 import { ConfigManager } from '@/core/config-manager';
 // import { ProviderSimulator } from '../utils/provider-simulator';
 import { createIntegrationContext, cleanupIntegrationContext, createTestIssue, measureExecutionTime } from '../utils/integration-helpers';
@@ -11,7 +10,6 @@ import type { TodoItem } from '@/types/todo';
 
 describe('Batch Execution Integration Tests', () => {
   let context: IntegrationTestContext;
-  // let agent: AutonomousAgent;
   let configManager: ConfigManager;
 
   beforeEach(async () => {
@@ -19,8 +17,6 @@ describe('Batch Execution Integration Tests', () => {
     
     configManager = new ConfigManager(context.workspace.rootPath);
     await configManager.loadConfig();
-    
-    agent = new AutonomousAgent(configManager, context.workspace.rootPath);
   });
 
   afterEach(async () => {

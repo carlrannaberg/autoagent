@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { AutonomousAgent } from '@/core/autonomous-agent';
 import { ConfigManager } from '@/core/config-manager';
 import { GitSimulator } from '../utils/git-simulator';
 import { ProviderSimulator } from '../utils/provider-simulator';
@@ -11,7 +10,6 @@ import type { Issue } from '@/types/issue';
 
 describe('Issue Lifecycle Integration Tests', () => {
   let context: IntegrationTestContext;
-  // let agent: AutonomousAgent;
   let configManager: ConfigManager;
   let gitSimulator: GitSimulator;
   let claudeProvider: ProviderSimulator;
@@ -29,8 +27,6 @@ describe('Issue Lifecycle Integration Tests', () => {
     
     configManager = new ConfigManager(context.workspace.rootPath);
     await configManager.loadConfig();
-    
-    agent = new AutonomousAgent(configManager, context.workspace.rootPath);
   });
 
   afterEach(async () => {

@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { AutonomousAgent } from '@/core/autonomous-agent';
 import { ConfigManager } from '@/core/config-manager';
 import { ProviderSimulator, ProviderFailoverSimulator } from '../utils/provider-simulator';
 import { createIntegrationContext, cleanupIntegrationContext, createTestIssue } from '../utils/integration-helpers';
@@ -8,7 +7,6 @@ import type { Issue } from '@/types/issue';
 
 describe('Provider Failover Integration Tests', () => {
   let context: IntegrationTestContext;
-  // let agent: AutonomousAgent;
   let configManager: ConfigManager;
   let claudeSimulator: ProviderSimulator;
   let geminiSimulator: ProviderSimulator;
@@ -30,9 +28,7 @@ describe('Provider Failover Integration Tests', () => {
     failoverSimulator = new ProviderFailoverSimulator([claudeSimulator, geminiSimulator]);
     
     configManager = new ConfigManager(context.workspace.rootPath);
-    await configManager.init();
-    
-    agent = new AutonomousAgent(configManager, context.workspace.rootPath);
+    await configManager.loadConfig();
   });
 
   afterEach(async () => {

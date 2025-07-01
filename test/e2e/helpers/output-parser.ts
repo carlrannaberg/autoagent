@@ -1,10 +1,18 @@
 export class OutputParser {
   static extractJsonOutput(output: string): any {
-    const jsonMatch = output.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No JSON output found');
+    // Try to match JSON array first (to handle arrays containing objects)
+    let jsonMatch = output.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
     }
-    return JSON.parse(jsonMatch[0]);
+    
+    // Try to match JSON object
+    jsonMatch = output.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    
+    throw new Error('No JSON output found');
   }
 
   static extractLines(output: string): string[] {
