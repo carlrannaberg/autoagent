@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes yet._
 
+## [0.1.1] - 2025-07-01
+
+### Fixed
+- Bootstrap command now properly provides issue and plan templates to AI during decomposition
+  - AI receives the correct templates to ensure consistent file creation
+  - Fixes issue where plans might not follow the expected format
+
+### Changed
+- Bootstrap issue titles now reference the specific plan file being implemented
+  - Changed from generic "Bootstrap project from master-plan.md" to "Implement plan from {planname}"
+  - Makes it clearer which plan file is being decomposed
+- Release scripts now show estimated timing information (3-5 minutes) during execution
+  - Users are informed that the process takes time while Claude analyzes the codebase
+  - Reduces uncertainty about whether the script is running correctly
+
+### Documentation
+- Added semantic versioning guidelines to AGENT.md
+  - Clear guidance on when to use patch, minor, or major releases
+  - Focus on user perspective and intended behavior
+  - Examples to help decide between patch fixes and minor features
+
 ## [0.1.0] - 2025-07-01
 
 ### Added
