@@ -3,84 +3,84 @@ import { setupE2ETest, initializeProject } from '../helpers/setup';
 // import { OutputParser } from '../helpers/output-parser';
 
 describe('autoagent config', () => {
-  const { workspace, cli } = setupE2ETest();
+  const context = setupE2ETest();
 
-  describe('config get', () => {
+  describe('config show', () => {
     it('should display all configuration values', async () => {
-      await initializeProject(workspace, cli);
+      await initializeProject(context.workspace, context.cli);
 
-      const result = await cli.execute(['config', 'get']);
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('provider:');
-      expect(result.stdout).toContain('autoMode:');
-      expect(result.stdout).toContain('verbose:');
-    });
-
-    it('should display specific configuration value', async () => {
-      await initializeProject(workspace, cli);
-
-      const result = await cli.execute(['config', 'get', 'provider']);
+      const result = await context.cli.execute(['config', 'show']);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toMatch(/provider:\s*(claude|gemini)/);
-    });
-
-    it('should handle unknown configuration keys', async () => {
-      await initializeProject(workspace, cli);
-
-      const result = await cli.execute(['config', 'get', 'unknown']);
-
-      expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('Unknown configuration key');
+      expect(result.stdout).toContain('Configuration:');
     });
   });
 
-  describe('config set', () => {
-    it('should update configuration values', async () => {
-      await initializeProject(workspace, cli);
+  describe('config set-provider', () => {
+    it('should update provider configuration', async () => {
+      await initializeProject(context.workspace, context.cli);
 
-      let result = await cli.execute(['config', 'set', 'provider', 'gemini']);
+      let result = await context.cli.execute(['config', 'set-provider', 'gemini']);
       expect(result.exitCode).toBe(0);
 
-      result = await cli.execute(['config', 'get', 'provider']);
-      expect(result.stdout).toContain('provider: gemini');
+      result = await context.cli.execute(['config', 'show']);
+      expect(result.stdout).toContain('gemini');
     });
 
-    it('should validate configuration values', async () => {
-      await initializeProject(workspace, cli);
+    it('should validate provider values', async () => {
+      await initializeProject(context.workspace, context.cli);
 
-      const result = await cli.execute(['config', 'set', 'provider', 'invalid']);
+      const result = await context.cli.execute(['config', 'set-provider', 'invalid']);
 
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('Invalid value');
-    });
-
-    it('should update multiple configuration values', async () => {
-      await initializeProject(workspace, cli);
-
-      await cli.execute(['config', 'set', 'verbose', 'true']);
-      await cli.execute(['config', 'set', 'autoMode', 'true']);
-
-      const result = await cli.execute(['config', 'get']);
-      expect(result.stdout).toContain('verbose: true');
-      expect(result.stdout).toContain('autoMode: true');
+      expect(result.stderr).toContain('Invalid provider');
     });
   });
 
-  describe('config reset', () => {
-    it('should reset configuration to defaults', async () => {
-      await initializeProject(workspace, cli);
+  describe('config set-auto-commit', () => {
+    it('should update auto-commit configuration', async () => {
+      await initializeProject(context.workspace, context.cli);
 
-      await cli.execute(['config', 'set', 'provider', 'gemini']);
-      await cli.execute(['config', 'set', 'verbose', 'true']);
-
-      const result = await cli.execute(['config', 'reset']);
+      const result = await context.cli.execute(['config', 'set-auto-commit', 'false']);
       expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Auto-commit disabled');
+    });
 
-      const getResult = await cli.execute(['config', 'get']);
-      expect(getResult.stdout).toContain('provider: claude');
-      expect(getResult.stdout).toContain('verbose: false');
+    it('should handle invalid boolean values', async () => {
+      await initializeProject(context.workspace, context.cli);
+
+      const result = await context.cli.execute(['config', 'set-auto-commit', 'invalid']);
+      expect(result.exitCode).toBe(0);
+      // When value is not 'true', it defaults to false
+      expect(result.stdout).toContain('Auto-commit disabled');
+    });
+  });
+
+  describe('config set-failover', () => {
+    it('should set failover providers', async () => {
+      await initializeProject(context.workspace, context.cli);
+
+      const result = await context.cli.execute(['config', 'set-failover', 'gemini', 'claude']);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Failover providers set to: gemini, claude');
+    });
+  });
+
+  describe('config clear-limits', () => {
+    it('should clear all rate limits', async () => {
+      await initializeProject(context.workspace, context.cli);
+
+      const result = await context.cli.execute(['config', 'clear-limits']);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('All rate limits cleared');
+    });
+
+    it('should clear specific provider rate limit', async () => {
+      await initializeProject(context.workspace, context.cli);
+
+      const result = await context.cli.execute(['config', 'clear-limits', '-p', 'claude']);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Rate limit cleared for claude');
     });
   });
 });

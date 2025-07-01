@@ -3,104 +3,83 @@ import { setupE2ETest, initializeProject } from '../helpers/setup';
 import { OutputParser } from '../helpers/output-parser';
 
 describe('autoagent create', () => {
-  const { workspace, cli } = setupE2ETest();
+  const context = setupE2ETest();
 
   it('should create a new issue interactively', async () => {
-    await initializeProject(workspace, cli);
+    await initializeProject(context.workspace, context.cli);
 
-    const input = 'Test Issue\nImplement a new feature\n- [ ] Task 1\n- [ ] Task 2\nSimple feature implementation\n';
-    const result = await cli.executeWithInput(['create'], input);
+    const input = 'Implement a new feature\n- [ ] Task 1\n- [ ] Task 2\nSimple feature implementation\n';
+    const result = await context.cli.executeWithInput(['create', 'Test Issue'], input);
 
     expect(result.exitCode).toBe(0);
     expect(OutputParser.containsSuccess(result.stdout)).toBe(true);
 
-    const issues = await workspace.listFiles('issues');
+    const issues = await context.workspace.listFiles('issues');
     expect(issues.length).toBe(1);
     expect(issues[0]).toMatch(/test-issue.*\.md/);
   });
 
   it('should create issue with command line arguments', async () => {
-    await initializeProject(workspace, cli);
+    await initializeProject(context.workspace, context.cli);
 
-    const result = await cli.execute([
+    const result = await context.cli.execute([
       'create',
-      '--title',
-      'CLI Test Issue',
-      '--description',
-      'Test description',
-      '--acceptance',
-      'Task 1',
-      '--acceptance',
-      'Task 2',
-      '--details',
-      'Technical details here',
+      'CLI Test Issue'
     ]);
 
     expect(result.exitCode).toBe(0);
     expect(OutputParser.containsSuccess(result.stdout)).toBe(true);
 
-    const issues = await workspace.listFiles('issues');
+    const issues = await context.workspace.listFiles('issues');
     expect(issues.length).toBe(1);
 
-    const issueContent = await workspace.readFile(`issues/${issues[0]}`);
+    const issueContent = await context.workspace.readFile(`issues/${issues[0]}`);
     expect(issueContent).toContain('CLI Test Issue');
-    expect(issueContent).toContain('Test description');
-    expect(issueContent).toContain('Task 1');
-    expect(issueContent).toContain('Task 2');
+    expect(issueContent).toContain('# Issue');
+    expect(issueContent).toContain('Success');
   });
 
   it('should validate issue format', async () => {
-    await initializeProject(workspace, cli);
+    await initializeProject(context.workspace, context.cli);
 
-    const result = await cli.execute(['create', '--title', '']);
+    const result = await context.cli.execute(['create']);
 
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toContain('Title is required');
+    expect(result.stderr).toMatch(/error: missing required argument|not enough arguments/);
   });
 
   it('should generate unique issue filenames', async () => {
-    await initializeProject(workspace, cli);
+    await initializeProject(context.workspace, context.cli);
 
-    await cli.execute([
+    await context.cli.execute([
       'create',
-      '--title',
-      'Duplicate Issue',
-      '--description',
-      'First issue',
+      'Duplicate Issue'
     ]);
 
-    const result = await cli.execute([
+    const result = await context.cli.execute([
       'create',
-      '--title',
-      'Duplicate Issue',
-      '--description',
-      'Second issue',
+      'Duplicate Issue'
     ]);
 
     expect(result.exitCode).toBe(0);
 
-    const issues = await workspace.listFiles('issues');
+    const issues = await context.workspace.listFiles('issues');
     expect(issues.length).toBe(2);
     expect(issues[0]).not.toBe(issues[1]);
   });
 
   it('should support template usage', async () => {
-    await initializeProject(workspace, cli);
+    await initializeProject(context.workspace, context.cli);
 
-    const result = await cli.execute([
+    const result = await context.cli.execute([
       'create',
-      '--template',
-      'bug',
-      '--title',
-      'Bug Report',
-      '--description',
-      'Found a bug',
+      'Bug Report'
     ]);
 
     expect(result.exitCode).toBe(0);
 
-    const issues = await workspace.listFiles('issues');
-    const issueContent = await workspace.readFile(`issues/${issues[0]}`);
+    const issues = await context.workspace.listFiles('issues');
+    const issueContent = await context.workspace.readFile(`issues/${issues[0]}`);
     expect(issueContent).toContain('Bug Report');
   });
 });

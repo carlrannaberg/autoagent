@@ -91,8 +91,8 @@ expect.extend({
       errors.push('title is missing or empty');
     }
     
-    if (received.requirement === undefined || received.requirement.trim().length === 0) {
-      errors.push('requirement is missing or empty');
+    if (received.requirements === undefined || received.requirements.trim().length === 0) {
+      errors.push('requirements is missing or empty');
     }
     
     if (!Array.isArray(received.acceptanceCriteria) || received.acceptanceCriteria.length === 0) {
@@ -144,11 +144,13 @@ expect.extend({
 
 export function createIssue(overrides: Partial<Issue> = {}): Issue {
   return {
+    number: 1,
     title: 'Test Issue',
-    requirement: 'Test requirement',
+    file: 'issues/1-test-issue.md',
+    requirements: 'Test requirement',
     acceptanceCriteria: ['Test criterion 1', 'Test criterion 2'],
     technicalDetails: 'Test technical details',
-    dependencies: [],
+    resources: [],
     ...overrides
   };
 }

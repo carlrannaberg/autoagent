@@ -3,14 +3,14 @@ import { setupE2ETest, initializeProject, createSampleIssue } from '../helpers/s
 import { OutputParser } from '../helpers/output-parser';
 
 describe('autoagent status', () => {
-  const { workspace, cli } = setupE2ETest();
+  const context = setupE2ETest();
 
   it('should show overall project status', async () => {
-    await initializeProject(workspace, cli);
-    await createSampleIssue(workspace, 'issue-1');
-    await createSampleIssue(workspace, 'issue-2');
+    await initializeProject(context.workspace, context.cli);
+    await createSampleIssue(context.workspace, 'issue-1');
+    await createSampleIssue(context.workspace, 'issue-2');
 
-    const result = await cli.execute(['status']);
+    const result = await context.cli.execute(['status']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Project Status');
@@ -19,10 +19,10 @@ describe('autoagent status', () => {
   });
 
   it('should show specific issue status', async () => {
-    await initializeProject(workspace, cli);
-    await createSampleIssue(workspace, 'test-issue');
+    await initializeProject(context.workspace, context.cli);
+    await createSampleIssue(context.workspace, 'test-issue');
 
-    const result = await cli.execute(['status', 'test-issue']);
+    const result = await context.cli.execute(['status', 'test-issue']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('test-issue');
@@ -30,9 +30,9 @@ describe('autoagent status', () => {
   });
 
   it('should show execution history', async () => {
-    await initializeProject(workspace, cli);
+    await initializeProject(context.workspace, context.cli);
 
-    await workspace.createFile('.autoagent/executions.json', JSON.stringify([
+    await context.workspace.createFile('.autoagent/executions.json', JSON.stringify([
       {
         id: 'exec-1',
         issue: 'test-issue',
@@ -52,7 +52,7 @@ describe('autoagent status', () => {
       },
     ]));
 
-    const result = await cli.execute(['status', '--history']);
+    const result = await context.cli.execute(['status', '--history']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Recent Executions');
@@ -63,9 +63,9 @@ describe('autoagent status', () => {
   });
 
   it('should show provider statistics', async () => {
-    await initializeProject(workspace, cli);
+    await initializeProject(context.workspace, context.cli);
 
-    await workspace.createFile('.autoagent/stats.json', JSON.stringify({
+    await context.workspace.createFile('.autoagent/stats.json', JSON.stringify({
       claude: {
         totalExecutions: 10,
         successRate: 0.9,
@@ -78,7 +78,7 @@ describe('autoagent status', () => {
       },
     }));
 
-    const result = await cli.execute(['status', '--providers']);
+    const result = await context.cli.execute(['status', '--providers']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Provider Statistics');
@@ -89,19 +89,19 @@ describe('autoagent status', () => {
   });
 
   it('should handle missing status data gracefully', async () => {
-    await initializeProject(workspace, cli);
+    await initializeProject(context.workspace, context.cli);
 
-    const result = await cli.execute(['status', 'non-existent']);
+    const result = await context.cli.execute(['status', 'non-existent']);
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain('Issue not found');
   });
 
   it('should support JSON output format', async () => {
-    await initializeProject(workspace, cli);
-    await createSampleIssue(workspace, 'json-test');
+    await initializeProject(context.workspace, context.cli);
+    await createSampleIssue(context.workspace, 'json-test');
 
-    const result = await cli.execute(['status', '--json']);
+    const result = await context.cli.execute(['status', '--json']);
 
     expect(result.exitCode).toBe(0);
     const data = OutputParser.extractJsonOutput(result.stdout);

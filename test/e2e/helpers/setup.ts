@@ -59,5 +59,5 @@ export async function createSamplePlan(workspace: E2EWorkspace, issueName = 'tes
 
 export async function initializeProject(workspace: E2EWorkspace, cli: CliExecutor): Promise<void> {
   await workspace.initGit();
-  await cli.execute(['init']);
+  await cli.execute(['config', 'init']);
 }

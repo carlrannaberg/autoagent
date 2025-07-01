@@ -23,6 +23,10 @@ export class TestWorkspace {
     return this._path;
   }
   
+  get rootPath(): string {
+    return this._path;
+  }
+  
   async setup(options: TestWorkspaceOptions = {}): Promise<void> {
     await fs.mkdir(this._path, { recursive: true });
     

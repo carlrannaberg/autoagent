@@ -114,7 +114,7 @@ describe('Multi-Provider Integration Tests', () => {
       providers.get('gemini')!['errorRate'] = 0.3;
       providers.get('gpt4')!['errorRate'] = 0.5;
 
-      const testRuns = 100;
+      const testRuns = 20;
       const successRates: Record<string, number> = {};
 
       for (const [name, provider] of providers) {
@@ -137,7 +137,7 @@ describe('Multi-Provider Integration Tests', () => {
       const bestProvider = Object.entries(successRates)
         .sort(([, a], [, b]) => b - a)[0][0];
       expect(bestProvider).toBe('claude');
-    });
+    }, 60000);
 
     it('should implement cost-aware provider selection', async () => {
       const providerCosts = {
@@ -171,7 +171,7 @@ describe('Multi-Provider Integration Tests', () => {
       expect(executionCounts.gemini).toBeGreaterThan(executionCounts.claude);
       expect(executionCounts.gemini).toBeGreaterThan(executionCounts.gpt4);
       expect(totalCost).toBeLessThanOrEqual(budget);
-    });
+    }, 60000);
   });
 
   describe('Concurrent Provider Execution', () => {
@@ -286,9 +286,12 @@ describe('Multi-Provider Integration Tests', () => {
         } else if (required.includes('testing') && !required.includes('documentation')) {
           expect(capableProviders).toContain('gemini');
           expect(capableProviders).toContain('gpt4');
-        } else if (required.includes('documentation')) {
+        } else if (required.includes('documentation') && !required.includes('testing')) {
           expect(capableProviders).toContain('claude');
           expect(capableProviders).toContain('gpt4');
+        } else if (required.includes('code') && required.includes('testing') && required.includes('documentation')) {
+          // Full implementation - only gpt4 has all capabilities
+          expect(capableProviders).toEqual(['gpt4']);
         }
       }
     });

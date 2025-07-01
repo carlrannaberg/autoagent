@@ -131,7 +131,7 @@ describe('Test Setup Utilities', () => {
 
       const issue = createIssue({
         title: 'Test Issue',
-        requirement: 'Test requirement'
+        requirements: 'Test requirement'
       });
 
       await workspace.createIssue(1, issue);

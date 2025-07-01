@@ -3,15 +3,15 @@ import { setupE2ETest, initializeProject, createSampleIssue } from '../helpers/s
 import { OutputParser } from '../helpers/output-parser';
 
 describe('autoagent list', () => {
-  const { workspace, cli } = setupE2ETest();
+  const context = setupE2ETest();
 
   it('should list all issues', async () => {
-    await initializeProject(workspace, cli);
-    await createSampleIssue(workspace, 'issue-1');
-    await createSampleIssue(workspace, 'issue-2');
-    await createSampleIssue(workspace, 'issue-3');
+    await initializeProject(context.workspace, context.cli);
+    await createSampleIssue(context.workspace, 'issue-1');
+    await createSampleIssue(context.workspace, 'issue-2');
+    await createSampleIssue(context.workspace, 'issue-3');
 
-    const result = await cli.execute(['list', 'issues']);
+    const result = await context.cli.execute(['list', 'issues']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('issue-1');
@@ -21,10 +21,10 @@ describe('autoagent list', () => {
   });
 
   it('should filter issues by status', async () => {
-    await initializeProject(workspace, cli);
-    await createSampleIssue(workspace, 'pending-issue');
+    await initializeProject(context.workspace, context.cli);
+    await createSampleIssue(context.workspace, 'pending-issue');
 
-    await workspace.createFile('.autoagent/status.json', JSON.stringify({
+    await context.workspace.createFile('.autoagent/status.json', JSON.stringify({
       'completed-issue': {
         status: 'completed',
         startedAt: new Date().toISOString(),
@@ -32,7 +32,7 @@ describe('autoagent list', () => {
       },
     }));
 
-    const result = await cli.execute(['list', 'issues', '--status', 'completed']);
+    const result = await context.cli.execute(['list', 'issues', '--status', 'completed']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('completed-issue');
@@ -40,9 +40,9 @@ describe('autoagent list', () => {
   });
 
   it('should list providers', async () => {
-    await initializeProject(workspace, cli);
+    await initializeProject(context.workspace, context.cli);
 
-    const result = await cli.execute(['list', 'providers']);
+    const result = await context.cli.execute(['list', 'providers']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('claude');
@@ -50,19 +50,19 @@ describe('autoagent list', () => {
   });
 
   it('should show empty list gracefully', async () => {
-    await initializeProject(workspace, cli);
+    await initializeProject(context.workspace, context.cli);
 
-    const result = await cli.execute(['list', 'issues']);
+    const result = await context.cli.execute(['list', 'issues']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('No issues found');
   });
 
   it('should support JSON output format', async () => {
-    await initializeProject(workspace, cli);
-    await createSampleIssue(workspace, 'json-test');
+    await initializeProject(context.workspace, context.cli);
+    await createSampleIssue(context.workspace, 'json-test');
 
-    const result = await cli.execute(['list', 'issues', '--json']);
+    const result = await context.cli.execute(['list', 'issues', '--json']);
 
     expect(result.exitCode).toBe(0);
     const data = OutputParser.extractJsonOutput(result.stdout);
@@ -73,9 +73,9 @@ describe('autoagent list', () => {
   });
 
   it('should list recent executions', async () => {
-    await initializeProject(workspace, cli);
+    await initializeProject(context.workspace, context.cli);
 
-    await workspace.createFile('.autoagent/executions.json', JSON.stringify([
+    await context.workspace.createFile('.autoagent/executions.json', JSON.stringify([
       {
         id: 'exec-1',
         issue: 'test-issue',
@@ -84,7 +84,7 @@ describe('autoagent list', () => {
       },
     ]));
 
-    const result = await cli.execute(['list', 'executions']);
+    const result = await context.cli.execute(['list', 'executions']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('exec-1');

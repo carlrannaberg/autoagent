@@ -4,11 +4,11 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 describe('Error Handling E2E', () => {
-  const { workspace, cli } = setupE2ETest();
+  const context = setupE2ETest();
 
   describe('Invalid Commands', () => {
     it('should handle unknown commands gracefully', async () => {
-      const result = await cli.execute(['unknown-command']);
+      const result = await context.cli.execute(['unknown-command']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain("Unknown command 'unknown-command'");
@@ -16,17 +16,17 @@ describe('Error Handling E2E', () => {
     });
 
     it('should handle missing required arguments', async () => {
-      await workspace.initGit();
-      await cli.execute(['init']);
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
 
-      const result = await cli.execute(['run']); // Missing issue name
+      const result = await context.cli.execute(['run']); // Missing issue name
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('Missing required argument');
     });
 
     it('should handle invalid option values', async () => {
-      const result = await cli.execute(['list', 'issues', '--status', 'invalid-status']);
+      const result = await context.cli.execute(['list', 'issues', '--status', 'invalid-status']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('Invalid status');
@@ -35,7 +35,7 @@ describe('Error Handling E2E', () => {
 
   describe('File System Errors', () => {
     it('should handle missing configuration file', async () => {
-      const result = await cli.execute(['config', 'get']);
+      const result = await context.cli.execute(['config', 'get']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('not initialized');
@@ -43,23 +43,23 @@ describe('Error Handling E2E', () => {
     });
 
     it('should handle corrupted configuration file', async () => {
-      await workspace.createFile('.autoagent.json', '{ invalid json }');
+      await context.workspace.createFile('.autoagent.json', '{ invalid json }');
 
-      const result = await cli.execute(['config', 'get']);
+      const result = await context.cli.execute(['config', 'get']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('Failed to parse configuration');
     });
 
     it('should handle permission errors', async () => {
-      await workspace.initGit();
-      await cli.execute(['init']);
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
 
       // Make config file read-only
-      const configPath = path.join(workspace.getPath(), '.autoagent.json');
+      const configPath = path.join(context.workspace.getPath(), '.autoagent.json');
       await fs.chmod(configPath, 0o444);
 
-      const result = await cli.execute(['config', 'set', 'provider', 'gemini']);
+      const result = await context.cli.execute(['config', 'set', 'provider', 'gemini']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toMatch(/permission|access/i);
@@ -69,10 +69,10 @@ describe('Error Handling E2E', () => {
     });
 
     it('should handle missing issue files', async () => {
-      await workspace.initGit();
-      await cli.execute(['init']);
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
 
-      const result = await cli.execute(['run', 'non-existent-issue']);
+      const result = await context.cli.execute(['run', 'non-existent-issue']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('Issue not found');
@@ -81,42 +81,42 @@ describe('Error Handling E2E', () => {
 
   describe('Network and Provider Errors', () => {
     it('should handle provider timeout', async () => {
-      await workspace.initGit();
-      await cli.execute(['init']);
-      await workspace.createFile('issues/timeout-test.md', '# Test Issue');
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
+      await context.workspace.createFile('issues/timeout-test.md', '# Test Issue');
 
-      cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-      cli.setEnv('AUTOAGENT_MOCK_TIMEOUT', 'true');
+      context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
+      context.cli.setEnv('AUTOAGENT_MOCK_TIMEOUT', 'true');
 
-      const result = await cli.execute(['run', 'timeout-test'], { timeout: 5000 });
+      const result = await context.cli.execute(['run', 'timeout-test'], { timeout: 5000 });
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('timeout');
     });
 
     it('should handle provider rate limit', async () => {
-      await workspace.initGit();
-      await cli.execute(['init']);
-      await workspace.createFile('issues/rate-limit-test.md', '# Test Issue');
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
+      await context.workspace.createFile('issues/rate-limit-test.md', '# Test Issue');
 
-      cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-      cli.setEnv('AUTOAGENT_MOCK_RATE_LIMIT', 'true');
+      context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
+      context.cli.setEnv('AUTOAGENT_MOCK_RATE_LIMIT', 'true');
 
-      const result = await cli.execute(['run', 'rate-limit-test']);
+      const result = await context.cli.execute(['run', 'rate-limit-test']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('rate limit');
     });
 
     it('should handle provider authentication failure', async () => {
-      await workspace.initGit();
-      await cli.execute(['init']);
-      await workspace.createFile('issues/auth-test.md', '# Test Issue');
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
+      await context.workspace.createFile('issues/auth-test.md', '# Test Issue');
 
-      cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-      cli.setEnv('AUTOAGENT_MOCK_AUTH_FAIL', 'true');
+      context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
+      context.cli.setEnv('AUTOAGENT_MOCK_AUTH_FAIL', 'true');
 
-      const result = await cli.execute(['run', 'auth-test']);
+      const result = await context.cli.execute(['run', 'auth-test']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('authentication');
@@ -125,40 +125,40 @@ describe('Error Handling E2E', () => {
 
   describe('Invalid Input Handling', () => {
     it('should handle malformed issue files', async () => {
-      await workspace.initGit();
-      await cli.execute(['init']);
-      await workspace.createFile('issues/malformed.md', 'Not a valid issue format');
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
+      await context.workspace.createFile('issues/malformed.md', 'Not a valid issue format');
 
-      const result = await cli.execute(['run', 'malformed']);
+      const result = await context.cli.execute(['run', 'malformed']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('Invalid issue format');
     });
 
     it('should handle empty issue files', async () => {
-      await workspace.initGit();
-      await cli.execute(['init']);
-      await workspace.createFile('issues/empty.md', '');
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
+      await context.workspace.createFile('issues/empty.md', '');
 
-      const result = await cli.execute(['list', 'issues']);
+      const result = await context.cli.execute(['list', 'issues']);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Invalid format');
     });
 
     it('should handle cyclic dependencies in issues', async () => {
-      await workspace.initGit();
-      await cli.execute(['init']);
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
 
-      await workspace.createFile('issues/issue-a.md', `# Issue A
+      await context.workspace.createFile('issues/issue-a.md', `# Issue A
 ## Dependencies
 - issue-b`);
-      await workspace.createFile('issues/issue-b.md', `# Issue B
+      await context.workspace.createFile('issues/issue-b.md', `# Issue B
 ## Dependencies
 - issue-a`);
 
-      cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-      const result = await cli.execute(['run', '--all']);
+      context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
+      const result = await context.cli.execute(['run', '--all']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('Cyclic dependency');
@@ -167,19 +167,19 @@ describe('Error Handling E2E', () => {
 
   describe('Recovery Scenarios', () => {
     it('should recover from partial execution', async () => {
-      await workspace.initGit();
-      await cli.execute(['init']);
-      await workspace.createFile('issues/partial-test.md', '# Test Issue');
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
+      await context.workspace.createFile('issues/partial-test.md', '# Test Issue');
 
       // Simulate partial execution
-      await workspace.createFile('.autoagent/status.json', JSON.stringify({
+      await context.workspace.createFile('.autoagent/status.json', JSON.stringify({
         'partial-test': {
           status: 'running',
           startedAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
         },
       }));
 
-      const result = await cli.execute(['status', 'partial-test']);
+      const result = await context.cli.execute(['status', 'partial-test']);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('running');
@@ -187,19 +187,19 @@ describe('Error Handling E2E', () => {
     });
 
     it('should clean up after failed execution', async () => {
-      await workspace.initGit();
-      await cli.execute(['init']);
-      await workspace.createFile('issues/cleanup-test.md', '# Test Issue');
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
+      await context.workspace.createFile('issues/cleanup-test.md', '# Test Issue');
 
-      cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-      cli.setEnv('AUTOAGENT_MOCK_FAIL', 'true');
+      context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
+      context.cli.setEnv('AUTOAGENT_MOCK_FAIL', 'true');
 
-      const result = await cli.execute(['run', 'cleanup-test']);
+      const result = await context.cli.execute(['run', 'cleanup-test']);
 
       expect(result.exitCode).toBe(1);
 
       // Verify status was updated
-      const statusResult = await cli.execute(['status', 'cleanup-test']);
+      const statusResult = await context.cli.execute(['status', 'cleanup-test']);
       expect(statusResult.stdout).toContain('failed');
     });
   });

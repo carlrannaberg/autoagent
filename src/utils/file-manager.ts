@@ -21,7 +21,7 @@ export class FileManager {
     return path.join(this.workspace, 'TODO.md');
   }
 
-  private async ensureDirectories(): Promise<void> {
+  async ensureDirectories(): Promise<void> {
     await fs.mkdir(this.issuesDir, { recursive: true });
     await fs.mkdir(this.plansDir, { recursive: true });
   }

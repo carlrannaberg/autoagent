@@ -3,15 +3,15 @@ import { setupE2ETest, initializeProject, createSampleIssue } from '../helpers/s
 import { OutputParser } from '../helpers/output-parser';
 
 describe('Output Formatting E2E', () => {
-  const { workspace, cli } = setupE2ETest();
+  const context = setupE2ETest();
 
   describe('Table Output', () => {
     it('should format issue list as table', async () => {
-      await initializeProject(workspace, cli);
-      await createSampleIssue(workspace, 'issue-1');
-      await createSampleIssue(workspace, 'issue-2');
+      await initializeProject(context.workspace, context.cli);
+      await createSampleIssue(context.workspace, 'issue-1');
+      await createSampleIssue(context.workspace, 'issue-2');
 
-      const result = await cli.execute(['list', 'issues']);
+      const result = await context.cli.execute(['list', 'issues']);
 
       expect(result.exitCode).toBe(0);
       const tableData = OutputParser.extractTableData(result.stdout);
@@ -21,11 +21,11 @@ describe('Output Formatting E2E', () => {
     });
 
     it('should align table columns properly', async () => {
-      await initializeProject(workspace, cli);
-      await createSampleIssue(workspace, 'short');
-      await createSampleIssue(workspace, 'very-long-issue-name-for-testing');
+      await initializeProject(context.workspace, context.cli);
+      await createSampleIssue(context.workspace, 'short');
+      await createSampleIssue(context.workspace, 'very-long-issue-name-for-testing');
 
-      const result = await cli.execute(['list', 'issues']);
+      const result = await context.cli.execute(['list', 'issues']);
 
       const lines = OutputParser.extractLines(result.stdout);
       const tableLine = lines.find((line) => line.includes('│'));
@@ -40,10 +40,10 @@ describe('Output Formatting E2E', () => {
 
   describe('JSON Output', () => {
     it('should format valid JSON when requested', async () => {
-      await initializeProject(workspace, cli);
-      await createSampleIssue(workspace, 'json-test');
+      await initializeProject(context.workspace, context.cli);
+      await createSampleIssue(context.workspace, 'json-test');
 
-      const result = await cli.execute(['list', 'issues', '--json']);
+      const result = await context.cli.execute(['list', 'issues', '--json']);
 
       expect(result.exitCode).toBe(0);
       expect(() => JSON.parse(result.stdout)).not.toThrow();
@@ -56,10 +56,10 @@ describe('Output Formatting E2E', () => {
     });
 
     it('should output pretty-printed JSON', async () => {
-      await initializeProject(workspace, cli);
-      await createSampleIssue(workspace, 'pretty-json');
+      await initializeProject(context.workspace, context.cli);
+      await createSampleIssue(context.workspace, 'pretty-json');
 
-      const result = await cli.execute(['status', '--json']);
+      const result = await context.cli.execute(['status', '--json']);
 
       expect(result.exitCode).toBe(0);
       const lines = result.stdout.split('\n');
@@ -71,17 +71,17 @@ describe('Output Formatting E2E', () => {
 
   describe('Progress Indicators', () => {
     it('should show progress during batch operations', async () => {
-      await initializeProject(workspace, cli);
+      await initializeProject(context.workspace, context.cli);
       
       // Create multiple issues
       for (let i = 1; i <= 5; i++) {
-        await createSampleIssue(workspace, `batch-${i}`);
+        await createSampleIssue(context.workspace, `batch-${i}`);
       }
 
-      cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-      cli.setEnv('AUTOAGENT_SHOW_PROGRESS', 'true');
+      context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
+      context.cli.setEnv('AUTOAGENT_SHOW_PROGRESS', 'true');
       
-      const result = await cli.execute(['run', '--all']);
+      const result = await context.cli.execute(['run', '--all']);
 
       expect(result.exitCode).toBe(0);
       const progress = OutputParser.extractProgress(result.stdout);
@@ -90,14 +90,14 @@ describe('Output Formatting E2E', () => {
     });
 
     it('should show spinner for long operations', async () => {
-      await initializeProject(workspace, cli);
-      await createSampleIssue(workspace, 'long-operation');
+      await initializeProject(context.workspace, context.cli);
+      await createSampleIssue(context.workspace, 'long-operation');
 
-      cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-      cli.setEnv('AUTOAGENT_MOCK_DELAY', '2000');
-      cli.setEnv('AUTOAGENT_SHOW_SPINNER', 'true');
+      context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
+      context.cli.setEnv('AUTOAGENT_MOCK_DELAY', '2000');
+      context.cli.setEnv('AUTOAGENT_SHOW_SPINNER', 'true');
 
-      const result = await cli.execute(['run', 'long-operation']);
+      const result = await context.cli.execute(['run', 'long-operation']);
 
       expect(result.exitCode).toBe(0);
       // Note: Actual spinner characters might be stripped, but we can check for progress messages
@@ -107,10 +107,10 @@ describe('Output Formatting E2E', () => {
 
   describe('Verbose Output', () => {
     it('should show detailed output in verbose mode', async () => {
-      await initializeProject(workspace, cli);
-      await createSampleIssue(workspace, 'verbose-test');
+      await initializeProject(context.workspace, context.cli);
+      await createSampleIssue(context.workspace, 'verbose-test');
 
-      const result = await cli.execute(['list', 'issues', '--verbose']);
+      const result = await context.cli.execute(['list', 'issues', '--verbose']);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Loading configuration');
@@ -120,10 +120,10 @@ describe('Output Formatting E2E', () => {
     });
 
     it('should show debug information with timestamps', async () => {
-      await initializeProject(workspace, cli);
+      await initializeProject(context.workspace, context.cli);
 
-      cli.setEnv('DEBUG', 'autoagent:*');
-      const result = await cli.execute(['status', '--verbose']);
+      context.cli.setEnv('DEBUG', 'autoagent:*');
+      const result = await context.cli.execute(['status', '--verbose']);
 
       expect(result.exitCode).toBe(0);
       // Check for timestamp pattern
@@ -133,11 +133,11 @@ describe('Output Formatting E2E', () => {
 
   describe('Color Output', () => {
     it('should use colors when terminal supports it', async () => {
-      await initializeProject(workspace, cli);
-      await createSampleIssue(workspace, 'color-test');
+      await initializeProject(context.workspace, context.cli);
+      await createSampleIssue(context.workspace, 'color-test');
 
-      cli.setEnv('FORCE_COLOR', '1');
-      const result = await cli.execute(['list', 'issues']);
+      context.cli.setEnv('FORCE_COLOR', '1');
+      const result = await context.cli.execute(['list', 'issues']);
 
       expect(result.exitCode).toBe(0);
       // Check for ANSI color codes
@@ -146,10 +146,10 @@ describe('Output Formatting E2E', () => {
     });
 
     it('should disable colors when requested', async () => {
-      await initializeProject(workspace, cli);
-      await createSampleIssue(workspace, 'no-color-test');
+      await initializeProject(context.workspace, context.cli);
+      await createSampleIssue(context.workspace, 'no-color-test');
 
-      const result = await cli.execute(['list', 'issues', '--no-color']);
+      const result = await context.cli.execute(['list', 'issues', '--no-color']);
 
       expect(result.exitCode).toBe(0);
       // Should not contain ANSI color codes
@@ -160,7 +160,7 @@ describe('Output Formatting E2E', () => {
 
   describe('Error Message Formatting', () => {
     it('should format error messages clearly', async () => {
-      const result = await cli.execute(['run', 'non-existent']);
+      const result = await context.cli.execute(['run', 'non-existent']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('Error:');
@@ -169,9 +169,9 @@ describe('Output Formatting E2E', () => {
     });
 
     it('should show stack traces in debug mode', async () => {
-      cli.setEnv('DEBUG', 'true');
+      context.cli.setEnv('DEBUG', 'true');
       
-      const result = await cli.execute(['config', 'get']);
+      const result = await context.cli.execute(['config', 'get']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('Error:');
@@ -182,15 +182,15 @@ describe('Output Formatting E2E', () => {
 
   describe('Summary Output', () => {
     it('should show execution summary', async () => {
-      await initializeProject(workspace, cli);
+      await initializeProject(context.workspace, context.cli);
       
       // Create and mock execute multiple issues
       for (let i = 1; i <= 3; i++) {
-        await createSampleIssue(workspace, `summary-${i}`);
+        await createSampleIssue(context.workspace, `summary-${i}`);
       }
 
-      cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-      const result = await cli.execute(['run', '--all']);
+      context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
+      const result = await context.cli.execute(['run', '--all']);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Execution Summary');
