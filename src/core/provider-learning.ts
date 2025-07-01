@@ -66,7 +66,7 @@ export class ProviderLearning {
       const durationInfo = recentResult.duration ? 
         `\nDuration: ${(recentResult.duration / 1000).toFixed(1)} seconds` : '';
       
-      const errorInfo = !recentResult.success && recentResult.error ? 
+      const errorInfo = !recentResult.success && recentResult.error !== undefined && recentResult.error !== '' ? 
         `\nError: ${recentResult.error}` : '';
       
       const prompt = `${taskInfo}${changesInfo}${durationInfo}${errorInfo}
