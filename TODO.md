@@ -3,10 +3,10 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #8]** Update CI/CD Pipeline for Vitest - `issues/8-update-cicd-pipeline.md`
 - [ ] **[Issue #9]** Clean Up Jest and Finalize Migration - `issues/9-cleanup-jest-finalize.md`
 
 ## Completed Issues
+- [x] **[Issue #8]** Update CI/CD Pipeline for Vitest - `issues/8-update-cicd-pipeline.md`
 - [x] **[Issue #7]** Add Benchmark Tests - `issues/7-add-benchmark-tests.md`
 - [x] **[Issue #6]** Create E2E Test Infrastructure - `issues/6-create-e2e-tests.md`
 - [x] **[Issue #5]** Create Integration Test Infrastructure - `issues/5-create-integration-tests.md`

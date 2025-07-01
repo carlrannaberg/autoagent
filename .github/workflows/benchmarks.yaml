@@ -1,0 +1,90 @@
+name: Performance Benchmarks
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      compare-branch:
+        description: 'Branch to compare against'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: write
+  deployments: write
+
+jobs:
+  benchmark:
+    name: Run Performance Benchmarks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Run benchmarks
+      run: npm run bench
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: bench-results.json
+        retention-days: 30
+    
+    - name: Store benchmark result
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        name: TypeScript Benchmarks
+        tool: 'customBiggerIsBetter'
+        output-file-path: bench-results.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        comment-on-alert: true
+        summary-always: true
+        alert-threshold: '150%'
+        fail-on-alert: true
+        comment-always: true
+        benchmark-data-dir-path: 'benchmarks'
+    
+    - name: Compare with base branch
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "## 📊 Benchmark Comparison" >> $GITHUB_STEP_SUMMARY
+        
+        # Checkout base branch
+        git checkout ${{ github.base_ref }}
+        npm ci
+        npm run build
+        npm run bench -- --reporter=json --outputFile=base-bench-results.json
+        
+        # Checkout PR branch
+        git checkout ${{ github.head_ref }}
+        
+        # Compare results
+        node -e "
+          const fs = require('fs');
+          const current = JSON.parse(fs.readFileSync('bench-results.json', 'utf8'));
+          const base = JSON.parse(fs.readFileSync('base-bench-results.json', 'utf8'));
+          
+          console.log('### Performance Comparison');
+          console.log('| Benchmark | Base | Current | Change |');
+          console.log('|-----------|------|---------|--------|');
+          
+          // Add comparison logic here
+        " >> $GITHUB_STEP_SUMMARY
