@@ -1,17 +1,17 @@
-// Create the mocked exec function 
-const mockExec = jest.fn();
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// Use vi.hoisted to hoist the mock creation
+const { mockExec } = vi.hoisted(() => ({
+  mockExec: vi.fn()
+}));
 
 // Mock child_process module before imports
-jest.mock('child_process');
+vi.mock('child_process');
 
 // Mock util module to return our mock exec when promisified
-jest.mock('util', () => {
-  const actualUtil = jest.requireActual<typeof import('util')>('util');
-  return {
-    ...actualUtil,
-    promisify: jest.fn(() => mockExec)
-  };
-});
+vi.mock('util', () => ({
+  promisify: () => mockExec
+}));
 
 import {
   checkGitAvailable,
@@ -28,7 +28,7 @@ import {
 
 describe('Git Utilities', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockExec.mockReset();
   });
 

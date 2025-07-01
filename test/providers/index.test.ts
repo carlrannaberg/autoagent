@@ -1,15 +1,16 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createProvider, getFirstAvailableProvider } from '../../src/providers';
 import { ClaudeProvider } from '../../src/providers/ClaudeProvider';
 import { GeminiProvider } from '../../src/providers/GeminiProvider';
 import { Provider } from '../../src/providers/Provider';
 import { ProviderName } from '../../src/types';
 
-jest.mock('../../src/providers/ClaudeProvider');
-jest.mock('../../src/providers/GeminiProvider');
+vi.mock('../../src/providers/ClaudeProvider');
+vi.mock('../../src/providers/GeminiProvider');
 
 describe('Provider factory functions', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('createProvider', () => {
@@ -30,29 +31,29 @@ describe('Provider factory functions', () => {
   });
 
   describe('getFirstAvailableProvider', () => {
-    let mockClaudeProvider: jest.Mocked<Provider>;
-    let mockGeminiProvider: jest.Mocked<Provider>;
+    let mockClaudeProvider: Provider;
+    let mockGeminiProvider: Provider;
 
     beforeEach(() => {
       mockClaudeProvider = {
         name: 'claude',
-        checkAvailability: jest.fn(),
-        execute: jest.fn()
-      } as unknown as jest.Mocked<Provider>;
+        checkAvailability: vi.fn(),
+        execute: vi.fn()
+      } as unknown as Provider;
 
       mockGeminiProvider = {
         name: 'gemini',
-        checkAvailability: jest.fn(),
-        execute: jest.fn()
-      } as unknown as jest.Mocked<Provider>;
+        checkAvailability: vi.fn(),
+        execute: vi.fn()
+      } as unknown as Provider;
 
-      (ClaudeProvider as jest.Mock).mockImplementation(() => mockClaudeProvider);
-      (GeminiProvider as jest.Mock).mockImplementation(() => mockGeminiProvider);
+      vi.mocked(ClaudeProvider).mockImplementation(() => mockClaudeProvider);
+      vi.mocked(GeminiProvider).mockImplementation(() => mockGeminiProvider);
     });
 
     it('should return first available provider', async () => {
-      mockClaudeProvider.checkAvailability.mockResolvedValue(true);
-      mockGeminiProvider.checkAvailability.mockResolvedValue(true);
+      vi.mocked(mockClaudeProvider.checkAvailability).mockResolvedValue(true);
+      vi.mocked(mockGeminiProvider.checkAvailability).mockResolvedValue(true);
 
       const provider = await getFirstAvailableProvider(['claude', 'gemini']);
       
@@ -62,8 +63,8 @@ describe('Provider factory functions', () => {
     });
 
     it('should skip unavailable providers', async () => {
-      mockClaudeProvider.checkAvailability.mockResolvedValue(false);
-      mockGeminiProvider.checkAvailability.mockResolvedValue(true);
+      vi.mocked(mockClaudeProvider.checkAvailability).mockResolvedValue(false);
+      vi.mocked(mockGeminiProvider.checkAvailability).mockResolvedValue(true);
 
       const provider = await getFirstAvailableProvider(['claude', 'gemini']);
       
@@ -73,8 +74,8 @@ describe('Provider factory functions', () => {
     });
 
     it('should return null if no providers available', async () => {
-      mockClaudeProvider.checkAvailability.mockResolvedValue(false);
-      mockGeminiProvider.checkAvailability.mockResolvedValue(false);
+      vi.mocked(mockClaudeProvider.checkAvailability).mockResolvedValue(false);
+      vi.mocked(mockGeminiProvider.checkAvailability).mockResolvedValue(false);
 
       const provider = await getFirstAvailableProvider(['claude', 'gemini']);
       
@@ -87,7 +88,7 @@ describe('Provider factory functions', () => {
     });
 
     it('should handle provider creation errors', async () => {
-      (ClaudeProvider as jest.Mock).mockImplementation(() => {
+      vi.mocked(ClaudeProvider).mockImplementation(() => {
         throw new Error('Failed to create provider');
       });
 
@@ -96,8 +97,8 @@ describe('Provider factory functions', () => {
     });
 
     it('should handle checkAvailability errors', async () => {
-      mockClaudeProvider.checkAvailability.mockRejectedValue(new Error('Check failed'));
-      mockGeminiProvider.checkAvailability.mockResolvedValue(true);
+      vi.mocked(mockClaudeProvider.checkAvailability).mockRejectedValue(new Error('Check failed'));
+      vi.mocked(mockGeminiProvider.checkAvailability).mockResolvedValue(true);
 
       const provider = await getFirstAvailableProvider(['claude', 'gemini']);
       
@@ -105,7 +106,7 @@ describe('Provider factory functions', () => {
     });
 
     it('should use default providers when none specified', async () => {
-      mockClaudeProvider.checkAvailability.mockResolvedValue(true);
+      vi.mocked(mockClaudeProvider.checkAvailability).mockResolvedValue(true);
 
       const provider = await getFirstAvailableProvider();
       

@@ -1,31 +1,34 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Logger } from '../../src/utils/logger';
 
 // Mock chalk to remove colors in tests
-jest.mock('chalk', () => ({
-  green: jest.fn((text) => `[GREEN]${text}[/GREEN]`),
-  red: jest.fn((text) => `[RED]${text}[/RED]`),
-  yellow: jest.fn((text) => `[YELLOW]${text}[/YELLOW]`),
-  blue: jest.fn((text) => `[BLUE]${text}[/BLUE]`),
-  gray: jest.fn((text) => `[GRAY]${text}[/GRAY]`),
-  cyan: jest.fn((text) => `[CYAN]${text}[/CYAN]`),
-  bold: {
-    green: jest.fn((text) => `[BOLD-GREEN]${text}[/BOLD-GREEN]`),
-    red: jest.fn((text) => `[BOLD-RED]${text}[/BOLD-RED]`),
-    yellow: jest.fn((text) => `[BOLD-YELLOW]${text}[/BOLD-YELLOW]`),
-    blue: jest.fn((text) => `[BOLD-BLUE]${text}[/BOLD-BLUE]`),
+vi.mock('chalk', () => ({
+  default: {
+    green: vi.fn((text) => `[GREEN]${text}[/GREEN]`),
+    red: vi.fn((text) => `[RED]${text}[/RED]`),
+    yellow: vi.fn((text) => `[YELLOW]${text}[/YELLOW]`),
+    blue: vi.fn((text) => `[BLUE]${text}[/BLUE]`),
+    gray: vi.fn((text) => `[GRAY]${text}[/GRAY]`),
+    cyan: vi.fn((text) => `[CYAN]${text}[/CYAN]`),
+    bold: {
+      green: vi.fn((text) => `[BOLD-GREEN]${text}[/BOLD-GREEN]`),
+      red: vi.fn((text) => `[BOLD-RED]${text}[/BOLD-RED]`),
+      yellow: vi.fn((text) => `[BOLD-YELLOW]${text}[/BOLD-YELLOW]`),
+      blue: vi.fn((text) => `[BOLD-BLUE]${text}[/BOLD-BLUE]`),
+    }
   }
 }));
 
 describe('Logger', () => {
-  let consoleLogSpy: jest.SpyInstance;
-  let consoleErrorSpy: jest.SpyInstance;
-  let processStdoutWriteSpy: jest.SpyInstance;
+  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let processStdoutWriteSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-    processStdoutWriteSpy = jest.spyOn(process.stdout, 'write').mockImplementation();
+    vi.clearAllMocks();
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    processStdoutWriteSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
   });
 
   afterEach(() => {
@@ -101,12 +104,12 @@ describe('Logger', () => {
 
     it('should support timestamps', () => {
       const mockDate = new Date('2023-01-01T12:00:00Z');
-      jest.spyOn(global, 'Date').mockImplementation(() => mockDate as unknown as Date);
+      vi.spyOn(global, 'Date').mockImplementation(() => mockDate as unknown as Date);
 
       Logger.info('Message', { timestamp: true });
       expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('[BLUE][2023-01-01T12:00:00.000Z] Message[/BLUE]'));
 
-      jest.restoreAllMocks();
+      vi.restoreAllMocks();
     });
   });
 

@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'vitest';
 import { PatternAnalyzer } from '../../src/core/pattern-analyzer';
 
 describe('PatternAnalyzer', () => {

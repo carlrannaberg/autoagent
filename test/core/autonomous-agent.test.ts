@@ -1,32 +1,45 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AutonomousAgent } from '../../src/core/autonomous-agent';
 import { ConfigManager } from '../../src/core/config-manager';
 import { FileManager } from '../../src/utils/file-manager';
-import { Provider } from '../../src/providers/Provider';
 import { ProviderLearning } from '../../src/core/provider-learning';
 import { EventEmitter } from 'events';
 import * as gitUtils from '../../src/utils/git';
 import { ExecutionResult } from '../../src/types';
 
+// Get mocked functions
+const { createProvider, getFirstAvailableProvider } = vi.hoisted(() => {
+  return {
+    createProvider: vi.fn(),
+    getFirstAvailableProvider: vi.fn()
+  };
+});
+
+const mockReadFile = vi.hoisted(() => vi.fn());
+
 // Mock dependencies
-jest.mock('../../src/core/config-manager');
-jest.mock('../../src/utils/file-manager');
-jest.mock('../../src/core/provider-learning');
-jest.mock('../../src/providers', () => ({
-  createProvider: jest.fn(),
-  getFirstAvailableProvider: jest.fn()
+vi.mock('../../src/core/config-manager');
+vi.mock('../../src/utils/file-manager');
+vi.mock('../../src/core/provider-learning');
+vi.mock('../../src/providers', () => ({
+  createProvider,
+  getFirstAvailableProvider
 }));
-jest.mock('../../src/utils/git');
-jest.mock('child_process');
+vi.mock('../../src/utils/git');
+vi.mock('child_process');
+vi.mock('fs/promises', () => ({
+  readFile: mockReadFile
+}));
 
 describe('AutonomousAgent', () => {
   let agent: AutonomousAgent;
-  let mockConfigManager: jest.Mocked<ConfigManager>;
-  let mockFileManager: jest.Mocked<FileManager>;
-  let mockProviderLearning: jest.Mocked<ProviderLearning>;
+  let mockConfigManager: any;
+  let mockFileManager: any;
+  let mockProviderLearning: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.resetAllMocks();
+    vi.clearAllMocks();
+    vi.resetAllMocks();
     
     // Remove all listeners to prevent memory leak warnings
     process.removeAllListeners('SIGINT');
@@ -34,7 +47,7 @@ describe('AutonomousAgent', () => {
     
     // Setup mock implementations
     mockConfigManager = {
-      loadConfig: jest.fn().mockResolvedValue({
+      loadConfig: vi.fn().mockResolvedValue({
         providers: ['claude', 'gemini'],
         failoverDelay: 5000,
         retryAttempts: 3,
@@ -45,7 +58,7 @@ describe('AutonomousAgent', () => {
         logLevel: 'info',
         customInstructions: ''
       }),
-      getConfig: jest.fn().mockReturnValue({
+      getConfig: vi.fn().mockReturnValue({
         providers: ['claude', 'gemini'],
         failoverDelay: 5000,
         retryAttempts: 3,
@@ -56,63 +69,63 @@ describe('AutonomousAgent', () => {
         logLevel: 'info',
         customInstructions: ''
       }),
-      isProviderRateLimited: jest.fn().mockResolvedValue(false),
-      getAvailableProviders: jest.fn().mockResolvedValue(['claude', 'gemini']),
-      updateRateLimit: jest.fn().mockResolvedValue(undefined),
-      checkRateLimit: jest.fn().mockResolvedValue({ isLimited: false })
-    } as unknown as jest.Mocked<ConfigManager>;
+      isProviderRateLimited: vi.fn().mockResolvedValue(false),
+      getAvailableProviders: vi.fn().mockResolvedValue(['claude', 'gemini']),
+      updateRateLimit: vi.fn().mockResolvedValue(undefined),
+      checkRateLimit: vi.fn().mockResolvedValue({ isLimited: false })
+    } as unknown as any;
 
     mockFileManager = {
-      createProviderInstructionsIfMissing: jest.fn().mockResolvedValue(undefined),
-      readIssue: jest.fn().mockResolvedValue({
+      createProviderInstructionsIfMissing: vi.fn().mockResolvedValue(undefined),
+      readIssue: vi.fn().mockResolvedValue({
         number: 1,
         title: 'Test Issue',
         file: 'issues/1-test-issue.md',
         requirements: 'Test requirements',
         acceptanceCriteria: ['Test criteria']
       }),
-      readPlan: jest.fn().mockResolvedValue({
+      readPlan: vi.fn().mockResolvedValue({
         issueNumber: 1,
         file: 'plans/1-plan.md',
         phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
       }),
-      readTodoList: jest.fn().mockResolvedValue(['- [ ] Issue #1: Test Issue']),
-      updateTodoList: jest.fn().mockResolvedValue(undefined),
-      readProviderInstructions: jest.fn().mockResolvedValue(''),
-      updateProviderInstructions: jest.fn().mockResolvedValue(undefined),
-      updateTodo: jest.fn().mockResolvedValue(undefined),
-      getNextIssue: jest.fn().mockResolvedValue(1),
-      getNextIssueNumber: jest.fn().mockResolvedValue(2),
-      readTodo: jest.fn().mockResolvedValue('## Pending Issues\n- [ ] Issue #1: Test'),
-      createIssue: jest.fn().mockResolvedValue('issues/2-new-issue.md'),
-      createPlan: jest.fn().mockResolvedValue('plans/2-plan.md'),
-      getTodoStats: jest.fn().mockResolvedValue({
+      readTodoList: vi.fn().mockResolvedValue(['- [ ] Issue #1: Test Issue']),
+      updateTodoList: vi.fn().mockResolvedValue(undefined),
+      readProviderInstructions: vi.fn().mockResolvedValue(''),
+      updateProviderInstructions: vi.fn().mockResolvedValue(undefined),
+      updateTodo: vi.fn().mockResolvedValue(undefined),
+      getNextIssue: vi.fn().mockResolvedValue(1),
+      getNextIssueNumber: vi.fn().mockResolvedValue(2),
+      readTodo: vi.fn().mockResolvedValue('## Pending Issues\n- [ ] Issue #1: Test'),
+      createIssue: vi.fn().mockResolvedValue('issues/2-new-issue.md'),
+      createPlan: vi.fn().mockResolvedValue('plans/2-plan.md'),
+      getTodoStats: vi.fn().mockResolvedValue({
         total: 3,
         completed: 1,
         pending: 2
       }),
-      getChangedFiles: jest.fn().mockResolvedValue(['test.ts']),
-      readFile: jest.fn().mockResolvedValue('Template content')
-    } as unknown as jest.Mocked<FileManager>;
+      getChangedFiles: vi.fn().mockResolvedValue(['test.ts']),
+      readFile: vi.fn().mockResolvedValue('Template content')
+    } as unknown as any;
 
     mockProviderLearning = {
-      updateProviderLearnings: jest.fn().mockResolvedValue(undefined)
-    } as unknown as jest.Mocked<ProviderLearning>;
+      updateProviderLearnings: vi.fn().mockResolvedValue(undefined)
+    } as unknown as any;
 
     // Mock constructor dependencies
-    (ConfigManager as unknown as jest.Mock).mockImplementation(() => mockConfigManager);
-    (FileManager as unknown as jest.Mock).mockImplementation(() => mockFileManager);
-    (ProviderLearning as unknown as jest.Mock).mockImplementation(() => mockProviderLearning);
+    (ConfigManager as unknown as any).mockImplementation(() => mockConfigManager);
+    (FileManager as unknown as any).mockImplementation(() => mockFileManager);
+    (ProviderLearning as unknown as any).mockImplementation(() => mockProviderLearning);
 
     // Mock git utilities
-    (gitUtils.checkGitAvailable as jest.Mock).mockResolvedValue(true);
-    (gitUtils.isGitRepository as jest.Mock).mockResolvedValue(true);
-    (gitUtils.hasChangesToCommit as jest.Mock).mockResolvedValue(true);
-    (gitUtils.stageAllChanges as jest.Mock).mockResolvedValue(undefined);
-    (gitUtils.createCommit as jest.Mock).mockResolvedValue({ success: true, commitHash: 'abc123' });
-    (gitUtils.getCurrentCommitHash as jest.Mock).mockResolvedValue('abc123');
-    (gitUtils.getUncommittedChanges as jest.Mock).mockResolvedValue('');
-    (gitUtils.revertToCommit as jest.Mock).mockResolvedValue(true);
+    (gitUtils.checkGitAvailable as any).mockResolvedValue(true);
+    (gitUtils.isGitRepository as any).mockResolvedValue(true);
+    (gitUtils.hasChangesToCommit as any).mockResolvedValue(true);
+    (gitUtils.stageAllChanges as any).mockResolvedValue(undefined);
+    (gitUtils.createCommit as any).mockResolvedValue({ success: true, commitHash: 'abc123' });
+    (gitUtils.getCurrentCommitHash as any).mockResolvedValue('abc123');
+    (gitUtils.getUncommittedChanges as any).mockResolvedValue('');
+    (gitUtils.revertToCommit as any).mockResolvedValue(true);
 
     agent = new AutonomousAgent();
   });
@@ -162,9 +175,8 @@ describe('AutonomousAgent', () => {
       ]);
 
       // Mock createProvider to return a provider with checkAvailability
-      const { createProvider } = require('../../src/providers');
       createProvider.mockReturnValue({
-        checkAvailability: jest.fn().mockResolvedValue(true)
+        checkAvailability: vi.fn().mockResolvedValue(true)
       });
 
       const status = await agent.getStatus();
@@ -181,29 +193,28 @@ describe('AutonomousAgent', () => {
   });
 
   describe('executeIssue', () => {
-    let mockProvider: jest.Mocked<Provider>;
+    let mockProvider: any; //Provider>;
 
     beforeEach(() => {
       mockProvider = {
         name: 'claude',
-        checkAvailability: jest.fn().mockResolvedValue(true),
-        execute: jest.fn().mockResolvedValue({
+        checkAvailability: vi.fn().mockResolvedValue(true),
+        execute: vi.fn().mockResolvedValue({
           success: true,
           issueNumber: 1,
           duration: 1000,
           output: 'Success',
           provider: 'claude'
         })
-      } as unknown as jest.Mocked<Provider>;
+      } as unknown as any;
 
-      const { getFirstAvailableProvider } = require('../../src/providers');
       getFirstAvailableProvider.mockResolvedValue(mockProvider);
     });
 
     it('should execute an issue successfully', async () => {
       // Mock file finding
-      jest.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
-      jest.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
+      vi.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
+      vi.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
 
       const result = await agent.executeIssue(1);
 
@@ -226,8 +237,8 @@ describe('AutonomousAgent', () => {
     });
 
     it('should handle missing issue file', async () => {
-      jest.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue(null);
-      jest.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue(null);
+      vi.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue(null);
+      vi.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue(null);
 
       // Prevent unhandled error events
       agent.on('error', () => {});
@@ -243,8 +254,8 @@ describe('AutonomousAgent', () => {
     });
 
     it('should handle execution failure', async () => {
-      jest.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
-      jest.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
+      vi.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
+      vi.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
       
       mockProvider.execute.mockResolvedValueOnce({
         success: false,
@@ -270,7 +281,7 @@ describe('AutonomousAgent', () => {
       ]);
 
       // Mock executeIssue
-      const executeIssueSpy = jest.spyOn(agent, 'executeIssue')
+      const executeIssueSpy = vi.spyOn(agent, 'executeIssue')
         .mockResolvedValueOnce({
           success: true,
           issueNumber: 2,
@@ -297,7 +308,7 @@ describe('AutonomousAgent', () => {
         '- [ ] Issue #2: Pending'
       ]);
 
-      const executeIssueSpy = jest.spyOn(agent, 'executeIssue')
+      const executeIssueSpy = vi.spyOn(agent, 'executeIssue')
         .mockResolvedValueOnce({
           success: false,
           issueNumber: 1,
@@ -316,14 +327,13 @@ describe('AutonomousAgent', () => {
     it('should create a new issue from a description', async () => {
       const mockProvider = {
         name: 'claude',
-        checkAvailability: jest.fn().mockResolvedValue(true),
-        execute: jest.fn().mockResolvedValue({
+        checkAvailability: vi.fn().mockResolvedValue(true),
+        execute: vi.fn().mockResolvedValue({
           success: true,
           output: 'Issue Title: Test Issue 2\nContent: Test content'
         })
-      } as unknown as jest.Mocked<Provider>;
+      } as unknown as any;
 
-      const { getFirstAvailableProvider } = require('../../src/providers');
       getFirstAvailableProvider.mockResolvedValue(mockProvider);
 
       mockFileManager.getNextIssue.mockResolvedValue({
@@ -360,7 +370,7 @@ describe('AutonomousAgent', () => {
         requirements: 'Test requirements',
         acceptanceCriteria: ['Test criteria']
       });
-      const executeIssueSpy = jest.spyOn(agent, 'executeIssue')
+      const executeIssueSpy = vi.spyOn(agent, 'executeIssue')
         .mockResolvedValue({
           success: true,
           issueNumber: 2,
@@ -389,32 +399,27 @@ describe('AutonomousAgent', () => {
   });
 
   describe('bootstrap', () => {
-    let mockProvider: jest.Mocked<Provider>;
+    let mockProvider: any; //Provider>;
 
     beforeEach(() => {
       mockProvider = {
         name: 'claude',
-        checkAvailability: jest.fn().mockResolvedValue(true),
-        execute: jest.fn().mockResolvedValue({
+        checkAvailability: vi.fn().mockResolvedValue(true),
+        execute: vi.fn().mockResolvedValue({
           success: true,
           issueNumber: 1,
           duration: 1000,
           output: 'Created 10 issues',
           provider: 'claude'
         })
-      } as unknown as jest.Mocked<Provider>;
+      } as unknown as any;
 
-      const { getFirstAvailableProvider } = require('../../src/providers');
       getFirstAvailableProvider.mockResolvedValue(mockProvider);
     });
 
     it('should bootstrap from master plan', async () => {
       // Mock file system to read master plan
-      const fs = require('fs/promises');
-      jest.mock('fs/promises', () => ({
-        readFile: jest.fn().mockResolvedValue('Master plan content')
-      }));
-      fs.readFile = jest.fn().mockResolvedValue('Master plan content');
+      mockReadFile.mockResolvedValue('Master plan content');
 
       const result = await agent.bootstrap('master-plan.md');
 
@@ -427,40 +432,35 @@ describe('AutonomousAgent', () => {
 
     it('should handle bootstrap failure', async () => {
       // Mock file system to throw error
-      const fs = require('fs/promises');
-      jest.mock('fs/promises', () => ({
-        readFile: jest.fn().mockRejectedValue(new Error('File not found'))
-      }));
-      fs.readFile = jest.fn().mockRejectedValue(new Error('File not found'));
+      mockReadFile.mockRejectedValue(new Error('File not found'));
 
       await expect(agent.bootstrap('master-plan.md')).rejects.toThrow('Could not read master plan: master-plan.md');
     });
   });
 
   describe('git operations', () => {
-    let mockProvider: jest.Mocked<Provider>;
+    let mockProvider: any; //Provider>;
 
     beforeEach(() => {
       mockProvider = {
         name: 'claude',
-        checkAvailability: jest.fn().mockResolvedValue(true),
-        execute: jest.fn().mockResolvedValue({
+        checkAvailability: vi.fn().mockResolvedValue(true),
+        execute: vi.fn().mockResolvedValue({
           success: true,
           issueNumber: 1,
           duration: 1000,
           output: 'Success',
           provider: 'claude'
         })
-      } as unknown as jest.Mocked<Provider>;
+      } as unknown as any;
 
-      const { getFirstAvailableProvider } = require('../../src/providers');
       getFirstAvailableProvider.mockResolvedValue(mockProvider);
     });
 
     it('should perform git commit when autoCommit is enabled', async () => {
       agent = new AutonomousAgent({ autoCommit: true });
-      jest.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
-      jest.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
+      vi.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
+      vi.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
 
       await agent.executeIssue(1);
 
@@ -477,9 +477,9 @@ describe('AutonomousAgent', () => {
 
     it('should skip git commit when no changes', async () => {
       agent = new AutonomousAgent({ autoCommit: true });
-      (gitUtils.hasChangesToCommit as jest.Mock).mockResolvedValue(false);
-      jest.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
-      jest.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
+      (gitUtils.hasChangesToCommit as any).mockResolvedValue(false);
+      vi.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
+      vi.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
 
       await agent.executeIssue(1);
 
@@ -488,11 +488,11 @@ describe('AutonomousAgent', () => {
 
     it('should handle git not available', async () => {
       agent = new AutonomousAgent({ autoCommit: true, debug: true });
-      (gitUtils.checkGitAvailable as jest.Mock).mockResolvedValue(false);
-      jest.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
-      jest.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
+      (gitUtils.checkGitAvailable as any).mockResolvedValue(false);
+      vi.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
+      vi.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
 
-      const debugSpy = jest.fn();
+      const debugSpy = vi.fn();
       agent.on('debug', debugSpy);
 
       await agent.executeIssue(1);
@@ -505,31 +505,30 @@ describe('AutonomousAgent', () => {
   });
 
   describe('provider failover', () => {
-    let mockProvider1: jest.Mocked<Provider>;
-    let mockProvider2: jest.Mocked<Provider>;
+    let mockProvider1: any; //Provider>;
+    let mockProvider2: any; //Provider>;
 
     beforeEach(() => {
       mockProvider1 = {
         name: 'claude',
-        checkAvailability: jest.fn().mockResolvedValue(true),
-        execute: jest.fn()
-      } as unknown as jest.Mocked<Provider>;
+        checkAvailability: vi.fn().mockResolvedValue(true),
+        execute: vi.fn()
+      } as unknown as any;
 
       mockProvider2 = {
         name: 'gemini',
-        checkAvailability: jest.fn().mockResolvedValue(true),
-        execute: jest.fn().mockResolvedValue({
+        checkAvailability: vi.fn().mockResolvedValue(true),
+        execute: vi.fn().mockResolvedValue({
           success: true,
           issueNumber: 1,
           duration: 1000,
           output: 'Success',
           provider: 'gemini'
         })
-      } as unknown as jest.Mocked<Provider>;
+      } as unknown as any;
     });
 
     it('should failover to alternate provider on rate limit', async () => {
-      const { getFirstAvailableProvider } = require('../../src/providers');
       getFirstAvailableProvider
         .mockResolvedValueOnce(mockProvider1)
         .mockResolvedValueOnce(mockProvider2);
@@ -542,11 +541,11 @@ describe('AutonomousAgent', () => {
         provider: 'claude'
       });
 
-      jest.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
-      jest.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
+      vi.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
+      vi.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
       
       // Mock the delay to avoid timeout
-      jest.spyOn(agent as unknown as any, 'delay').mockResolvedValue(undefined);
+      vi.spyOn(agent as unknown as any, 'delay').mockResolvedValue(undefined);
 
       const result = await agent.executeIssue(1);
 
@@ -559,24 +558,23 @@ describe('AutonomousAgent', () => {
   describe('rollback', () => {
     it('should capture pre-execution state when rollback is enabled', async () => {
       agent = new AutonomousAgent({ enableRollback: true });
-      const captureStateSpy = jest.spyOn(agent as unknown as any, 'capturePreExecutionState');
+      const captureStateSpy = vi.spyOn(agent as unknown as any, 'capturePreExecutionState');
 
-      jest.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
-      jest.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
+      vi.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
+      vi.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
 
       const mockProvider = {
         name: 'claude',
-        checkAvailability: jest.fn().mockResolvedValue(true),
-        execute: jest.fn().mockResolvedValue({
+        checkAvailability: vi.fn().mockResolvedValue(true),
+        execute: vi.fn().mockResolvedValue({
           success: true,
           issueNumber: 1,
           duration: 1000,
           output: 'Success',
           provider: 'claude'
         })
-      } as unknown as jest.Mocked<Provider>;
+      } as unknown as any;
 
-      const { getFirstAvailableProvider } = require('../../src/providers');
       getFirstAvailableProvider.mockResolvedValue(mockProvider);
 
       await agent.executeIssue(1);
@@ -608,27 +606,26 @@ describe('AutonomousAgent', () => {
   describe('event handling', () => {
     it('should emit progress events', async () => {
       agent = new AutonomousAgent({ debug: false }); // Create non-debug agent to test events
-      const progressHandler = jest.fn();
+      const progressHandler = vi.fn();
       agent.on('progress', progressHandler);
       agent.on('execution-start', progressHandler);
       agent.on('provider-selected', progressHandler);
 
-      jest.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
-      jest.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
+      vi.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
+      vi.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
 
       const mockProvider = {
         name: 'claude',
-        checkAvailability: jest.fn().mockResolvedValue(true),
-        execute: jest.fn().mockResolvedValue({
+        checkAvailability: vi.fn().mockResolvedValue(true),
+        execute: vi.fn().mockResolvedValue({
           success: true,
           issueNumber: 1,
           duration: 1000,
           output: 'Success',
           provider: 'claude'
         })
-      } as unknown as jest.Mocked<Provider>;
+      } as unknown as any;
 
-      const { getFirstAvailableProvider } = require('../../src/providers');
       getFirstAvailableProvider.mockResolvedValue(mockProvider);
 
       await agent.executeIssue(1);
@@ -640,13 +637,13 @@ describe('AutonomousAgent', () => {
       const abortController = new AbortController();
       agent = new AutonomousAgent({ signal: abortController.signal });
 
-      jest.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
-      jest.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
+      vi.spyOn(agent as unknown as any, 'findIssueFile').mockResolvedValue('issues/1-test-issue.md');
+      vi.spyOn(agent as unknown as any, 'findPlanFile').mockResolvedValue('plans/1-plan.md');
 
       const mockProvider = {
         name: 'claude',
-        checkAvailability: jest.fn().mockResolvedValue(true),
-        execute: jest.fn().mockImplementation(() => {
+        checkAvailability: vi.fn().mockResolvedValue(true),
+        execute: vi.fn().mockImplementation(() => {
           // Simulate cancellation during execution
           abortController.abort();
           return Promise.resolve({
@@ -654,9 +651,8 @@ describe('AutonomousAgent', () => {
             error: 'Cancelled'
           });
         })
-      } as unknown as jest.Mocked<Provider>;
+      } as unknown as any;
 
-      const { getFirstAvailableProvider } = require('../../src/providers');
       getFirstAvailableProvider.mockResolvedValue(mockProvider);
 
       const result = await agent.executeIssue(1);

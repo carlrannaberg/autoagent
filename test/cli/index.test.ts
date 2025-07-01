@@ -1,57 +1,58 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ConfigManager } from '../../src/core/config-manager';
 import { AutonomousAgent } from '../../src/core/autonomous-agent';
 import { Logger } from '../../src/utils/logger';
 
 // Mock modules
-jest.mock('../../src/core/config-manager');
-jest.mock('../../src/core/autonomous-agent');
-jest.mock('../../src/utils/logger');
-jest.mock('../../src/providers', () => ({
-  createProvider: jest.fn().mockReturnValue({
+vi.mock('../../src/core/config-manager');
+vi.mock('../../src/core/autonomous-agent');
+vi.mock('../../src/utils/logger');
+vi.mock('../../src/providers', () => ({
+  createProvider: vi.fn().mockReturnValue({
     name: 'claude',
-    checkAvailability: jest.fn().mockResolvedValue(true),
-    execute: jest.fn()
+    checkAvailability: vi.fn().mockResolvedValue(true),
+    execute: vi.fn()
   })
 }));
 
 describe('CLI Integration Tests', () => {
-  let mockConfigManager: jest.Mocked<ConfigManager>;
-  let mockAgent: jest.Mocked<AutonomousAgent>;
-  let processExitSpy: jest.SpyInstance;
-  let consoleLogSpy: jest.SpyInstance;
-  let consoleErrorSpy: jest.SpyInstance;
+  let mockConfigManager: any;
+  let mockAgent: any;
+  let processExitSpy: any;
+  let consoleLogSpy: any;
+  let consoleErrorSpy: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Mock process.exit to prevent test runner from exiting
-    processExitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {
+    processExitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
       throw new Error('process.exit called');
     }) as any);
     
     // Mock console methods
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation();
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
     
     // Mock Logger static methods
-    jest.spyOn(Logger, 'info').mockImplementation();
-    jest.spyOn(Logger, 'success').mockImplementation();
-    jest.spyOn(Logger, 'error').mockImplementation();
-    jest.spyOn(Logger, 'warning').mockImplementation();
-    jest.spyOn(Logger, 'debug').mockImplementation();
-    jest.spyOn(Logger, 'progress').mockImplementation();
-    jest.spyOn(Logger, 'clear').mockImplementation();
-    jest.spyOn(Logger, 'newline').mockImplementation();
+    vi.spyOn(Logger, 'info').mockImplementation();
+    vi.spyOn(Logger, 'success').mockImplementation();
+    vi.spyOn(Logger, 'error').mockImplementation();
+    vi.spyOn(Logger, 'warning').mockImplementation();
+    vi.spyOn(Logger, 'debug').mockImplementation();
+    vi.spyOn(Logger, 'progress').mockImplementation();
+    vi.spyOn(Logger, 'clear').mockImplementation();
+    vi.spyOn(Logger, 'newline').mockImplementation();
     
     mockConfigManager = {
-      initConfig: jest.fn().mockResolvedValue(undefined),
-      setProvider: jest.fn().mockResolvedValue(undefined),
-      setFailoverProviders: jest.fn().mockResolvedValue(undefined),
-      updateConfig: jest.fn().mockResolvedValue(undefined),
-      setIncludeCoAuthoredBy: jest.fn().mockResolvedValue(undefined),
-      clearRateLimit: jest.fn().mockResolvedValue(undefined),
-      showConfig: jest.fn().mockResolvedValue(undefined),
-      loadConfig: jest.fn().mockResolvedValue({
+      initConfig: vi.fn().mockResolvedValue(undefined),
+      setProvider: vi.fn().mockResolvedValue(undefined),
+      setFailoverProviders: vi.fn().mockResolvedValue(undefined),
+      updateConfig: vi.fn().mockResolvedValue(undefined),
+      setIncludeCoAuthoredBy: vi.fn().mockResolvedValue(undefined),
+      clearRateLimit: vi.fn().mockResolvedValue(undefined),
+      showConfig: vi.fn().mockResolvedValue(undefined),
+      loadConfig: vi.fn().mockResolvedValue({
         providers: ['claude', 'gemini'],
         failoverDelay: 5000,
         retryAttempts: 3,
@@ -62,37 +63,37 @@ describe('CLI Integration Tests', () => {
         logLevel: 'info',
         customInstructions: ''
       }),
-      getAvailableProviders: jest.fn().mockResolvedValue(['claude', 'gemini'])
-    } as unknown as jest.Mocked<ConfigManager>;
+      getAvailableProviders: vi.fn().mockResolvedValue(['claude', 'gemini'])
+    } as unknown as any;
 
     mockAgent = {
-      initialize: jest.fn().mockResolvedValue(undefined),
-      executeIssue: jest.fn().mockResolvedValue({
+      initialize: vi.fn().mockResolvedValue(undefined),
+      executeIssue: vi.fn().mockResolvedValue({
         success: true,
         issueNumber: 1,
         duration: 1000,
         provider: 'claude'
       }),
-      executeAll: jest.fn().mockResolvedValue([]),
-      executeNext: jest.fn().mockResolvedValue({
+      executeAll: vi.fn().mockResolvedValue([]),
+      executeNext: vi.fn().mockResolvedValue({
         success: true,
         issueNumber: 1,
         duration: 1000,
         provider: 'claude'
       }),
-      createIssue: jest.fn().mockResolvedValue(1),
-      getStatus: jest.fn().mockResolvedValue({
+      createIssue: vi.fn().mockResolvedValue(1),
+      getStatus: vi.fn().mockResolvedValue({
         totalIssues: 5,
         completedIssues: 2,
         pendingIssues: 3,
         availableProviders: ['claude', 'gemini'],
         rateLimitedProviders: []
       }),
-      bootstrap: jest.fn().mockResolvedValue(undefined)
-    } as unknown as jest.Mocked<AutonomousAgent>;
+      bootstrap: vi.fn().mockResolvedValue(undefined)
+    } as unknown as any;
 
-    (ConfigManager as unknown as jest.Mock).mockImplementation(() => mockConfigManager);
-    (AutonomousAgent as unknown as jest.Mock).mockImplementation(() => mockAgent);
+    (ConfigManager as unknown as any).mockImplementation(() => mockConfigManager);
+    (AutonomousAgent as unknown as any).mockImplementation(() => mockAgent);
   });
 
   afterEach(() => {

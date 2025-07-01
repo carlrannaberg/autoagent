@@ -1,17 +1,18 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ProviderLearning } from '../../src/core/provider-learning';
 import { FileManager } from '../../src/utils/file-manager';
 import { ExecutionResult } from '../../src/types';
 
 // Mock FileManager
-jest.mock('../../src/utils/file-manager');
+vi.mock('../../src/utils/file-manager');
 
 describe('ProviderLearning', () => {
   let providerLearning: ProviderLearning;
-  let mockFileManager: jest.Mocked<FileManager>;
+  let mockFileManager: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockFileManager = new FileManager() as jest.Mocked<FileManager>;
+    vi.clearAllMocks();
+    mockFileManager = new FileManager() as any;
     providerLearning = new ProviderLearning(mockFileManager);
   });
 

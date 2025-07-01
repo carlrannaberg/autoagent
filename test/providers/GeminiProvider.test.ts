@@ -1,40 +1,41 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GeminiProvider } from '../../src/providers/GeminiProvider';
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-jest.mock('child_process');
-jest.mock('fs/promises');
-jest.mock('path');
+vi.mock('child_process');
+vi.mock('fs/promises');
+vi.mock('path');
 
 class MockChildProcess extends EventEmitter {
   stdout = new EventEmitter();
   stderr = new EventEmitter();
   stdin = {
-    write: jest.fn(),
-    end: jest.fn()
+    write: vi.fn(),
+    end: vi.fn()
   };
-  kill = jest.fn();
+  kill = vi.fn();
 }
 
 describe('GeminiProvider', () => {
   let provider: GeminiProvider;
-  let mockSpawn: jest.MockedFunction<typeof spawn>;
+  let mockSpawn: ReturnType<typeof vi.fn>;
   let mockProcess: MockChildProcess;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     provider = new GeminiProvider();
     mockProcess = new MockChildProcess();
-    mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
+    mockSpawn = vi.mocked(spawn);
     mockSpawn.mockReturnValue(mockProcess as unknown as ReturnType<typeof spawn>);
     
     // Mock fs.readFile
-    (fs.readFile as jest.Mock).mockResolvedValue('File content');
+    vi.mocked(fs.readFile).mockResolvedValue('File content');
     
     // Mock path.basename
-    (path.basename as jest.Mock).mockReturnValue('filename.txt');
+    vi.mocked(path.basename).mockReturnValue('filename.txt');
   });
 
   describe('checkAvailability', () => {
@@ -75,7 +76,7 @@ describe('GeminiProvider', () => {
   describe('execute', () => {
     it('should execute successfully', async () => {
       const abortController = new AbortController();
-      (fs.readFile as jest.Mock)
+      vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content')
         .mockResolvedValueOnce('Context file content');
@@ -120,7 +121,7 @@ describe('GeminiProvider', () => {
     });
 
     it('should handle execution errors', async () => {
-      (fs.readFile as jest.Mock)
+      vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
         
@@ -143,7 +144,7 @@ describe('GeminiProvider', () => {
     });
 
     it('should collect stderr output', async () => {
-      (fs.readFile as jest.Mock)
+      vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
         
@@ -167,7 +168,7 @@ describe('GeminiProvider', () => {
     });
 
     it('should handle signal abort', async () => {
-      (fs.readFile as jest.Mock)
+      vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
         
@@ -192,7 +193,7 @@ describe('GeminiProvider', () => {
     });
 
     it('should detect errors in output', async () => {
-      (fs.readFile as jest.Mock)
+      vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
         
@@ -228,7 +229,7 @@ describe('GeminiProvider', () => {
     });
 
     it('should handle empty output', async () => {
-      (fs.readFile as jest.Mock)
+      vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
         

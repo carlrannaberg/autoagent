@@ -37,9 +37,9 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
   
-  if (consoleSpies.log) consoleSpies.log.mockRestore();
-  if (consoleSpies.error) consoleSpies.error.mockRestore();
-  if (consoleSpies.warn) consoleSpies.warn.mockRestore();
+  if (consoleSpies.log) {consoleSpies.log.mockRestore();}
+  if (consoleSpies.error) {consoleSpies.error.mockRestore();}
+  if (consoleSpies.warn) {consoleSpies.warn.mockRestore();}
 });
 
 expect.extend({
@@ -48,13 +48,13 @@ expect.extend({
     
     if (pass) {
       return {
-        message: () => `expected execution not to be successful`,
+        message: () => 'expected execution not to be successful',
         pass: true
       };
     } else {
       return {
         message: () => 
-          `expected execution to be successful, but got:\n` +
+          'expected execution to be successful, but got:\n' +
           `  success: ${received.success}\n` +
           `  error: ${received.error?.message || 'none'}`,
         pass: false
@@ -103,13 +103,13 @@ expect.extend({
     
     if (pass) {
       return {
-        message: () => `expected issue not to be valid`,
+        message: () => 'expected issue not to be valid',
         pass: true
       };
     } else {
       return {
         message: () => 
-          `expected issue to be valid, but found errors:\n` +
+          'expected issue to be valid, but found errors:\n' +
           errors.map(e => `  - ${e}`).join('\n'),
         pass: false
       };

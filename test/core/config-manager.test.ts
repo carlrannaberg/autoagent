@@ -1,26 +1,27 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConfigManager } from '../../src/core/config-manager';
 import { promises as fs } from 'fs';
 import { UserConfig } from '../../src/types';
 
-jest.mock('fs', () => ({
+vi.mock('fs', () => ({
   promises: {
-    readFile: jest.fn(),
-    writeFile: jest.fn(),
-    mkdir: jest.fn()
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
+    mkdir: vi.fn()
   }
 }));
 
-jest.mock('os', () => ({
-  homedir: jest.fn(() => '/home/user')
+vi.mock('os', () => ({
+  homedir: vi.fn(() => '/home/user')
 }));
 
 describe('ConfigManager', () => {
-  const mockFs = fs as jest.Mocked<typeof fs>;
+  const mockFs = fs as any;
   let configManager: ConfigManager;
   const testWorkingDir = '/test/project';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     configManager = new ConfigManager(testWorkingDir);
   });
 

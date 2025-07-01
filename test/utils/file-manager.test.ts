@@ -1,23 +1,24 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { FileManager } from '../../src/utils/file-manager';
 import { Issue, Plan } from '../../src/types';
 
-jest.mock('fs/promises');
+vi.mock('fs/promises');
 
 describe('FileManager', () => {
   let fileManager: FileManager;
   const mockWorkspace = '/test/workspace';
   
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     fileManager = new FileManager(mockWorkspace);
   });
   
   describe('ensureDirectories', () => {
     it('should create issues and plans directories', async () => {
-      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
-      (fs.readdir as jest.Mock).mockResolvedValue([]);
+      (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readdir as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       
       // Call private method through a public method
       await fileManager.getNextIssueNumber();
@@ -35,8 +36,8 @@ describe('FileManager', () => {
   
   describe('getNextIssueNumber', () => {
     it('should return 1 for empty directory', async () => {
-      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
-      (fs.readdir as jest.Mock).mockRejectedValue({ code: 'ENOENT' });
+      (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readdir as ReturnType<typeof vi.fn>).mockRejectedValue({ code: 'ENOENT' });
       
       const result = await fileManager.getNextIssueNumber();
       
@@ -44,8 +45,8 @@ describe('FileManager', () => {
     });
     
     it('should return next number based on existing issues', async () => {
-      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
-      (fs.readdir as jest.Mock).mockResolvedValue([
+      (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.readdir as ReturnType<typeof vi.fn>).mockResolvedValue([
         '1-first-issue.md',
         '2-second-issue.md',
         '5-fifth-issue.md',
@@ -60,8 +61,8 @@ describe('FileManager', () => {
   
   describe('createIssue', () => {
     it('should create issue file with correct content', async () => {
-      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       
       const issue: Issue = {
         number: 1,
@@ -84,8 +85,8 @@ describe('FileManager', () => {
     });
 
     it('should handle special characters and dots in titles correctly', async () => {
-      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       
       // Test various problematic titles
       const testCases = [
@@ -124,8 +125,8 @@ describe('FileManager', () => {
     });
 
     it('should create issue with CLI signature (number, title, content)', async () => {
-      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       
       const filepath = await fileManager.createIssue(1, 'Test CLI Issue', 'Content here');
       
@@ -156,7 +157,7 @@ Technical details
 - Resource 1
 - Resource 2`;
       
-      (fs.readFile as jest.Mock).mockResolvedValue(issueContent);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(issueContent);
       
       const result = await fileManager.readIssue('/test/issue.md');
       
@@ -172,7 +173,7 @@ Technical details
     });
     
     it('should return null for non-existent file', async () => {
-      (fs.readFile as jest.Mock).mockRejectedValue({ code: 'ENOENT' });
+      (fs.readFile as ReturnType<typeof vi.fn>).mockRejectedValue({ code: 'ENOENT' });
       
       const result = await fileManager.readIssue('/test/nonexistent.md');
       
@@ -182,8 +183,8 @@ Technical details
   
   describe('createPlan', () => {
     it('should create plan file with correct content', async () => {
-      (fs.mkdir as jest.Mock).mockResolvedValue(undefined);
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       
       const plan: Plan = {
         issueNumber: 1,
@@ -220,7 +221,7 @@ Technical details
 ## Completed Issues
 - [x] Issue 3`;
       
-      (fs.readFile as jest.Mock).mockResolvedValue(todoContent);
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue(todoContent);
       
       const result = await fileManager.readTodoList();
       
@@ -232,7 +233,7 @@ Technical details
     });
     
     it('should return empty array for non-existent file', async () => {
-      (fs.readFile as jest.Mock).mockRejectedValue({ code: 'ENOENT' });
+      (fs.readFile as ReturnType<typeof vi.fn>).mockRejectedValue({ code: 'ENOENT' });
       
       const result = await fileManager.readTodoList();
       
@@ -242,7 +243,7 @@ Technical details
   
   describe('updateTodoList', () => {
     it('should write todo list with correct format', async () => {
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       
       const todos = [
         '- [ ] Issue 1',
@@ -261,7 +262,7 @@ Technical details
   
   describe('readProviderInstructions', () => {
     it('should read provider instructions file', async () => {
-      (fs.readFile as jest.Mock).mockResolvedValue('Claude instructions');
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue('Claude instructions');
       
       const result = await fileManager.readProviderInstructions('CLAUDE');
       
@@ -273,7 +274,7 @@ Technical details
     });
     
     it('should return empty string for non-existent file', async () => {
-      (fs.readFile as jest.Mock).mockRejectedValue({ code: 'ENOENT' });
+      (fs.readFile as ReturnType<typeof vi.fn>).mockRejectedValue({ code: 'ENOENT' });
       
       const result = await fileManager.readProviderInstructions('GEMINI');
       
@@ -283,9 +284,9 @@ Technical details
   
   describe('createProviderInstructionsIfMissing', () => {
     it('should create missing instruction files', async () => {
-      (fs.access as jest.Mock).mockRejectedValue(new Error('Not found'));
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
-      (fs.symlink as jest.Mock).mockResolvedValue(undefined);
+      (fs.access as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Not found'));
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.symlink as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       
       await fileManager.createProviderInstructionsIfMissing();
       
@@ -304,8 +305,8 @@ Technical details
     });
     
     it('should not create existing files', async () => {
-      (fs.access as jest.Mock).mockResolvedValue(undefined);
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.access as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       
       await fileManager.createProviderInstructionsIfMissing();
       
@@ -313,9 +314,9 @@ Technical details
     });
 
     it('should create stub files when symlinks fail', async () => {
-      (fs.access as jest.Mock).mockRejectedValue(new Error('Not found'));
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
-      (fs.symlink as jest.Mock).mockRejectedValue(new Error('Symlinks not supported'));
+      (fs.access as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Not found'));
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.symlink as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Symlinks not supported'));
       
       await fileManager.createProviderInstructionsIfMissing();
       
@@ -341,7 +342,7 @@ Technical details
 
   describe('readFile', () => {
     it('should read file with relative path', async () => {
-      (fs.readFile as jest.Mock).mockResolvedValue('file content');
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue('file content');
       
       const content = await fileManager.readFile('test.md');
       
@@ -353,7 +354,7 @@ Technical details
     });
 
     it('should read file with absolute path', async () => {
-      (fs.readFile as jest.Mock).mockResolvedValue('file content');
+      (fs.readFile as ReturnType<typeof vi.fn>).mockResolvedValue('file content');
       
       const absolutePath = '/absolute/path/test.md';
       const content = await fileManager.readFile(absolutePath);
@@ -365,7 +366,7 @@ Technical details
 
   describe('writeFile', () => {
     it('should write file with relative path', async () => {
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       
       await fileManager.writeFile('test.md', 'content');
       
@@ -377,7 +378,7 @@ Technical details
     });
 
     it('should write file with absolute path', async () => {
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       
       const absolutePath = '/absolute/path/test.md';
       await fileManager.writeFile(absolutePath, 'content');

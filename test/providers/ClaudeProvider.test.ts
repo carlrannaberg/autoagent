@@ -1,26 +1,27 @@
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import { ClaudeProvider } from '../../src/providers/ClaudeProvider';
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-jest.mock('child_process');
-jest.mock('fs/promises');
-jest.mock('path');
+vi.mock('child_process');
+vi.mock('fs/promises');
+vi.mock('path');
 
 class MockChildProcess extends EventEmitter {
   stdout = new EventEmitter();
   stderr = new EventEmitter();
   stdin = {
-    write: jest.fn(),
-    end: jest.fn()
+    write: vi.fn(),
+    end: vi.fn()
   };
-  kill = jest.fn();
+  kill = vi.fn();
 }
 
 describe('ClaudeProvider', () => {
   let provider: ClaudeProvider;
-  let mockSpawn: jest.MockedFunction<typeof spawn>;
+  let mockSpawn: ReturnType<typeof vi.fn>;
   let mockProcess: MockChildProcess;
   let originalConsoleLog: typeof console.log;
   
@@ -29,7 +30,7 @@ describe('ClaudeProvider', () => {
     // eslint-disable-next-line no-console
     originalConsoleLog = console.log;
     // eslint-disable-next-line no-console
-    console.log = jest.fn();
+    console.log = vi.fn();
   });
   
   afterAll(() => {
@@ -39,20 +40,20 @@ describe('ClaudeProvider', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     provider = new ClaudeProvider();
     mockProcess = new MockChildProcess();
-    mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
+    mockSpawn = vi.mocked(spawn);
     mockSpawn.mockReturnValue(mockProcess as unknown as ReturnType<typeof spawn>);
     
     // Mock fs.readFile
-    (fs.readFile as jest.Mock).mockResolvedValue('File content');
+    vi.mocked(fs.readFile).mockResolvedValue('File content');
     
     // Mock path.basename
-    (path.basename as jest.Mock).mockReturnValue('filename.txt');
+    vi.mocked(path.basename).mockReturnValue('filename.txt');
     
     // Mock process.cwd
-    jest.spyOn(process, 'cwd').mockReturnValue('/test/dir');
+    vi.spyOn(process, 'cwd').mockReturnValue('/test/dir');
   });
 
   describe('checkAvailability', () => {
@@ -93,7 +94,7 @@ describe('ClaudeProvider', () => {
   describe('execute', () => {
     it('should execute successfully with JSON output', async () => {
       const abortController = new AbortController();
-      (fs.readFile as jest.Mock)
+      vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content')
         .mockResolvedValueOnce('Context file content');
@@ -159,7 +160,7 @@ describe('ClaudeProvider', () => {
     });
 
     it('should handle execution errors', async () => {
-      (fs.readFile as jest.Mock)
+      vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
       
@@ -185,13 +186,13 @@ describe('ClaudeProvider', () => {
     });
 
     it('should handle context files correctly', async () => {
-      (fs.readFile as jest.Mock)
+      vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content')
         .mockResolvedValueOnce('Context 1')
         .mockResolvedValueOnce('Context 2');
       
-      (path.basename as jest.Mock)
+      vi.mocked(path.basename)
         .mockReturnValueOnce('context1.md')
         .mockReturnValueOnce('context2.md');
         
@@ -223,7 +224,7 @@ describe('ClaudeProvider', () => {
     });
 
     it('should handle streaming output with file modifications', async () => {
-      (fs.readFile as jest.Mock)
+      vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
         
@@ -273,7 +274,7 @@ describe('ClaudeProvider', () => {
     });
 
     it('should handle signal abort', async () => {
-      (fs.readFile as jest.Mock)
+      vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
         

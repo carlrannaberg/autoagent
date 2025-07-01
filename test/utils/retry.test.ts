@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { 
   retry, 
   retryWithJitter, 
@@ -9,32 +10,32 @@ import {
 } from '../../src/utils/retry';
 
 // Mock the logger to suppress console output during tests
-jest.mock('../../src/utils/logger', () => ({
+vi.mock('../../src/utils/logger', () => ({
   Logger: {
-    warning: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn(),
-    success: jest.fn(),
-    debug: jest.fn()
+    warning: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    success: vi.fn(),
+    debug: vi.fn()
   }
 }));
 
 describe('Retry utilities', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
+    vi.clearAllMocks();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('retry', () => {
     it('should succeed on first attempt', async () => {
-      const fn = jest.fn().mockResolvedValue('success');
+      const fn = vi.fn().mockResolvedValue('success');
       
       const promise = retry(fn);
-      await jest.runAllTimersAsync();
+      await vi.runAllTimersAsync();
       const result = await promise;
 
       expect(result).toBe('success');
@@ -42,7 +43,7 @@ describe('Retry utilities', () => {
     });
 
     it('should retry on failure and succeed', async () => {
-      const fn = jest.fn()
+      const fn = vi.fn()
         .mockRejectedValueOnce(new Error('Fail 1'))
         .mockRejectedValueOnce(new Error('Fail 2'))
         .mockResolvedValue('success');
@@ -50,7 +51,7 @@ describe('Retry utilities', () => {
       const promise = retry(fn);
       
       // Run through retries
-      await jest.runAllTimersAsync();
+      await vi.runAllTimersAsync();
       
       const result = await promise;
       expect(result).toBe('success');
@@ -58,14 +59,14 @@ describe('Retry utilities', () => {
     });
 
     it('should fail after max attempts', async () => {
-      const fn = jest.fn().mockRejectedValue(new Error('Always fails'));
+      const fn = vi.fn().mockRejectedValue(new Error('Always fails'));
       
       const promise = retry(fn, { maxAttempts: 3, initialDelay: 10 });
       
       // Advance timers for each retry attempt
       for (let i = 0; i < 3; i++) {
         await Promise.resolve(); // Let the retry execute
-        jest.advanceTimersByTime(10 * Math.pow(2, i)); // Advance by the delay
+        vi.advanceTimersByTime(10 * Math.pow(2, i)); // Advance by the delay
       }
       
       await expect(promise).rejects.toThrow(RetryError);
@@ -78,7 +79,7 @@ describe('Retry utilities', () => {
     }, 10000);
 
     it('should use exponential backoff', async () => {
-      const fn = jest.fn()
+      const fn = vi.fn()
         .mockRejectedValueOnce(new Error('Fail 1'))
         .mockRejectedValueOnce(new Error('Fail 2'))
         .mockResolvedValue('success');
@@ -89,15 +90,15 @@ describe('Retry utilities', () => {
       });
       
       // First attempt fails immediately
-      await jest.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(0);
       expect(fn).toHaveBeenCalledTimes(1);
       
       // Second attempt after 100ms
-      await jest.advanceTimersByTimeAsync(100);
+      await vi.advanceTimersByTimeAsync(100);
       expect(fn).toHaveBeenCalledTimes(2);
       
       // Third attempt after 200ms more (100 * 2)
-      await jest.advanceTimersByTimeAsync(200);
+      await vi.advanceTimersByTimeAsync(200);
       expect(fn).toHaveBeenCalledTimes(3);
       
       const result = await promise;
@@ -105,7 +106,7 @@ describe('Retry utilities', () => {
     });
 
     it('should respect maxDelay', async () => {
-      const fn = jest.fn()
+      const fn = vi.fn()
         .mockRejectedValueOnce(new Error('Fail'))
         .mockResolvedValue('success');
       
@@ -116,11 +117,11 @@ describe('Retry utilities', () => {
       });
       
       // First attempt fails
-      await jest.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(0);
       expect(fn).toHaveBeenCalledTimes(1);
       
       // Second attempt should happen after maxDelay (500ms), not 10000ms
-      await jest.advanceTimersByTimeAsync(500);
+      await vi.advanceTimersByTimeAsync(500);
       expect(fn).toHaveBeenCalledTimes(2);
       
       await promise;
@@ -128,7 +129,7 @@ describe('Retry utilities', () => {
 
     it('should stop retrying for non-retryable errors', async () => {
       const nonRetryableError = new Error('Non-retryable');
-      const fn = jest.fn().mockRejectedValue(nonRetryableError);
+      const fn = vi.fn().mockRejectedValue(nonRetryableError);
       
       const promise = retry(fn, {
         shouldRetry: (error) => error.message !== 'Non-retryable'
@@ -140,12 +141,12 @@ describe('Retry utilities', () => {
 
     it('should detect rate limit errors', async () => {
       const rateLimitError = new RateLimitError('Rate limited', 60);
-      const fn = jest.fn()
+      const fn = vi.fn()
         .mockRejectedValueOnce(rateLimitError)
         .mockResolvedValue('success');
       
       const promise = retry(fn);
-      await jest.runAllTimersAsync();
+      await vi.runAllTimersAsync();
       
       const result = await promise;
       expect(result).toBe('success');
@@ -156,9 +157,9 @@ describe('Retry utilities', () => {
   describe('retryWithJitter', () => {
     it('should add jitter to delays', async () => {
       // Mock Math.random to return predictable values
-      const mockRandom = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+      const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.5);
       
-      const fn = jest.fn()
+      const fn = vi.fn()
         .mockRejectedValueOnce(new Error('Fail'))
         .mockResolvedValue('success');
       
@@ -167,11 +168,11 @@ describe('Retry utilities', () => {
       });
       
       // Let initial execution and jitter run
-      await jest.advanceTimersByTimeAsync(50); // Initial jitter
+      await vi.advanceTimersByTimeAsync(50); // Initial jitter
       expect(fn).toHaveBeenCalledTimes(1);
       
       // Second attempt after delay + jitter
-      await jest.advanceTimersByTimeAsync(150); // 100ms delay + 50ms jitter
+      await vi.advanceTimersByTimeAsync(150); // 100ms delay + 50ms jitter
       expect(fn).toHaveBeenCalledTimes(2);
       
       await promise;
@@ -181,7 +182,7 @@ describe('Retry utilities', () => {
 
   describe('createRetryableFunction', () => {
     it('should create a retryable version of a function', async () => {
-      const originalFn = jest.fn()
+      const originalFn = vi.fn()
         .mockRejectedValueOnce(new Error('Temporary failure'))
         .mockResolvedValue('success');
       
@@ -191,7 +192,7 @@ describe('Retry utilities', () => {
       });
       
       const promise = retryableFn();
-      await jest.runAllTimersAsync();
+      await vi.runAllTimersAsync();
       const result = await promise;
       
       expect(result).toBe('success');
@@ -199,7 +200,7 @@ describe('Retry utilities', () => {
     });
 
     it('should pass arguments correctly', async () => {
-      const originalFn = jest.fn().mockResolvedValue('result');
+      const originalFn = vi.fn().mockResolvedValue('result');
       const retryableFn = createRetryableFunction(originalFn);
       
       await retryableFn('arg1', 'arg2', { option: true });
