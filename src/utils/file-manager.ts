@@ -383,12 +383,27 @@ Please see AGENT.md for the actual instructions.
   }
 
   async getTodoStats(): Promise<{ total: number; completed: number; pending: number }> {
-    const todos = await this.readTodoList();
-    const total = todos.length;
-    const completed = todos.filter(t => t.includes('[x]')).length;
-    const pending = total - completed;
-    
-    return { total, completed, pending };
+    // First try to read from status.json (used by CLI commands)
+    const statusFile = path.join(this.workspace, '.autoagent', 'status.json');
+    try {
+      const statusContent = await fs.readFile(statusFile, 'utf-8');
+      const statusData = JSON.parse(statusContent);
+      const issues = Object.values(statusData) as any[];
+      
+      const total = issues.length;
+      const completed = issues.filter(issue => issue.status === 'completed').length;
+      const pending = total - completed;
+      
+      return { total, completed, pending };
+    } catch {
+      // Fall back to TODO.md if status.json doesn't exist
+      const todos = await this.readTodoList();
+      const total = todos.length;
+      const completed = todos.filter(t => t.includes('[x]')).length;
+      const pending = total - completed;
+      
+      return { total, completed, pending };
+    }
   }
 
   async getNextIssue(): Promise<Issue | undefined> {

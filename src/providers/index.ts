@@ -1,21 +1,24 @@
 import { Provider } from './Provider';
 import { ClaudeProvider } from './ClaudeProvider';
 import { GeminiProvider } from './GeminiProvider';
+import { MockProvider } from './MockProvider';
 
-export { Provider, ClaudeProvider, GeminiProvider };
+export { Provider, ClaudeProvider, GeminiProvider, MockProvider };
 
 /**
  * Create a provider instance based on the provider type.
- * @param providerType - Type of provider to create ('claude' or 'gemini')
+ * @param providerType - Type of provider to create ('claude', 'gemini', or 'mock')
  * @returns Provider instance
  * @throws Error if provider type is invalid
  */
-export function createProvider(providerType: 'claude' | 'gemini'): Provider {
+export function createProvider(providerType: 'claude' | 'gemini' | 'mock'): Provider {
   switch (providerType) {
     case 'claude':
       return new ClaudeProvider();
     case 'gemini':
       return new GeminiProvider();
+    case 'mock':
+      return new MockProvider();
     default:
       throw new Error(`Invalid provider type: ${providerType as string}`);
   }
@@ -28,7 +31,8 @@ export function createProvider(providerType: 'claude' | 'gemini'): Provider {
 export async function getAvailableProviders(): Promise<string[]> {
   const providers: Provider[] = [
     new ClaudeProvider(),
-    new GeminiProvider()
+    new GeminiProvider(),
+    new MockProvider()
   ];
 
   const availabilityChecks = await Promise.all(
@@ -49,9 +53,9 @@ export async function getAvailableProviders(): Promise<string[]> {
  * @returns Promise resolving to the first available provider or null
  */
 export async function getFirstAvailableProvider(
-  preferredProviders?: ('claude' | 'gemini')[]
+  preferredProviders?: ('claude' | 'gemini' | 'mock')[]
 ): Promise<Provider | null> {
-  const checkOrder = preferredProviders || ['claude', 'gemini'];
+  const checkOrder = preferredProviders || ['claude', 'gemini', 'mock'];
 
   for (const providerType of checkOrder) {
     try {

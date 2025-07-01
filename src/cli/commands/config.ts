@@ -1,14 +1,194 @@
 import { Command } from 'commander';
 import { ConfigManager } from '../../core/config-manager';
 import { Logger } from '../../utils/logger';
-import { ProviderName } from '../../types';
+import { ProviderName, UserConfig } from '../../types';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+
 
 export function registerConfigCommand(program: Command): void {
-  // Config command group
   const config = program
     .command('config')
     .description('Manage configuration');
 
+  // Get configuration value(s)
+  config
+    .command('get [key]')
+    .description('Get configuration value(s)')
+    .option('--show-source', 'Show the source of each configuration value')
+    .action(async (key?: string, options?: { showSource?: boolean }) => {
+      try {
+        // Check if project is initialized
+        const projectConfigPath = path.join(process.cwd(), '.autoagent.json');
+        try {
+          await fs.access(projectConfigPath);
+        } catch {
+          Logger.error('Project not initialized. Run "autoagent init" first.');
+          process.exit(1);
+        }
+        
+        const configManager = new ConfigManager();
+        await configManager.loadConfig();
+        const currentConfig = configManager.getConfig();
+        
+        if (key) {
+          const value = getConfigValue(key, currentConfig);
+          const envValue = getEnvValue(key);
+          const displayValue = envValue !== undefined ? envValue : value;
+          
+          if (displayValue === undefined) {
+            Logger.error(`Unknown configuration key: ${key}`);
+            process.exit(1);
+          }
+          
+          // Handle string values that might be JSON.stringify'd
+          let formattedValue = displayValue;
+          if (typeof displayValue === 'string' && displayValue.startsWith('"') && displayValue.endsWith('"')) {
+            formattedValue = displayValue.slice(1, -1);  // Remove quotes
+          }
+          
+          let output = `${key}: ${formattedValue}`;
+          if (options?.showSource) {
+            const source = envValue !== undefined ? 'environment' : 'local';
+            output += ` (${source})`;
+          }
+          console.log(output);
+        } else {
+          // Show all config values
+          const allKeys = Object.keys(currentConfig);
+          for (const k of allKeys) {
+            const value = getConfigValue(k, currentConfig);
+            const envValue = getEnvValue(k);
+            const displayValue = envValue !== undefined ? envValue : value;
+            
+            // Handle string values that might be JSON.stringify'd
+            let formattedValue = displayValue;
+            if (typeof displayValue === 'string' && displayValue.startsWith('"') && displayValue.endsWith('"')) {
+              formattedValue = displayValue.slice(1, -1);  // Remove quotes
+            }
+            
+            let output = `${k}: ${formattedValue}`;
+            if (options?.showSource) {
+              const source = envValue !== undefined ? 'environment' : 'local';
+              output += ` (${source})`;
+            }
+            console.log(output);
+          }
+        }
+      } catch (error) {
+        Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    });
+
+  // Set configuration value
+  config
+    .command('set <key> <value>')
+    .description('Set configuration value')
+    .option('-g, --global', 'Set in global configuration')
+    .action(async (key: string, value: string, options: { global?: boolean }) => {
+      try {
+        // Check if project is initialized (unless setting global config)
+        if (!options.global) {
+          const projectConfigPath = path.join(process.cwd(), '.autoagent.json');
+          try {
+            await fs.access(projectConfigPath);
+          } catch {
+            Logger.error('Project not initialized. Run "autoagent init" first.');
+            process.exit(1);
+          }
+        }
+        
+        const configManager = new ConfigManager();
+        await configManager.loadConfig();
+        
+        // Validate the key and value
+        const validatedValue = validateConfigValue(key, value);
+        
+        const updates: Partial<UserConfig> = {};
+        setConfigValue(key, validatedValue, updates);
+        
+        await configManager.updateConfig(updates, options.global ? 'global' : 'local');
+        Logger.success(`Configuration updated: ${key} = ${value}`);
+      } catch (error) {
+        Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    });
+
+  // Reset configuration
+  config
+    .command('reset')
+    .description('Reset configuration to defaults')
+    .option('-g, --global', 'Reset global configuration')
+    .action(async (options: { global?: boolean }) => {
+      try {
+        const configPath = options.global 
+          ? path.join(process.env.HOME || '/', '.autoagent', 'config.json')
+          : path.join(process.cwd(), '.autoagent', 'config.json');
+        
+        try {
+          await fs.unlink(configPath);
+          Logger.success(`Configuration reset ${options.global ? 'globally' : 'locally'}`);
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+            throw error;
+          }
+          Logger.info('No configuration file to reset');
+        }
+      } catch (error) {
+        Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    });
+
+  // Export configuration
+  config
+    .command('export <filename>')
+    .description('Export configuration to file')
+    .action(async (filename: string) => {
+      try {
+        const configManager = new ConfigManager();
+        await configManager.loadConfig();
+        const currentConfig = configManager.getConfig();
+        
+        const exportPath = path.resolve(process.cwd(), filename);
+        await fs.writeFile(exportPath, JSON.stringify(currentConfig, null, 2));
+        
+        Logger.success(`Configuration exported to ${filename}`);
+      } catch (error) {
+        Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    });
+
+  // Import configuration
+  config
+    .command('import <filename>')
+    .description('Import configuration from file')
+    .option('-g, --global', 'Import to global configuration')
+    .action(async (filename: string, options: { global?: boolean }) => {
+      try {
+        const configManager = new ConfigManager();
+        const importPath = path.resolve(process.cwd(), filename);
+        
+        const content = await fs.readFile(importPath, 'utf-8');
+        const importedConfig = JSON.parse(content) as UserConfig;
+        
+        // Validate all imported values
+        for (const [key, value] of Object.entries(importedConfig)) {
+          validateConfigValue(key, String(value));
+        }
+        
+        await configManager.saveConfig(importedConfig, options.global);
+        Logger.success(`Configuration imported from ${filename}`);
+      } catch (error) {
+        Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    });
+
+  // Legacy commands for backward compatibility
   config
     .command('init')
     .description('Initialize configuration')
@@ -121,4 +301,162 @@ export function registerConfigCommand(program: Command): void {
         process.exit(1);
       }
     });
+}
+
+function getConfigValue(key: string, config: UserConfig): any {
+  switch (key) {
+    case 'provider':
+      return config.providers?.[0];
+    case 'providers':
+      return config.providers;
+    case 'verbose':
+      return config.logLevel === 'debug';
+    case 'autoMode':
+      return config.gitAutoCommit;
+    case 'logLevel':
+      return config.logLevel;
+    case 'maxTokens':
+      return config.maxTokens;
+    case 'retryAttempts':
+      return config.retryAttempts;
+    case 'failoverDelay':
+      return config.failoverDelay;
+    case 'gitAutoCommit':
+      return config.gitAutoCommit;
+    case 'gitCommitInterval':
+      return config.gitCommitInterval;
+    case 'includeCoAuthoredBy':
+      return config.includeCoAuthoredBy;
+    case 'customInstructions':
+      return config.customInstructions;
+    case 'rateLimitCooldown':
+      return config.rateLimitCooldown;
+    default:
+      return undefined;
+  }
+}
+
+function setConfigValue(key: string, value: any, updates: Partial<UserConfig>): void {
+  switch (key) {
+    case 'provider':
+      updates.providers = [value as ProviderName];
+      break;
+    case 'providers':
+      updates.providers = value as ProviderName[];
+      break;
+    case 'verbose':
+      updates.logLevel = value ? 'debug' : 'info';
+      break;
+    case 'autoMode':
+      updates.gitAutoCommit = value;
+      break;
+    case 'logLevel':
+      updates.logLevel = value;
+      break;
+    case 'maxTokens':
+      updates.maxTokens = value;
+      break;
+    case 'retryAttempts':
+      updates.retryAttempts = value;
+      break;
+    case 'failoverDelay':
+      updates.failoverDelay = value;
+      break;
+    case 'gitAutoCommit':
+      updates.gitAutoCommit = value;
+      break;
+    case 'gitCommitInterval':
+      updates.gitCommitInterval = value;
+      break;
+    case 'includeCoAuthoredBy':
+      updates.includeCoAuthoredBy = value;
+      break;
+    case 'customInstructions':
+      updates.customInstructions = value;
+      break;
+    case 'rateLimitCooldown':
+      updates.rateLimitCooldown = value;
+      break;
+    default:
+      throw new Error(`Unknown configuration key: ${key}`);
+  }
+}
+
+function getEnvValue(key: string): any {
+  const envMap: Record<string, string> = {
+    'verbose': 'AUTOAGENT_VERBOSE',
+    'provider': 'AUTOAGENT_PROVIDER',
+    'autoMode': 'AUTOAGENT_AUTO_MODE',
+    'logLevel': 'AUTOAGENT_LOG_LEVEL',
+    'maxTokens': 'AUTOAGENT_MAX_TOKENS',
+    'retryAttempts': 'AUTOAGENT_RETRY_ATTEMPTS',
+    'failoverDelay': 'AUTOAGENT_FAILOVER_DELAY',
+    'gitAutoCommit': 'AUTOAGENT_GIT_AUTO_COMMIT',
+    'gitCommitInterval': 'AUTOAGENT_GIT_COMMIT_INTERVAL',
+    'includeCoAuthoredBy': 'AUTOAGENT_INCLUDE_CO_AUTHORED_BY',
+    'customInstructions': 'AUTOAGENT_CUSTOM_INSTRUCTIONS',
+    'rateLimitCooldown': 'AUTOAGENT_RATE_LIMIT_COOLDOWN'
+  };
+
+  const envKey = envMap[key];
+  if (!envKey || !process.env[envKey]) {
+    return undefined;
+  }
+
+  const envValue = process.env[envKey];
+  
+  // Parse boolean values
+  if (key === 'verbose' || key === 'autoMode' || key === 'gitAutoCommit' || key === 'includeCoAuthoredBy') {
+    return envValue === 'true';
+  }
+  
+  // Parse number values
+  if (key === 'maxTokens' || key === 'retryAttempts' || key === 'failoverDelay' || 
+      key === 'gitCommitInterval' || key === 'rateLimitCooldown') {
+    return parseInt(envValue, 10);
+  }
+  
+  return envValue;
+}
+
+function validateConfigValue(key: string, value: string): any {
+  switch (key) {
+    case 'provider':
+      if (!['claude', 'gemini'].includes(value)) {
+        throw new Error(`Invalid value for provider: ${value}. Must be 'claude' or 'gemini'`);
+      }
+      return value;
+    
+    case 'verbose':
+    case 'autoMode':
+    case 'gitAutoCommit':
+    case 'includeCoAuthoredBy':
+      if (!['true', 'false'].includes(value)) {
+        throw new Error(`Invalid value for ${key}: ${value}. Value must be boolean (true/false)`);
+      }
+      return value === 'true';
+    
+    case 'logLevel':
+      if (!['debug', 'info', 'warn', 'error'].includes(value)) {
+        throw new Error(`Invalid value for logLevel: ${value}. Must be one of: debug, info, warn, error`);
+      }
+      return value;
+    
+    case 'maxTokens':
+    case 'retryAttempts':
+    case 'failoverDelay':
+    case 'gitCommitInterval':
+    case 'rateLimitCooldown':
+      const num = parseInt(value, 10);
+      if (isNaN(num) || num < 0) {
+        throw new Error(`Invalid value for ${key}: ${value}. Must be a positive number`);
+      }
+      return num;
+    
+    case 'customInstructions':
+      return value;
+    
+    default:
+      throw new Error(`Unknown configuration key: ${key}`);
+  }
 }
