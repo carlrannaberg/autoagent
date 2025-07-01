@@ -267,7 +267,7 @@ Technical details
       
       expect(result).toBe('Claude instructions');
       expect(fs.readFile).toHaveBeenCalledWith(
-        path.join(mockWorkspace, 'CLAUDE.md'),
+        path.join(mockWorkspace, 'AGENT.md'),
         'utf-8'
       );
     });

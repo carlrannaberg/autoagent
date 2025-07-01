@@ -1,9 +1,11 @@
 import { ProviderLearning } from '../../src/core/provider-learning';
 import { FileManager } from '../../src/utils/file-manager';
 import { ExecutionResult } from '../../src/types';
+import { createProvider } from '../../src/providers';
 
-// Mock FileManager
+// Mock dependencies
 jest.mock('../../src/utils/file-manager');
+jest.mock('../../src/providers');
 
 describe('ProviderLearning', () => {
   let providerLearning: ProviderLearning;
@@ -16,16 +18,13 @@ describe('ProviderLearning', () => {
   });
 
   describe('updateProviderLearnings', () => {
-    it('should update AGENT.md with insights but no execution history', async () => {
-      const existingContent = `# Agent Instructions
-
-This file gives guidance to agentic coding tools.
-
-## Project Context
-Test project`;
-      
-      mockFileManager.readFile.mockResolvedValue(existingContent);
-      mockFileManager.writeFile.mockResolvedValue(undefined);
+    it('should invoke AI provider to update AGENT.md intelligently', async () => {
+      // Mock the provider
+      const mockProvider = {
+        checkAvailability: jest.fn().mockResolvedValue(true),
+        execute: jest.fn().mockResolvedValue({ success: true })
+      };
+      (createProvider as jest.Mock).mockReturnValue(mockProvider);
 
       const executionResult: ExecutionResult = {
         success: true,
@@ -38,24 +37,23 @@ Test project`;
 
       await providerLearning.updateProviderLearnings(executionResult);
 
-      // Verify AGENT.md was read and written
-      expect(mockFileManager.readFile).toHaveBeenCalledWith('AGENT.md');
-      expect(mockFileManager.writeFile).toHaveBeenCalledWith(
-        'AGENT.md',
-        expect.any(String)
+      // Verify provider was created and used
+      expect(createProvider).toHaveBeenCalledWith('claude');
+      expect(mockProvider.checkAvailability).toHaveBeenCalled();
+      expect(mockProvider.execute).toHaveBeenCalledWith(
+        expect.stringContaining('Just completed: Issue #1'),
+        '',
+        ['AGENT.md', 'issues/1-*.md', 'plans/1-*.md'],
+        undefined
       );
-      
-      // Verify no execution history is added
-      const updatedContent = mockFileManager.writeFile.mock.calls[0]?.[1];
-      expect(updatedContent).not.toContain('## Execution History');
-      expect(updatedContent).not.toContain('## Performance Metrics');
-      expect(updatedContent).not.toContain('## Detected Patterns');
-      expect(updatedContent).toContain('## Learning Insights');
     });
 
-    it('should handle failed executions and update insights', async () => {
-      mockFileManager.readFile.mockResolvedValue('# Agent Instructions');
-      mockFileManager.writeFile.mockResolvedValue(undefined);
+    it('should handle failed executions and include error info', async () => {
+      const mockProvider = {
+        checkAvailability: jest.fn().mockResolvedValue(true),
+        execute: jest.fn().mockResolvedValue({ success: true })
+      };
+      (createProvider as jest.Mock).mockReturnValue(mockProvider);
       
       const executionResult: ExecutionResult = {
         success: false,
@@ -67,19 +65,21 @@ Test project`;
 
       await providerLearning.updateProviderLearnings(executionResult);
 
-      // Verify file was updated
-      expect(mockFileManager.writeFile).toHaveBeenCalledWith('AGENT.md', expect.any(String));
+      // Verify provider was invoked with error info
+      expect(mockProvider.execute).toHaveBeenCalledWith(
+        expect.stringContaining('Error: Rate limit exceeded'),
+        '',
+        expect.any(Array),
+        undefined
+      );
     });
 
-    it('should accumulate insights over multiple executions', async () => {
-      let currentContent = '# Agent Instructions';
-      
-      // Mock to simulate file updates
-      mockFileManager.readFile.mockImplementation(() => Promise.resolve(currentContent));
-      mockFileManager.writeFile.mockImplementation((_path, content) => {
-        currentContent = content;
-        return Promise.resolve();
-      });
+    it('should accumulate patterns over multiple executions', async () => {
+      const mockProvider = {
+        checkAvailability: jest.fn().mockResolvedValue(true),
+        execute: jest.fn().mockResolvedValue({ success: true })
+      };
+      (createProvider as jest.Mock).mockReturnValue(mockProvider);
 
       // Multiple executions
       for (let i = 1; i <= 3; i++) {
@@ -91,10 +91,13 @@ Test project`;
         });
       }
 
-      // Verify insights are generated but no history
-      expect(currentContent).toContain('## Learning Insights');
-      expect(currentContent).not.toContain('## Execution History');
-      expect(currentContent).not.toContain('Total Executions');
+      // Verify provider was called for each execution
+      expect(mockProvider.execute).toHaveBeenCalledTimes(3);
+      
+      // Check last call included pattern info
+      const lastCall = mockProvider.execute.mock.calls[2];
+      const prompt = lastCall[0];
+      expect(prompt).toContain('Just completed: Issue #3');
     });
 
     it('should ignore executions without provider', async () => {
@@ -107,38 +110,40 @@ Test project`;
 
       await providerLearning.updateProviderLearnings(executionResult);
 
-      expect(mockFileManager.readProviderInstructions).not.toHaveBeenCalled();
-      expect(mockFileManager.updateProviderInstructions).not.toHaveBeenCalled();
+      expect(createProvider).not.toHaveBeenCalled();
     });
 
-    it('should generate insights from patterns', async () => {
-      mockFileManager.readFile.mockResolvedValue('# Agent Instructions');
-      mockFileManager.writeFile.mockResolvedValue(undefined);
+    it('should handle provider not available', async () => {
+      const mockProvider = {
+        checkAvailability: jest.fn().mockResolvedValue(false),
+        execute: jest.fn()
+      };
+      (createProvider as jest.Mock).mockReturnValue(mockProvider);
       
-      // Simulate multiple successful executions
-      for (let i = 1; i <= 10; i++) {
-        await providerLearning.updateProviderLearnings({
-          success: true,
-          issueNumber: i,
-          duration: 25000 + (i * 1000),
-          provider: 'claude',
-          filesModified: [`src/file${i}.ts`, `test/file${i}.spec.ts`]
-        });
-      }
+      const executionResult: ExecutionResult = {
+        success: true,
+        issueNumber: 1,
+        duration: 25000,
+        provider: 'claude',
+        filesModified: ['src/file.ts']
+      };
 
-      // Get the last written content
-      const lastCall = mockFileManager.writeFile.mock.calls[mockFileManager.writeFile.mock.calls.length - 1];
-      const finalContent = lastCall?.[1];
+      await providerLearning.updateProviderLearnings(executionResult);
       
-      // Verify insights are present but no patterns section
-      expect(finalContent).toContain('## Learning Insights');
-      expect(finalContent).toContain('Best Practices');
-      expect(finalContent).not.toContain('## Detected Patterns');
+      // Should check availability but not execute
+      expect(mockProvider.checkAvailability).toHaveBeenCalled();
+      expect(mockProvider.execute).not.toHaveBeenCalled();
     });
   });
 
   describe('clearCache', () => {
     it('should clear cache for specific provider', async () => {
+      const mockProvider = {
+        checkAvailability: jest.fn().mockResolvedValue(true),
+        execute: jest.fn().mockResolvedValue({ success: true })
+      };
+      (createProvider as jest.Mock).mockReturnValue(mockProvider);
+      
       // Populate pattern analyzer with data
       await providerLearning.updateProviderLearnings({
         success: true,
