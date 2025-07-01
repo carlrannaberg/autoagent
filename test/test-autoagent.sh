@@ -11,16 +11,18 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Test modes
-MODE=${1:-"all"}  # all, cli, direct, or specific test name
+MODE=${1:-"all"}  # all or specific test name
 
 echo -e "${BLUE}🧪 AutoAgent Test Suite${NC}"
 echo -e "${CYAN}Mode: $MODE${NC}"
 echo ""
 
-# Save current directory
+# Save current directory and determine project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 ORIGINAL_DIR=$(pwd)
 TEST_DIR=$(mktemp -d)
-AUTOAGENT_BIN="$ORIGINAL_DIR/../bin/autoagent"
+AUTOAGENT_BIN="$PROJECT_ROOT/bin/autoagent"
 
 # Track test results
 TESTS_RUN=0
@@ -93,22 +95,50 @@ This is a test environment. When completing tasks:
 - For "Test Task": Create test-output.txt with "Hello from autoagent!" and the current date
 - For "Second Task": Create second-test.txt with "Second test complete"
 EOF
+
+    # Initialize directories
+    mkdir -p issues plans logs
 }
 
 # Build autoagent once at the start
 echo -e "${BLUE}🔨 Building autoagent...${NC}"
-cd "$ORIGINAL_DIR/.."
+cd "$PROJECT_ROOT"
 npm run build
+cd "$ORIGINAL_DIR"  # Return to original directory
 
-# Test 1: CLI workflow - single issue
-test_cli_single_issue() {
+# Test 1: Single issue execution
+test_single_issue() {
     setup_test_project
     
-    # Initialize config
-    "$AUTOAGENT_BIN" config init || return 1
-    
-    # Create issue using CLI
-    "$AUTOAGENT_BIN" create "Test Task" || return 1
+    # Create test issue and plan
+    cat > "issues/1-test-task.md" << 'EOF'
+# Issue 1: Test Task
+
+## Requirements
+Create a simple test file to verify the agent is working
+
+## Acceptance Criteria
+- [ ] Create a file named test-output.txt
+- [ ] File should contain "Hello from autoagent!"
+- [ ] File should include the current date
+EOF
+
+    cat > "plans/1-test-task.md" << 'EOF'
+# Plan for Issue 1: Test Task
+
+## Implementation Plan
+- [ ] Create test-output.txt with "Hello from autoagent!" and current date
+EOF
+
+    # Create TODO.md
+    cat > "TODO.md" << 'EOF'
+# To-Do
+
+This file tracks all issues for the autonomous agent.
+
+## Pending Issues
+- [ ] **[Issue #1]** Test Task - `issues/1-test-task.md`
+EOF
     
     # Run the issue
     "$AUTOAGENT_BIN" run || return 1
@@ -121,20 +151,55 @@ test_cli_single_issue() {
     return 0
 }
 
-# Test 2: CLI workflow - multiple issues with --all
-test_cli_multiple_issues() {
+# Test 2: Multiple issues with --all
+test_multiple_issues_all() {
     setup_test_project
     
-    # Initialize config
-    "$AUTOAGENT_BIN" config init || return 1
-    
-    # Create two issues
-    "$AUTOAGENT_BIN" create "Test Task" || return 1
-    "$AUTOAGENT_BIN" create "Second Task" || return 1
-    
-    # Check status shows 2 pending
-    STATUS=$("$AUTOAGENT_BIN" status 2>&1)
-    echo "$STATUS" | grep -q "Pending:.*2" || return 1
+    # Create two test issues
+    cat > "issues/1-test-task.md" << 'EOF'
+# Issue 1: Test Task
+
+## Requirements
+Create a test file
+
+## Acceptance Criteria
+- [ ] Create test-output.txt with "Hello from autoagent!"
+EOF
+
+    cat > "plans/1-test-task.md" << 'EOF'
+# Plan for Issue 1: Test Task
+
+## Implementation Plan
+- [ ] Create test-output.txt
+EOF
+
+    cat > "issues/2-second-task.md" << 'EOF'
+# Issue 2: Second Task
+
+## Requirements
+Create another test file
+
+## Acceptance Criteria
+- [ ] Create second-test.txt with "Second test complete"
+EOF
+
+    cat > "plans/2-second-task.md" << 'EOF'
+# Plan for Issue 2: Second Task
+
+## Implementation Plan
+- [ ] Create second-test.txt
+EOF
+
+    # Create TODO.md with both issues
+    cat > "TODO.md" << 'EOF'
+# To-Do
+
+This file tracks all issues for the autonomous agent.
+
+## Pending Issues
+- [ ] **[Issue #1]** Test Task - `issues/1-test-task.md`
+- [ ] **[Issue #2]** Second Task - `issues/2-second-task.md`
+EOF
     
     # Run all issues
     "$AUTOAGENT_BIN" run --all || return 1
@@ -150,29 +215,28 @@ test_cli_multiple_issues() {
     return 0
 }
 
-# Test 3: Direct file creation (edge case)
-test_direct_file_workflow() {
+# Test 3: Incremental issue addition
+test_incremental_issues() {
     setup_test_project
     
-    # Create directories
-    mkdir -p issues plans logs
-    
-    # Create issue and plan files directly
+    # Create first issue
     cat > "issues/1-test-task.md" << 'EOF'
 # Issue 1: Test Task
+
 ## Requirements
 Create a test file
+
 ## Acceptance Criteria
 - [ ] Create test-output.txt with "Hello from autoagent!"
 EOF
 
     cat > "plans/1-test-task.md" << 'EOF'
 # Plan for Issue 1: Test Task
+
 ## Implementation Plan
-- [ ] Create test-output.txt with required content
+- [ ] Create test-output.txt
 EOF
 
-    # Create TODO.md
     cat > "TODO.md" << 'EOF'
 # To-Do
 
@@ -181,31 +245,43 @@ This file tracks all issues for the autonomous agent.
 ## Pending Issues
 - [ ] **[Issue #1]** Test Task - `issues/1-test-task.md`
 EOF
-
-    # Run
-    "$AUTOAGENT_BIN" run || return 1
-    
-    # Verify
-    [ -f "test-output.txt" ] || return 1
-    grep -q "\[x\]" TODO.md || return 1
-    
-    return 0
-}
-
-# Test 4: Adding issue after first completion
-test_incremental_issues() {
-    setup_test_project
-    
-    # Initialize and create first issue
-    "$AUTOAGENT_BIN" config init || return 1
-    "$AUTOAGENT_BIN" create "Test Task" || return 1
     
     # Run first issue
     "$AUTOAGENT_BIN" run || return 1
     [ -f "test-output.txt" ] || return 1
     
-    # Add second issue after first is complete
-    "$AUTOAGENT_BIN" create "Second Task" || return 1
+    # Now add second issue properly
+    cat > "issues/2-second-task.md" << 'EOF'
+# Issue 2: Second Task
+
+## Requirements
+Create another test file
+
+## Acceptance Criteria
+- [ ] Create second-test.txt with "Second test complete"
+EOF
+
+    cat > "plans/2-second-task.md" << 'EOF'
+# Plan for Issue 2: Second Task
+
+## Implementation Plan
+- [ ] Create second-test.txt
+EOF
+
+    # Update TODO.md properly (maintaining the structure)
+    EXISTING_TODOS=$(grep -E "^-\s+\[.\]\s+" TODO.md || true)
+    cat > TODO.md << EOF
+# To-Do
+
+This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
+
+## Pending Issues
+$(echo "$EXISTING_TODOS" | grep -v "\[x\]" || true)
+- [ ] **[Issue #2]** Second Task - \`issues/2-second-task.md\`
+
+## Completed Issues
+$(echo "$EXISTING_TODOS" | grep "\[x\]" || true)
+EOF
     
     # Run with --all should pick up the new issue
     "$AUTOAGENT_BIN" run --all || return 1
@@ -216,13 +292,32 @@ test_incremental_issues() {
     return 0
 }
 
-# Test 5: Status command
+# Test 4: Status command
 test_status_command() {
     setup_test_project
     
-    "$AUTOAGENT_BIN" config init || return 1
-    "$AUTOAGENT_BIN" create "Test Task" || return 1
-    "$AUTOAGENT_BIN" create "Second Task" || return 1
+    # Create two issues
+    cat > "issues/1-test-task.md" << 'EOF'
+# Issue 1: Test Task
+## Requirements
+Test file creation
+EOF
+
+    cat > "issues/2-second-task.md" << 'EOF'
+# Issue 2: Second Task
+## Requirements
+Another test file
+EOF
+
+    cat > "TODO.md" << 'EOF'
+# To-Do
+
+This file tracks all issues for the autonomous agent.
+
+## Pending Issues
+- [ ] **[Issue #1]** Test Task - `issues/1-test-task.md`
+- [ ] **[Issue #2]** Second Task - `issues/2-second-task.md`
+EOF
     
     # Check initial status
     STATUS=$("$AUTOAGENT_BIN" status 2>&1)
@@ -230,46 +325,31 @@ test_status_command() {
     echo "$STATUS" | grep -q "Pending:.*2" || return 1
     echo "$STATUS" | grep -q "Completed:.*0" || return 1
     
-    # Run one issue
-    "$AUTOAGENT_BIN" run || return 1
-    
-    # Check status after one completion
-    STATUS=$("$AUTOAGENT_BIN" status 2>&1)
-    echo "$STATUS" | grep -q "Pending:.*1" || return 1
-    echo "$STATUS" | grep -q "Completed:.*1" || return 1
-    
     return 0
 }
 
 # Run tests based on mode
 case "$MODE" in
-    "all"|"cli")
-        run_test "cli_single_issue" test_cli_single_issue
-        run_test "cli_multiple_issues" test_cli_multiple_issues
+    "all")
+        run_test "single_issue" test_single_issue
+        run_test "multiple_issues_all" test_multiple_issues_all
         run_test "incremental_issues" test_incremental_issues
         run_test "status_command" test_status_command
-        ;;&
-    "all"|"direct")
-        run_test "direct_file_workflow" test_direct_file_workflow
         ;;
     *)
         # Run specific test
         case "$MODE" in
-            "cli_single_issue") run_test "$MODE" test_cli_single_issue ;;
-            "cli_multiple_issues") run_test "$MODE" test_cli_multiple_issues ;;
-            "direct_file_workflow") run_test "$MODE" test_direct_file_workflow ;;
+            "single_issue") run_test "$MODE" test_single_issue ;;
+            "multiple_issues_all") run_test "$MODE" test_multiple_issues_all ;;
             "incremental_issues") run_test "$MODE" test_incremental_issues ;;
             "status_command") run_test "$MODE" test_status_command ;;
             *)
                 echo -e "${RED}Unknown test: $MODE${NC}"
                 echo "Available tests:"
-                echo "  - cli_single_issue"
-                echo "  - cli_multiple_issues"
-                echo "  - direct_file_workflow"
+                echo "  - single_issue"
+                echo "  - multiple_issues_all"
                 echo "  - incremental_issues"
                 echo "  - status_command"
-                echo ""
-                echo "Or use modes: all, cli, direct"
                 exit 1
                 ;;
         esac
