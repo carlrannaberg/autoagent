@@ -28,6 +28,7 @@ npm run clean        # Clean build output
 
 # Release commands (uses Claude to prepare releases)
 # NOTE: These commands can take 5-10 minutes as Claude analyzes the codebase
+# IMPORTANT: These commands prepare the release but do NOT create tags
 npm run release:patch # Prepare a patch release (0.0.1 -> 0.0.2)
 npm run release:minor # Prepare a minor release (0.0.1 -> 0.1.0)
 npm run release:major # Prepare a major release (0.0.1 -> 1.0.0)
@@ -54,6 +55,7 @@ npm view autoagent-cli@x.x.x
 2. **No tag modifications**: Never delete/move tags for published versions 
 3. **Forward only**: If you need to include more changes, bump to next version
 4. **Rollback safely**: Only use `npm run release:rollback` for unpublished versions
+5. **No manual tag creation**: NEVER create git tags manually - tags are automatically created by GitHub workflows after successful release preparation
 
 **Tip:** Run `npm run check` before pushing to catch type errors, linting issues, and test failures early. This runs all validations concurrently for faster feedback.
 
@@ -93,6 +95,12 @@ When deciding between patch, minor, or major releases, consider the **user's per
 ## Git Repository
 
 The main branch for this project is called "master"
+
+**Important Git Operations:**
+- **NEVER create git tags manually** - Tags are automatically created by GitHub workflows
+- After running `npm run release:*` commands, simply push to master
+- The GitHub release workflow will create the appropriate tag
+- Only use `git tag` for listing/viewing tags, not for creating them
 
 ## Coding Standards
 
