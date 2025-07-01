@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes yet._
 
+## [0.1.3] - 2025-07-01
+
+### Changed
+- Provider learning system now uses AI to intelligently update AGENT.md instead of manual metrics tracking
+  - Removed execution history, performance metrics, and pattern sections from provider files
+  - Provider learning now runs after each task completion to capture insights in real-time
+  - AI analyzes git diffs and actual code changes to determine valuable learnings
+  - Only updates AGENT.md when there are meaningful insights to add
+
+### Fixed
+- Fixed handling of nullable error strings in provider learning to prevent potential runtime errors
+
+### Added
+- Added `getExecutionCount()` method to PatternAnalyzer for tracking execution history
+
 ## [0.1.2] - 2025-07-01
 
 ### Fixed
