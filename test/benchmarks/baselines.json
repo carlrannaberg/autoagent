@@ -1,0 +1,90 @@
+{
+  "execution": {
+    "singleIssue": {
+      "p50": 1000,
+      "p90": 2000,
+      "p95": 3000,
+      "max": 5000
+    },
+    "batchExecution": {
+      "5issues": {
+        "p50": 4000,
+        "p90": 6000,
+        "p95": 8000,
+        "max": 10000
+      },
+      "10issues": {
+        "p50": 8000,
+        "p90": 12000,
+        "p95": 15000,
+        "max": 20000
+      },
+      "20issues": {
+        "p50": 16000,
+        "p90": 24000,
+        "p95": 30000,
+        "max": 40000
+      }
+    }
+  },
+  "providers": {
+    "claude": {
+      "initialization": {
+        "p50": 50,
+        "p90": 100,
+        "p95": 150,
+        "max": 200
+      },
+      "switchingOverhead": {
+        "p50": 10,
+        "p90": 20,
+        "p95": 30,
+        "max": 50
+      }
+    },
+    "gemini": {
+      "initialization": {
+        "p50": 60,
+        "p90": 120,
+        "p95": 180,
+        "max": 250
+      },
+      "switchingOverhead": {
+        "p50": 15,
+        "p90": 25,
+        "p95": 35,
+        "max": 60
+      }
+    }
+  },
+  "memory": {
+    "perIssue": {
+      "heapUsed": 2097152,
+      "rss": 4194304
+    },
+    "baseline": {
+      "heapUsed": 20971520,
+      "rss": 41943040
+    }
+  },
+  "operations": {
+    "configLoading": {
+      "p50": 5,
+      "p90": 10,
+      "p95": 15,
+      "max": 20
+    },
+    "fileParsing": {
+      "p50": 2,
+      "p90": 5,
+      "p95": 8,
+      "max": 10
+    },
+    "gitOperations": {
+      "p50": 50,
+      "p90": 100,
+      "p95": 150,
+      "max": 200
+    }
+  }
+}
