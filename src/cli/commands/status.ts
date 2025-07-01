@@ -16,7 +16,7 @@ export function registerStatusCommand(program: Command): void {
           workspace: options?.workspace
         });
 
-        if (options?.history) {
+        if (options?.history === true) {
           // Show execution history
           const fs = await import('fs/promises');
           const path = await import('path');
@@ -24,12 +24,17 @@ export function registerStatusCommand(program: Command): void {
           
           try {
             const content = await fs.readFile(executionsFile, 'utf-8');
-            const executions = JSON.parse(content);
-            Logger.info('Execution History:\n');
-            executions.forEach((exec: any) => {
+            const executions = JSON.parse(content) as Array<{
+              id: string;
+              issue: string;
+              status: string;
+              timestamp: string;
+            }>;
+            Logger.info('Recent Executions:\n');
+            executions.forEach((exec) => {
               const statusIcon = exec.status === 'completed' ? '✅' : 
                                 exec.status === 'failed' ? '❌' : '🔄';
-              Logger.info(`  ${statusIcon} ${exec.issue} (${exec.status}) - ${new Date(exec.timestamp).toLocaleString()}`);
+              Logger.info(`  ${statusIcon} ${exec.id} (${exec.status}) - ${new Date(exec.timestamp).toLocaleString()}`);
             });
           } catch {
             Logger.info('No execution history found');
@@ -37,21 +42,40 @@ export function registerStatusCommand(program: Command): void {
           return;
         }
 
-        if (issueArg) {
+        if (issueArg != null && issueArg.length > 0) {
           // Show specific issue status
           const fs = await import('fs/promises');
           const path = await import('path');
+          
+          // Check if issue exists by looking for issue files
+          const issuesDir = path.join(options?.workspace ?? process.cwd(), 'issues');
+          let issueExists = false;
+          
+          try {
+            const files = await fs.readdir(issuesDir);
+            issueExists = files.some(f => f.includes(issueArg) && f.endsWith('.md'));
+          } catch {
+            // Issues directory doesn't exist
+          }
+          
+          if (!issueExists) {
+            Logger.error('Issue not found');
+            process.exit(1);
+          }
+          
           const statusFile = path.join(options?.workspace ?? process.cwd(), '.autoagent', 'status.json');
           
           let issueStatus = 'pending';
           try {
             const statusContent = await fs.readFile(statusFile, 'utf-8');
-            const statusData = JSON.parse(statusContent);
-            issueStatus = statusData[issueArg]?.status ?? 'pending';
+            const statusData = JSON.parse(statusContent) as Record<string, { status?: string; [key: string]: unknown }>;
+            const issueData = statusData[issueArg];
+            issueStatus = issueData?.status ?? 'pending';
           } catch {
             // Status file might not exist, default to pending
           }
           
+          Logger.info(`${issueArg}`);
           Logger.info(`Status: ${issueStatus}`);
           return;
         }
