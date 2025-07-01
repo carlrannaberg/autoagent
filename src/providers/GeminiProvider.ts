@@ -80,14 +80,16 @@ When you make changes to files, please clearly indicate which files were modifie
       }
       
       // Build command arguments
-      // Gemini uses positional argument for prompt
-      const args = [prompt];
+      const args: string[] = [];
       
-      // Add include-all flag to give access to current directory
-      args.push('--include-all');
+      // Add all_files flag to give access to current directory
+      args.push('--all_files');
       
       // Enable YOLO mode for autonomous operation (auto-approve all tool calls)
       args.push('--yolo');
+      
+      // Gemini uses -p flag for prompt
+      args.push('-p', prompt);
       
       const { stdout, stderr, code } = await this.spawnProcess('gemini', args, signal);
 

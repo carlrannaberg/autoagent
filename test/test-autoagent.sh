@@ -12,9 +12,11 @@ NC='\033[0m' # No Color
 
 # Test modes
 MODE=${1:-"all"}  # all or specific test name
+PROVIDER=${2:-"both"}  # claude, gemini, or both
 
 echo -e "${BLUE}🧪 AutoAgent Test Suite${NC}"
 echo -e "${CYAN}Mode: $MODE${NC}"
+echo -e "${CYAN}Provider: $PROVIDER${NC}"
 echo ""
 
 # Save current directory and determine project root
@@ -53,6 +55,7 @@ trap cleanup EXIT
 run_test() {
     local test_name=$1
     local test_func=$2
+    local provider=$3
     
     if [ "$MODE" != "all" ] && [ "$MODE" != "$test_name" ]; then
         return
@@ -60,7 +63,7 @@ run_test() {
     
     TESTS_RUN=$((TESTS_RUN + 1))
     echo -e "\n${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${PURPLE}Running test: $test_name${NC}"
+    echo -e "${PURPLE}Running test: $test_name (provider: $provider)${NC}"
     echo -e "${PURPLE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
     
     # Create fresh test directory for each test
@@ -68,12 +71,36 @@ run_test() {
     mkdir -p "$TEST_DIR"
     cd "$TEST_DIR"
     
+    # Export provider for the test
+    export TEST_PROVIDER=$provider
+    
     if $test_func; then
-        echo -e "${GREEN}✅ Test passed: $test_name${NC}"
+        echo -e "${GREEN}✅ Test passed: $test_name (provider: $provider)${NC}"
         TESTS_PASSED=$((TESTS_PASSED + 1))
     else
-        echo -e "${RED}❌ Test failed: $test_name${NC}"
+        echo -e "${RED}❌ Test failed: $test_name (provider: $provider)${NC}"
         TESTS_FAILED=$((TESTS_FAILED + 1))
+    fi
+}
+
+# Helper function to run a test with specified providers
+run_test_with_providers() {
+    local test_name=$1
+    local test_func=$2
+    
+    if [ "$PROVIDER" = "both" ]; then
+        if [ "$CLAUDE_AVAILABLE" = true ]; then
+            run_test "$test_name" "$test_func" "claude"
+        fi
+        if [ "$GEMINI_AVAILABLE" = true ]; then
+            run_test "$test_name" "$test_func" "gemini"
+        fi
+    elif [ "$PROVIDER" = "claude" ] || [ "$PROVIDER" = "gemini" ]; then
+        run_test "$test_name" "$test_func" "$PROVIDER"
+    else
+        echo -e "${RED}Invalid provider: $PROVIDER${NC}"
+        echo "Valid providers: claude, gemini, both"
+        exit 1
     fi
 }
 
@@ -96,6 +123,17 @@ This is a test environment. When completing tasks:
 - For "Second Task": Create second-test.txt with "Second test complete"
 EOF
 
+    # Create GEMINI.md (same instructions for consistency)
+    cat > "GEMINI.md" << 'EOF'
+# Gemini Instructions
+This is a test environment. When completing tasks:
+- For "Test Task": Create test-output.txt with "Hello from autoagent!" and the current date
+- For "Second Task": Create second-test.txt with "Second test complete"
+EOF
+
+    # Create AGENT.md as fallback
+    cp CLAUDE.md AGENT.md
+
     # Initialize directories
     mkdir -p issues plans logs
 }
@@ -105,6 +143,45 @@ echo -e "${BLUE}🔨 Building autoagent...${NC}"
 cd "$PROJECT_ROOT"
 npm run build
 cd "$ORIGINAL_DIR"  # Return to original directory
+
+# Check provider availability
+echo -e "\n${BLUE}🔍 Checking provider availability...${NC}"
+CLAUDE_AVAILABLE=false
+GEMINI_AVAILABLE=false
+
+if command -v claude &> /dev/null; then
+    CLAUDE_AVAILABLE=true
+    echo -e "${GREEN}✓ Claude CLI is available${NC}"
+else
+    echo -e "${YELLOW}⚠ Claude CLI not found${NC}"
+fi
+
+if command -v gemini &> /dev/null; then
+    GEMINI_AVAILABLE=true
+    echo -e "${GREEN}✓ Gemini CLI is available${NC}"
+else
+    echo -e "${YELLOW}⚠ Gemini CLI not found${NC}"
+fi
+
+# Adjust provider based on availability
+if [ "$PROVIDER" = "both" ]; then
+    if [ "$CLAUDE_AVAILABLE" = false ] && [ "$GEMINI_AVAILABLE" = false ]; then
+        echo -e "${RED}❌ No providers available. Please install claude or gemini CLI.${NC}"
+        exit 1
+    elif [ "$CLAUDE_AVAILABLE" = false ]; then
+        echo -e "${YELLOW}Only Gemini available, switching to gemini-only mode${NC}"
+        PROVIDER="gemini"
+    elif [ "$GEMINI_AVAILABLE" = false ]; then
+        echo -e "${YELLOW}Only Claude available, switching to claude-only mode${NC}"
+        PROVIDER="claude"
+    fi
+elif [ "$PROVIDER" = "claude" ] && [ "$CLAUDE_AVAILABLE" = false ]; then
+    echo -e "${RED}❌ Claude CLI not available${NC}"
+    exit 1
+elif [ "$PROVIDER" = "gemini" ] && [ "$GEMINI_AVAILABLE" = false ]; then
+    echo -e "${RED}❌ Gemini CLI not available${NC}"
+    exit 1
+fi
 
 # Test 1: Single issue execution
 test_single_issue() {
@@ -140,8 +217,8 @@ This file tracks all issues for the autonomous agent.
 - [ ] **[Issue #1]** Test Task - `issues/1-test-task.md`
 EOF
     
-    # Run the issue
-    "$AUTOAGENT_BIN" run || return 1
+    # Run the issue with specified provider
+    "$AUTOAGENT_BIN" run --provider "$TEST_PROVIDER" || return 1
     
     # Verify results
     [ -f "test-output.txt" ] || return 1
@@ -201,8 +278,8 @@ This file tracks all issues for the autonomous agent.
 - [ ] **[Issue #2]** Second Task - `issues/2-second-task.md`
 EOF
     
-    # Run all issues
-    "$AUTOAGENT_BIN" run --all || return 1
+    # Run all issues with specified provider
+    "$AUTOAGENT_BIN" run --all --provider "$TEST_PROVIDER" || return 1
     
     # Verify both files created
     [ -f "test-output.txt" ] || return 1
@@ -246,8 +323,8 @@ This file tracks all issues for the autonomous agent.
 - [ ] **[Issue #1]** Test Task - `issues/1-test-task.md`
 EOF
     
-    # Run first issue
-    "$AUTOAGENT_BIN" run || return 1
+    # Run first issue with specified provider
+    "$AUTOAGENT_BIN" run --provider "$TEST_PROVIDER" || return 1
     [ -f "test-output.txt" ] || return 1
     
     # Now add second issue properly
@@ -284,7 +361,7 @@ $(echo "$EXISTING_TODOS" | grep "\[x\]" || true)
 EOF
     
     # Run with --all should pick up the new issue
-    "$AUTOAGENT_BIN" run --all || return 1
+    "$AUTOAGENT_BIN" run --all --provider "$TEST_PROVIDER" || return 1
     
     # Verify second file created
     [ -f "second-test.txt" ] || return 1
@@ -331,18 +408,19 @@ EOF
 # Run tests based on mode
 case "$MODE" in
     "all")
-        run_test "single_issue" test_single_issue
-        run_test "multiple_issues_all" test_multiple_issues_all
-        run_test "incremental_issues" test_incremental_issues
-        run_test "status_command" test_status_command
+        run_test_with_providers "single_issue" test_single_issue
+        run_test_with_providers "multiple_issues_all" test_multiple_issues_all
+        run_test_with_providers "incremental_issues" test_incremental_issues
+        # Status command doesn't need provider testing
+        run_test "status_command" test_status_command "claude"
         ;;
     *)
         # Run specific test
         case "$MODE" in
-            "single_issue") run_test "$MODE" test_single_issue ;;
-            "multiple_issues_all") run_test "$MODE" test_multiple_issues_all ;;
-            "incremental_issues") run_test "$MODE" test_incremental_issues ;;
-            "status_command") run_test "$MODE" test_status_command ;;
+            "single_issue") run_test_with_providers "$MODE" test_single_issue ;;
+            "multiple_issues_all") run_test_with_providers "$MODE" test_multiple_issues_all ;;
+            "incremental_issues") run_test_with_providers "$MODE" test_incremental_issues ;;
+            "status_command") run_test "$MODE" test_status_command "claude" ;;
             *)
                 echo -e "${RED}Unknown test: $MODE${NC}"
                 echo "Available tests:"
@@ -350,6 +428,10 @@ case "$MODE" in
                 echo "  - multiple_issues_all"
                 echo "  - incremental_issues"
                 echo "  - status_command"
+                echo ""
+                echo "Usage: $0 [test_name] [provider]"
+                echo "  test_name: all (default) or specific test name"
+                echo "  provider: both (default), claude, or gemini"
                 exit 1
                 ;;
         esac
