@@ -1,5 +1,6 @@
 import { spawn, ChildProcess } from 'child_process';
 import { ExecutionResult } from '../types';
+import { StreamFormatter } from '../utils/stream-formatter';
 
 /**
  * Abstract base class for AI provider implementations.
@@ -58,6 +59,162 @@ export abstract class Provider {
 
       child.stdout?.on('data', (data: Buffer) => {
         stdout += data.toString();
+      });
+
+      child.stderr?.on('data', (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      child.on('error', (error) => {
+        reject(error);
+      });
+
+      child.on('close', (code) => {
+        resolve({ stdout, stderr, code });
+      });
+    });
+  }
+
+  /**
+   * Spawn a child process with streaming output (for real-time feedback)
+   * @param command - Command to execute
+   * @param args - Command arguments
+   * @param signal - Optional abort signal
+   * @returns Promise resolving to process output
+   */
+  protected spawnProcessWithStreaming(
+    command: string,
+    args: string[],
+    signal?: AbortSignal
+  ): Promise<{ stdout: string; stderr: string; code: number | null }> {
+    return new Promise((resolve, reject) => {
+      const child: ChildProcess = spawn(command, args);
+      let stdout = '';
+      let stderr = '';
+
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          child.kill('SIGTERM');
+          reject(new Error('Process aborted'));
+        });
+      }
+
+      child.stdout?.on('data', (data: Buffer) => {
+        const chunk = data.toString();
+        stdout += chunk;
+        
+        // Debug: Log raw chunks if DEBUG is set
+        if (process.env.DEBUG === 'true') {
+          console.error('[DEBUG] Raw chunk:', chunk);
+        }
+        
+        // Stream output to console for real-time feedback
+        // Parse streaming JSON and output text content
+        const lines = chunk.split('\n').filter(line => line.trim().length > 0);
+        for (const line of lines) {
+          try {
+            const message = JSON.parse(line) as Record<string, unknown>;
+            
+            // Use the formatter based on the command
+            if (command === 'claude') {
+              StreamFormatter.formatClaudeMessage(message);
+            } else if (command === 'gemini') {
+              StreamFormatter.formatGeminiMessage(message);
+            }
+          } catch (e) {
+            // Log parse errors in debug mode
+            if (process.env.DEBUG === 'true') {
+              console.error('[DEBUG] Parse error:', e, 'Line:', line);
+            }
+          }
+        }
+      });
+
+      child.stderr?.on('data', (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      child.on('error', (error) => {
+        reject(error);
+      });
+
+      child.on('close', (code) => {
+        resolve({ stdout, stderr, code });
+      });
+    });
+  }
+
+  /**
+   * Spawn a child process with streaming output and stdin input
+   * @param command - Command to execute
+   * @param args - Command arguments
+   * @param stdinContent - Content to write to stdin
+   * @param signal - Optional abort signal
+   * @returns Promise resolving to process output
+   */
+  protected spawnProcessWithStreamingAndStdin(
+    command: string,
+    args: string[],
+    stdinContent: string,
+    signal?: AbortSignal
+  ): Promise<{ stdout: string; stderr: string; code: number | null }> {
+    return new Promise((resolve, reject) => {
+      console.error('[DEBUG] Spawning:', command, args);
+      const child: ChildProcess = spawn(command, args, {
+        stdio: ['pipe', 'pipe', 'pipe'] // Ensure stdin is piped
+      });
+      let stdout = '';
+      let stderr = '';
+      
+      child.on('spawn', () => {
+        console.error('[DEBUG] Process spawned successfully');
+      });
+
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          child.kill('SIGTERM');
+          reject(new Error('Process aborted'));
+        });
+      }
+
+      // Write content to stdin
+      if (child.stdin) {
+        console.error('[DEBUG] Writing to stdin, length:', stdinContent.length);
+        child.stdin.write(stdinContent);
+        child.stdin.end();
+      } else {
+        console.error('[DEBUG] No stdin available!');
+      }
+
+      child.stdout?.on('data', (data: Buffer) => {
+        const chunk = data.toString();
+        stdout += chunk;
+        
+        // Debug: Log raw chunks if DEBUG is set
+        if (process.env.DEBUG === 'true') {
+          console.error('[DEBUG] Raw chunk:', chunk);
+        }
+        
+        // Stream output to console for real-time feedback
+        // Parse streaming JSON and output text content
+        const lines = chunk.split('\n').filter(line => line.trim().length > 0);
+        for (const line of lines) {
+          try {
+            const message = JSON.parse(line) as Record<string, unknown>;
+            
+            // Use the formatter based on the command
+            if (command === 'claude') {
+              StreamFormatter.formatClaudeMessage(message);
+            } else if (command === 'gemini') {
+              StreamFormatter.formatGeminiMessage(message);
+            }
+          } catch (e) {
+            // Log parse errors in debug mode
+            if (process.env.DEBUG === 'true') {
+              console.error('[DEBUG] Parse error:', e, 'Line:', line);
+            }
+          }
+        }
       });
 
       child.stderr?.on('data', (data: Buffer) => {

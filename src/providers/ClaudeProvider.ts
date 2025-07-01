@@ -3,6 +3,8 @@ import { Provider } from './Provider';
 import { ExecutionResult } from '../types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { StreamFormatter } from '../utils/stream-formatter';
+import { spawn } from 'child_process';
 
 /**
  * Claude provider implementation.
@@ -51,79 +53,115 @@ export class ClaudeProvider extends Provider {
       const issueContent = await fs.readFile(issueFile, 'utf-8');
       const planContent = await fs.readFile(planFile, 'utf-8');
       
-      // Build the prompt
-      let prompt = `You are an autonomous AI agent tasked with completing the following issue and plan.
-
-## Issue
-
-${issueContent}
-
-## Plan
-
-${planContent}
+      // Build the INSTRUCTIONS for -p flag
+      const instructions = `You are an autonomous AI agent tasked with completing the following issue and plan.
 
 Please execute the plan to complete the issue. Make all necessary code changes, create files as needed, and ensure all acceptance criteria are met.
 
 When you make changes to files, please clearly indicate which files were modified.`;
       
-      // Add context files if provided
+      // Build the CONTENT for stdin
+      let stdinContent = `## Issue
+
+${issueContent}
+
+## Plan
+
+${planContent}`;
+      
+      // Add context files to stdin content
       if (contextFiles && contextFiles.length > 0) {
-        prompt += '\n\n## Additional Context Files\n';
+        stdinContent += '\n\n## Additional Context Files\n';
         for (const file of contextFiles) {
           try {
             const content = await fs.readFile(file, 'utf-8');
             const filename = path.basename(file);
-            prompt += `\n### ${filename}\n\n${content}\n`;
+            stdinContent += `\n### ${filename}\n\n${content}\n`;
           } catch (err) {
             // Skip files that can't be read
           }
         }
       }
       
-      // Build command arguments
+      // Build command arguments with instructions only
       const args = [
-        '-p', prompt
+        '-p', instructions
       ];
       
       // Add directory access for the current working directory
       const cwd = process.cwd();
       args.unshift('--add-dir', cwd);
       
-      // Use JSON output format if available
-      args.push('--output-format', 'json');
+      // Use streaming JSON output format for real-time feedback
+      args.push('--output-format', 'stream-json');
+      args.push('--verbose');
+      
+      // Debug: Log the command being executed
+      if (process.env.DEBUG === 'true') {
+        console.error('Claude command:', 'claude', args.join(' '));
+        console.error('Stdin content length:', stdinContent.length);
+      }
       
       // Skip permission prompts for autonomous operation
       args.push('--dangerously-skip-permissions');
       
-      const { stdout, stderr, code } = await this.spawnProcess('claude', args, signal);
-
-      if (code !== 0) {
-        throw new Error(`Claude execution failed with code ${code}: ${stderr}`);
-      }
-
-      // Try to parse JSON output
-      let filesChanged: string[] = [];
-      let output = stdout;
+      // Set max turns to prevent hanging
+      args.push('--max-turns', '30');
       
-      try {
-        const parsed = JSON.parse(stdout) as unknown;
-        // Claude's JSON output structure might vary
-        if (typeof parsed === 'object' && parsed !== null) {
-          const obj = parsed as Record<string, unknown>;
-          if (typeof obj.content === 'string') {
-            output = obj.content;
-          } else if (typeof obj.output === 'string') {
-            output = obj.output;
-          }
-        } else if (typeof parsed === 'string') {
-          output = parsed;
-        }
-      } catch (parseError) {
-        // Not JSON or failed to parse, use raw output
+      // Show formatted header
+      StreamFormatter.showHeader('claude');
+      
+      // Execute Claude with custom streaming implementation
+      const result = await this.executeWithStreaming(args, stdinContent, signal);
+      
+      // Show formatted footer
+      StreamFormatter.showFooter();
+
+      if (!result.success) {
+        throw new Error(result.error !== undefined ? result.error : 'Claude execution failed');
       }
 
+      // Process streaming JSON output (one message per line)
+      let filesChanged: string[] = [];
+      let output = '';
+      let finalResult = '';
+      
+      // Split by newlines to process each JSON message
+      const lines = result.stdout.split('\n').filter(line => line.trim().length > 0);
+      
+      for (const line of lines) {
+        try {
+          const message = JSON.parse(line) as Record<string, unknown>;
+          
+          // Look for assistant messages with text content
+          if (message.type === 'assistant' && message.message !== null && typeof message.message === 'object') {
+            const msg = message.message as Record<string, unknown>;
+            if (Array.isArray(msg.content)) {
+              for (const content of msg.content) {
+                if (typeof content === 'object' && content !== null) {
+                  const contentObj = content as Record<string, unknown>;
+                  if (contentObj.type === 'text' && typeof contentObj.text === 'string') {
+                    output += contentObj.text;
+                  }
+                }
+              }
+            }
+          }
+          
+          // Capture the final result
+          if (message.type === 'result' && typeof message.result === 'string') {
+            finalResult = message.result;
+          }
+        } catch (parseError) {
+          // Skip non-JSON lines
+        }
+      }
+      
+      // Use final result if available, otherwise use accumulated output
+      const finalOutput = finalResult || output;
+      
       // Extract files changed from output
-      filesChanged = this.extractFilesChanged(output);
+      filesChanged = this.extractFilesChanged(finalOutput);
 
       return {
         success: true,
@@ -142,6 +180,110 @@ When you make changes to files, please clearly indicate which files were modifie
         provider: 'claude'
       };
     }
+  }
+
+  /**
+   * Execute Claude with streaming output and stdin input.
+   * @param args - Command arguments
+   * @param stdinContent - Content to write to stdin
+   * @param signal - Optional abort signal
+   * @returns Promise resolving to execution result
+   */
+  private async executeWithStreaming(
+    args: string[],
+    stdinContent: string,
+    signal?: AbortSignal
+  ): Promise<{ success: boolean; stdout: string; stderr: string; error?: string }> {
+    return new Promise((resolve) => {
+      const child = spawn('claude', args, {
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      
+      let stdout = '';
+      let stderr = '';
+      let hasSpawned = false;
+      
+      child.on('spawn', () => {
+        hasSpawned = true;
+        if (process.env.DEBUG === 'true') {
+          console.error('[DEBUG] Claude process spawned successfully');
+        }
+      });
+      
+      child.on('error', (error) => {
+        resolve({
+          success: false,
+          stdout,
+          stderr,
+          error: error.message
+        });
+      });
+      
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          child.kill('SIGTERM');
+          resolve({
+            success: false,
+            stdout,
+            stderr,
+            error: 'Process aborted'
+          });
+        });
+      }
+      
+      // Write prompt to stdin
+      if (child.stdin !== null) {
+        child.stdin.write(stdinContent);
+        child.stdin.end();
+      }
+      
+      // Handle stdout with streaming
+      child.stdout?.on('data', (chunk: Buffer) => {
+        const data = chunk.toString();
+        stdout += data;
+        
+        // Parse and format streaming output
+        const lines = data.split('\n').filter(line => line.trim() !== '');
+        for (const line of lines) {
+          try {
+            const message = JSON.parse(line) as Record<string, unknown>;
+            StreamFormatter.formatClaudeMessage(message);
+          } catch (e) {
+            // Not JSON, ignore
+          }
+        }
+      });
+      
+      // Handle stderr
+      child.stderr?.on('data', (chunk: Buffer) => {
+        stderr += chunk.toString();
+      });
+      
+      // Handle process exit
+      child.on('close', (code) => {
+        if (!hasSpawned) {
+          resolve({
+            success: false,
+            stdout,
+            stderr,
+            error: 'Failed to spawn claude process'
+          });
+        } else if (code === 0) {
+          resolve({
+            success: true,
+            stdout,
+            stderr
+          });
+        } else {
+          resolve({
+            success: false,
+            stdout,
+            stderr,
+            error: stderr || `Claude exited with code ${code}`
+          });
+        }
+      });
+    });
   }
 
   /**
