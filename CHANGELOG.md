@@ -9,6 +9,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes yet._
 
+## [0.1.0] - 2025-07-01
+
+### Added
+- Real-time streaming output support for Claude provider
+  - Shows progress as Claude processes issues
+  - Uses stream-json output format for better visibility
+  - Includes formatted headers and footers for execution sessions
+- Progress tracking and event system for autonomous agent
+  - `onProgress` callback with percentage-based progress updates
+  - Event emitters for execution-start, execution-end, error, interrupt, and debug
+  - Better user feedback during issue execution
+- StreamFormatter utility for consistent output formatting
+  - Handles streaming JSON messages from providers
+  - Formats tool calls, text content, and execution results
+  - Provider-specific formatting support
+- Provider base class methods for streaming process execution
+  - `spawnProcessWithStreaming` for real-time output capture
+  - Support for both standard and streaming JSON formats
+
+### Changed
+- CLI enhanced with comprehensive progress feedback
+  - Shows execution progress with percentages
+  - Displays success/failure status for each issue
+  - Summary statistics for batch operations
+  - Better error reporting with specific failure reasons
+- Claude provider completely rewritten for streaming support
+  - Uses stdin for content delivery (prompt via -p flag, content via stdin)
+  - Processes streaming JSON output line-by-line
+  - Improved error handling and debugging capabilities
+  - Added --max-turns flag to prevent hanging
+- Bootstrap command improvements
+  - Creates both issue AND plan files during initialization
+  - More descriptive issue titles that reference the source plan file
+  - Better structured plan phases for master plan decomposition
+
+### Fixed
+- Fixed stdin content delivery to Claude provider
+  - Separated instructions (via -p flag) from content (via stdin)
+  - Properly handles large context files without command line length limits
+- Improved process spawning reliability
+  - Better error handling for failed spawns
+  - Proper signal handling for process cancellation
+- Enhanced test coverage for streaming functionality
+  - Added tests for new streaming methods
+  - Updated mocks to handle streaming scenarios
+
 ## [0.0.5] - 2025-07-01
 
 ### Fixed
