@@ -88,10 +88,8 @@ When you make changes to files, please clearly indicate which files were modifie
       // Enable YOLO mode for autonomous operation (auto-approve all tool calls)
       args.push('--yolo');
       
-      // Gemini uses -p flag for prompt
-      args.push('-p', prompt);
-      
-      const { stdout, stderr, code } = await this.spawnProcessWithStreaming('gemini', args, signal);
+      // Use stdin to pass the prompt (more reliable than -p flag for long prompts)
+      const { stdout, stderr, code } = await this.spawnProcessWithStreamingAndStdin('gemini', args, prompt, signal);
 
       if (code !== 0) {
         throw new Error(`Gemini execution failed with code ${code}: ${stderr}`);

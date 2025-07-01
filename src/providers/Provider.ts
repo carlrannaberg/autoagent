@@ -88,17 +88,11 @@ export abstract class Provider {
     signal?: AbortSignal
   ): Promise<{ stdout: string; stderr: string; code: number | null }> {
     return new Promise((resolve, reject) => {
-      console.error('[DEBUG] Spawning with streaming:', command, args.slice(0, -1), '[PROMPT]');
       const child: ChildProcess = spawn(command, args);
       let stdout = '';
       let stderr = '';
 
-      child.on('spawn', () => {
-        console.error('[DEBUG] Process spawned successfully');
-      });
-
       child.on('error', (error) => {
-        console.error('[DEBUG] Process error:', error);
         reject(error);
       });
 
@@ -173,16 +167,11 @@ export abstract class Provider {
     signal?: AbortSignal
   ): Promise<{ stdout: string; stderr: string; code: number | null }> {
     return new Promise((resolve, reject) => {
-      console.error('[DEBUG] Spawning:', command, args);
       const child: ChildProcess = spawn(command, args, {
         stdio: ['pipe', 'pipe', 'pipe'] // Ensure stdin is piped
       });
       let stdout = '';
       let stderr = '';
-      
-      child.on('spawn', () => {
-        console.error('[DEBUG] Process spawned successfully');
-      });
 
       if (signal) {
         signal.addEventListener('abort', () => {
@@ -193,11 +182,8 @@ export abstract class Provider {
 
       // Write content to stdin
       if (child.stdin) {
-        console.error('[DEBUG] Writing to stdin, length:', stdinContent.length);
         child.stdin.write(stdinContent);
         child.stdin.end();
-      } else {
-        console.error('[DEBUG] No stdin available!');
       }
 
       child.stdout?.on('data', (data: Buffer) => {
