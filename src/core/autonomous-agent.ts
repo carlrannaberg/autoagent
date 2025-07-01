@@ -728,18 +728,33 @@ ${result.output ?? 'Success'}`;
       throw new Error(`Could not read master plan: ${masterPlanPath}`);
     }
 
+    // Read templates
+    const templateDir = path.join(this.config.workspace ?? process.cwd(), 'templates');
+    const issueTemplate = await this.fileManager.readFile(path.join(templateDir, 'issue.md'));
+    const planTemplate = await this.fileManager.readFile(path.join(templateDir, 'plan.md'));
+
     // Create prompt for bootstrapping
     const prompt = `You are an expert project manager. Decompose the following master plan into individual, actionable issues.
 Each issue should be self-contained and independently executable.
 
-For each issue, provide:
-1. A clear title
-2. Detailed requirements
-3. Specific acceptance criteria
-4. Any technical details needed
-5. Dependencies on other issues (if any)
+IMPORTANT: For EACH issue you create, you MUST create TWO files:
+1. An issue file in the issues/ directory
+2. A corresponding plan file in the plans/ directory (with the SAME filename)
 
-Also create a todo.md file that lists all issues in order.
+Use these templates:
+
+ISSUE TEMPLATE:
+${issueTemplate}
+
+PLAN TEMPLATE:
+${planTemplate}
+
+Key differences:
+- ISSUES focus on WHAT needs to be done (requirements, acceptance criteria)
+- PLANS focus on HOW to do it (implementation phases, technical approach)
+
+Also create a TODO.md file that lists all issues in this format:
+- [ ] **[Issue #NUMBER]** Title - \`issues/filename.md\`
 
 Master Plan:
 ${masterPlanContent}`;
