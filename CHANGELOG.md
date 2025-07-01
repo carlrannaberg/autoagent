@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _No unreleased changes yet._
 
+## [0.1.2] - 2025-07-01
+
+### Fixed
+- Fixed `autoagent run --all` command to properly detect dynamically created tasks
+  - The command now reloads the todo list after each issue execution
+  - Processes any new tasks that were created during execution
+  - Prevents skipping of tasks that are added to TODO.md while the agent is running
+
 ## [0.1.1] - 2025-07-01
 
 ### Fixed
