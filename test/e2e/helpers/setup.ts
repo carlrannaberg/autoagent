@@ -25,10 +25,14 @@ export function setupE2ETest(): E2ETestContext {
   return context;
 }
 
-export async function createSampleIssue(workspace: E2EWorkspace, issueName = 'test-issue'): Promise<void> {
-  const issueContent = `# Issue: Test Issue
+export async function createSampleIssue(workspace: E2EWorkspace, issueName = 'test-issue', issueNumber = 1): Promise<void> {
+  // Create issue with proper naming convention: {number}-{slug}.md
+  const issueSlug = issueName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const filename = `${issueNumber}-${issueSlug}.md`;
+  
+  const issueContent = `# Issue ${issueNumber}: ${issueName}
 
-## Requirement
+## Requirements
 This is a test issue for E2E testing.
 
 ## Acceptance Criteria
@@ -36,9 +40,29 @@ This is a test issue for E2E testing.
 - [ ] Test task 2
 
 ## Technical Details
-- Simple test issue`;
+Simple test issue`;
 
-  await workspace.createIssue(issueName, issueContent);
+  await workspace.createFile(`issues/${filename}`, issueContent);
+  
+  // Also create/update status tracking
+  const statusData = {
+    [issueName]: {
+      status: 'pending',
+      issueNumber,
+      createdAt: new Date().toISOString()
+    }
+  };
+  
+  // Try to read existing status data and merge
+  try {
+    const existingStatus = await workspace.readFile('.autoagent/status.json');
+    const existing = JSON.parse(existingStatus);
+    Object.assign(existing, statusData);
+    await workspace.createFile('.autoagent/status.json', JSON.stringify(existing, null, 2));
+  } catch {
+    // File doesn't exist, create new
+    await workspace.createFile('.autoagent/status.json', JSON.stringify(statusData, null, 2));
+  }
 }
 
 export async function createSamplePlan(workspace: E2EWorkspace, issueName = 'test-issue'): Promise<void> {
@@ -61,5 +85,5 @@ export async function initializeProject(workspace: E2EWorkspace, cli: CliExecuto
   await workspace.initGit();
   // Set mock provider for E2E tests
   cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-  await cli.execute(['config', 'init']);
+  await cli.execute(['init']);
 }

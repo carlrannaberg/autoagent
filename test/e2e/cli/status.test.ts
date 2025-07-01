@@ -7,8 +7,8 @@ describe('autoagent status', () => {
 
   it('should show overall project status', async () => {
     await initializeProject(context.workspace, context.cli);
-    await createSampleIssue(context.workspace, 'issue-1');
-    await createSampleIssue(context.workspace, 'issue-2');
+    await createSampleIssue(context.workspace, 'issue-1', 1);
+    await createSampleIssue(context.workspace, 'issue-2', 2);
 
     const result = await context.cli.execute(['status']);
 
