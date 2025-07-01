@@ -22,6 +22,10 @@ VERSION=${VERSION_TAG#v}  # Remove 'v' prefix
 
 echo "Rolling back release $VERSION_TAG..."
 
+# Fetch latest tags from remote to ensure we have complete information
+echo "Fetching latest tags from remote..."
+git fetch --tags
+
 # Get package name from package.json
 PACKAGE_NAME=$(node -p "require('./package.json').name")
 echo "Package name: $PACKAGE_NAME"

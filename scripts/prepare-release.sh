@@ -29,6 +29,10 @@ fi
 
 echo "Preparing $RELEASE_TYPE release..."
 
+# Fetch latest tags from remote to ensure we have complete information
+echo "Fetching latest tags from remote..."
+git fetch --tags
+
 # Get current version
 CURRENT_VERSION=$(node -p "require('./package.json').version")
 echo "Current version: $CURRENT_VERSION"
