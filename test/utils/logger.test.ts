@@ -50,7 +50,7 @@ describe('Logger', () => {
 
     it('should log error messages', () => {
       Logger.error('Error message');
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[RED]✗ Error message[/RED]');
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[RED]Error: Error message[/RED]');
     });
 
     it('should log warning messages', () => {
@@ -82,7 +82,7 @@ describe('Logger', () => {
     it('should handle Error objects', () => {
       const error = new Error('Test error');
       Logger.error(error);
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[RED]✗ Test error[/RED]');
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[RED]Error: Test error[/RED]');
     });
 
     it('should show stack trace in debug mode', () => {
@@ -90,8 +90,8 @@ describe('Logger', () => {
       error.stack = 'Error: Test error\n    at test.js:10';
       Logger.setDebugEnabled(true);
       Logger.error(error);
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[RED]✗ Test error[/RED]');
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[GRAY]Error: Test error\n    at test.js:10[/GRAY]');
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[RED]Error: Test error[/RED]');
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[GRAY]Stack trace: Error: Test error\n    at test.js:10[/GRAY]');
       Logger.setDebugEnabled(false);
     });
   });

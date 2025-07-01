@@ -42,7 +42,7 @@ export function registerStatusCommand(program: Command): void {
           return;
         }
 
-        if (issueArg != null && issueArg.length > 0) {
+        if (issueArg !== null && issueArg !== undefined && issueArg.length > 0) {
           // Show specific issue status
           const fs = await import('fs/promises');
           const path = await import('path');

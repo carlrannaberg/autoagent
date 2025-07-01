@@ -15,6 +15,23 @@ interface RunOptions {
   dryRun?: boolean;
 }
 
+interface StatusData {
+  [key: string]: {
+    status: string;
+    issueNumber?: number;
+    title?: string;
+    createdAt?: string;
+    completedAt?: string;
+  };
+}
+
+interface ExecutionData {
+  id: string;
+  issue: string;
+  status: string;
+  timestamp: string;
+}
+
 export function registerRunCommand(program: Command): void {
   program
     .command('run [issue]')
@@ -36,12 +53,12 @@ export function registerRunCommand(program: Command): void {
         try {
           await fs.promises.access(projectConfigPath);
         } catch {
-          Logger.error('Project not initialized. Run "autoagent init" first.');
+          Logger.error(new Error('Project not initialized. Run: autoagent init'));
           process.exit(1);
         }
         
         // Validate arguments
-        if (!issue && !options.all) {
+        if ((issue === null || issue === undefined || issue.length === 0) && options.all !== true) {
           Logger.error('Missing required argument: issue name. Use --all to run all issues.');
           process.exit(1);
         }
@@ -100,7 +117,7 @@ export function registerRunCommand(program: Command): void {
         await agent.initialize();
 
         // Show provider being used
-        if (options.provider) {
+        if (options.provider !== null && options.provider !== undefined && options.provider.length > 0) {
           Logger.info(`Using provider: ${options.provider}`);
         }
 
@@ -121,10 +138,10 @@ export function registerRunCommand(program: Command): void {
             const statusFile = path.join(workspacePath, '.autoagent', 'status.json');
             
             // Update all pending issues to completed
-            let statusData: Record<string, any> = {};
+            let statusData: StatusData = {};
             try {
               const statusContent = await fs.readFile(statusFile, 'utf-8');
-              statusData = JSON.parse(statusContent);
+              statusData = JSON.parse(statusContent) as StatusData;
             } catch {
               // File doesn't exist, no issues to run
               statusData = {};
@@ -132,19 +149,19 @@ export function registerRunCommand(program: Command): void {
             
             results = [];
             const executionsFile = path.join(workspacePath, '.autoagent', 'executions.json');
-            let executions = [];
+            let executions: ExecutionData[] = [];
             try {
               const executionsContent = await fs.readFile(executionsFile, 'utf-8');
-              executions = JSON.parse(executionsContent);
+              executions = JSON.parse(executionsContent) as ExecutionData[];
             } catch {
               // File doesn't exist, start fresh
             }
             
             for (const [key, issue] of Object.entries(statusData)) {
-              if ((issue as any).status === 'pending') {
-                (issue as any).status = 'completed';
-                (issue as any).completedAt = new Date().toISOString();
-                results.push({ success: true, issueNumber: (issue as any).issueNumber });
+              if (issue.status === 'pending') {
+                issue.status = 'completed';
+                issue.completedAt = new Date().toISOString();
+                results.push({ success: true, issueNumber: issue.issueNumber ?? 0 });
                 
                 // Record execution history
                 executions.push({
@@ -170,7 +187,7 @@ export function registerRunCommand(program: Command): void {
           } else {
             Logger.warning(`⚠️  Completed ${successful} issues, ${failed} failed`);
           }
-        } else if (issue) {
+        } else if (issue !== null && issue !== undefined && issue.length > 0) {
           // Running a specific issue
           if (process.env.AUTOAGENT_MOCK_PROVIDER === 'true') {
             // Mock execution for testing
@@ -179,25 +196,25 @@ export function registerRunCommand(program: Command): void {
             const statusFile = path.join(workspacePath, '.autoagent', 'status.json');
             
             // Update status to completed
-            let statusData: Record<string, any> = {};
+            let statusData: StatusData = {};
             try {
               const statusContent = await fs.readFile(statusFile, 'utf-8');
-              statusData = JSON.parse(statusContent);
+              statusData = JSON.parse(statusContent) as StatusData;
             } catch {
               // File doesn't exist, continue
             }
             
-            if (statusData[issue]) {
+            if (statusData[issue] !== null && statusData[issue] !== undefined) {
               statusData[issue].status = 'completed';
               statusData[issue].completedAt = new Date().toISOString();
               await fs.writeFile(statusFile, JSON.stringify(statusData, null, 2), 'utf-8');
               
               // Also record execution history
               const executionsFile = path.join(workspacePath, '.autoagent', 'executions.json');
-              let executions = [];
+              let executions: ExecutionData[] = [];
               try {
                 const executionsContent = await fs.readFile(executionsFile, 'utf-8');
-                executions = JSON.parse(executionsContent);
+                executions = JSON.parse(executionsContent) as ExecutionData[];
               } catch {
                 // File doesn't exist, start fresh
               }

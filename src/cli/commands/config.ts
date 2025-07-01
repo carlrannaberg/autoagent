@@ -23,7 +23,7 @@ export function registerConfigCommand(program: Command): void {
         try {
           await fs.access(projectConfigPath);
         } catch {
-          Logger.error('Project not initialized. Run "autoagent init" first.');
+          Logger.error(new Error('Project not initialized. Run: autoagent init'));
           process.exit(1);
         }
         
@@ -31,9 +31,9 @@ export function registerConfigCommand(program: Command): void {
         await configManager.loadConfig();
         const currentConfig = configManager.getConfig();
         
-        if (key) {
-          const value = getConfigValue(key, currentConfig);
-          const envValue = getEnvValue(key);
+        if (key !== null && key !== undefined && key.length > 0) {
+          const value: unknown = getConfigValue(key, currentConfig);
+          const envValue: unknown = getEnvValue(key);
           const displayValue = envValue !== undefined ? envValue : value;
           
           if (displayValue === undefined) {
@@ -41,26 +41,26 @@ export function registerConfigCommand(program: Command): void {
             process.exit(1);
           }
           
-          let output = `${key}: ${displayValue}`;
-          if (options?.showSource) {
+          let output = `${key}: ${displayValue !== null ? String(displayValue) : 'undefined'}`;
+          if (options?.showSource === true) {
             const source = envValue !== undefined ? 'environment' : 'local';
             output += ` (${source})`;
           }
-          console.log(output);
+          Logger.info(output);
         } else {
           // Show all config values
           const allKeys = Object.keys(currentConfig);
           for (const k of allKeys) {
-            const value = getConfigValue(k, currentConfig);
-            const envValue = getEnvValue(k);
+            const value: unknown = getConfigValue(k, currentConfig);
+            const envValue: unknown = getEnvValue(k);
             const displayValue = envValue !== undefined ? envValue : value;
             
-            let output = `${k}: ${displayValue}`;
-            if (options?.showSource) {
+            let output = `${k}: ${displayValue !== null ? String(displayValue) : 'undefined'}`;
+            if (options?.showSource === true) {
               const source = envValue !== undefined ? 'environment' : 'local';
               output += ` (${source})`;
             }
-            console.log(output);
+            Logger.info(output);
           }
         }
       } catch (error) {
@@ -77,12 +77,12 @@ export function registerConfigCommand(program: Command): void {
     .action(async (key: string, value: string, options: { global?: boolean }) => {
       try {
         // Check if project is initialized (unless setting global config)
-        if (!options.global) {
+        if (options.global !== true) {
           const projectConfigPath = path.join(process.cwd(), '.autoagent.json');
           try {
             await fs.access(projectConfigPath);
           } catch {
-            Logger.error('Project not initialized. Run "autoagent init" first.');
+            Logger.error(new Error('Project not initialized. Run: autoagent init'));
             process.exit(1);
           }
         }
@@ -91,12 +91,12 @@ export function registerConfigCommand(program: Command): void {
         await configManager.loadConfig();
         
         // Validate the key and value
-        const validatedValue = validateConfigValue(key, value);
+        const validatedValue: unknown = validateConfigValue(key, value);
         
         const updates: Partial<UserConfig> = {};
         setConfigValue(key, validatedValue, updates);
         
-        await configManager.updateConfig(updates, options.global ? 'global' : 'local');
+        await configManager.updateConfig(updates, options.global === true ? 'global' : 'local');
         Logger.success(`Configuration updated: ${key} = ${value}`);
       } catch (error) {
         Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -111,13 +111,19 @@ export function registerConfigCommand(program: Command): void {
     .option('-g, --global', 'Reset global configuration')
     .action(async (options: { global?: boolean }) => {
       try {
-        const configPath = options.global 
-          ? path.join(process.env.HOME || '/', '.autoagent', 'config.json')
+        const configPath = options.global === true
+          ? ((): string => {
+              const homeDir = process.env.HOME;
+              if (homeDir === null || homeDir === undefined || homeDir.length === 0) {
+                throw new Error('HOME environment variable not found');
+              }
+              return path.join(homeDir, '.autoagent', 'config.json');
+            })()
           : path.join(process.cwd(), '.autoagent', 'config.json');
         
         try {
           await fs.unlink(configPath);
-          Logger.success(`Configuration reset ${options.global ? 'globally' : 'locally'}`);
+          Logger.success(`Configuration reset ${options.global === true ? 'globally' : 'locally'}`);
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
             throw error;
@@ -291,7 +297,7 @@ export function registerConfigCommand(program: Command): void {
     });
 }
 
-function getConfigValue(key: string, config: UserConfig): any {
+function getConfigValue(key: string, config: UserConfig): unknown {
   switch (key) {
     case 'provider':
       return config.providers?.[0];
@@ -324,7 +330,7 @@ function getConfigValue(key: string, config: UserConfig): any {
   }
 }
 
-function setConfigValue(key: string, value: any, updates: Partial<UserConfig>): void {
+function setConfigValue(key: string, value: unknown, updates: Partial<UserConfig>): void {
   switch (key) {
     case 'provider':
       updates.providers = [value as ProviderName];
@@ -333,44 +339,44 @@ function setConfigValue(key: string, value: any, updates: Partial<UserConfig>): 
       updates.providers = value as ProviderName[];
       break;
     case 'verbose':
-      updates.logLevel = value ? 'debug' : 'info';
+      updates.logLevel = Boolean(value) === true ? 'debug' : 'info';
       break;
     case 'autoMode':
-      updates.gitAutoCommit = value;
+      updates.gitAutoCommit = value as boolean;
       break;
     case 'logLevel':
-      updates.logLevel = value;
+      updates.logLevel = value as 'debug' | 'info' | 'warn' | 'error';
       break;
     case 'maxTokens':
-      updates.maxTokens = value;
+      updates.maxTokens = value as number;
       break;
     case 'retryAttempts':
-      updates.retryAttempts = value;
+      updates.retryAttempts = value as number;
       break;
     case 'failoverDelay':
-      updates.failoverDelay = value;
+      updates.failoverDelay = value as number;
       break;
     case 'gitAutoCommit':
-      updates.gitAutoCommit = value;
+      updates.gitAutoCommit = value as boolean;
       break;
     case 'gitCommitInterval':
-      updates.gitCommitInterval = value;
+      updates.gitCommitInterval = value as number;
       break;
     case 'includeCoAuthoredBy':
-      updates.includeCoAuthoredBy = value;
+      updates.includeCoAuthoredBy = value as boolean;
       break;
     case 'customInstructions':
-      updates.customInstructions = value;
+      updates.customInstructions = value as string;
       break;
     case 'rateLimitCooldown':
-      updates.rateLimitCooldown = value;
+      updates.rateLimitCooldown = value as number;
       break;
     default:
       throw new Error(`Unknown configuration key: ${key}`);
   }
 }
 
-function getEnvValue(key: string): any {
+function getEnvValue(key: string): unknown {
   const envMap: Record<string, string> = {
     'verbose': 'AUTOAGENT_VERBOSE',
     'provider': 'AUTOAGENT_PROVIDER',
@@ -387,7 +393,7 @@ function getEnvValue(key: string): any {
   };
 
   const envKey = envMap[key];
-  if (!envKey || !process.env[envKey]) {
+  if (envKey === null || envKey === undefined || envKey.length === 0 || process.env[envKey] === null || process.env[envKey] === undefined || process.env[envKey] === '') {
     return undefined;
   }
 
@@ -407,7 +413,7 @@ function getEnvValue(key: string): any {
   return envValue;
 }
 
-function validateConfigValue(key: string, value: string): any {
+function validateConfigValue(key: string, value: string): unknown {
   switch (key) {
     case 'provider':
       if (!['claude', 'gemini'].includes(value)) {
@@ -434,12 +440,13 @@ function validateConfigValue(key: string, value: string): any {
     case 'retryAttempts':
     case 'failoverDelay':
     case 'gitCommitInterval':
-    case 'rateLimitCooldown':
+    case 'rateLimitCooldown': {
       const num = parseInt(value, 10);
       if (isNaN(num) || num < 0) {
         throw new Error(`Invalid value for ${key}: ${value}. Must be a positive number`);
       }
       return num;
+    }
     
     case 'customInstructions':
       return value;

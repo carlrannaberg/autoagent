@@ -10,9 +10,9 @@ export class MockProvider extends Provider {
     return 'mock';
   }
 
-  async checkAvailability(): Promise<boolean> {
+  checkAvailability(): Promise<boolean> {
     // Mock provider is available when explicitly enabled
-    return process.env.AUTOAGENT_MOCK_PROVIDER === 'true';
+    return Promise.resolve(process.env.AUTOAGENT_MOCK_PROVIDER === 'true');
   }
 
   async execute(
@@ -30,7 +30,7 @@ export class MockProvider extends Provider {
     
     // Extract issue number from file path or use 1 for direct prompts  
     const issueMatch = issueFile.match(/(\d+)-/);
-    const issueNumber = issueMatch && issueMatch[1] ? parseInt(issueMatch[1], 10) : 1;
+    const issueNumber = (issueMatch?.[1] !== undefined) ? parseInt(issueMatch[1], 10) : 1;
     
     // Check for mock error conditions
     if (process.env.AUTOAGENT_MOCK_FAIL === 'true') {

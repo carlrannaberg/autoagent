@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { ConfigManager } from '@/core/config-manager';
 // import { ProviderSimulator } from '../utils/provider-simulator';
-import { createIntegrationContext, cleanupIntegrationContext, createTestIssue, measureExecutionTime } from '../utils/integration-helpers';
+import { createIntegrationContext, cleanupIntegrationContext, measureExecutionTime } from '../utils/integration-helpers';
 import type { IntegrationTestContext } from '../utils/integration-helpers';
 import type { Issue } from '@/types/issue';
 import type { TodoItem } from '@/types/todo';
@@ -74,7 +74,7 @@ ${issue.requirement}
 ${issue.acceptanceCriteria.map(c => `- [ ] ${c}`).join('\n')}
 
 ## Technical Details
-${issue.technicalDetails || 'No additional technical details.'}
+${issue.technicalDetails ?? 'No additional technical details.'}
 `;
         await fs.writeFile(path.join(issueDir, issueFilename), issueContent);
         
@@ -260,7 +260,7 @@ ${issue.requirement}
 ${issue.acceptanceCriteria.map(c => `- [ ] ${c}`).join('\n')}
 
 ## Technical Details
-${issue.technicalDetails || 'No additional technical details.'}
+${issue.technicalDetails ?? 'No additional technical details.'}
 `;
         await fs.writeFile(path.join(issueDir, issueFilename), issueContent);
         

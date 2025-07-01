@@ -9,6 +9,7 @@ import { registerCheckCommand } from './commands/check';
 import { registerRunCommand } from './commands/run';
 import { registerStatusCommand } from './commands/status';
 import { registerListCommand } from './commands/list';
+import { Logger } from '../utils/logger';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -18,6 +19,11 @@ interface PackageJson {
 
 const packageJsonPath = path.join(__dirname, '../../package.json');
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8')) as PackageJson;
+
+// Enable debug mode if DEBUG environment variable is set
+if (process.env.DEBUG === 'true' || process.env.DEBUG === '1') {
+  Logger.setDebugEnabled(true);
+}
 
 const program = new Command();
 

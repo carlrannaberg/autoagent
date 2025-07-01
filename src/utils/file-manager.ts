@@ -387,8 +387,8 @@ Please see AGENT.md for the actual instructions.
     const statusFile = path.join(this.workspace, '.autoagent', 'status.json');
     try {
       const statusContent = await fs.readFile(statusFile, 'utf-8');
-      const statusData = JSON.parse(statusContent);
-      const issues = Object.values(statusData) as any[];
+      const statusData = JSON.parse(statusContent) as Record<string, { status: string }>;
+      const issues = Object.values(statusData);
       
       const total = issues.length;
       const completed = issues.filter(issue => issue.status === 'completed').length;

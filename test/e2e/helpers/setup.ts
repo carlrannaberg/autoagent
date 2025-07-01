@@ -45,8 +45,9 @@ Simple test issue`;
   await workspace.createFile(`issues/${filename}`, issueContent);
   
   // Also create/update status tracking
+  const statusKey = filename.replace('.md', ''); // Use filename without .md as status key
   const statusData = {
-    [issueName]: {
+    [statusKey]: {
       status: 'pending',
       issueNumber,
       createdAt: new Date().toISOString()

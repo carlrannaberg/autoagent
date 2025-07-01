@@ -10,7 +10,7 @@ export function registerCreateCommand(program: Command): void {
     .option('-t, --title <title>', 'Issue title')
     .option('-d, --description <description>', 'Issue description')
     .option('-a, --acceptance <criteria>', 'Acceptance criteria (can be used multiple times)', (value, prev: string[]) => {
-      return prev ? [...prev, value] : [value];
+      return Array.isArray(prev) && prev.length > 0 ? [...prev, value] : [value];
     }, [] as string[])
     .option('--details <details>', 'Technical details')
     .option('-p, --provider <provider>', 'Override AI provider for this operation (claude or gemini)')
@@ -24,7 +24,7 @@ export function registerCreateCommand(program: Command): void {
       workspace?: string 
     }) => {
       try {
-        if (!options.title) {
+        if (options.title === null || options.title === undefined || options.title.length === 0) {
           Logger.error('Issue title is required');
           process.exit(1);
         }
@@ -46,10 +46,10 @@ export function registerCreateCommand(program: Command): void {
         await fs.mkdir(path.dirname(statusFile), { recursive: true });
         
         // Load existing status data
-        let statusData: Record<string, any> = {};
+        let statusData: Record<string, unknown> = {};
         try {
           const statusContent = await fs.readFile(statusFile, 'utf-8');
-          statusData = JSON.parse(statusContent);
+          statusData = JSON.parse(statusContent) as Record<string, unknown>;
         } catch {
           // File doesn't exist or is invalid, start fresh
         }

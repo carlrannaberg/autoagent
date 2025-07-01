@@ -68,7 +68,7 @@ describe('autoagent list', () => {
     const data = OutputParser.extractJsonOutput(result.stdout);
     expect(Array.isArray(data)).toBe(true);
     expect(data.length).toBe(1);
-    expect(data[0]).toHaveProperty('name', 'json-test');
+    expect(data[0]).toHaveProperty('name', '1-json-test');
     expect(data[0]).toHaveProperty('status', 'pending');
   });
 

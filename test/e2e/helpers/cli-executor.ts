@@ -45,7 +45,7 @@ export class CliExecutor {
       let exitCode = 1; // Default to 1 if we can't determine the actual code
       
       // Debug logging to understand the error structure
-      if (process.env.DEBUG_CLI_EXECUTOR) {
+      if (process.env.DEBUG_CLI_EXECUTOR !== undefined) {
         console.error('CLI Executor Error:', {
           code: execError.code,
           status: execError.status,
@@ -68,7 +68,7 @@ export class CliExecutor {
       } else if (execError.status !== undefined && typeof execError.status === 'number') {
         // Some Node versions use 'status' instead of 'code'
         exitCode = execError.status;
-      } else if (execError.signal) {
+      } else if (execError.signal !== undefined) {
         // Process was killed by a signal
         exitCode = 128 + (execError.signal === 'SIGTERM' ? 15 : 9);
       } else if (execError.code === 'ENOENT') {
