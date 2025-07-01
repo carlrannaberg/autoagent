@@ -31,13 +31,8 @@ export class ProviderLearning {
     if (analyzer) {
       analyzer.addExecution(result);
       
-      // Update AGENT.md after every 5 executions or when significant patterns emerge
-      const executionCount = analyzer.getExecutionCount();
-      const patterns = analyzer.getPatterns();
-      
-      if (executionCount % 5 === 0 || patterns.filter(p => p.confidence >= 0.8).length >= 3) {
-        await this.updateAgentFileWithProvider(result.provider, analyzer);
-      }
+      // Update AGENT.md after each task completion to capture learnings
+      await this.updateAgentFileWithProvider(result.provider, analyzer, result);
     }
   }
 
@@ -48,32 +43,42 @@ export class ProviderLearning {
    */
   private async updateAgentFileWithProvider(
     providerName: string,
-    analyzer: PatternAnalyzer
+    analyzer: PatternAnalyzer,
+    recentResult: ExecutionResult
   ): Promise<void> {
     try {
       // Get patterns and recommendations
       const patterns = analyzer.getPatterns();
       const recommendations = analyzer.getRecommendations();
       
-      // Only proceed if we have meaningful insights
-      if (patterns.length === 0 && recommendations.length === 0) {
-        return;
-      }
+      // Always give the AI a chance to learn from the task, even if no patterns detected yet
+      // The AI will decide if there are valuable learnings to add
       
       // Create the prompt for the AI to update AGENT.md
-      const prompt = `Based on recent task executions, I've detected the following patterns and insights:
+      const taskInfo = recentResult.issueTitle !== undefined && recentResult.issueTitle !== '' ? 
+        `Just completed: Issue #${recentResult.issueNumber} - ${recentResult.issueTitle} (${recentResult.success ? 'successful' : 'failed'})` :
+        `Just completed: Issue #${recentResult.issueNumber} (${recentResult.success ? 'successful' : 'failed'})`;
+      
+      // Add information about what changed
+      const changesInfo = recentResult.filesModified && recentResult.filesModified.length > 0 ?
+        `\nFiles modified: ${recentResult.filesModified.join(', ')}` : '';
+      
+      const durationInfo = recentResult.duration ? 
+        `\nDuration: ${(recentResult.duration / 1000).toFixed(1)} seconds` : '';
+      
+      const errorInfo = !recentResult.success && recentResult.error ? 
+        `\nError: ${recentResult.error}` : '';
+      
+      const prompt = `${taskInfo}${changesInfo}${durationInfo}${errorInfo}
 
-Detected patterns:
-${patterns.map(p => `- ${p.description} (${Math.round(p.confidence * 100)}% confidence, ${p.occurrences} occurrences)`).join('\n')}
+${patterns.length > 0 ? `Detected patterns:\n${patterns.map(p => `- ${p.description} (${Math.round(p.confidence * 100)}% confidence, ${p.occurrences} occurrences)`).join('\n')}\n\n` : ''}${recommendations.length > 0 ? `Recommendations:\n${recommendations.map(r => `- ${r}`).join('\n')}\n\n` : ''}Based on this task execution, please review AGENT.md and make updates ONLY if there are valuable learnings to add.
 
-Recommendations:
-${recommendations.map(r => `- ${r}`).join('\n')}
-
-Please update the AGENT.md file to incorporate these learnings. Guidelines:
+Guidelines:
+- Review the git diff (use 'git diff' command) to understand what changed during this task
+- If the task was trivial or no significant learnings emerged, DO NOT make any changes
 - DO NOT add execution history, performance metrics, or pattern sections
-- Weave insights naturally into existing sections (coding standards, best practices, additional notes, etc.)
-- Keep updates concise and actionable
-- Only add information helpful for future AI agents
+- Only update if there are insights that would help future AI agents
+- Weave insights naturally into existing sections
 - Don't duplicate existing content
 - Use the Edit tool to make targeted updates to relevant sections`;
       
@@ -91,6 +96,12 @@ Please update the AGENT.md file to incorporate these learnings. Guidelines:
       
       // Add AGENT.md to the context files
       const contextFiles = ['AGENT.md'];
+      
+      // If issue file exists, add it for context
+      if (recentResult.issueNumber) {
+        contextFiles.push(`issues/${recentResult.issueNumber}-*.md`);
+        contextFiles.push(`plans/${recentResult.issueNumber}-*.md`);
+      }
       
       // Execute the update request - the provider will use its editing tools
       await provider.execute(prompt, '', contextFiles, undefined);
