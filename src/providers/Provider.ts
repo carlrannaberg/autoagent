@@ -88,9 +88,19 @@ export abstract class Provider {
     signal?: AbortSignal
   ): Promise<{ stdout: string; stderr: string; code: number | null }> {
     return new Promise((resolve, reject) => {
+      console.error('[DEBUG] Spawning with streaming:', command, args.slice(0, -1), '[PROMPT]');
       const child: ChildProcess = spawn(command, args);
       let stdout = '';
       let stderr = '';
+
+      child.on('spawn', () => {
+        console.error('[DEBUG] Process spawned successfully');
+      });
+
+      child.on('error', (error) => {
+        console.error('[DEBUG] Process error:', error);
+        reject(error);
+      });
 
       if (signal) {
         signal.addEventListener('abort', () => {
@@ -109,22 +119,26 @@ export abstract class Provider {
         }
         
         // Stream output to console for real-time feedback
-        // Parse streaming JSON and output text content
-        const lines = chunk.split('\n').filter(line => line.trim().length > 0);
-        for (const line of lines) {
-          try {
-            const message = JSON.parse(line) as Record<string, unknown>;
-            
-            // Use the formatter based on the command
-            if (command === 'claude') {
-              StreamFormatter.formatClaudeMessage(message);
-            } else if (command === 'gemini') {
-              StreamFormatter.formatGeminiMessage(message);
-            }
-          } catch (e) {
-            // Log parse errors in debug mode
-            if (process.env.DEBUG === 'true') {
-              console.error('[DEBUG] Parse error:', e, 'Line:', line);
+        if (command === 'gemini') {
+          // Gemini outputs plain text, not JSON
+          // Just print the output directly
+          process.stdout.write(chunk);
+        } else {
+          // Parse streaming JSON and output text content (for Claude)
+          const lines = chunk.split('\n').filter(line => line.trim().length > 0);
+          for (const line of lines) {
+            try {
+              const message = JSON.parse(line) as Record<string, unknown>;
+              
+              // Use the formatter based on the command
+              if (command === 'claude') {
+                StreamFormatter.formatClaudeMessage(message);
+              }
+            } catch (e) {
+              // Log parse errors in debug mode
+              if (process.env.DEBUG === 'true') {
+                console.error('[DEBUG] Parse error:', e, 'Line:', line);
+              }
             }
           }
         }
@@ -196,22 +210,26 @@ export abstract class Provider {
         }
         
         // Stream output to console for real-time feedback
-        // Parse streaming JSON and output text content
-        const lines = chunk.split('\n').filter(line => line.trim().length > 0);
-        for (const line of lines) {
-          try {
-            const message = JSON.parse(line) as Record<string, unknown>;
-            
-            // Use the formatter based on the command
-            if (command === 'claude') {
-              StreamFormatter.formatClaudeMessage(message);
-            } else if (command === 'gemini') {
-              StreamFormatter.formatGeminiMessage(message);
-            }
-          } catch (e) {
-            // Log parse errors in debug mode
-            if (process.env.DEBUG === 'true') {
-              console.error('[DEBUG] Parse error:', e, 'Line:', line);
+        if (command === 'gemini') {
+          // Gemini outputs plain text, not JSON
+          // Just print the output directly
+          process.stdout.write(chunk);
+        } else {
+          // Parse streaming JSON and output text content (for Claude)
+          const lines = chunk.split('\n').filter(line => line.trim().length > 0);
+          for (const line of lines) {
+            try {
+              const message = JSON.parse(line) as Record<string, unknown>;
+              
+              // Use the formatter based on the command
+              if (command === 'claude') {
+                StreamFormatter.formatClaudeMessage(message);
+              }
+            } catch (e) {
+              // Log parse errors in debug mode
+              if (process.env.DEBUG === 'true') {
+                console.error('[DEBUG] Parse error:', e, 'Line:', line);
+              }
             }
           }
         }

@@ -91,7 +91,7 @@ When you make changes to files, please clearly indicate which files were modifie
       // Gemini uses -p flag for prompt
       args.push('-p', prompt);
       
-      const { stdout, stderr, code } = await this.spawnProcess('gemini', args, signal);
+      const { stdout, stderr, code } = await this.spawnProcessWithStreaming('gemini', args, signal);
 
       if (code !== 0) {
         throw new Error(`Gemini execution failed with code ${code}: ${stderr}`);
