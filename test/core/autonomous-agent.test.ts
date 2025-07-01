@@ -91,7 +91,8 @@ describe('AutonomousAgent', () => {
         completed: 1,
         pending: 2
       }),
-      getChangedFiles: jest.fn().mockResolvedValue(['test.ts'])
+      getChangedFiles: jest.fn().mockResolvedValue(['test.ts']),
+      readFile: jest.fn().mockResolvedValue('Template content')
     } as unknown as jest.Mocked<FileManager>;
 
     mockProviderLearning = {
