@@ -30,6 +30,17 @@ describe('GeminiProvider', () => {
     mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
     mockSpawn.mockReturnValue(mockProcess as unknown as ReturnType<typeof spawn>);
     
+    // Verify spawn was called with correct stdio configuration for stdin piping
+    mockSpawn.mockImplementation((command, args, options) => {
+      // Verify it's the correct command
+      if (command === 'gemini' && options && 'stdio' in options) {
+        expect(options.stdio).toEqual(['pipe', 'pipe', 'pipe']);
+        expect(args).toContain('--all_files');
+        expect(args).toContain('--yolo');
+      }
+      return mockProcess as unknown as ReturnType<typeof spawn>;
+    });
+    
     // Mock fs.readFile
     (fs.readFile as jest.Mock).mockResolvedValue('File content');
     
@@ -108,15 +119,20 @@ describe('GeminiProvider', () => {
         filesChanged: ['src/file.ts']
       });
 
-      // Gemini uses positional argument for prompt and --include-all flag
+      // Gemini uses stdin for prompt and --all_files --yolo flags
       expect(mockSpawn).toHaveBeenCalled();
       const callArgs = mockSpawn.mock.calls[0];
       expect(callArgs).toBeDefined();
       expect(callArgs![0]).toBe('gemini');
       const commandArgs = callArgs![1] as string[];
-      expect(commandArgs[0]).toContain('Issue content');
-      expect(commandArgs[0]).toContain('Plan content');
-      expect(commandArgs).toContain('--include-all');
+      expect(commandArgs).toContain('--all_files');
+      expect(commandArgs).toContain('--yolo');
+      
+      // Check that content was written to stdin
+      expect(mockProcess.stdin.write).toHaveBeenCalled();
+      const stdinContent = (mockProcess.stdin.write as jest.Mock).mock.calls[0][0];
+      expect(stdinContent).toContain('Issue content');
+      expect(stdinContent).toContain('Plan content');
     });
 
     it('should handle execution errors', async () => {
