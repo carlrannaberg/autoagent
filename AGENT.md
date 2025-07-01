@@ -57,6 +57,30 @@ npm view autoagent-cli@x.x.x
 
 **Tip:** Run `npm run check` before pushing to catch type errors, linting issues, and test failures early. This runs all validations concurrently for faster feedback.
 
+## Semantic Versioning Guidelines
+
+When deciding between patch, minor, or major releases, consider the **user's perspective** and **intended behavior**:
+
+**Patch Release (0.0.x)**:
+- Bug fixes that restore intended functionality
+- Performance improvements
+- Documentation updates
+- **Key question**: "Was this supposed to work this way already?"
+
+**Minor Release (0.x.0)**:
+- New features that weren't part of the original design
+- New configuration options
+- New commands or APIs
+- **Key question**: "Is this adding something that wasn't planned before?"
+
+**Major Release (x.0.0)**:
+- Breaking changes to existing APIs
+- Removal of features
+- Changes requiring user migration
+- **Key question**: "Will existing users need to change their code?"
+
+**Example**: If streaming output was always intended but wasn't working, fixing it is a patch. If it was never planned and we're adding it as an enhancement, it's a minor release.
+
 ## Technology Stack
 - **Language**: TypeScript (targeting ES2020)
 - **Runtime**: Node.js >= 22.0.0
