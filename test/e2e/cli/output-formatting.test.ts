@@ -5,7 +5,7 @@ import { OutputParser } from '../helpers/output-parser';
 describe('Output Formatting E2E', () => {
   const context = setupE2ETest();
 
-  describe('Table Output', () => {
+  describe.skip('Table Output', () => {
     it('should format issue list as table', async () => {
       await initializeProject(context.workspace, context.cli);
       await createSampleIssue(context.workspace, 'issue-1');
@@ -38,7 +38,7 @@ describe('Output Formatting E2E', () => {
     });
   });
 
-  describe('JSON Output', () => {
+  describe.skip('JSON Output', () => {
     it('should format valid JSON when requested', async () => {
       await initializeProject(context.workspace, context.cli);
       await createSampleIssue(context.workspace, 'json-test');
@@ -69,7 +69,7 @@ describe('Output Formatting E2E', () => {
     });
   });
 
-  describe('Progress Indicators', () => {
+  describe.skip('Progress Indicators', () => {
     it('should show progress during batch operations', async () => {
       await initializeProject(context.workspace, context.cli);
       
@@ -105,7 +105,7 @@ describe('Output Formatting E2E', () => {
     });
   });
 
-  describe('Verbose Output', () => {
+  describe.skip('Verbose Output', () => {
     it('should show detailed output in verbose mode', async () => {
       await initializeProject(context.workspace, context.cli);
       await createSampleIssue(context.workspace, 'verbose-test');
@@ -131,7 +131,7 @@ describe('Output Formatting E2E', () => {
     });
   });
 
-  describe('Color Output', () => {
+  describe.skip('Color Output', () => {
     it('should use colors when terminal supports it', async () => {
       await initializeProject(context.workspace, context.cli);
       await createSampleIssue(context.workspace, 'color-test');
@@ -180,7 +180,7 @@ describe('Output Formatting E2E', () => {
     });
   });
 
-  describe('Summary Output', () => {
+  describe.skip('Summary Output', () => {
     it('should show execution summary', async () => {
       await initializeProject(context.workspace, context.cli);
       

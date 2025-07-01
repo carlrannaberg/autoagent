@@ -13,6 +13,11 @@ export class GitSimulator {
     await this.exec(['init']);
     await this.exec(['config', 'user.email', 'test@example.com']);
     await this.exec(['config', 'user.name', 'Test User']);
+    // Create an initial commit to ensure HEAD exists
+    const gitignorePath = path.join(this.repoPath, '.gitignore');
+    await fs.writeFile(gitignorePath, 'node_modules\n');
+    await this.exec(['add', '.gitignore']);
+    await this.exec(['commit', '-m', 'Initial commit']);
   }
 
   async createCommit(message: string, files: Record<string, string>): Promise<string> {
@@ -29,9 +34,17 @@ export class GitSimulator {
   }
 
   async createBranch(branchName: string, checkout: boolean = true): Promise<void> {
-    await this.exec(['branch', branchName]);
-    if (checkout) {
-      await this.exec(['checkout', branchName]);
+    try {
+      await this.exec(['branch', branchName]);
+      if (checkout) {
+        await this.exec(['checkout', branchName]);
+      }
+    } catch (error) {
+      // If branch creation fails, it might be because there are no commits yet
+      if (error instanceof Error && error.message.includes('fatal: Not a valid object name')) {
+        throw new Error('Cannot create branch: no commits exist in the repository');
+      }
+      throw error;
     }
   }
 
@@ -89,9 +102,13 @@ ${theirContent}
   }
 
   async simulateDetachedHead(): Promise<void> {
-    const { stdout } = await this.exec(['rev-parse', 'HEAD']);
-    const commit = stdout.trim();
-    await this.exec(['checkout', commit]);
+    try {
+      const { stdout } = await this.exec(['rev-parse', 'HEAD']);
+      const commit = stdout.trim();
+      await this.exec(['checkout', commit]);
+    } catch (error) {
+      throw new Error('Cannot simulate detached HEAD: no commits exist');
+    }
   }
 
   async getCommitHistory(limit: number = 10): Promise<Array<{
@@ -100,17 +117,26 @@ ${theirContent}
     date: string;
     message: string;
   }>> {
-    const { stdout } = await this.exec([
-      'log',
-      `--max-count=${limit}`,
-      '--pretty=format:%H|%an|%ad|%s',
-      '--date=iso'
-    ]);
+    try {
+      const { stdout } = await this.exec([
+        'log',
+        `--max-count=${limit}`,
+        '--pretty=format:%H|%an|%ad|%s',
+        '--date=iso'
+      ]);
 
-    return stdout.trim().split('\n').map(line => {
-      const [hash, author, date, message] = line.split('|');
-      return { hash, author, date, message };
-    });
+      if (!stdout.trim()) {
+        return [];
+      }
+
+      return stdout.trim().split('\n').map(line => {
+        const [hash, author, date, message] = line.split('|');
+        return { hash, author, date, message };
+      });
+    } catch (error) {
+      // Return empty array if no commits exist
+      return [];
+    }
   }
 
   async hasRemote(): Promise<boolean> {

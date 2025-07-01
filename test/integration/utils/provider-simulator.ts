@@ -140,9 +140,27 @@ export class ProviderSimulator implements AIProvider {
 export class ProviderFailoverSimulator {
   private providers: ProviderSimulator[];
   private currentProviderIndex: number = 0;
+  private lastSuccessfulProviderIndex: number = 0;
 
   constructor(providers: ProviderSimulator[]) {
     this.providers = providers;
+  }
+
+  private isRetryableError(error: Error): boolean {
+    const errorMessage = error.message.toLowerCase();
+    // Non-retryable errors
+    if (errorMessage.includes('invalid api key')) {
+      return false;
+    }
+    // Retryable errors
+    if (errorMessage.includes('rate limit') ||
+        errorMessage.includes('network timeout') ||
+        errorMessage.includes('model not available') ||
+        errorMessage.includes('random failure')) {
+      return true;
+    }
+    // Default to retryable for unknown errors
+    return true;
   }
 
   async executeWithFailover(prompt: string, options: any = {}): Promise<{
@@ -152,31 +170,40 @@ export class ProviderFailoverSimulator {
   }> {
     const attempts: Array<{ provider: string; error?: Error }> = [];
 
-    for (let i = 0; i < this.providers.length; i++) {
-      const providerIndex = (this.currentProviderIndex + i) % this.providers.length;
+    // Start with the last successful provider, but try all providers in order if it fails
+    const providerIndices = Array.from({ length: this.providers.length }, (_, i) => 
+      (this.lastSuccessfulProviderIndex + i) % this.providers.length
+    );
+
+    for (const providerIndex of providerIndices) {
       const provider = this.providers[providerIndex];
 
       try {
         const result = await provider.execute(prompt, options);
         attempts.push({ provider: provider.name });
+        this.lastSuccessfulProviderIndex = providerIndex;
         return {
           result,
           provider: provider.name,
           attempts
         };
       } catch (error) {
+        const err = error as Error;
         attempts.push({ 
           provider: provider.name, 
-          error: error as Error 
+          error: err 
         });
         
-        if (i === this.providers.length - 1) {
-          throw new Error(`All providers failed. Last error: ${error as string}`);
+        // If it's a non-retryable error, throw immediately
+        if (!this.isRetryableError(err)) {
+          throw err;
         }
+        
+        // Continue to next provider
       }
     }
 
-    throw new Error('No providers available');
+    throw new Error('All providers failed');
   }
 
   getProviderMetrics(): Map<string, ReturnType<ProviderSimulator['getMetrics']>> {
@@ -189,6 +216,7 @@ export class ProviderFailoverSimulator {
 
   reset(): void {
     this.currentProviderIndex = 0;
+    this.lastSuccessfulProviderIndex = 0;
     this.providers.forEach(p => p.reset());
   }
 }

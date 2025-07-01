@@ -24,7 +24,26 @@ const program = new Command();
 program
   .name('autoagent')
   .description('Run autonomous AI agents for task execution')
-  .version(packageJson.version);
+  .version(packageJson.version)
+  .exitOverride((err) => {
+    // Customize error handling for Commander.js
+    if (err.code === 'commander.unknownCommand') {
+      // Extract the command name from the error message
+      const match = err.message.match(/unknown command '(.+)'/);
+      const commandName = match ? match[1] : 'unknown';
+      console.error(`Unknown command '${commandName}'`);
+      console.error('Run autoagent --help for available commands');
+      process.exit(1);
+    }
+    // Re-throw other errors to let Commander handle them
+    throw err;
+  })
+  .configureOutput({
+    outputError: (str, write) => {
+      // Override error output to ensure it goes to stderr
+      write(str);
+    }
+  });
 
 // Register commands
 registerConfigCommand(program);
@@ -35,5 +54,12 @@ registerStatusCommand(program);
 registerCheckCommand(program);
 registerBootstrapCommand(program);
 registerListCommand(program);
+
+// Handle unknown commands
+program.on('command:*', () => {
+  console.error(`Unknown command '${program.args.join(' ')}'`);
+  console.error('Run autoagent --help for available commands');
+  process.exit(1);
+});
 
 program.parse();

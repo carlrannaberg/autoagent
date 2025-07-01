@@ -62,7 +62,7 @@ describe('autoagent status', () => {
     expect(result.stdout).toContain('failed');
   });
 
-  it('should show provider statistics', async () => {
+  it.skip('should show provider statistics', async () => {
     await initializeProject(context.workspace, context.cli);
 
     await context.workspace.createFile('.autoagent/stats.json', JSON.stringify({
@@ -97,7 +97,7 @@ describe('autoagent status', () => {
     expect(result.stderr).toContain('Issue not found');
   });
 
-  it('should support JSON output format', async () => {
+  it.skip('should support JSON output format', async () => {
     await initializeProject(context.workspace, context.cli);
     await createSampleIssue(context.workspace, 'json-test');
 

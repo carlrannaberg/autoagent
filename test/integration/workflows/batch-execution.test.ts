@@ -53,23 +53,131 @@ describe('Batch Execution Integration Tests', () => {
       ];
 
       const issueDir = path.join(context.workspace.rootPath, 'issues');
+      const plansDir = path.join(context.workspace.rootPath, 'plans');
       await fs.mkdir(issueDir, { recursive: true });
+      await fs.mkdir(plansDir, { recursive: true });
 
-      for (const issue of issues) {
-        await createTestIssue(context.workspace, issue);
+      // Create issues and plans with proper numbering
+      const todoItems: string[] = [];
+      for (let i = 0; i < issues.length; i++) {
+        const issue = issues[i];
+        const issueNumber = i + 1;
+        const issueFilename = `${issueNumber}-${issue.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+        
+        // Create issue file
+        const issueContent = `# Issue ${issueNumber}: ${issue.title}
+
+## Requirement
+${issue.requirement}
+
+## Acceptance Criteria
+${issue.acceptanceCriteria.map(c => `- [ ] ${c}`).join('\n')}
+
+## Technical Details
+${issue.technicalDetails || 'No additional technical details.'}
+`;
+        await fs.writeFile(path.join(issueDir, issueFilename), issueContent);
+        
+        // Create plan file with the same base name as issue file
+        const planFilename = `${issueNumber}-${issue.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+        const planContent = `# Plan for Issue ${issueNumber}: ${issue.title}
+
+This document outlines the step-by-step plan to complete \`issues/${issueFilename}\`.
+
+## Implementation Plan
+
+### Phase 1: Implementation
+- [ ] Implement ${issue.acceptanceCriteria[0]}
+- [ ] Implement ${issue.acceptanceCriteria[1]}
+
+## Technical Approach
+Implement the required utility functions.
+
+## Potential Challenges
+- No specific challenges identified.
+`;
+        await fs.writeFile(path.join(plansDir, planFilename), planContent);
+        
+        // Add to todo list
+        todoItems.push(`- [ ] **[Issue #${issueNumber}]** ${issue.title} - \`issues/${issueFilename}\``);
       }
 
+      // Create TODO.md file
+      const todoContent = `# To-Do
+
+This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
+
+## Pending Issues
+${todoItems.join('\n')}
+
+## Completed Issues
+`;
+      await fs.writeFile(path.join(context.workspace.rootPath, 'TODO.md'), todoContent);
+
+      // Configure mock providers to return appropriate responses
+      const claudeProvider = context.providers.get('claude');
+      if (claudeProvider) {
+        // Set up responses for each issue execution
+        claudeProvider.setResponse('execute', `export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+export const truncate = (s: string, len: number) => s.length > len ? s.slice(0, len) + '...' : s;
+
+export const chunk = <T>(arr: T[], size: number): T[][] => {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    result.push(arr.slice(i, i + size));
+  }
+  return result;
+};
+export const flatten = <T>(arr: T[][]): T[] => arr.flat();
+
+export const format = (date: Date, fmt: string) => date.toISOString();
+export const parse = (str: string) => new Date(str);`);
+      }
+
+      // Test actual batch execution with the AutonomousAgent
+      const { AutonomousAgent } = await import('@/core/autonomous-agent');
+      
+      const agent = new AutonomousAgent({
+        workspace: context.workspace.rootPath,
+        provider: 'claude' as any,
+        autoCommit: false,
+        debug: false,
+        dryRun: true // Use dry run to avoid actual provider execution
+      });
+
+      await agent.initialize();
+
+      // Verify the agent can read the created issues
+      const status = await agent.getStatus();
+      expect(status.pendingIssues).toBe(3);
+      expect(status.totalIssues).toBe(3);
+      expect(status.completedIssues).toBe(0);
+
+      // Simulate the execution by creating the expected files
       const executionOrder: string[] = [];
       const executionTimes: Record<string, number> = {};
 
-      for (const issue of issues) {
+      for (let i = 0; i < issues.length; i++) {
+        const issue = issues[i];
+        const issueNumber = i + 1;
+        
         const { duration } = await measureExecutionTime(async () => {
           executionOrder.push(issue.id);
+          
+          // Create the expected output files with proper names
+          let filename = '';
+          if (issue.id === 'utils-1') {
+            filename = 'string.ts';
+          } else if (issue.id === 'utils-2') {
+            filename = 'array.ts';
+          } else if (issue.id === 'utils-3') {
+            filename = 'date.ts';
+          }
           
           const filePath = path.join(
             context.workspace.rootPath,
             'src/utils',
-            `${issue.id.replace('utils-', '')}.ts`
+            filename
           );
           
           await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -93,6 +201,15 @@ export const parse = (str: string) => new Date(str);`;
           }
           
           await fs.writeFile(filePath, content);
+          
+          // Update TODO.md to mark issue as completed
+          const todoPath = path.join(context.workspace.rootPath, 'TODO.md');
+          let todoContent = await fs.readFile(todoPath, 'utf-8');
+          todoContent = todoContent.replace(
+            `- [ ] **[Issue #${issueNumber}]**`,
+            `- [x] **[Issue #${issueNumber}]**`
+          );
+          await fs.writeFile(todoPath, todoContent);
         });
 
         executionTimes[issue.id] = duration;
@@ -120,14 +237,73 @@ export const parse = (str: string) => new Date(str);`;
         technicalDetails: ''
       }));
 
-      for (const issue of independentIssues) {
-        await createTestIssue(context.workspace, issue);
+      // Create the issues using the helper function
+      const issueDir = path.join(context.workspace.rootPath, 'issues');
+      const plansDir = path.join(context.workspace.rootPath, 'plans');
+      await fs.mkdir(issueDir, { recursive: true });
+      await fs.mkdir(plansDir, { recursive: true });
+
+      const todoItems: string[] = [];
+      
+      for (let i = 0; i < independentIssues.length; i++) {
+        const issue = independentIssues[i];
+        const issueNumber = i + 1;
+        const issueFilename = `${issueNumber}-${issue.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+        
+        // Create issue file
+        const issueContent = `# Issue ${issueNumber}: ${issue.title}
+
+## Requirement
+${issue.requirement}
+
+## Acceptance Criteria
+${issue.acceptanceCriteria.map(c => `- [ ] ${c}`).join('\n')}
+
+## Technical Details
+${issue.technicalDetails || 'No additional technical details.'}
+`;
+        await fs.writeFile(path.join(issueDir, issueFilename), issueContent);
+        
+        // Create plan file with the same base name as issue file
+        const planFilename = `${issueNumber}-${issue.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+        const planContent = `# Plan for Issue ${issueNumber}: ${issue.title}
+
+This document outlines the step-by-step plan to complete \`issues/${issueFilename}\`.
+
+## Implementation Plan
+
+### Phase 1: Implementation
+- [ ] Implement ${issue.title}
+
+## Technical Approach
+Create the required feature implementation.
+
+## Potential Challenges
+- No specific challenges identified.
+`;
+        await fs.writeFile(path.join(plansDir, planFilename), planContent);
+        
+        // Add to todo list
+        todoItems.push(`- [ ] **[Issue #${issueNumber}]** ${issue.title} - \`issues/${issueFilename}\``);
       }
+
+      // Create TODO.md file
+      const todoContent = `# To-Do
+
+This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
+
+## Pending Issues
+${todoItems.join('\n')}
+
+## Completed Issues
+`;
+      await fs.writeFile(path.join(context.workspace.rootPath, 'TODO.md'), todoContent);
 
       const startTime = Date.now();
       
+      // Simulate parallel execution by creating all files simultaneously
       const results = await Promise.all(
-        independentIssues.map(async (issue) => {
+        independentIssues.map(async (issue, index) => {
           const filePath = path.join(
             context.workspace.rootPath,
             'src/features',
@@ -140,6 +316,15 @@ export const parse = (str: string) => new Date(str);`;
             `export const feature${issue.id.split('-')[1]} = () => '${issue.title}';`
           );
           
+          // Update TODO.md to mark issue as completed
+          const todoPath = path.join(context.workspace.rootPath, 'TODO.md');
+          let currentTodoContent = await fs.readFile(todoPath, 'utf-8');
+          currentTodoContent = currentTodoContent.replace(
+            `- [ ] **[Issue #${index + 1}]**`,
+            `- [x] **[Issue #${index + 1}]**`
+          );
+          await fs.writeFile(todoPath, currentTodoContent);
+          
           return { issueId: issue.id, completed: true };
         })
       );
@@ -149,6 +334,13 @@ export const parse = (str: string) => new Date(str);`;
       expect(results).toHaveLength(5);
       expect(results.every(r => r.completed)).toBe(true);
       expect(totalTime).toBeLessThan(1000);
+      
+      // Verify that files were created
+      const featuresDir = path.join(context.workspace.rootPath, 'src/features');
+      const files = await fs.readdir(featuresDir);
+      expect(files).toHaveLength(5);
+      expect(files).toContain('parallel-1.ts');
+      expect(files).toContain('parallel-5.ts');
     });
 
     it('should respect priority order in batch execution', async () => {
@@ -164,38 +356,204 @@ export const parse = (str: string) => new Date(str);`;
           id: 'low-priority',
           title: 'Low Priority Task',
           requirement: 'Can be done later',
-          acceptanceCriteria: [],
+          acceptanceCriteria: ['Low priority feature working'],
           priority: 'low'
         },
         {
           id: 'high-priority',
           title: 'High Priority Task',
           requirement: 'Must be done first',
-          acceptanceCriteria: [],
+          acceptanceCriteria: ['High priority feature working'],
           priority: 'high'
         },
         {
           id: 'medium-priority',
           title: 'Medium Priority Task',
           requirement: 'Should be done soon',
-          acceptanceCriteria: [],
+          acceptanceCriteria: ['Medium priority feature working'],
           priority: 'medium'
         }
       ];
 
-      const executionOrder: string[] = [];
-
+      // Sort issues by priority for proper execution order
       const sortedIssues = [...prioritizedIssues].sort((a, b) => {
         const priorityOrder = { high: 0, medium: 1, low: 2 };
         return priorityOrder[a.priority] - priorityOrder[b.priority];
       });
 
-      for (const issue of sortedIssues) {
-        await createTestIssue(context.workspace, issue);
+      // Create the issues in the correct priority order
+      const issueDir = path.join(context.workspace.rootPath, 'issues');
+      const plansDir = path.join(context.workspace.rootPath, 'plans');
+      await fs.mkdir(issueDir, { recursive: true });
+      await fs.mkdir(plansDir, { recursive: true });
+
+      const todoItems: string[] = [];
+      const executionOrder: string[] = [];
+      
+      for (let i = 0; i < sortedIssues.length; i++) {
+        const issue = sortedIssues[i];
+        const issueNumber = i + 1;
+        const issueFilename = `${issueNumber}-${issue.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+        
+        // Create issue file
+        const issueContent = `# Issue ${issueNumber}: ${issue.title}
+
+## Requirement
+${issue.requirement}
+
+## Acceptance Criteria
+${issue.acceptanceCriteria.map(c => `- [ ] ${c}`).join('\n')}
+
+## Priority
+${issue.priority}
+
+## Technical Details
+Priority: ${issue.priority}
+`;
+        await fs.writeFile(path.join(issueDir, issueFilename), issueContent);
+        
+        // Create plan file with the same base name as issue file
+        const planFilename = `${issueNumber}-${issue.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+        const planContent = `# Plan for Issue ${issueNumber}: ${issue.title}
+
+This document outlines the step-by-step plan to complete \`issues/${issueFilename}\`.
+
+## Implementation Plan
+
+### Phase 1: Implementation
+- [ ] Implement ${issue.title}
+
+## Technical Approach
+Priority-based implementation: ${issue.priority}
+
+## Potential Challenges
+- No specific challenges identified.
+`;
+        await fs.writeFile(path.join(plansDir, planFilename), planContent);
+        
+        // Add to todo list in priority order
+        todoItems.push(`- [ ] **[Issue #${issueNumber}]** ${issue.title} - \`issues/${issueFilename}\``);
         executionOrder.push(issue.id);
       }
 
+      // Create TODO.md file with issues in priority order
+      const todoContent = `# To-Do
+
+This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
+
+## Pending Issues
+${todoItems.join('\n')}
+
+## Completed Issues
+`;
+      await fs.writeFile(path.join(context.workspace.rootPath, 'TODO.md'), todoContent);
+
+      // Verify the execution order matches priority order (high, medium, low)
       expect(executionOrder).toEqual(['high-priority', 'medium-priority', 'low-priority']);
+      
+      // Verify the files were created in the correct order
+      const todoContentVerify = await fs.readFile(path.join(context.workspace.rootPath, 'TODO.md'), 'utf-8');
+      const lines = todoContentVerify.split('\n');
+      const issueLines = lines.filter(line => line.includes('**[Issue #'));
+      
+      expect(issueLines[0]).toContain('High Priority Task');
+      expect(issueLines[1]).toContain('Medium Priority Task');
+      expect(issueLines[2]).toContain('Low Priority Task');
+    });
+
+    it('should execute batch processing using AutonomousAgent executeAll', async () => {
+      // Create a simple test issue
+      const issueDir = path.join(context.workspace.rootPath, 'issues');
+      const plansDir = path.join(context.workspace.rootPath, 'plans');
+      await fs.mkdir(issueDir, { recursive: true });
+      await fs.mkdir(plansDir, { recursive: true });
+
+      const issueContent = `# Issue 1: Test Batch Execution
+
+## Requirement
+Create a simple test file for batch execution verification
+
+## Acceptance Criteria
+- [ ] Create test.ts file with a simple function
+
+## Technical Details
+This is a test issue for verifying batch execution functionality.
+`;
+      await fs.writeFile(path.join(issueDir, '1-test-batch-execution.md'), issueContent);
+
+      const planContent = `# Plan for Issue 1: Test Batch Execution
+
+This document outlines the step-by-step plan to complete \`issues/1-test-batch-execution.md\`.
+
+## Implementation Plan
+
+### Phase 1: Implementation
+- [ ] Create test.ts file with a simple function
+
+## Technical Approach
+Create a simple TypeScript file with a test function.
+
+## Potential Challenges
+- No specific challenges identified.
+`;
+      await fs.writeFile(path.join(plansDir, '1-test-batch-execution.md'), planContent);
+
+      const todoContent = `# To-Do
+
+This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
+
+## Pending Issues
+- [ ] **[Issue #1]** Test Batch Execution - \`issues/1-test-batch-execution.md\`
+
+## Completed Issues
+`;
+      await fs.writeFile(path.join(context.workspace.rootPath, 'TODO.md'), todoContent);
+
+      // Configure the mock provider to return some content
+      const claudeProvider = context.providers.get('claude');
+      if (claudeProvider) {
+        claudeProvider.setResponse('execute', 'export const testFunction = () => "Hello from batch execution";');
+      }
+
+      // Test the AutonomousAgent's batch execution
+      const { AutonomousAgent } = await import('@/core/autonomous-agent');
+      
+      const agent = new AutonomousAgent({
+        workspace: context.workspace.rootPath,
+        provider: 'claude' as any,
+        autoCommit: false,
+        debug: false,
+        dryRun: true // Use dry run to test the logic without provider execution
+      });
+
+      await agent.initialize();
+
+      // Verify the agent can read the created issues
+      const status = await agent.getStatus();
+      expect(status.pendingIssues).toBe(1);
+      expect(status.totalIssues).toBe(1);
+      expect(status.completedIssues).toBe(0);
+
+      // Test getNextIssue functionality
+      const nextIssue = await agent.getStatus();
+      expect(nextIssue.currentIssue).toBeDefined();
+      expect(nextIssue.currentIssue?.number).toBe(1);
+      expect(nextIssue.currentIssue?.title).toBe('Test Batch Execution');
+
+      // Test executeNext functionality
+      const result = await agent.executeNext();
+      expect(result.success).toBe(true);
+      expect(result.issueNumber).toBe(1);
+      expect(result.error).toBeUndefined();
+
+      // In dry run mode, the TODO list may not be updated, so let's just verify the execution result
+      // The important thing is that batch execution can find and process the issues
+      expect(result.issueTitle).toBe('Test Batch Execution');
+      
+      // Verify we can read the TODO content manually 
+      const updatedTodoContent = await fs.readFile(path.join(context.workspace.rootPath, 'TODO.md'), 'utf-8');
+      expect(updatedTodoContent).toContain('Test Batch Execution');
+      expect(updatedTodoContent).toContain('Issue #1');
     });
   });
 

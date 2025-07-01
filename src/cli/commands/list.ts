@@ -50,6 +50,24 @@ export function registerListCommand(program: Command): void {
 }
 
 async function listIssues(workspace: string, options: { status?: string; json?: boolean }): Promise<void> {
+  // Validate status parameter first
+  if (options.status !== undefined && options.status !== null) {
+    const validStatuses = ['pending', 'in_progress', 'completed'];
+    if (!validStatuses.includes(options.status)) {
+      Logger.error(`Invalid status: ${options.status}. Valid statuses are: ${validStatuses.join(', ')}`);
+      process.exit(1);
+    }
+  }
+
+  // Check if project is initialized
+  const projectConfigPath = path.join(workspace, '.autoagent.json');
+  try {
+    await fs.access(projectConfigPath);
+  } catch {
+    Logger.error('Project not initialized. Run "autoagent init" first.');
+    process.exit(1);
+  }
+
   const issuesDir = path.join(workspace, 'issues');
   const statusFile = path.join(workspace, '.autoagent', 'status.json');
 

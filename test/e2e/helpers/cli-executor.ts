@@ -40,10 +40,46 @@ export class CliExecutor {
       };
     } catch (error) {
       const execError = error as any;
+      // execFileAsync throws when exit code is non-zero
+      // The actual exit code is stored differently depending on the error type
+      let exitCode = 1; // Default to 1 if we can't determine the actual code
+      
+      // Debug logging to understand the error structure
+      if (process.env.DEBUG_CLI_EXECUTOR) {
+        console.error('CLI Executor Error:', {
+          code: execError.code,
+          status: execError.status,
+          signal: execError.signal,
+          killed: execError.killed,
+          message: execError.message
+        });
+      }
+      
+      // In Node.js, when a child process exits with non-zero code,
+      // the error object has different properties depending on how it failed:
+      // - error.code: the exit code when the process exits normally
+      // - error.status: alternative property name for exit code in some Node versions
+      // - error.signal: when the process is killed by a signal
+      // - error.code can also be a string like 'ENOENT' for system errors
+      
+      if (typeof execError.code === 'number') {
+        // This is the exit code from the child process
+        exitCode = execError.code;
+      } else if (execError.status !== undefined && typeof execError.status === 'number') {
+        // Some Node versions use 'status' instead of 'code'
+        exitCode = execError.status;
+      } else if (execError.signal) {
+        // Process was killed by a signal
+        exitCode = 128 + (execError.signal === 'SIGTERM' ? 15 : 9);
+      } else if (execError.code === 'ENOENT') {
+        // Command not found
+        exitCode = 127;
+      }
+      
       return {
         stdout: execError.stdout !== undefined ? execError.stdout : '',
         stderr: execError.stderr !== undefined ? execError.stderr : '',
-        exitCode: execError.code !== undefined ? execError.code : 1,
+        exitCode,
       };
     }
   }

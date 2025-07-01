@@ -41,13 +41,7 @@ export function registerConfigCommand(program: Command): void {
             process.exit(1);
           }
           
-          // Handle string values that might be JSON.stringify'd
-          let formattedValue = displayValue;
-          if (typeof displayValue === 'string' && displayValue.startsWith('"') && displayValue.endsWith('"')) {
-            formattedValue = displayValue.slice(1, -1);  // Remove quotes
-          }
-          
-          let output = `${key}: ${formattedValue}`;
+          let output = `${key}: ${displayValue}`;
           if (options?.showSource) {
             const source = envValue !== undefined ? 'environment' : 'local';
             output += ` (${source})`;
@@ -61,13 +55,7 @@ export function registerConfigCommand(program: Command): void {
             const envValue = getEnvValue(k);
             const displayValue = envValue !== undefined ? envValue : value;
             
-            // Handle string values that might be JSON.stringify'd
-            let formattedValue = displayValue;
-            if (typeof displayValue === 'string' && displayValue.startsWith('"') && displayValue.endsWith('"')) {
-              formattedValue = displayValue.slice(1, -1);  // Remove quotes
-            }
-            
-            let output = `${k}: ${formattedValue}`;
+            let output = `${k}: ${displayValue}`;
             if (options?.showSource) {
               const source = envValue !== undefined ? 'environment' : 'local';
               output += ` (${source})`;

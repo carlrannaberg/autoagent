@@ -9,7 +9,7 @@ describe('autoagent create', () => {
     await initializeProject(context.workspace, context.cli);
 
     const input = 'Implement a new feature\n- [ ] Task 1\n- [ ] Task 2\nSimple feature implementation\n';
-    const result = await context.cli.executeWithInput(['create', 'Test Issue'], input);
+    const result = await context.cli.executeWithInput(['create', '--title', 'Test Issue', '--provider', 'mock'], input);
 
     expect(result.exitCode).toBe(0);
     expect(OutputParser.containsSuccess(result.stdout)).toBe(true);
@@ -24,7 +24,10 @@ describe('autoagent create', () => {
 
     const result = await context.cli.execute([
       'create',
-      'CLI Test Issue'
+      '--title',
+      'CLI Test Issue',
+      '--provider',
+      'mock'
     ]);
 
     expect(result.exitCode).toBe(0);
@@ -45,7 +48,7 @@ describe('autoagent create', () => {
     const result = await context.cli.execute(['create']);
 
     expect(result.exitCode).toBe(1);
-    expect(result.stderr).toMatch(/error: missing required argument|not enough arguments/);
+    expect(result.stderr).toContain('Issue title is required');
   });
 
   it('should generate unique issue filenames', async () => {
@@ -53,12 +56,18 @@ describe('autoagent create', () => {
 
     await context.cli.execute([
       'create',
-      'Duplicate Issue'
+      '--title',
+      'Duplicate Issue',
+      '--provider',
+      'mock'
     ]);
 
     const result = await context.cli.execute([
       'create',
-      'Duplicate Issue'
+      '--title',
+      'Duplicate Issue',
+      '--provider',
+      'mock'
     ]);
 
     expect(result.exitCode).toBe(0);
@@ -73,7 +82,10 @@ describe('autoagent create', () => {
 
     const result = await context.cli.execute([
       'create',
-      'Bug Report'
+      '--title',
+      'Bug Report',
+      '--provider',
+      'mock'
     ]);
 
     expect(result.exitCode).toBe(0);

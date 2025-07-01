@@ -59,5 +59,7 @@ export async function createSamplePlan(workspace: E2EWorkspace, issueName = 'tes
 
 export async function initializeProject(workspace: E2EWorkspace, cli: CliExecutor): Promise<void> {
   await workspace.initGit();
+  // Set mock provider for E2E tests
+  cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
   await cli.execute(['config', 'init']);
 }

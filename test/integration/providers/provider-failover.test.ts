@@ -8,25 +8,9 @@ import type { Issue } from '@/types/issue';
 describe('Provider Failover Integration Tests', () => {
   let context: IntegrationTestContext;
   let configManager: ConfigManager;
-  let claudeSimulator: ProviderSimulator;
-  let geminiSimulator: ProviderSimulator;
-  let failoverSimulator: ProviderFailoverSimulator;
 
   beforeEach(async () => {
     context = await createIntegrationContext();
-    
-    claudeSimulator = new ProviderSimulator({
-      name: 'claude',
-      responseDelay: 100
-    });
-    
-    geminiSimulator = new ProviderSimulator({
-      name: 'gemini',
-      responseDelay: 150
-    });
-    
-    failoverSimulator = new ProviderFailoverSimulator([claudeSimulator, geminiSimulator]);
-    
     configManager = new ConfigManager(context.workspace.rootPath);
     await configManager.loadConfig();
   });
@@ -37,16 +21,17 @@ describe('Provider Failover Integration Tests', () => {
 
   describe('Rate Limit Failover', () => {
     it('should failover from Claude to Gemini when rate limited', async () => {
-      claudeSimulator = new ProviderSimulator({
+      // Create new instances for this test
+      const claudeSim = new ProviderSimulator({
         name: 'claude',
         rateLimitThreshold: 2
       });
       
-      geminiSimulator = new ProviderSimulator({
+      const geminiSim = new ProviderSimulator({
         name: 'gemini'
       });
       
-      failoverSimulator = new ProviderFailoverSimulator([claudeSimulator, geminiSimulator]);
+      const failoverSim = new ProviderFailoverSimulator([claudeSim, geminiSim]);
 
       const prompts = [
         'First request',
@@ -57,7 +42,7 @@ describe('Provider Failover Integration Tests', () => {
 
       const results = [];
       for (const prompt of prompts) {
-        const result = await failoverSimulator.executeWithFailover(prompt);
+        const result = await failoverSim.executeWithFailover(prompt);
         results.push(result);
       }
 
@@ -66,49 +51,49 @@ describe('Provider Failover Integration Tests', () => {
       expect(results[2].provider).toBe('gemini');
       expect(results[3].provider).toBe('gemini');
 
-      const metrics = failoverSimulator.getProviderMetrics();
+      const metrics = failoverSim.getProviderMetrics();
       expect(metrics.get('claude')!.isRateLimited).toBe(true);
       expect(metrics.get('gemini')!.isRateLimited).toBe(false);
     });
 
     it('should handle both providers being rate limited', async () => {
-      claudeSimulator = new ProviderSimulator({
+      const claudeSim = new ProviderSimulator({
         name: 'claude',
         rateLimitThreshold: 1
       });
       
-      geminiSimulator = new ProviderSimulator({
+      const geminiSim = new ProviderSimulator({
         name: 'gemini',
         rateLimitThreshold: 1
       });
       
-      failoverSimulator = new ProviderFailoverSimulator([claudeSimulator, geminiSimulator]);
+      const failoverSim = new ProviderFailoverSimulator([claudeSim, geminiSim]);
 
-      await failoverSimulator.executeWithFailover('First request');
-      await failoverSimulator.executeWithFailover('Second request');
+      await failoverSim.executeWithFailover('First request');
+      await failoverSim.executeWithFailover('Second request');
 
       await expect(
-        failoverSimulator.executeWithFailover('Third request')
+        failoverSim.executeWithFailover('Third request')
       ).rejects.toThrow('All providers failed');
 
-      const metrics = failoverSimulator.getProviderMetrics();
+      const metrics = failoverSim.getProviderMetrics();
       expect(metrics.get('claude')!.isRateLimited).toBe(true);
       expect(metrics.get('gemini')!.isRateLimited).toBe(true);
     });
 
     it('should track failover attempts correctly', async () => {
-      claudeSimulator = new ProviderSimulator({
+      const claudeSim = new ProviderSimulator({
         name: 'claude',
         errorRate: 1.0
       });
       
-      geminiSimulator = new ProviderSimulator({
+      const geminiSim = new ProviderSimulator({
         name: 'gemini'
       });
       
-      failoverSimulator = new ProviderFailoverSimulator([claudeSimulator, geminiSimulator]);
+      const failoverSim = new ProviderFailoverSimulator([claudeSim, geminiSim]);
 
-      const result = await failoverSimulator.executeWithFailover('Test prompt');
+      const result = await failoverSim.executeWithFailover('Test prompt');
       
       expect(result.attempts).toHaveLength(2);
       expect(result.attempts[0].provider).toBe('claude');
@@ -121,39 +106,39 @@ describe('Provider Failover Integration Tests', () => {
 
   describe('Provider Recovery', () => {
     it('should retry original provider after rate limit reset', async () => {
-      claudeSimulator = new ProviderSimulator({
+      const claudeSim = new ProviderSimulator({
         name: 'claude',
         rateLimitThreshold: 1
       });
       
-      geminiSimulator = new ProviderSimulator({
+      const geminiSim = new ProviderSimulator({
         name: 'gemini'
       });
       
-      failoverSimulator = new ProviderFailoverSimulator([claudeSimulator, geminiSimulator]);
+      const failoverSim = new ProviderFailoverSimulator([claudeSim, geminiSim]);
 
-      await failoverSimulator.executeWithFailover('First request');
+      await failoverSim.executeWithFailover('First request');
       
-      const secondResult = await failoverSimulator.executeWithFailover('Second request');
+      const secondResult = await failoverSim.executeWithFailover('Second request');
       expect(secondResult.provider).toBe('gemini');
 
-      claudeSimulator.resetRateLimit();
+      claudeSim.resetRateLimit();
 
-      const thirdResult = await failoverSimulator.executeWithFailover('Third request');
+      const thirdResult = await failoverSim.executeWithFailover('Third request');
       expect(thirdResult.provider).toBe('gemini');
 
-      failoverSimulator.reset();
-      const fourthResult = await failoverSimulator.executeWithFailover('Fourth request');
+      failoverSim.reset();
+      const fourthResult = await failoverSim.executeWithFailover('Fourth request');
       expect(fourthResult.provider).toBe('claude');
     });
 
     it('should handle intermittent failures with retry', async () => {
       let callCount = 0;
-      claudeSimulator = new ProviderSimulator({
+      const claudeSim = new ProviderSimulator({
         name: 'claude'
       });
       
-      claudeSimulator.execute = function(_prompt: string) {
+      claudeSim.execute = function(_prompt: string) {
         callCount++;
         if (callCount <= 2) {
           throw new Error('Temporary network error');
@@ -164,7 +149,7 @@ describe('Provider Failover Integration Tests', () => {
       const result = await (async (): Promise<string> => {
         for (let i = 0; i < 3; i++) {
           try {
-            return await claudeSimulator.execute('Test prompt');
+            return await claudeSim.execute('Test prompt');
           } catch (error) {
             if (i === 2) {throw error;}
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -194,30 +179,21 @@ describe('Provider Failover Integration Tests', () => {
 
       await createTestIssue(context.workspace, issue);
 
-      let stepCount = 0;
-      claudeSimulator.setCustomResponse('Step 1: Create file', 'File created successfully');
-      claudeSimulator.execute = function(this: ProviderSimulator, _prompt: string): string {
-        stepCount++;
-        if (stepCount === 2) {
-          throw new Error('Provider failure');
-        }
-        return this.generateDefaultResponse(_prompt);
-      }.bind(claudeSimulator) as any;
+      const claudeSim = new ProviderSimulator({ name: 'claude' });
+      claudeSim.setCustomResponse('Step 1: Create file', 'File created successfully');
+      // Claude will fail on the second call
+      claudeSim.setCustomResponse('Step 2: Update file', new Error('Provider failure'));
 
-      geminiSimulator.setCustomResponse('Step 2: Update file', 'File updated successfully');
-      geminiSimulator.setCustomResponse('Step 3: Add tests', 'Tests added successfully');
+      const geminiSim = new ProviderSimulator({ name: 'gemini' });
+      geminiSim.setCustomResponse('Step 2: Update file', 'File updated successfully');
+      geminiSim.setCustomResponse('Step 3: Add tests', 'Tests added successfully');
 
-      failoverSimulator = new ProviderFailoverSimulator([claudeSimulator, geminiSimulator]);
+      const failoverSim = new ProviderFailoverSimulator([claudeSim, geminiSim]);
 
       const results = [];
       for (const criteria of issue.acceptanceCriteria) {
-        try {
-          const result = await failoverSimulator.executeWithFailover(criteria);
-          results.push(result);
-        } catch (error) {
-          const result = await failoverSimulator.executeWithFailover(criteria);
-          results.push(result);
-        }
+        const result = await failoverSim.executeWithFailover(criteria);
+        results.push(result);
       }
 
       expect(results[0].provider).toBe('claude');
@@ -232,37 +208,37 @@ describe('Provider Failover Integration Tests', () => {
         totalSteps: 5
       };
 
-      claudeSimulator = new ProviderSimulator({
+      const claudeSim = new ProviderSimulator({
         name: 'claude',
         rateLimitThreshold: 3
       });
 
-      claudeSimulator.execute = async function(this: ProviderSimulator, _prompt: string): Promise<string> {
-        const result = await ProviderSimulator.prototype.execute.call(this, _prompt);
-        if (_prompt.includes('step')) {
-          executionState.completedSteps.push(_prompt);
-          executionState.currentStep = _prompt;
-        }
-        return result;
-      } as any;
-
-      geminiSimulator = new ProviderSimulator({
-        name: 'gemini'
-      });
-
-      geminiSimulator.execute = async function(prompt: string) {
+      claudeSim.execute = async function(this: ProviderSimulator, prompt: string): Promise<string> {
         const result = await ProviderSimulator.prototype.execute.call(this, prompt);
         if (prompt.includes('step')) {
           executionState.completedSteps.push(prompt);
           executionState.currentStep = prompt;
         }
         return result;
-      } as any;
+      }.bind(claudeSim) as any;
 
-      failoverSimulator = new ProviderFailoverSimulator([claudeSimulator, geminiSimulator]);
+      const geminiSim = new ProviderSimulator({
+        name: 'gemini'
+      });
+
+      geminiSim.execute = async function(this: ProviderSimulator, prompt: string): Promise<string> {
+        const result = await ProviderSimulator.prototype.execute.call(this, prompt);
+        if (prompt.includes('step')) {
+          executionState.completedSteps.push(prompt);
+          executionState.currentStep = prompt;
+        }
+        return result;
+      }.bind(geminiSim) as any;
+
+      const failoverSim = new ProviderFailoverSimulator([claudeSim, geminiSim]);
 
       for (let i = 1; i <= 5; i++) {
-        await failoverSimulator.executeWithFailover(`Execute step ${i}`);
+        await failoverSim.executeWithFailover(`Execute step ${i}`);
       }
 
       expect(executionState.completedSteps).toHaveLength(5);
@@ -272,7 +248,7 @@ describe('Provider Failover Integration Tests', () => {
       expect(executionState.completedSteps[3]).toContain('step 4');
       expect(executionState.completedSteps[4]).toContain('step 5');
 
-      const metrics = failoverSimulator.getProviderMetrics();
+      const metrics = failoverSim.getProviderMetrics();
       expect(metrics.get('claude')!.successfulCalls).toBe(3);
       expect(metrics.get('gemini')!.successfulCalls).toBe(2);
     });
@@ -288,46 +264,48 @@ describe('Provider Failover Integration Tests', () => {
       ];
 
       for (const { error, shouldFailover } of errorTypes) {
-        claudeSimulator = new ProviderSimulator({ name: 'claude' });
-        claudeSimulator.setCustomResponse('test', error);
+        const claudeSim = new ProviderSimulator({ name: 'claude' });
+        claudeSim.setCustomResponse('test', error);
 
-        geminiSimulator = new ProviderSimulator({ name: 'gemini' });
+        const geminiSim = new ProviderSimulator({ name: 'gemini' });
         
-        failoverSimulator = new ProviderFailoverSimulator([claudeSimulator, geminiSimulator]);
+        const failoverSim = new ProviderFailoverSimulator([claudeSim, geminiSim]);
 
         if (shouldFailover) {
-          const result = await failoverSimulator.executeWithFailover('test');
+          const result = await failoverSim.executeWithFailover('test');
           expect(result.provider).toBe('gemini');
         } else {
           await expect(
-            failoverSimulator.executeWithFailover('test')
+            failoverSim.executeWithFailover('test')
           ).rejects.toThrow(error.message);
         }
 
-        failoverSimulator.reset();
+        failoverSim.reset();
       }
     });
 
     it('should respect provider-specific retry policies', async () => {
       // const retryDelays = { claude: 1000, gemini: 2000 };
       
-      claudeSimulator = new ProviderSimulator({
+      const claudeSim = new ProviderSimulator({
         name: 'claude',
         rateLimitThreshold: 1
       });
 
-      geminiSimulator = new ProviderSimulator({
+      const geminiSim = new ProviderSimulator({
         name: 'gemini'
       });
 
+      const failoverSim = new ProviderFailoverSimulator([claudeSim, geminiSim]);
+
       const startTime = Date.now();
       
-      await failoverSimulator.executeWithFailover('First request');
-      await failoverSimulator.executeWithFailover('Second request');
+      await failoverSim.executeWithFailover('First request');
+      await failoverSim.executeWithFailover('Second request');
 
       const duration = Date.now() - startTime;
       
-      expect(duration).toBeGreaterThanOrEqual(claudeSimulator['responseDelay'] * 2);
+      expect(duration).toBeGreaterThanOrEqual(claudeSim['responseDelay'] * 2);
     });
   });
 });
