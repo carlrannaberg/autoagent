@@ -27,6 +27,7 @@ npm run test:coverage # Run tests with coverage report
 npm run clean        # Clean build output
 
 # Release commands (uses Claude to prepare releases)
+# NOTE: These commands can take 5-10 minutes as Claude analyzes the codebase
 npm run release:patch # Prepare a patch release (0.0.1 -> 0.0.2)
 npm run release:minor # Prepare a minor release (0.0.1 -> 0.1.0)
 npm run release:major # Prepare a major release (0.0.1 -> 1.0.0)
