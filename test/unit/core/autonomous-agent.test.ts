@@ -22,14 +22,14 @@ const { createProvider, getFirstAvailableProvider, mockFiles, mockFileContents }
 vi.mock('fs/promises', () => ({
   default: {
     readdir: vi.fn().mockImplementation(async (dir: string) => {
-      return mockFiles.get(dir) || [];
+      return mockFiles.get(dir) ?? [];
     }),
     readFile: vi.fn().mockImplementation(async (path: string) => {
       return Buffer.from(mockFileContents.get(path) ?? 'Template content');
     })
   },
   readdir: vi.fn().mockImplementation(async (dir: string) => {
-    return mockFiles.get(dir) || [];
+    return mockFiles.get(dir) ?? [];
   }),
   readFile: vi.fn().mockImplementation(async (path: string) => {
     return Buffer.from(mockFileContents.get(path) ?? 'Template content');
@@ -98,9 +98,10 @@ describe('AutonomousAgent', () => {
 
     // Mock the path module to ensure consistent paths
     vi.doMock('path', () => ({
-      join: (...args: string[]) => args.join('/'),
-      dirname: (p: string) => p.substring(0, p.lastIndexOf('/')),
-      basename: (p: string) => p.substring(p.lastIndexOf('/') + 1)
+      join: (...args: string[]): string => args.join('/'),
+      dirname: (p: string): string => p.substring(0, p.lastIndexOf('/')),
+      basename: (p: string): string => p.substring(p.lastIndexOf('/') + 1),
+      isAbsolute: (p: string): boolean => p.startsWith('/')
     }));
 
     // Mock provider creation
@@ -113,11 +114,11 @@ describe('AutonomousAgent', () => {
       if (!provider.execute.length || provider.execute.length === 2) {
         // Monkey-patch the prompt-based execute for createIssue
         const originalExecute = provider.execute.bind(provider);
-        provider.execute = function(...args: any[]) {
+        provider.execute = function(...args: any[]): any {
           if (args.length === 2 && typeof args[0] === 'string' && !args[0].includes('/')) {
             // This is a prompt-based call (createIssue/bootstrap)
-            const prompt = args[0];
-            const response = this.responses?.get('create') || this.defaultResponse || 'Created successfully';
+            const _prompt = args[0];
+            const response = this.responses?.get('create') ?? this.defaultResponse ?? 'Created successfully';
             return Promise.resolve({ output: response });
           }
           // Regular file-based execute
@@ -132,7 +133,7 @@ describe('AutonomousAgent', () => {
       const order = preferredProviders || ['claude', 'gemini', 'mock'];
       for (const name of order) {
         const provider = testProviders.get(name);
-        if (provider && await provider.checkAvailability()) {
+        if (provider != null && provider.checkAvailability()) {
           return provider;
         }
       }
@@ -140,13 +141,19 @@ describe('AutonomousAgent', () => {
     });
 
     // Set up file system structure for issues and plans
-    mockFiles.set('/test/issues', ['1-test-issue.md']);
-    mockFiles.set('/test/plans', ['1-test-plan.md']);
+    // Use the correct workspace path
+    const workspace = '/test';
+    mockFiles.set(`${workspace}/issues`, ['1-test-issue.md']);
+    mockFiles.set(`${workspace}/plans`, ['1-test-plan.md']);
+    
+    // Add the issue and plan content
+    mockFileContents.set(`${workspace}/issues/1-test-issue.md`, '# Test Issue\n\nTest content');
+    mockFileContents.set(`${workspace}/plans/1-test-plan.md`, '# Test Plan\n\nTest plan content');
     
     // Add provider instruction files
-    mockFileContents.set('/test/CLAUDE.md', 'Claude instructions');
-    mockFileContents.set('/test/GEMINI.md', 'Gemini instructions');
-    mockFileContents.set('/test/AGENT.md', 'Agent instructions');
+    mockFileContents.set(`${workspace}/CLAUDE.md`, 'Claude instructions');
+    mockFileContents.set(`${workspace}/GEMINI.md`, 'Gemini instructions');
+    mockFileContents.set(`${workspace}/AGENT.md`, 'Agent instructions');
 
     agent = new AutonomousAgent({ workspace: '/test', signal: true }); // Use signal: true to prevent signal handler setup
     
@@ -213,11 +220,7 @@ describe('AutonomousAgent', () => {
       await agent.initialize();
       fileManager.addTodo(1, 'Test Issue', false);
       
-      // Add issue and plan files to the mock file system
-      mockFiles.set('/test/issues', ['1-test-issue.md']);
-      mockFiles.set('/test/plans', ['1-test-plan.md']);
-      mockFileContents.set('/test/issues/1-test-issue.md', '# Test Issue\n\nTest content');
-      mockFileContents.set('/test/plans/1-test-plan.md', '# Test Plan\n\nTest plan content');
+      // Issue and plan files are already set up in main beforeEach
     });
 
     it('should execute an issue successfully', async () => {

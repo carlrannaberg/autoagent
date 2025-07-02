@@ -235,7 +235,7 @@ async function main(): Promise<void> {
   }
   
   // Set CI defaults
-  if (process.env.CI) {
+  if (process.env.CI !== null && process.env.CI !== undefined && process.env.CI !== '') {
     config.failOnRegression = config.failOnRegression ?? true;
     config.iterations = config.iterations ?? 50; // Fewer iterations in CI for speed
   }

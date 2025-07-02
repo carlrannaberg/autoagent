@@ -37,7 +37,7 @@ export class InMemoryConfigManager {
     return Date.now() < limitTime;
   }
 
-  async getAvailableProviders(): Promise<string[]> {
+  getAvailableProviders(): string[] {
     const available: string[] = [];
     for (const provider of this.config.providers) {
       const isLimited = this.isProviderRateLimited(provider);
@@ -52,7 +52,7 @@ export class InMemoryConfigManager {
     this.rateLimits.set(provider, resetTime);
   }
 
-  async checkRateLimit(provider: string): Promise<{ isLimited: boolean; resetTime?: number }> {
+  checkRateLimit(provider: string): { isLimited: boolean; resetTime?: number } {
     const isLimited = this.isProviderRateLimited(provider);
     const resetTime = this.rateLimits.get(provider);
     return { isLimited, resetTime };

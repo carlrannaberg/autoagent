@@ -109,7 +109,7 @@ describe('Enhanced Benchmark Example', () => {
 export const benchmarks = [
   {
     name: 'String concatenation performance',
-    fn: () => {
+    fn: (): string => {
       let result = '';
       for (let i = 0; i < 1000; i++) {
         result += 'test';
@@ -119,13 +119,13 @@ export const benchmarks = [
   },
   {
     name: 'Array creation performance',
-    fn: () => {
+    fn: (): number[] => {
       return Array.from({ length: 1000 }, (_, i) => i * 2);
     }
   },
   {
     name: 'Object property access',
-    fn: () => {
+    fn: (): number => {
       const obj = { a: 1, b: 2, c: 3, d: 4, e: 5 };
       let sum = 0;
       for (let i = 0; i < 1000; i++) {

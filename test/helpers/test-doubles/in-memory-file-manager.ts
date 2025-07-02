@@ -17,7 +17,7 @@ export class InMemoryFileManager {
 
   readIssue(issueNumber: number): Issue {
     const issue = this.issues.get(issueNumber);
-    if (issue == null) {
+    if (issue === null || issue === undefined) {
       return {
         number: issueNumber,
         title: `Test Issue ${issueNumber}`,
@@ -31,7 +31,7 @@ export class InMemoryFileManager {
 
   readPlan(issueNumber: number): Plan {
     const plan = this.plans.get(issueNumber);
-    if (plan == null) {
+    if (plan === null || plan === undefined) {
       return {
         issueNumber,
         file: `plans/${issueNumber}-plan.md`,
@@ -42,7 +42,7 @@ export class InMemoryFileManager {
   }
 
   readTodoList(): string[] {
-    return this.todos.map(todo => 
+    return this.todos.map((todo: any) => 
       `- [${todo.completed ? 'x' : ' '}] Issue #${todo.issueNumber}: ${todo.title}`
     );
   }
@@ -71,19 +71,19 @@ export class InMemoryFileManager {
 
   updateTodo(issueNumber: number, completed: boolean): void {
     const todo = this.todos.find(t => t.issueNumber === issueNumber);
-    if (todo != null) {
+    if (todo !== null && todo !== undefined) {
       todo.completed = completed;
     }
   }
 
-  getNextIssue(): number | null {
-    const pending = this.todos.find(t => t.completed == null || !t.completed);
-    return pending != null ? pending.issueNumber : null;
+  getNextIssue(): { number: number; title: string } | null {
+    const pending = this.todos.find((t: any) => t.completed === null || t.completed === undefined || !t.completed);
+    return pending !== null && pending !== undefined ? { number: pending.issueNumber, title: pending.title } : null;
   }
   
   getNextPendingIssue(): number | null {
-    const pending = this.todos.find(t => t.completed == null || !t.completed);
-    return pending != null ? pending.issueNumber : null;
+    const pending = this.todos.find((t: any) => t.completed === null || t.completed === undefined || !t.completed);
+    return pending !== null && pending !== undefined ? pending.issueNumber : null;
   }
 
   getNextIssueNumber(): number {
@@ -92,7 +92,7 @@ export class InMemoryFileManager {
   }
 
   readTodo(): string {
-    const pendingTodos = this.todos.filter(t => t.completed == null || !t.completed);
+    const pendingTodos = this.todos.filter((t: any) => t.completed === null || t.completed === undefined || !t.completed);
     const completedTodos = this.todos.filter(t => t.completed);
     
     let content = '## Pending Issues\n';

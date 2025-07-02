@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import baselines from '../baselines.json';
-import { compareDatasets, ComparisonTest, StatisticalSummary, generateStatisticalReport } from './statistics';
+import { compareDatasets, ComparisonTest, StatisticalSummary } from './statistics';
 
 export interface BenchmarkResult {
   name: string;
