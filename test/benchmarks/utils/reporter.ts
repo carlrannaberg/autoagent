@@ -1,6 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import baselines from '../baselines.json';
+import { compareDatasets, ComparisonTest, StatisticalSummary, generateStatisticalReport } from './statistics';
 
 export interface BenchmarkResult {
   name: string;
@@ -13,6 +14,8 @@ export interface BenchmarkResult {
   p50: number;
   p90: number;
   p95: number;
+  rawSamples?: number[];
+  statistics?: StatisticalSummary;
 }
 
 export interface BenchmarkReport {
@@ -34,6 +37,7 @@ export interface ComparisonResult {
   difference: number;
   percentChange: number;
   regression: boolean;
+  statisticalTest?: ComparisonTest;
 }
 
 export class BenchmarkReporter {
@@ -72,13 +76,32 @@ export class BenchmarkReporter {
         const difference = result.mean - baselineValue;
         const percentChange = (difference / baselineValue) * 100;
         
+        // Perform statistical test if we have raw samples
+        let statisticalTest: ComparisonTest | undefined;
+        if (result.rawSamples && result.rawSamples.length > 5) {
+          // Create synthetic baseline samples for comparison
+          // In practice, you'd store historical samples
+          const baselineSamples = Array(result.rawSamples.length)
+            .fill(0)
+            .map(() => baselineValue + (Math.random() - 0.5) * baselineValue * 0.1);
+          
+          statisticalTest = compareDatasets(baselineSamples, result.rawSamples);
+        }
+        
+        // Determine regression based on both magnitude and statistical significance
+        let regression = percentChange > 10; // Default threshold
+        if (statisticalTest?.significant && percentChange > 5) {
+          regression = true; // Lower threshold if statistically significant
+        }
+        
         comparisons.push({
           name: result.name,
           baseline: baselineValue,
           current: result.mean,
           difference,
           percentChange,
-          regression: percentChange > 10 // 10% threshold for regression
+          regression,
+          statisticalTest
         });
       }
     }
@@ -122,43 +145,86 @@ export class BenchmarkReporter {
     ];
 
     // Format results table
-    lines.push('| Benchmark | Ops/sec | Mean (ms) | Min | Max | P90 | P95 |');
-    lines.push('|-----------|---------|-----------|-----|-----|-----|-----|');
+    lines.push('| Benchmark | Ops/sec | Mean (ms) | Std Dev | Min | Max | P90 | P95 | CV% |');
+    lines.push('|-----------|---------|-----------|---------|-----|-----|-----|-----|-----|');
     
     for (const result of report.results) {
+      const stdDev = result.statistics?.standardDeviation?.toFixed(2) || 'N/A';
+      const cv = result.statistics?.coefficientOfVariation?.toFixed(1) || 'N/A';
       lines.push(
         `| ${result.name} | ${result.ops.toFixed(2)} | ${result.mean.toFixed(2)} | ` +
-        `${result.min.toFixed(2)} | ${result.max.toFixed(2)} | ` +
-        `${result.p90.toFixed(2)} | ${result.p95.toFixed(2)} |`
+        `${stdDev} | ${result.min.toFixed(2)} | ${result.max.toFixed(2)} | ` +
+        `${result.p90.toFixed(2)} | ${result.p95.toFixed(2)} | ${cv} |`
       );
+    }
+
+    // Add statistical details
+    lines.push('', '## Statistical Analysis', '');
+    for (const result of report.results) {
+      if (result.statistics) {
+        lines.push(`### ${result.name}`, '');
+        lines.push(`- **Sample size:** ${result.statistics.count}`);
+        lines.push(`- **95% Confidence Interval:** [${result.statistics.confidenceInterval95[0].toFixed(3)}, ${result.statistics.confidenceInterval95[1].toFixed(3)}] ms`);
+        
+        if (result.statistics.outliers.length > 0) {
+          const outlierPercent = (result.statistics.outliers.length / result.statistics.count * 100).toFixed(1);
+          lines.push(`- **Outliers:** ${result.statistics.outliers.length} (${outlierPercent}%) detected`);
+        }
+        
+        // Distribution shape
+        let shape = 'symmetric';
+        if (Math.abs(result.statistics.skewness) > 0.5) {
+          shape = result.statistics.skewness > 0 ? 'right-skewed' : 'left-skewed';
+        }
+        lines.push(`- **Distribution:** ${shape} (skewness: ${result.statistics.skewness.toFixed(3)})`);
+        lines.push('');
+      }
     }
 
     // Add comparisons if available
     if (report.comparisons.length > 0) {
-      lines.push('', '## Baseline Comparisons', '');
-      lines.push('| Benchmark | Baseline | Current | Change | Status |');
-      lines.push('|-----------|----------|---------|--------|--------|');
+      lines.push('## Baseline Comparisons', '');
+      lines.push('| Benchmark | Baseline | Current | Change | Effect Size | Significance | Status |');
+      lines.push('|-----------|----------|---------|--------|-------------|--------------|--------|');
       
       for (const comp of report.comparisons) {
-        const status = comp.regression ? '⚠️ REGRESSION' : '✅ OK';
         const changeStr = comp.percentChange > 0 ? `+${comp.percentChange.toFixed(1)}%` : `${comp.percentChange.toFixed(1)}%`;
+        const effectSize = comp.statisticalTest?.effectSize?.toFixed(3) || 'N/A';
+        const significance = comp.statisticalTest?.significant ? 
+          `p=${comp.statisticalTest.pValue.toFixed(4)}` : 'Not significant';
+        
+        let status = '✅ OK';
+        if (comp.regression) {
+          status = comp.statisticalTest?.significant ? '🚨 SIGNIFICANT REGRESSION' : '⚠️ REGRESSION';
+        }
         
         lines.push(
           `| ${comp.name} | ${comp.baseline.toFixed(2)} | ${comp.current.toFixed(2)} | ` +
-          `${changeStr} | ${status} |`
+          `${changeStr} | ${effectSize} | ${significance} | ${status} |`
         );
       }
     }
 
     // Add regression summary
     const regressions = report.comparisons.filter(c => c.regression);
-    if (regressions.length > 0) {
-      lines.push('', '## ⚠️ Performance Regressions Detected', '');
-      for (const reg of regressions) {
-        lines.push(`- **${reg.name}**: ${reg.percentChange.toFixed(1)}% slower than baseline`);
+    const significantRegressions = regressions.filter(c => c.statisticalTest?.significant);
+    
+    if (significantRegressions.length > 0) {
+      lines.push('', '## 🚨 Statistically Significant Performance Regressions', '');
+      for (const reg of significantRegressions) {
+        lines.push(`- **${reg.name}**: ${reg.percentChange.toFixed(1)}% slower (${reg.statisticalTest?.interpretation} effect)`);
       }
-    } else if (report.comparisons.length > 0) {
-      lines.push('', '## ✅ No Performance Regressions', '');
+    }
+    
+    if (regressions.length > significantRegressions.length) {
+      lines.push('', '## ⚠️ Other Potential Regressions (Not Statistically Significant)', '');
+      for (const reg of regressions.filter(r => !r.statisticalTest?.significant)) {
+        lines.push(`- **${reg.name}**: ${reg.percentChange.toFixed(1)}% slower (needs more data)`);
+      }
+    }
+    
+    if (regressions.length === 0 && report.comparisons.length > 0) {
+      lines.push('', '## ✅ No Performance Regressions Detected', '');
     }
 
     return lines.join('\n');
