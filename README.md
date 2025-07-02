@@ -13,19 +13,6 @@
 
 AutoAgent is a powerful npm package that enables running autonomous AI agents using Claude or Gemini for task execution. It converts complex bash scripts into a robust TypeScript-based solution with both CLI and programmatic APIs.
 
-### 🆕 What's New in v0.2.0
-
-- **`list` command**: Query issues, providers, and execution history with filtering and JSON output
-- **Enhanced `config` command**: Get/set individual values, show configuration sources
-- **Enhanced `status` command**: Query specific issues, view execution history
-- **Mock Provider**: Test without API calls using `AUTOAGENT_MOCK_PROVIDER=true`
-- **Issue name arguments**: Run specific issues by name: `autoagent run 5-implement-auth`
-- **Environment variable support**: Full configuration override via environment
-- **Improved error handling**: Better exit codes, validation, and error messages
-- **Cyclic dependency detection**: Prevents infinite loops in issue dependencies
-- **Status tracking**: Automatic tracking in `.autoagent/status.json`
-- **Vitest migration**: Faster, more reliable test suite
-
 ### Key Features
 
 - 🤖 **Multiple AI Providers**: Support for Claude (Anthropic), Gemini (Google), and Mock provider for testing
@@ -126,7 +113,7 @@ autoagent run
 # Execute with specific provider
 autoagent run --provider gemini
 
-# Execute a specific issue (new in v0.2.0)
+# Execute a specific issue by name
 autoagent run 1-add-authentication
 ```
 
@@ -141,7 +128,7 @@ Execute one or all pending issues.
 # Run next pending issue
 autoagent run
 
-# Run specific issue (new in v0.2.0)
+# Run specific issue by name
 autoagent run 5-update-dependencies
 
 # Run all pending issues
@@ -156,7 +143,7 @@ autoagent run --provider gemini
 # Disable auto-commit
 autoagent run --no-auto-commit
 
-# Use mock provider for testing (new in v0.2.0)
+# Use mock provider for testing
 AUTOAGENT_MOCK_PROVIDER=true autoagent run
 ```
 
@@ -171,17 +158,17 @@ autoagent create "Implement user profile page"
 autoagent create "Add caching layer" --provider claude
 ```
 
-#### `autoagent status [issue]` (enhanced in v0.2.0)
+#### `autoagent status [issue]`
 Display project status, pending issues, or specific issue status.
 
 ```bash
 # Show overall project status
 autoagent status
 
-# Show specific issue status (new)
+# Show specific issue status
 autoagent status 5-update-dependencies
 
-# Show execution history (new)
+# Show execution history
 autoagent status --history
 ```
 
@@ -220,16 +207,16 @@ autoagent config show
 # Clear rate limits
 autoagent config clear-limits
 
-# Get specific config value (new in v0.2.0)
+# Get specific config value
 autoagent config get provider
 autoagent config get provider --show-source
 
-# Set any config value (new in v0.2.0)
+# Set any config value
 autoagent config set logLevel debug
 autoagent config set retryAttempts 5
 ```
 
-#### `autoagent list <type>` (new in v0.2.0)
+#### `autoagent list <type>`
 List issues, providers, or execution history.
 
 ```bash
