@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { ProviderSimulator, ProviderFailoverSimulator } from '../utils/provider-simulator';
-import { createIntegrationContext, cleanupIntegrationContext, createTestIssue, measureExecutionTime } from '../utils/integration-helpers';
-import type { IntegrationTestContext } from '../utils/integration-helpers';
+import { ProviderSimulator, ProviderFailoverSimulator } from '../../helpers/setup/provider-simulator';
+import { createIntegrationContext, cleanupIntegrationContext, createTestIssue, measureExecutionTime } from '../../helpers/setup/integration-helpers';
+import type { IntegrationTestContext } from '../../helpers/setup/integration-helpers';
 import type { Issue } from '@/types/issue';
 
 describe('Performance Integration Tests', () => {

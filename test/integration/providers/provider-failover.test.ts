@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ConfigManager } from '@/core/config-manager';
-import { ProviderSimulator, ProviderFailoverSimulator } from '../utils/provider-simulator';
-import { createIntegrationContext, cleanupIntegrationContext, createTestIssue } from '../utils/integration-helpers';
-import type { IntegrationTestContext } from '../utils/integration-helpers';
+import { ProviderSimulator, ProviderFailoverSimulator } from '../../helpers/setup/provider-simulator';
+import { createIntegrationContext, cleanupIntegrationContext, createTestIssue } from '../../helpers/setup/integration-helpers';
+import type { IntegrationTestContext } from '../../helpers/setup/integration-helpers';
 import type { Issue } from '@/types/issue';
 
 describe('Provider Failover Integration Tests', () => {

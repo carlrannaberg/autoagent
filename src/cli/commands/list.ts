@@ -124,7 +124,8 @@ async function listIssues(workspace: string, options: { status?: string; json?: 
 
   if (issues.length === 0) {
     if (options.json === true) {
-      Logger.info('[]');
+      // eslint-disable-next-line no-console
+      console.log('[]');
     } else {
       Logger.info('No issues found');
     }
@@ -143,7 +144,8 @@ async function listIssues(workspace: string, options: { status?: string; json?: 
       name: issue.name,
       status: issue.status
     }));
-    Logger.info(JSON.stringify(jsonOutput, null, 2));
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify(jsonOutput, null, 2));
   } else {
     if (filteredIssues.length === 0) {
       Logger.info(`No issues found with status: ${options.status}`);
@@ -167,7 +169,8 @@ async function listProviders(json?: boolean): Promise<void> {
       name,
       available: availableProviders.includes(name)
     }));
-    Logger.info(JSON.stringify(providersInfo, null, 2));
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify(providersInfo, null, 2));
   } else {
     Logger.info('AI Providers:\n');
     allProviders.forEach(name => {
@@ -186,7 +189,8 @@ async function listExecutions(workspace: string, json?: boolean): Promise<void> 
     const executions: Execution[] = JSON.parse(content) as Execution[];
 
     if (json === true) {
-      Logger.info(JSON.stringify(executions, null, 2));
+      // eslint-disable-next-line no-console
+      console.log(JSON.stringify(executions, null, 2));
     } else {
       if (executions.length === 0) {
         Logger.info('No executions found');

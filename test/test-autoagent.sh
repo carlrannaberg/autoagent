@@ -136,6 +136,9 @@ EOF
 
     # Initialize directories
     mkdir -p issues plans logs
+    
+    # Initialize the project
+    "$AUTOAGENT_BIN" init || return 1
 }
 
 # Build autoagent once at the start
@@ -218,7 +221,7 @@ This file tracks all issues for the autonomous agent.
 EOF
     
     # Run the issue with specified provider
-    "$AUTOAGENT_BIN" run --provider "$TEST_PROVIDER" || return 1
+    "$AUTOAGENT_BIN" run --all --provider "$TEST_PROVIDER" || return 1
     
     # Verify results
     [ -f "test-output.txt" ] || return 1
@@ -324,7 +327,7 @@ This file tracks all issues for the autonomous agent.
 EOF
     
     # Run first issue with specified provider
-    "$AUTOAGENT_BIN" run --provider "$TEST_PROVIDER" || return 1
+    "$AUTOAGENT_BIN" run --all --provider "$TEST_PROVIDER" || return 1
     [ -f "test-output.txt" ] || return 1
     
     # Now add second issue properly

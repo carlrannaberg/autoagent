@@ -41,6 +41,10 @@ program
       console.error('Run autoagent --help for available commands');
       process.exit(1);
     }
+    // Handle help and version display
+    if (err.code === 'commander.helpDisplayed' || err.code === 'commander.version') {
+      process.exit(0);
+    }
     // Re-throw other errors to let Commander handle them
     throw err;
   })

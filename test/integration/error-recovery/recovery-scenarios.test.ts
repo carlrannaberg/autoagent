@@ -3,10 +3,10 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 // import { spawn } from 'child_process';
 import { ConfigManager } from '@/core/config-manager';
-import { ProviderSimulator } from '../utils/provider-simulator';
-import { GitSimulator } from '../utils/git-simulator';
-import { createIntegrationContext, cleanupIntegrationContext } from '../utils/integration-helpers';
-import type { IntegrationTestContext } from '../utils/integration-helpers';
+import { ProviderSimulator } from '../../helpers/setup/provider-simulator';
+import { GitSimulator } from '../../helpers/setup/git-simulator';
+import { createIntegrationContext, cleanupIntegrationContext } from '../../helpers/setup/integration-helpers';
+import type { IntegrationTestContext } from '../../helpers/setup/integration-helpers';
 
 describe('Error Recovery Integration Tests', () => {
   let context: IntegrationTestContext;

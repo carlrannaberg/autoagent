@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { ProviderSimulator } from '../utils/provider-simulator';
-import { createIntegrationContext, cleanupIntegrationContext } from '../utils/integration-helpers';
-import type { IntegrationTestContext } from '../utils/integration-helpers';
+import { ProviderSimulator } from '../../helpers/setup/provider-simulator';
+import { createIntegrationContext, cleanupIntegrationContext } from '../../helpers/setup/integration-helpers';
+import type { IntegrationTestContext } from '../../helpers/setup/integration-helpers';
 // import type { Issue } from '@/types/issue';
 
 describe('Multi-Provider Integration Tests', () => {
@@ -110,9 +110,19 @@ describe('Multi-Provider Integration Tests', () => {
     });
 
     it('should select provider based on success rate', async () => {
-      providers.get('claude')!['errorRate'] = 0.1;
-      providers.get('gemini')!['errorRate'] = 0.3;
-      providers.get('gpt4')!['errorRate'] = 0.5;
+      // Create providers with specific error rates
+      providers.set('claude', new ProviderSimulator({ 
+        name: 'claude', 
+        errorRate: 0.1  // 10% error rate (90% success)
+      }));
+      providers.set('gemini', new ProviderSimulator({ 
+        name: 'gemini', 
+        errorRate: 0.3  // 30% error rate (70% success)
+      }));
+      providers.set('gpt4', new ProviderSimulator({ 
+        name: 'gpt4', 
+        errorRate: 0.5  // 50% error rate (50% success)
+      }));
 
       const testRuns = 20;
       const successRates: Record<string, number> = {};

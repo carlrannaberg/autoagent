@@ -2,7 +2,16 @@ import { expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import type { SpyInstance } from 'vitest';
 import * as path from 'node:path';
 import * as os from 'node:os';
+import { rmSync } from 'fs';
+import { join } from 'path';
+import { config } from 'dotenv';
 import type { ExecutionResult, Issue, TodoItem, Configuration } from '../src/types/index.js';
+
+// Load test environment variables
+config({ path: '.env.test' });
+
+// Import enhanced custom matchers
+import './helpers/assertions/custom-matchers';
 
 declare module 'vitest' {
   interface Assertion {
@@ -10,6 +19,10 @@ declare module 'vitest' {
     toHaveProviderHistory(expectedProviders: string[]): void;
     toBeValidIssue(): void;
     toContainTodoItem(expectedTodo: Partial<TodoItem>): void;
+    toHaveExecutedSuccessfully(): void;
+    toMatchStatisticalBaseline(baseline: any, tolerance?: number): void;
+    toBeWithinPerformanceThreshold(maxTime: number): void;
+    toHaveValidConfiguration(): void;
   }
 }
 
@@ -19,9 +32,33 @@ let consoleSpies: {
   warn: SpyInstance;
 };
 
+// Test type detection
+const testType = process.env.TEST_TYPE || detectTestType();
+
+function detectTestType(): string {
+  const testFile = expect.getState()?.testPath;
+  if (!testFile) {return 'unit';}
+  
+  if (testFile.includes('/unit/')) {return 'unit';}
+  if (testFile.includes('/integration/')) {return 'integration';}
+  if (testFile.includes('/e2e/')) {return 'e2e';}
+  if (testFile.includes('/performance/')) {return 'performance';}
+  if (testFile.includes('/smoke/')) {return 'smoke';}
+  if (testFile.includes('/contract/')) {return 'contract';}
+  
+  return 'unit';
+}
+
 beforeAll(() => {
   process.env.NODE_ENV = 'test';
   process.env.AUTOAGENT_SILENT = 'true';
+  
+  // Set test-specific paths
+  process.env.AUTOAGENT_CONFIG_DIR = join(process.cwd(), '.test-autoagent');
+  
+  // Set shorter timeouts for test environment
+  process.env.AUTOAGENT_TIMEOUT = '5000';
+  process.env.AUTOAGENT_RETRY_ATTEMPTS = '1';
 });
 
 beforeEach(() => {
@@ -40,8 +77,61 @@ afterEach(() => {
   if (consoleSpies.log !== undefined) {consoleSpies.log.mockRestore();}
   if (consoleSpies.error !== undefined) {consoleSpies.error.mockRestore();}
   if (consoleSpies.warn !== undefined) {consoleSpies.warn.mockRestore();}
+  
+  // Clear any test-specific environment variables
+  Object.keys(process.env).forEach(key => {
+    if (key.startsWith('TEST_')) {
+      delete process.env[key];
+    }
+  });
 });
 
+// Global cleanup - runs after all tests
+afterAll(() => {
+  // Clean up test workspaces
+  const testWorkspaces = [
+    join(process.cwd(), '.test-workspace'),
+    join(process.cwd(), '.test-autoagent'),
+    join(process.cwd(), 'test-workspace-*'),
+    join(process.cwd(), 'benchmark-results')
+  ];
+  
+  testWorkspaces.forEach(workspace => {
+    try {
+      rmSync(workspace, { recursive: true, force: true });
+    } catch {
+      // Ignore errors - directory might not exist
+    }
+  });
+});
+
+// Test type specific configurations
+switch (testType) {
+  case 'unit':
+    vi.setConfig({ testTimeout: 5000 });
+    break;
+    
+  case 'integration':
+    vi.setConfig({ testTimeout: 15000 });
+    break;
+    
+  case 'e2e':
+    vi.setConfig({ testTimeout: 30000 });
+    break;
+    
+  case 'performance':
+    vi.setConfig({ testTimeout: 60000 });
+    break;
+    
+  case 'smoke':
+    vi.setConfig({ testTimeout: 10000 });
+    break;
+    
+  default:
+    vi.setConfig({ testTimeout: 10000 });
+}
+
+// Extend existing custom matchers
 expect.extend({
   toBeSuccessfulExecution(received: ExecutionResult) {
     const pass = received.success === true && received.error === undefined;
@@ -142,6 +232,7 @@ expect.extend({
   }
 });
 
+// Legacy helper functions for backward compatibility
 export function createIssue(overrides: Partial<Issue> = {}): Issue {
   return {
     number: 1,
@@ -202,6 +293,9 @@ export const testHelpers = {
   createTempDir
 };
 
+// Export test type for use in tests
+export const TEST_TYPE = testType;
+
 export { consoleSpies };
 export { TestWorkspace } from './utils/test-workspace.js';
-export * from './mocks/index.js';
+export * from './helpers/test-doubles/index.js';

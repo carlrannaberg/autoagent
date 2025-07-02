@@ -1,90 +1,59 @@
-import { E2EWorkspace } from './e2e-workspace';
-import { CliExecutor } from './cli-executor';
 import { beforeEach, afterEach } from 'vitest';
+import { E2EWorkspace } from '../../helpers/setup/e2e-workspace';
+import { CliExecutor } from '../../helpers/setup/cli-executor';
 
-export interface E2ETestContext {
+export interface E2EContext {
   workspace: E2EWorkspace;
   cli: CliExecutor;
 }
 
-export function setupE2ETest(): E2ETestContext {
-  const context: E2ETestContext = {
-    workspace: new E2EWorkspace(),
-    cli: null as any,
-  };
+export function setupE2ETest(): E2EContext {
+  const workspace = new E2EWorkspace();
+  let cli: CliExecutor;
 
-  beforeEach(async () => {
-    const workspacePath = await context.workspace.create();
-    context.cli = new CliExecutor(workspacePath);
+  beforeEach(async (): Promise<void> => {
+    const workspacePath = await workspace.create();
+    cli = new CliExecutor(workspacePath);
   });
 
-  afterEach(async () => {
-    await context.workspace.cleanup();
+  afterEach(async (): Promise<void> => {
+    await workspace.cleanup();
   });
 
-  return context;
-}
-
-export async function createSampleIssue(workspace: E2EWorkspace, issueName = 'test-issue', issueNumber = 1): Promise<void> {
-  // Create issue with proper naming convention: {number}-{slug}.md
-  const issueSlug = issueName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-  const filename = `${issueNumber}-${issueSlug}.md`;
-  
-  const issueContent = `# Issue ${issueNumber}: ${issueName}
-
-## Requirements
-This is a test issue for E2E testing.
-
-## Acceptance Criteria
-- [ ] Test task 1
-- [ ] Test task 2
-
-## Technical Details
-Simple test issue`;
-
-  await workspace.createFile(`issues/${filename}`, issueContent);
-  
-  // Also create/update status tracking
-  const statusKey = filename.replace('.md', ''); // Use filename without .md as status key
-  const statusData = {
-    [statusKey]: {
-      status: 'pending',
-      issueNumber,
-      createdAt: new Date().toISOString()
+  return {
+    get workspace(): E2EWorkspace {
+      return workspace;
+    },
+    get cli(): CliExecutor {
+      return cli;
     }
   };
-  
-  // Try to read existing status data and merge
-  try {
-    const existingStatus = await workspace.readFile('.autoagent/status.json');
-    const existing = JSON.parse(existingStatus);
-    Object.assign(existing, statusData);
-    await workspace.createFile('.autoagent/status.json', JSON.stringify(existing, null, 2));
-  } catch {
-    // File doesn't exist, create new
-    await workspace.createFile('.autoagent/status.json', JSON.stringify(statusData, null, 2));
-  }
-}
-
-export async function createSamplePlan(workspace: E2EWorkspace, issueName = 'test-issue'): Promise<void> {
-  const planContent = `# Plan for Test Issue
-
-## Implementation Plan
-
-### Phase 1: Setup
-- [ ] Create test file
-- [ ] Add basic implementation
-
-### Phase 2: Testing
-- [ ] Add tests
-- [ ] Verify functionality`;
-
-  await workspace.createPlan(issueName, planContent);
 }
 
 export async function initializeProject(workspace: E2EWorkspace, cli: CliExecutor): Promise<void> {
   await workspace.initGit();
-  // Set mock provider for E2E tests
-  cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-  await cli.execute(['init']);
+  const result = await cli.execute(['init']);
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to initialize project: ${result.stderr}`);
+  }
+}
+
+export async function createSampleIssue(workspace: E2EWorkspace, name: string, issueNumber?: number): Promise<void> {
+  const number = issueNumber ?? 1;
+  const issueContent = `# Issue ${number}: ${name}
+
+## Description
+This is a sample issue for testing purposes.
+
+## Acceptance Criteria
+- [ ] Task 1
+- [ ] Task 2
+
+## Technical Details
+Sample technical details for ${name}.
+`;
+  
+  // Create issue with proper naming format: {number}-{name}.md
+  const fileName = `${number}-${name}`;
+  await workspace.createIssue(fileName, issueContent);
 }

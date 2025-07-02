@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { ConfigManager } from '@/core/config-manager';
-import { GitSimulator } from '../utils/git-simulator';
-import { ProviderSimulator } from '../utils/provider-simulator';
-import { createIntegrationContext, cleanupIntegrationContext, createTestIssue, createTestConfig } from '../utils/integration-helpers';
-import type { IntegrationTestContext } from '../utils/integration-helpers';
+import { GitSimulator } from '../../helpers/setup/git-simulator';
+import { ProviderSimulator } from '../../helpers/setup/provider-simulator';
+import { createIntegrationContext, cleanupIntegrationContext, createTestIssue, createTestConfig } from '../../helpers/setup/integration-helpers';
+import type { IntegrationTestContext } from '../../helpers/setup/integration-helpers';
 import type { Issue } from '@/types/issue';
 
 describe('Issue Lifecycle Integration Tests', () => {
