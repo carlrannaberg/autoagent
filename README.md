@@ -13,18 +13,34 @@
 
 AutoAgent is a powerful npm package that enables running autonomous AI agents using Claude or Gemini for task execution. It converts complex bash scripts into a robust TypeScript-based solution with both CLI and programmatic APIs.
 
+### 🆕 What's New in v0.2.0
+
+- **`list` command**: Query issues, providers, and execution history with filtering and JSON output
+- **Enhanced `config` command**: Get/set individual values, show configuration sources
+- **Enhanced `status` command**: Query specific issues, view execution history
+- **Mock Provider**: Test without API calls using `AUTOAGENT_MOCK_PROVIDER=true`
+- **Issue name arguments**: Run specific issues by name: `autoagent run 5-implement-auth`
+- **Environment variable support**: Full configuration override via environment
+- **Improved error handling**: Better exit codes, validation, and error messages
+- **Cyclic dependency detection**: Prevents infinite loops in issue dependencies
+- **Status tracking**: Automatic tracking in `.autoagent/status.json`
+- **Vitest migration**: Faster, more reliable test suite
+
 ### Key Features
 
-- 🤖 **Multiple AI Providers**: Support for Claude (Anthropic) and Gemini (Google)
+- 🤖 **Multiple AI Providers**: Support for Claude (Anthropic), Gemini (Google), and Mock provider for testing
 - 🔄 **Automatic Failover**: Seamlessly switches between providers on rate limits
-- 📋 **Task Management**: Comprehensive issue and plan tracking system
+- 📋 **Task Management**: Comprehensive issue and plan tracking system with status management
 - 🔧 **Git Integration**: Automatic commits with co-authorship attribution
 - 📊 **Provider Learning**: Tracks performance and learns from execution patterns
+- 📝 **List Command**: Query issues, providers, and execution history with filtering
 - ⚡ **Async Execution**: Efficient async/await based architecture
-- 🛡️ **TypeScript**: Full type safety and IntelliSense support
+- 🛡️ **TypeScript**: Full type safety and IntelliSense support with strict mode
 - 🎯 **Retry Logic**: Intelligent retry with exponential backoff
 - 📁 **Template System**: Pre-built templates for issues and plans
 - 🚀 **CLI & API**: Use as a command-line tool or programmatically
+- 🔍 **Enhanced Error Handling**: Proper exit codes and descriptive error messages
+- 🌍 **Environment Variables**: Full support for configuration via environment
 
 ## Table of Contents
 
@@ -33,8 +49,10 @@ AutoAgent is a powerful npm package that enables running autonomous AI agents us
 - [CLI Usage](#cli-usage)
 - [Programmatic Usage](#programmatic-usage)
 - [Configuration](#configuration)
+- [Environment Variables](#environment-variables)
 - [Examples](#examples)
 - [Architecture](#architecture)
+- [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
@@ -108,8 +126,8 @@ autoagent run
 # Execute with specific provider
 autoagent run --provider gemini
 
-# Execute a specific issue
-autoagent run issues/1-add-authentication.md
+# Execute a specific issue (new in v0.2.0)
+autoagent run 1-add-authentication
 ```
 
 ## CLI Usage
@@ -123,8 +141,8 @@ Execute one or all pending issues.
 # Run next pending issue
 autoagent run
 
-# Run specific issue
-autoagent run issues/5-update-dependencies.md
+# Run specific issue (new in v0.2.0)
+autoagent run 5-update-dependencies
 
 # Run all pending issues
 autoagent run --all
@@ -137,6 +155,9 @@ autoagent run --provider gemini
 
 # Disable auto-commit
 autoagent run --no-auto-commit
+
+# Use mock provider for testing (new in v0.2.0)
+AUTOAGENT_MOCK_PROVIDER=true autoagent run
 ```
 
 #### `autoagent create <description>`
@@ -150,22 +171,31 @@ autoagent create "Implement user profile page"
 autoagent create "Add caching layer" --provider claude
 ```
 
-#### `autoagent status`
-Display project status and pending issues.
+#### `autoagent status [issue]` (enhanced in v0.2.0)
+Display project status, pending issues, or specific issue status.
 
 ```bash
+# Show overall project status
 autoagent status
+
+# Show specific issue status (new)
+autoagent status 5-update-dependencies
+
+# Show execution history (new)
+autoagent status --history
 ```
 
 Output:
 ```
-AutoAgent Status
-================
-Provider: claude (available)
-Pending Issues: 3
-Completed Issues: 12
-Next Issue: #16 - Add error handling
-Git: main branch (clean)
+📊 Project Status
+
+Total Issues:     15
+Completed:        12  
+Pending:          3
+
+Next Issue: 16-add-error-handling
+
+✅ Available Providers: claude, gemini
 ```
 
 #### `autoagent config`
@@ -189,6 +219,46 @@ autoagent config show
 
 # Clear rate limits
 autoagent config clear-limits
+
+# Get specific config value (new in v0.2.0)
+autoagent config get provider
+autoagent config get provider --show-source
+
+# Set any config value (new in v0.2.0)
+autoagent config set logLevel debug
+autoagent config set retryAttempts 5
+```
+
+#### `autoagent list <type>` (new in v0.2.0)
+List issues, providers, or execution history.
+
+```bash
+# List all issues
+autoagent list issues
+
+# List issues by status
+autoagent list issues --status pending
+autoagent list issues --status completed
+
+# List with JSON output
+autoagent list issues --json
+
+# List available providers
+autoagent list providers
+autoagent list providers --json
+
+# List execution history
+autoagent list executions
+autoagent list executions --json
+```
+
+Example output:
+```
+Found 3 issue(s):
+
+  ⏳ 1-setup-project (pending)
+  ✅ 2-add-tests (completed)
+  🔄 3-refactor-api (in_progress)
 ```
 
 #### `autoagent check`
@@ -357,6 +427,43 @@ AutoAgent uses a layered configuration system:
 
 For detailed configuration documentation, see [docs/CONFIG.md](docs/CONFIG.md).
 
+## Environment Variables
+
+AutoAgent supports configuration through environment variables, which take precedence over configuration files:
+
+### Core Configuration
+
+- `AUTOAGENT_PROVIDER` - Default AI provider (claude/gemini/mock)
+- `AUTOAGENT_VERBOSE` - Enable verbose output (true/false)
+- `AUTOAGENT_LOG_LEVEL` - Set log level (debug/info/warn/error)
+- `AUTOAGENT_AUTO_COMMIT` - Enable auto-commit (true/false)
+- `AUTOAGENT_RETRY_ATTEMPTS` - Number of retry attempts (default: 3)
+- `AUTOAGENT_MAX_TOKENS` - Maximum tokens per request
+
+### Mock Provider (for testing)
+
+- `AUTOAGENT_MOCK_PROVIDER` - Enable mock provider (true/false)
+- `AUTOAGENT_MOCK_DELAY` - Simulated execution delay in ms
+- `AUTOAGENT_MOCK_ERROR` - Simulate specific errors (timeout/rate-limit/auth-failed)
+- `AUTOAGENT_MOCK_FAIL_ISSUE` - Issue number to simulate failure
+
+### Debugging
+
+- `DEBUG` - Enable debug mode with stack traces (true/1)
+- `DEBUG_CLI_EXECUTOR` - Debug CLI command execution
+
+Example usage:
+```bash
+# Use mock provider with custom delay
+AUTOAGENT_MOCK_PROVIDER=true AUTOAGENT_MOCK_DELAY=500 autoagent run
+
+# Enable verbose debug output
+DEBUG=true AUTOAGENT_VERBOSE=true autoagent run --all
+
+# Override provider via environment
+AUTOAGENT_PROVIDER=gemini autoagent run
+```
+
 ## Agent Instructions (AGENT.md)
 
 AutoAgent uses the `AGENT.md` file to provide context to AI providers about your project. This file gives guidance to agentic coding tools on codebase structure, build/test commands, architecture, etc.
@@ -374,12 +481,32 @@ Learn more about the AGENT.md standard at [https://agent.md](https://agent.md).
 
 ## Examples
 
-### Example 1: Batch Processing
+### Example 1: Query Issues and Status
+
+```bash
+# List all pending issues
+autoagent list issues --status pending
+
+# Check specific issue status
+autoagent status 5-implement-auth
+
+# View recent executions
+autoagent status --history
+
+# Get issues in JSON format for scripting
+ISSUES=$(autoagent list issues --status pending --json)
+echo $ISSUES | jq '.[0].name'
+```
+
+### Example 2: Batch Processing with Mock Provider
 
 ```javascript
 const { AutonomousAgent, ConfigManager, FileManager } = require('autoagent-cli');
 
 async function processBatch() {
+  // Enable mock provider for testing
+  process.env.AUTOAGENT_MOCK_PROVIDER = 'true';
+  
   const config = new ConfigManager();
   const files = new FileManager();
   const agent = new AutonomousAgent(config, files);
@@ -395,7 +522,7 @@ async function processBatch() {
 }
 ```
 
-### Example 2: Provider Failover
+### Example 3: Provider Failover
 
 ```javascript
 const { createProvider, isProviderAvailable } = require('autoagent-cli');
@@ -418,12 +545,79 @@ async function executeWithFailover() {
 }
 ```
 
+### Example 4: Configuration Management
+
+```bash
+# Check where configuration is coming from
+autoagent config get provider --show-source
+# Output: provider = claude (from environment)
+
+# Override with environment variable
+AUTOAGENT_PROVIDER=gemini autoagent run
+
+# Set configuration programmatically
+autoagent config set retryAttempts 5
+autoagent config set logLevel debug
+
+# Validate configuration
+autoagent config set provider invalid-provider
+# Error: Invalid value for provider. Must be one of: claude, gemini, mock
+```
+
 More examples available in the [examples/](examples/) directory:
 - [basic-usage.js](examples/basic-usage.js) - Getting started
 - [provider-failover.js](examples/provider-failover.js) - Failover handling
 - [batch-execution.js](examples/batch-execution.js) - Batch processing
 - [configuration.js](examples/configuration.js) - Configuration management
 - [custom-integration.js](examples/custom-integration.js) - Advanced integration
+
+## Testing
+
+AutoAgent includes comprehensive testing support including a mock provider for CI/CD pipelines:
+
+### Using Mock Provider
+
+The mock provider simulates AI responses without making actual API calls:
+
+```bash
+# Run with mock provider
+AUTOAGENT_MOCK_PROVIDER=true autoagent run
+
+# Run tests in CI/CD
+AUTOAGENT_MOCK_PROVIDER=true npm test
+
+# Simulate specific scenarios
+AUTOAGENT_MOCK_ERROR=rate-limit autoagent run
+AUTOAGENT_MOCK_FAIL_ISSUE=3 autoagent run --all
+```
+
+### Running Tests
+
+```bash
+# Run all tests with Vitest
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run with coverage
+npm run test:coverage
+
+# Run specific test suites
+npm run test:unit        # Unit tests only
+npm run test:integration # Integration tests
+npm run test:e2e        # End-to-end tests
+
+# Run with Vitest UI
+npm run test:ui
+```
+
+### Test Structure
+
+- `test/unit/` - Unit tests for individual components
+- `test/integration/` - Integration tests for component interactions
+- `test/e2e/` - End-to-end CLI tests
+- `test/benchmark/` - Performance benchmarks
 
 ## Architecture
 
@@ -439,7 +633,8 @@ More examples available in the [examples/](examples/) directory:
  │               │     │                  │    │                 │
  │ • Issues      │     │ • User Config    │    │ • Claude        │
  │ • Plans       │     │ • Rate Limits    │    │ • Gemini        │
- │ • Todo List   │     │ • Preferences    │    │ • Failover      │
+ │ • Todo List   │     │ • Preferences    │    │ • Mock (Test)   │
+ │ • Status      │     │ • Env Variables  │    │ • Failover      │
  └───────────────┘     └──────────────────┘    └─────────────────┘
 ```
 
@@ -482,6 +677,30 @@ autoagent config set-auto-commit true
 # Clean and rebuild
 rm -rf dist
 npm run build
+```
+
+**Exit code 1 with no clear error**
+```bash
+# Enable debug mode to see stack traces
+DEBUG=true autoagent run
+
+# Check for corrupted config
+autoagent config show
+```
+
+**Cyclic dependency detected**
+```bash
+# List all issues to check dependencies
+autoagent list issues --json | jq '.[] | {name, dependencies}'
+
+# Fix by editing issue files to remove circular references
+```
+
+**Mock provider not working**
+```bash
+# Ensure environment variable is set
+export AUTOAGENT_MOCK_PROVIDER=true
+autoagent list providers  # Should show mock as available
 ```
 
 For more troubleshooting help, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
