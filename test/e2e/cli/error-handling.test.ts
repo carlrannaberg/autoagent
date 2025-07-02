@@ -43,7 +43,12 @@ describe('Error Handling E2E', () => {
     });
 
     it('should handle corrupted configuration file', async () => {
-      await context.workspace.createFile('.autoagent.json', '{ invalid json }');
+      // First initialize the project
+      await context.workspace.initGit();
+      await context.cli.execute(['init']);
+      
+      // Then corrupt the actual config file
+      await context.workspace.createFile('.autoagent/config.json', '{ invalid json }');
 
       const result = await context.cli.execute(['config', 'get']);
 
@@ -54,9 +59,12 @@ describe('Error Handling E2E', () => {
     it('should handle permission errors', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
+      
+      // Ensure config exists by setting a value
+      await context.cli.execute(['config', 'set', 'provider', 'claude']);
 
       // Make config file read-only
-      const configPath = path.join(context.workspace.getPath(), '.autoagent.json');
+      const configPath = path.join(context.workspace.getPath(), '.autoagent/config.json');
       await fs.chmod(configPath, 0o444);
 
       const result = await context.cli.execute(['config', 'set', 'provider', 'gemini']);
@@ -83,7 +91,7 @@ describe('Error Handling E2E', () => {
     it('should handle provider timeout', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/timeout-test.md', '# Test Issue');
+      await context.workspace.createFile('issues/timeout-test.md', '# Issue 1: Test Issue\n\n## Requirements\nTest');
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_TIMEOUT', 'true');
@@ -97,7 +105,7 @@ describe('Error Handling E2E', () => {
     it('should handle provider rate limit', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/rate-limit-test.md', '# Test Issue');
+      await context.workspace.createFile('issues/rate-limit-test.md', '# Issue 1: Test Issue\n\n## Requirements\nTest');
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_RATE_LIMIT', 'true');
@@ -105,13 +113,13 @@ describe('Error Handling E2E', () => {
       const result = await context.cli.execute(['run', 'rate-limit-test']);
 
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('rate limit');
+      expect(result.stderr.toLowerCase()).toContain('rate limit');
     });
 
     it('should handle provider authentication failure', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/auth-test.md', '# Test Issue');
+      await context.workspace.createFile('issues/auth-test.md', '# Issue 1: Test Issue\n\n## Requirements\nTest');
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_AUTH_FAIL', 'true');
@@ -119,7 +127,7 @@ describe('Error Handling E2E', () => {
       const result = await context.cli.execute(['run', 'auth-test']);
 
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('authentication');
+      expect(result.stderr.toLowerCase()).toContain('authentication');
     });
   });
 
@@ -169,7 +177,7 @@ describe('Error Handling E2E', () => {
     it('should recover from partial execution', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/partial-test.md', '# Test Issue');
+      await context.workspace.createFile('issues/partial-test.md', '# Issue 1: Test Issue\n\n## Requirements\nTest');
 
       // Simulate partial execution
       await context.workspace.createFile('.autoagent/status.json', JSON.stringify({
@@ -189,7 +197,7 @@ describe('Error Handling E2E', () => {
     it('should clean up after failed execution', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/cleanup-test.md', '# Test Issue');
+      await context.workspace.createFile('issues/cleanup-test.md', '# Issue 1: Test Issue\n\n## Requirements\nTest');
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_FAIL', 'true');

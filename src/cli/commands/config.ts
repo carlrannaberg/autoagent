@@ -28,6 +28,25 @@ export function registerConfigCommand(program: Command): void {
         }
         
         const configManager = new ConfigManager();
+        
+        // Check for corrupted JSON in config files before loading
+        const localConfigPath = path.join(process.cwd(), '.autoagent', 'config.json');
+        let hasCorruptedJson = false;
+        try {
+          const content = await fs.readFile(localConfigPath, 'utf-8');
+          JSON.parse(content); // This will throw if JSON is invalid
+        } catch (error) {
+          if (error instanceof SyntaxError) {
+            hasCorruptedJson = true;
+          }
+          // File doesn't exist or other errors, which is fine
+        }
+        
+        if (hasCorruptedJson) {
+          Logger.error('Failed to parse configuration');
+          process.exit(1);
+        }
+        
         await configManager.loadConfig();
         const currentConfig = configManager.getConfig();
         
@@ -64,7 +83,10 @@ export function registerConfigCommand(program: Command): void {
           }
         }
       } catch (error) {
-        Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        // Don't double-log JSON errors that were already handled
+        if (!(error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON')))) {
+          Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
         process.exit(1);
       }
     });
@@ -88,7 +110,15 @@ export function registerConfigCommand(program: Command): void {
         }
         
         const configManager = new ConfigManager();
-        await configManager.loadConfig();
+        try {
+          await configManager.loadConfig();
+        } catch (error) {
+          if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
+            Logger.error('Failed to parse configuration');
+            process.exit(1);
+          }
+          throw error;
+        }
         
         // Validate the key and value
         const validatedValue: unknown = validateConfigValue(key, value);
@@ -96,10 +126,23 @@ export function registerConfigCommand(program: Command): void {
         const updates: Partial<UserConfig> = {};
         setConfigValue(key, validatedValue, updates);
         
-        await configManager.updateConfig(updates, options.global === true ? 'global' : 'local');
+        try {
+          await configManager.updateConfig(updates, options.global === true ? 'global' : 'local');
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === 'EACCES' || (error as NodeJS.ErrnoException).code === 'EPERM') {
+            Logger.error('Permission denied: Cannot write to configuration file');
+            process.exit(1);
+          }
+          throw error;
+        }
         Logger.success(`Configuration updated: ${key} = ${value}`);
       } catch (error) {
-        Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        // Don't double-log errors that were already handled
+        const isJsonError = error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'));
+        const isPermissionError = (error as NodeJS.ErrnoException).code === 'EACCES' || (error as NodeJS.ErrnoException).code === 'EPERM';
+        if (!isJsonError && !isPermissionError) {
+          Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
         process.exit(1);
       }
     });
@@ -143,7 +186,15 @@ export function registerConfigCommand(program: Command): void {
     .action(async (filename: string) => {
       try {
         const configManager = new ConfigManager();
-        await configManager.loadConfig();
+        try {
+          await configManager.loadConfig();
+        } catch (error) {
+          if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
+            Logger.error('Failed to parse configuration');
+            process.exit(1);
+          }
+          throw error;
+        }
         const currentConfig = configManager.getConfig();
         
         const exportPath = path.resolve(process.cwd(), filename);
@@ -205,6 +256,15 @@ export function registerConfigCommand(program: Command): void {
     .action(async (provider: string, options: { global?: boolean }) => {
       try {
         const configManager = new ConfigManager();
+        try {
+          await configManager.loadConfig();
+        } catch (error) {
+          if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
+            Logger.error('Failed to parse configuration');
+            process.exit(1);
+          }
+          throw error;
+        }
         await configManager.setProvider(provider as ProviderName, options.global);
         Logger.success(`Default provider set to ${provider}`);
       } catch (error) {
@@ -220,6 +280,15 @@ export function registerConfigCommand(program: Command): void {
     .action(async (providers: string[], options: { global?: boolean }) => {
       try {
         const configManager = new ConfigManager();
+        try {
+          await configManager.loadConfig();
+        } catch (error) {
+          if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
+            Logger.error('Failed to parse configuration');
+            process.exit(1);
+          }
+          throw error;
+        }
         await configManager.setFailoverProviders(providers, options.global);
         Logger.success(`Failover providers set to: ${providers.join(', ')}`);
       } catch (error) {
@@ -235,7 +304,16 @@ export function registerConfigCommand(program: Command): void {
     .action(async (enabled: string, options: { global?: boolean }) => {
       try {
         const configManager = new ConfigManager();
-        const userConfig = await configManager.loadConfig();
+        let userConfig;
+        try {
+          userConfig = await configManager.loadConfig();
+        } catch (error) {
+          if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
+            Logger.error('Failed to parse configuration');
+            process.exit(1);
+          }
+          throw error;
+        }
         userConfig.gitAutoCommit = enabled === 'true';
         await configManager.saveConfig(userConfig, options.global);
         Logger.success(`Auto-commit ${userConfig.gitAutoCommit ? 'enabled' : 'disabled'}`);
@@ -252,7 +330,16 @@ export function registerConfigCommand(program: Command): void {
     .action(async (enabled: string, options: { global?: boolean }) => {
       try {
         const configManager = new ConfigManager();
-        const userConfig = await configManager.loadConfig();
+        let userConfig;
+        try {
+          userConfig = await configManager.loadConfig();
+        } catch (error) {
+          if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
+            Logger.error('Failed to parse configuration');
+            process.exit(1);
+          }
+          throw error;
+        }
         userConfig.includeCoAuthoredBy = enabled === 'true';
         await configManager.saveConfig(userConfig, options.global);
         Logger.success(`Co-authorship ${userConfig.includeCoAuthoredBy ? 'enabled' : 'disabled'}`);
@@ -268,6 +355,15 @@ export function registerConfigCommand(program: Command): void {
     .action(async () => {
       try {
         const configManager = new ConfigManager();
+        try {
+          await configManager.loadConfig();
+        } catch (error) {
+          if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
+            Logger.error('Failed to parse configuration');
+            process.exit(1);
+          }
+          throw error;
+        }
         await configManager.showConfig();
       } catch (error) {
         Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);

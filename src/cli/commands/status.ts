@@ -34,7 +34,7 @@ export function registerStatusCommand(program: Command): void {
             executions.forEach((exec) => {
               const statusIcon = exec.status === 'completed' ? '✅' : 
                                 exec.status === 'failed' ? '❌' : '🔄';
-              Logger.info(`  ${statusIcon} ${exec.id} (${exec.status}) - ${new Date(exec.timestamp).toLocaleString()}`);
+              Logger.info(`  ${statusIcon} ${exec.issue} (${exec.status}) - ${new Date(exec.timestamp).toLocaleString()}`);
             });
           } catch {
             Logger.info('No execution history found');
@@ -66,17 +66,36 @@ export function registerStatusCommand(program: Command): void {
           const statusFile = path.join(options?.workspace ?? process.cwd(), '.autoagent', 'status.json');
           
           let issueStatus = 'pending';
+          let startedAt: string | undefined;
           try {
             const statusContent = await fs.readFile(statusFile, 'utf-8');
-            const statusData = JSON.parse(statusContent) as Record<string, { status?: string; [key: string]: unknown }>;
+            const statusData = JSON.parse(statusContent) as Record<string, { status?: string; startedAt?: string; [key: string]: unknown }>;
             const issueData = statusData[issueArg];
             issueStatus = issueData?.status ?? 'pending';
+            startedAt = issueData?.startedAt;
           } catch {
             // Status file might not exist, default to pending
           }
           
           Logger.info(`${issueArg}`);
           Logger.info(`Status: ${issueStatus}`);
+          
+          // If running, show how long ago it was started
+          if (issueStatus === 'running' && startedAt !== undefined) {
+            const startTime = new Date(startedAt).getTime();
+            const now = Date.now();
+            const elapsed = now - startTime;
+            const hours = Math.floor(elapsed / (1000 * 60 * 60));
+            const minutes = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (hours > 0) {
+              Logger.info(`${hours} hour${hours > 1 ? 's' : ''} ago`);
+            } else if (minutes > 0) {
+              Logger.info(`${minutes} minute${minutes > 1 ? 's' : ''} ago`);
+            } else {
+              Logger.info('Just started');
+            }
+          }
           return;
         }
 

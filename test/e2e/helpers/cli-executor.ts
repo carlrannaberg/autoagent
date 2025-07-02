@@ -51,7 +51,9 @@ export class CliExecutor {
           status: execError.status,
           signal: execError.signal,
           killed: execError.killed,
-          message: execError.message
+          message: execError.message,
+          exitCode: execError.exitCode,
+          stderr: execError.stderr?.substring(0, 200)
         });
       }
       
@@ -62,7 +64,10 @@ export class CliExecutor {
       // - error.signal: when the process is killed by a signal
       // - error.code can also be a string like 'ENOENT' for system errors
       
-      if (typeof execError.code === 'number') {
+      if (execError.exitCode !== undefined && typeof execError.exitCode === 'number') {
+        // Modern Node.js provides exitCode directly
+        exitCode = execError.exitCode;
+      } else if (typeof execError.code === 'number') {
         // This is the exit code from the child process
         exitCode = execError.code;
       } else if (execError.status !== undefined && typeof execError.status === 'number') {

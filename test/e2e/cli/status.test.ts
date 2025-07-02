@@ -56,9 +56,9 @@ describe('autoagent status', () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Recent Executions');
-    expect(result.stdout).toContain('exec-1');
+    expect(result.stdout).toContain('test-issue');
     expect(result.stdout).toContain('completed');
-    expect(result.stdout).toContain('exec-2');
+    expect(result.stdout).toContain('test-issue-2');
     expect(result.stdout).toContain('failed');
   });
 

@@ -95,11 +95,21 @@ async function listIssues(workspace: string, options: { status?: string; json?: 
   }
 
   // Parse issues from files
-  const issuesFromFiles = issueFiles.map(file => {
+  const issuesFromFiles = await Promise.all(issueFiles.map(async file => {
     const name = file.replace('.md', '');
     const status = statusData[name]?.status ?? 'pending';
-    return { name, status, file };
-  });
+    
+    // Try to read the issue to validate format
+    try {
+      const fileManager = new (await import('../../utils/file-manager')).FileManager(workspace);
+      const issueFile = path.join(issuesDir, file);
+      await fileManager.readIssue(issueFile);
+      return { name, status, file, valid: true };
+    } catch (error) {
+      // Invalid format
+      return { name, status: 'Invalid format', file, valid: false };
+    }
+  }));
 
   // Also include issues that only exist in status.json
   const issuesFromStatus = Object.entries(statusData)

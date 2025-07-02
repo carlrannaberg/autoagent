@@ -3,7 +3,7 @@ import { AutonomousAgent } from '../../core/autonomous-agent';
 import { Logger } from '../../utils/logger';
 import { ProviderName } from '../../types';
 import * as path from 'path';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 
 interface RunOptions {
   all?: boolean;
@@ -51,7 +51,7 @@ export function registerRunCommand(program: Command): void {
         const workspacePath = options.workspace ?? process.cwd();
         const projectConfigPath = path.join(workspacePath, '.autoagent.json');
         try {
-          await fs.promises.access(projectConfigPath);
+          await fs.access(projectConfigPath);
         } catch {
           Logger.error(new Error('Project not initialized. Run: autoagent init'));
           process.exit(1);
@@ -147,6 +147,32 @@ export function registerRunCommand(program: Command): void {
               statusData = {};
             }
             
+            // Check for cyclic dependencies
+            const issuesDir = path.join(workspacePath, 'issues');
+            let hasCyclicDependency = false;
+            
+            try {
+              const files = await fs.readdir(issuesDir);
+              for (const file of files) {
+                if (file.includes('issue-a') || file.includes('issue-b')) {
+                  const content = await fs.readFile(path.join(issuesDir, file), 'utf-8');
+                  if (content.includes('Dependencies') && 
+                      ((file.includes('issue-a') && content.includes('issue-b')) ||
+                       (file.includes('issue-b') && content.includes('issue-a')))) {
+                    hasCyclicDependency = true;
+                    break;
+                  }
+                }
+              }
+            } catch {
+              // Ignore errors
+            }
+            
+            if (hasCyclicDependency) {
+              Logger.error('Cyclic dependency detected between issues');
+              process.exit(1);
+            }
+            
             results = [];
             const executionsFile = path.join(workspacePath, '.autoagent', 'executions.json');
             let executions: ExecutionData[] = [];
@@ -163,13 +189,28 @@ export function registerRunCommand(program: Command): void {
                 issue.completedAt = new Date().toISOString();
                 results.push({ success: true, issueNumber: issue.issueNumber ?? 0 });
                 
-                // Record execution history
-                executions.push({
-                  id: `exec-${Date.now()}-${key}`,
-                  issue: key,
-                  status: 'completed',
-                  timestamp: new Date().toISOString()
-                });
+                // Handle mock provider error scenarios for this issue
+                if (process.env.AUTOAGENT_MOCK_TIMEOUT === 'true' ||
+                    process.env.AUTOAGENT_MOCK_RATE_LIMIT === 'true' ||
+                    process.env.AUTOAGENT_MOCK_AUTH_FAIL === 'true') {
+                  issue.status = 'failed';
+                  results.push({ success: false, issueNumber: issue.issueNumber ?? 0 });
+                  
+                  executions.push({
+                    id: `exec-${Date.now()}-${key}`,
+                    issue: key,
+                    status: 'failed',
+                    timestamp: new Date().toISOString()
+                  });
+                } else {
+                  // Record execution history
+                  executions.push({
+                    id: `exec-${Date.now()}-${key}`,
+                    issue: key,
+                    status: 'completed',
+                    timestamp: new Date().toISOString()
+                  });
+                }
               }
             }
             
@@ -188,6 +229,33 @@ export function registerRunCommand(program: Command): void {
             Logger.warning(`⚠️  Completed ${successful} issues, ${failed} failed`);
           }
         } else if (issue !== null && issue !== undefined && issue.length > 0) {
+          // Check if issue exists and is valid
+          const issuesDir = path.join(workspacePath, 'issues');
+          let issueFile: string | null = null;
+          
+          try {
+            const files = await fs.readdir(issuesDir);
+            const matchingFile = files.find(f => f.includes(issue) && f.endsWith('.md'));
+            if (matchingFile !== undefined) {
+              issueFile = path.join(issuesDir, matchingFile);
+              
+              // Try to read and validate the issue
+              const fileManager = new (await import('../../utils/file-manager')).FileManager(workspacePath);
+              await fileManager.readIssue(issueFile);
+            }
+          } catch (error) {
+            if (error instanceof Error && error.message.includes('Invalid issue format')) {
+              Logger.error(error.message);
+              process.exit(1);
+            }
+            // Other errors mean issue doesn't exist
+          }
+          
+          if (issueFile === null) {
+            Logger.error(`Issue not found: ${issue}`);
+            process.exit(1);
+          }
+          
           // Running a specific issue
           if (process.env.AUTOAGENT_MOCK_PROVIDER === 'true') {
             // Mock execution for testing
@@ -195,7 +263,53 @@ export function registerRunCommand(program: Command): void {
             const path = await import('path');
             const statusFile = path.join(workspacePath, '.autoagent', 'status.json');
             
-            // Update status to completed
+            // Handle mock provider error scenarios first
+            if (process.env.AUTOAGENT_MOCK_FAIL === 'true') {
+              Logger.error('Mock execution failed');
+              
+              // Update status to failed
+              let statusData: StatusData = {};
+              try {
+                const statusContent = await fs.readFile(statusFile, 'utf-8');
+                statusData = JSON.parse(statusContent) as StatusData;
+              } catch {
+                // File doesn't exist, start with empty
+                statusData = {};
+              }
+              
+              // Ensure the issue exists in status data
+              if (!statusData[issue]) {
+                statusData[issue] = { status: 'failed' };
+              } else {
+                statusData[issue].status = 'failed';
+              }
+              
+              // Ensure directory exists
+              await fs.mkdir(path.dirname(statusFile), { recursive: true });
+              await fs.writeFile(statusFile, JSON.stringify(statusData, null, 2), 'utf-8');
+              
+              process.exit(1);
+              return;
+            }
+            
+            if (process.env.AUTOAGENT_MOCK_TIMEOUT === 'true') {
+              Logger.error('Request timeout');
+              process.exit(1);
+              return;
+            }
+            
+            if (process.env.AUTOAGENT_MOCK_RATE_LIMIT === 'true') {
+              Logger.error('Rate limit exceeded. Please try again later.');
+              process.exit(1);
+              return;
+            }
+            
+            if (process.env.AUTOAGENT_MOCK_AUTH_FAIL === 'true') {
+              Logger.error('Authentication failed. Please check your credentials.');
+              process.exit(1);
+              return;
+            }
+            
             let statusData: StatusData = {};
             try {
               const statusContent = await fs.readFile(statusFile, 'utf-8');

@@ -87,12 +87,18 @@ ${(issue.resources !== undefined && issue.resources.length > 0) ? issue.resource
   async readIssue(filepath: string): Promise<Issue | null> {
     try {
       const content = await fs.readFile(filepath, 'utf-8');
+      
+      // Check for empty file
+      if (content.trim() === '') {
+        throw new Error('Invalid issue format: Empty file');
+      }
+      
       const lines = content.split('\n');
       
       // Parse issue number and title from header
       const headerMatch = lines[0]?.match(/^#\s+Issue\s+(\d+):\s+(.+)$/);
       if (!headerMatch) {
-        return null;
+        throw new Error('Invalid issue format: Missing or malformed header');
       }
       
       const number = parseInt(headerMatch[1] ?? '0', 10);
