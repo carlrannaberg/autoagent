@@ -23,6 +23,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add git instructions to AGENT.md for updating CHANGELOG.md before commits
 
+## [0.1.4] - 2025-07-01
+
+### Fixed
+- Fixed Gemini provider command-line integration to use correct flags
+  - Changed from positional arguments to `--all_files` flag for directory access
+  - Now passes prompts via stdin instead of command arguments for reliability with long prompts
+- Fixed streaming output handling for Gemini provider
+  - Gemini outputs plain text instead of JSON, requiring different parsing logic
+  - Provider now correctly displays Gemini's output without JSON parsing errors
+- Added missing error event handler in process spawning to catch spawn failures
+
+### Added
+- Comprehensive test scripts for multi-provider testing support
+  - `test-autoagent.sh` provides full end-to-end testing of all AutoAgent features
+  - `test-single-gemini.sh` for isolated Gemini provider testing
+  - Tests cover issue creation, plan generation, execution, and provider failover
+
 ## [0.1.3] - 2025-07-01
 
 ### Changed
