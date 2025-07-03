@@ -124,7 +124,7 @@ describe('Multi-Provider Integration Tests', () => {
         errorRate: 0.5  // 50% error rate (50% success)
       }));
 
-      const testRuns = 20;
+      const testRuns = 100; // Increased for more reliable statistics
       const successRates: Record<string, number> = {};
 
       for (const [name, provider] of providers) {
@@ -141,8 +141,13 @@ describe('Multi-Provider Integration Tests', () => {
         provider.reset();
       }
 
-      expect(successRates.claude).toBeGreaterThan(successRates.gemini);
-      expect(successRates.gemini).toBeGreaterThan(successRates.gpt4);
+      // Check that success rates are within expected ranges with some tolerance
+      expect(successRates.claude).toBeGreaterThanOrEqual(0.8); // Should be ~90%
+      expect(successRates.claude).toBeLessThanOrEqual(1.0);
+      expect(successRates.gemini).toBeGreaterThanOrEqual(0.6); // Should be ~70%
+      expect(successRates.gemini).toBeLessThanOrEqual(0.8);
+      expect(successRates.gpt4).toBeGreaterThanOrEqual(0.4); // Should be ~50%
+      expect(successRates.gpt4).toBeLessThanOrEqual(0.6);
       
       const bestProvider = Object.entries(successRates)
         .sort(([, a], [, b]) => b - a)[0][0];
