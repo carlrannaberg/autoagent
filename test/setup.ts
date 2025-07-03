@@ -33,11 +33,11 @@ let consoleSpies: {
 };
 
 // Test type detection
-const testType = process.env.TEST_TYPE || detectTestType();
+const testType = process.env.TEST_TYPE ?? detectTestType();
 
 function detectTestType(): string {
   const testFile = expect.getState()?.testPath;
-  if (!testFile) {return 'unit';}
+  if (testFile === null || testFile === undefined || testFile === '') {return 'unit';}
   
   if (testFile.includes('/unit/')) {return 'unit';}
   if (testFile.includes('/integration/')) {return 'integration';}

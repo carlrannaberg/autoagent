@@ -21,18 +21,18 @@ const { createProvider, getFirstAvailableProvider, mockFiles, mockFileContents }
 
 vi.mock('fs/promises', () => ({
   default: {
-    readdir: vi.fn().mockImplementation(async (dir: string) => {
-      return mockFiles.get(dir) ?? [];
+    readdir: vi.fn().mockImplementation((dir: string) => {
+      return Promise.resolve(mockFiles.get(dir) ?? []);
     }),
-    readFile: vi.fn().mockImplementation(async (path: string) => {
-      return Buffer.from(mockFileContents.get(path) ?? 'Template content');
+    readFile: vi.fn().mockImplementation((path: string) => {
+      return Promise.resolve(Buffer.from(mockFileContents.get(path) ?? 'Template content'));
     })
   },
-  readdir: vi.fn().mockImplementation(async (dir: string) => {
-    return mockFiles.get(dir) ?? [];
+  readdir: vi.fn().mockImplementation((dir: string) => {
+    return Promise.resolve(mockFiles.get(dir) ?? []);
   }),
-  readFile: vi.fn().mockImplementation(async (path: string) => {
-    return Buffer.from(mockFileContents.get(path) ?? 'Template content');
+  readFile: vi.fn().mockImplementation((path: string) => {
+    return Promise.resolve(Buffer.from(mockFileContents.get(path) ?? 'Template content'));
   })
 }));
 
@@ -101,6 +101,10 @@ describe('AutonomousAgent', () => {
       join: (...args: string[]): string => args.join('/'),
       dirname: (p: string): string => p.substring(0, p.lastIndexOf('/')),
       basename: (p: string): string => p.substring(p.lastIndexOf('/') + 1),
+      extname: (p: string): string => {
+        const lastDot = p.lastIndexOf('.');
+        return lastDot > 0 ? p.substring(lastDot) : '';
+      },
       isAbsolute: (p: string): boolean => p.startsWith('/')
     }));
 
@@ -129,7 +133,7 @@ describe('AutonomousAgent', () => {
       return provider;
     });
 
-    getFirstAvailableProvider.mockImplementation(async (preferredProviders?: string[]) => {
+    getFirstAvailableProvider.mockImplementation((preferredProviders?: string[]) => {
       const order = preferredProviders || ['claude', 'gemini', 'mock'];
       for (const name of order) {
         const provider = testProviders.get(name);
@@ -137,7 +141,7 @@ describe('AutonomousAgent', () => {
           return provider;
         }
       }
-      return null;
+      return Promise.resolve(null);
     });
 
     // Set up file system structure for issues and plans

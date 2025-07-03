@@ -35,7 +35,7 @@ describe('CLI Smoke Tests', () => {
       expect.fail('Should have thrown an error');
     } catch (error: any) {
       expect(error.code).toBe(1);
-      expect(error.stderr || error.stdout).toContain('Unknown command');
+      expect((error.stderr ?? '') + (error.stdout ?? '')).toContain('Unknown command');
     }
   });
 
@@ -70,7 +70,7 @@ describe('CLI Environment Smoke Tests', () => {
     expect(packageInfo.dependencies).toBeDefined();
     
     // Check for critical runtime dependencies
-    const dependencies = packageInfo.dependencies || {};
+    const dependencies = packageInfo.dependencies ?? {};
     expect(dependencies).toHaveProperty('commander');
     expect(dependencies).toHaveProperty('chalk');
   });

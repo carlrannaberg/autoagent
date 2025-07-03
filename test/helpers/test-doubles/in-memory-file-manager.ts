@@ -43,7 +43,7 @@ export class InMemoryFileManager {
 
   readTodoList(): string[] {
     return this.todos.map((todo: any) => 
-      `- [${todo.completed ? 'x' : ' '}] Issue #${todo.issueNumber}: ${todo.title}`
+      `- [${todo.completed === true ? 'x' : ' '}] Issue #${todo.issueNumber}: ${todo.title}`
     );
   }
 
@@ -77,12 +77,12 @@ export class InMemoryFileManager {
   }
 
   getNextIssue(): { number: number; title: string } | null {
-    const pending = this.todos.find((t: any) => t.completed === null || t.completed === undefined || !t.completed);
+    const pending = this.todos.find((t: any) => t.completed === null || t.completed === undefined || t.completed === false);
     return pending !== null && pending !== undefined ? { number: pending.issueNumber, title: pending.title } : null;
   }
   
   getNextPendingIssue(): number | null {
-    const pending = this.todos.find((t: any) => t.completed === null || t.completed === undefined || !t.completed);
+    const pending = this.todos.find((t: any) => t.completed === null || t.completed === undefined || t.completed === false);
     return pending !== null && pending !== undefined ? pending.issueNumber : null;
   }
 
@@ -92,7 +92,7 @@ export class InMemoryFileManager {
   }
 
   readTodo(): string {
-    const pendingTodos = this.todos.filter((t: any) => t.completed === null || t.completed === undefined || !t.completed);
+    const pendingTodos = this.todos.filter((t: any) => t.completed === null || t.completed === undefined || t.completed === false);
     const completedTodos = this.todos.filter(t => t.completed);
     
     let content = '## Pending Issues\n';

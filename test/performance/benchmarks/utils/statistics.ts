@@ -52,7 +52,7 @@ export function calculateStatistics(values: number[]): StatisticalSummary {
   
   // Mode calculation
   const frequency = new Map<number, number>();
-  values.forEach(val => frequency.set(val, (frequency.get(val) || 0) + 1));
+  values.forEach(val => frequency.set(val, (frequency.get(val) ?? 0) + 1));
   const maxFreq = Math.max(...frequency.values());
   const mode = Array.from(frequency.entries())
     .filter(([_, freq]) => freq === maxFreq)
@@ -157,7 +157,7 @@ export function compareDatasets(baseline: number[], current: number[]): Comparis
   const tStatistic = (stats2.mean - stats1.mean) / pooledSE;
   
   // Degrees of freedom (Welch-Satterthwaite equation)
-  const df = Math.pow(
+  const _df = Math.pow(
     (stats1.variance / stats1.count) + (stats2.variance / stats2.count), 2
   ) / (
     Math.pow(stats1.variance / stats1.count, 2) / (stats1.count - 1) +
@@ -234,7 +234,7 @@ function calculateKurtosis(values: number[], mean: number, stdDev: number): numb
 /**
  * Get t-critical value (simplified approximation)
  */
-function getTCritical(df: number, alpha: number): number {
+function getTCritical(df: number, _alpha: number): number {
   // Simplified approximation for t-critical values
   // In practice, would use a proper t-distribution table
   if (df >= 30) {return 1.96;} // z-critical for large samples
