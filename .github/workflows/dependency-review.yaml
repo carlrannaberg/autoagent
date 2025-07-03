@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - 'package.json'
-      - 'package-lock.json'
 
 permissions:
   contents: read
@@ -18,12 +17,22 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
     
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Generate lock file for dependency review
+      run: |
+        # Generate a temporary package-lock.json for dependency review
+        # This is only for CI analysis, not committed to the repo
+        npm install --package-lock-only
+    
     - name: Dependency Review
       uses: actions/dependency-review-action@v4
       with:
         fail-on-severity: high
         allow-licenses: MIT, Apache-2.0, BSD-3-Clause, BSD-2-Clause, ISC
-        deny-licenses: GPL-3.0, AGPL-3.0
         comment-summary-in-pr: true
     
     - name: Check dependency size impact
