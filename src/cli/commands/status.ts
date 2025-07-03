@@ -8,19 +8,21 @@ export function registerStatusCommand(program: Command): void {
     .description('Show current status')
     .argument('[issue]', 'Issue name or number to check specific status')
     .option('--history', 'Show execution history')
-    .option('-w, --workspace <path>', 'Workspace directory', process.cwd())
+    .option('-w, --workspace <path>', 'Workspace directory')
     .action(async (issueArg?: string, options?: { workspace?: string; history?: boolean }) => {
       try {
+        const workspace = options?.workspace ?? process.cwd();
+        
         const agent = new AutonomousAgent({
           provider: 'claude',
-          workspace: options?.workspace
+          workspace
         });
 
         if (options?.history === true) {
           // Show execution history
           const fs = await import('fs/promises');
           const path = await import('path');
-          const executionsFile = path.join(options?.workspace ?? process.cwd(), '.autoagent', 'executions.json');
+          const executionsFile = path.join(workspace, '.autoagent', 'executions.json');
           
           try {
             const content = await fs.readFile(executionsFile, 'utf-8');
@@ -48,7 +50,7 @@ export function registerStatusCommand(program: Command): void {
           const path = await import('path');
           
           // Check if issue exists by looking for issue files
-          const issuesDir = path.join(options?.workspace ?? process.cwd(), 'issues');
+          const issuesDir = path.join(workspace, 'issues');
           let issueExists = false;
           
           try {
@@ -63,7 +65,7 @@ export function registerStatusCommand(program: Command): void {
             process.exit(1);
           }
           
-          const statusFile = path.join(options?.workspace ?? process.cwd(), '.autoagent', 'status.json');
+          const statusFile = path.join(workspace, '.autoagent', 'status.json');
           
           let issueStatus = 'pending';
           let startedAt: string | undefined;

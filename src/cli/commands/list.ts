@@ -23,7 +23,7 @@ export function registerListCommand(program: Command): void {
     .description('List issues, providers, or executions')
     .option('-s, --status <status>', 'Filter by status (for issues)')
     .option('--json', 'Output in JSON format')
-    .option('-w, --workspace <path>', 'Workspace directory', process.cwd())
+    .option('-w, --workspace <path>', 'Workspace directory')
     .action(async (type: string, options: { status?: string; json?: boolean; workspace?: string }) => {
       try {
         const workspace = options.workspace ?? process.cwd();

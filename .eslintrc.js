@@ -62,7 +62,7 @@ module.exports = {
       }
     },
     {
-      files: ['test/benchmarks/**/*.ts'],
+      files: ['test/benchmarks/**/*.ts', 'test/performance/benchmarks/**/*.ts'],
       rules: {
         'no-console': 'off'
       }

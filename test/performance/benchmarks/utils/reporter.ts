@@ -60,7 +60,7 @@ export class BenchmarkReporter {
       comparisons: this.compareWithBaselines()
     };
 
-    if (outputPath !== undefined && outputPath !== '') {
+    if (outputPath !== undefined && outputPath !== null && outputPath !== '') {
       await this.saveReport(report, outputPath);
     }
 
@@ -78,7 +78,7 @@ export class BenchmarkReporter {
         
         // Perform statistical test if we have raw samples
         let statisticalTest: ComparisonTest | undefined;
-        if (result.rawSamples && result.rawSamples.length > 5) {
+        if (result.rawSamples !== null && result.rawSamples !== undefined && result.rawSamples.length > 5) {
           // Create synthetic baseline samples for comparison
           // In practice, you'd store historical samples
           const baselineSamples = Array(result.rawSamples.length)
@@ -90,7 +90,7 @@ export class BenchmarkReporter {
         
         // Determine regression based on both magnitude and statistical significance
         let regression = percentChange > 10; // Default threshold
-        if (statisticalTest?.significant && percentChange > 5) {
+        if (statisticalTest?.significant === true && percentChange > 5) {
           regression = true; // Lower threshold if statistically significant
         }
         
@@ -149,8 +149,8 @@ export class BenchmarkReporter {
     lines.push('|-----------|---------|-----------|---------|-----|-----|-----|-----|-----|');
     
     for (const result of report.results) {
-      const stdDev = result.statistics?.standardDeviation?.toFixed(2) || 'N/A';
-      const cv = result.statistics?.coefficientOfVariation?.toFixed(1) || 'N/A';
+      const stdDev = result.statistics?.standardDeviation?.toFixed(2) ?? 'N/A';
+      const cv = result.statistics?.coefficientOfVariation?.toFixed(1) ?? 'N/A';
       lines.push(
         `| ${result.name} | ${result.ops.toFixed(2)} | ${result.mean.toFixed(2)} | ` +
         `${stdDev} | ${result.min.toFixed(2)} | ${result.max.toFixed(2)} | ` +
@@ -161,7 +161,7 @@ export class BenchmarkReporter {
     // Add statistical details
     lines.push('', '## Statistical Analysis', '');
     for (const result of report.results) {
-      if (result.statistics) {
+      if (result.statistics !== null && result.statistics !== undefined) {
         lines.push(`### ${result.name}`, '');
         lines.push(`- **Sample size:** ${result.statistics.count}`);
         lines.push(`- **95% Confidence Interval:** [${result.statistics.confidenceInterval95[0].toFixed(3)}, ${result.statistics.confidenceInterval95[1].toFixed(3)}] ms`);
@@ -189,13 +189,13 @@ export class BenchmarkReporter {
       
       for (const comp of report.comparisons) {
         const changeStr = comp.percentChange > 0 ? `+${comp.percentChange.toFixed(1)}%` : `${comp.percentChange.toFixed(1)}%`;
-        const effectSize = comp.statisticalTest?.effectSize?.toFixed(3) || 'N/A';
-        const significance = comp.statisticalTest?.significant ? 
+        const effectSize = comp.statisticalTest?.effectSize?.toFixed(3) ?? 'N/A';
+        const significance = comp.statisticalTest?.significant === true ? 
           `p=${comp.statisticalTest.pValue.toFixed(4)}` : 'Not significant';
         
         let status = '✅ OK';
         if (comp.regression) {
-          status = comp.statisticalTest?.significant ? '🚨 SIGNIFICANT REGRESSION' : '⚠️ REGRESSION';
+          status = comp.statisticalTest?.significant === true ? '🚨 SIGNIFICANT REGRESSION' : '⚠️ REGRESSION';
         }
         
         lines.push(
@@ -218,7 +218,7 @@ export class BenchmarkReporter {
     
     if (regressions.length > significantRegressions.length) {
       lines.push('', '## ⚠️ Other Potential Regressions (Not Statistically Significant)', '');
-      for (const reg of regressions.filter(r => !r.statisticalTest?.significant)) {
+      for (const reg of regressions.filter(r => r.statisticalTest?.significant !== true)) {
         lines.push(`- **${reg.name}**: ${reg.percentChange.toFixed(1)}% slower (needs more data)`);
       }
     }

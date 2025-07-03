@@ -1,30 +1,51 @@
 export class OutputParser {
   static extractJsonOutput(output: string): any {
     try {
+      // First try to parse the entire output as JSON
+      const trimmed = output.trim();
+      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+        return JSON.parse(trimmed);
+      }
+      
       // Try to find JSON in the output, handling potential wrapper text
       const lines = output.split('\n');
       let jsonStr = '';
       let inJson = false;
+      let braceCount = 0;
+      let bracketCount = 0;
       
       for (const line of lines) {
-        if (line.trim().startsWith('[') || line.trim().startsWith('{')) {
+        const trimmedLine = line.trim();
+        
+        if (!inJson && (trimmedLine.startsWith('[') || trimmedLine.startsWith('{'))) {
           inJson = true;
         }
+        
         if (inJson) {
           jsonStr += line + '\n';
-        }
-        if (inJson && (line.trim().endsWith(']') || line.trim().endsWith('}'))) {
-          break;
+          
+          // Count braces and brackets to handle nested JSON
+          for (const char of line) {
+            if (char === '{') { braceCount++; }
+            if (char === '}') { braceCount--; }
+            if (char === '[') { bracketCount++; }
+            if (char === ']') { bracketCount--; }
+          }
+          
+          // Check if we've closed all braces/brackets
+          if (braceCount === 0 && bracketCount === 0 && jsonStr.trim().length > 0) {
+            break;
+          }
         }
       }
       
-      if (jsonStr) {
-        return JSON.parse(jsonStr);
+      if (jsonStr.trim()) {
+        return JSON.parse(jsonStr.trim());
       }
       
       // Fallback to extractJson method
       return this.extractJson(output);
-    } catch {
+    } catch (error) {
       return null;
     }
   }

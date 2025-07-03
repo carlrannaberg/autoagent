@@ -164,4 +164,9 @@ export class InMemoryFileManager {
   addTodo(issueNumber: number, title: string, completed: boolean = false): void {
     this.todos.push({ issueNumber, title, completed });
   }
+  
+  // Helper method to clear todos for tests
+  clearTodos(): void {
+    this.todos = [];
+  }
 }

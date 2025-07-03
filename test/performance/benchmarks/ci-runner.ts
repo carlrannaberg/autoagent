@@ -73,7 +73,7 @@ class CIBenchmarkRunner {
       const suitePath = path.join(__dirname, suiteName, `${suiteName}.bench.js`);
       const suiteModule = await import(suitePath);
       
-      if (suiteModule.benchmarks != null && Array.isArray(suiteModule.benchmarks)) {
+      if (suiteModule.benchmarks !== null && suiteModule.benchmarks !== undefined && Array.isArray(suiteModule.benchmarks)) {
         for (const benchmarkDef of suiteModule.benchmarks) {
           const result = await this.runBenchmark(benchmarkDef);
           this.results.push(result);
@@ -156,7 +156,7 @@ class CIBenchmarkRunner {
     await fs.writeFile(statsPath, statisticalReport);
     
     // Generate CI summary for GitHub Actions
-    if (process.env.GITHUB_ACTIONS != null && process.env.GITHUB_ACTIONS !== '') {
+    if (process.env.GITHUB_ACTIONS !== null && process.env.GITHUB_ACTIONS !== undefined && process.env.GITHUB_ACTIONS !== '') {
       await this.generateGitHubSummary(report);
     }
 
@@ -170,7 +170,7 @@ class CIBenchmarkRunner {
     const summary = this.reporter.formatReport(report);
     
     // Write to GitHub Actions step summary
-    if (process.env.GITHUB_STEP_SUMMARY != null && process.env.GITHUB_STEP_SUMMARY !== '') {
+    if (process.env.GITHUB_STEP_SUMMARY !== null && process.env.GITHUB_STEP_SUMMARY !== undefined && process.env.GITHUB_STEP_SUMMARY !== '') {
       await fs.appendFile(process.env.GITHUB_STEP_SUMMARY, summary);
     }
     

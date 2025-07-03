@@ -5,8 +5,8 @@ import { Issue, Plan, Phase } from '../types';
 export class FileManager {
   private workspace: string;
 
-  constructor(workspace: string = process.cwd()) {
-    this.workspace = workspace;
+  constructor(workspace: string | undefined = process.cwd()) {
+    this.workspace = workspace ?? process.cwd();
   }
 
   private get issuesDir(): string {
@@ -389,27 +389,57 @@ Please see AGENT.md for the actual instructions.
   }
 
   async getTodoStats(): Promise<{ total: number; completed: number; pending: number }> {
-    // First try to read from status.json (used by CLI commands)
+    // First, count all issues in the issues directory
+    const issuesDir = path.join(this.workspace, 'issues');
+    let issueFiles: string[] = [];
+    
+    try {
+      const files = await fs.readdir(issuesDir);
+      issueFiles = files.filter(f => f.endsWith('.md'));
+    } catch {
+      // Issues directory doesn't exist
+    }
+
+    // Then load status data if available
     const statusFile = path.join(this.workspace, '.autoagent', 'status.json');
+    let statusData: Record<string, { status: string }> = {};
+    
     try {
       const statusContent = await fs.readFile(statusFile, 'utf-8');
-      const statusData = JSON.parse(statusContent) as Record<string, { status: string }>;
-      const issues = Object.values(statusData);
-      
-      const total = issues.length;
-      const completed = issues.filter(issue => issue.status === 'completed').length;
-      const pending = total - completed;
-      
-      return { total, completed, pending };
+      statusData = JSON.parse(statusContent) as Record<string, { status: string }>;
     } catch {
-      // Fall back to TODO.md if status.json doesn't exist
-      const todos = await this.readTodoList();
-      const total = todos.length;
-      const completed = todos.filter(t => t.includes('[x]')).length;
-      const pending = total - completed;
-      
-      return { total, completed, pending };
+      // Status file doesn't exist, that's ok
     }
+
+    // Count issues from files
+    let total = issueFiles.length;
+    let completed = 0;
+    let pending = 0;
+
+    // Process issues from files
+    for (const file of issueFiles) {
+      const issueName = file.replace('.md', '');
+      const status = statusData[issueName]?.status ?? 'pending';
+      if (status === 'completed') {
+        completed++;
+      } else {
+        pending++;
+      }
+    }
+
+    // Also include issues that only exist in status.json
+    for (const [issueName, data] of Object.entries(statusData)) {
+      if (!issueFiles.some(f => f.replace('.md', '') === issueName)) {
+        total++;
+        if (data.status === 'completed') {
+          completed++;
+        } else {
+          pending++;
+        }
+      }
+    }
+
+    return { total, completed, pending };
   }
 
   async getNextIssue(): Promise<Issue | undefined> {

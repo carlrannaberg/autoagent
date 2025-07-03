@@ -34,7 +34,7 @@ describe('GeminiProvider', () => {
     // Verify spawn was called with correct stdio configuration for stdin piping
     mockSpawn.mockImplementation((command, args, options) => {
       // Verify it's the correct command
-      if (command === 'gemini' && options && 'stdio' in options) {
+      if (command === 'gemini' && options !== null && options !== undefined && 'stdio' in options) {
         expect(options.stdio).toEqual(['pipe', 'pipe', 'pipe']);
         expect(args).toContain('--all_files');
         expect(args).toContain('--yolo');
