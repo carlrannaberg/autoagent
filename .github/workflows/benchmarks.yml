@@ -23,8 +23,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
-        cache: 'npm'
+        node-version: '22'
     
     - name: Install dependencies
       run: npm install
@@ -33,10 +32,13 @@ jobs:
       run: npm run build
     
     - name: Run enhanced benchmarks
-      run: npm run bench:ci
+      id: benchmarks
+      run: |
+        npm run bench:ci || echo "BENCHMARK_FAILED=true" >> $GITHUB_ENV
       env:
         CI: true
         GITHUB_ACTIONS: true
+      continue-on-error: true
     
     - name: Upload benchmark results
       uses: actions/upload-artifact@v4
@@ -46,8 +48,41 @@ jobs:
         path: benchmark-results/
         retention-days: 30
     
+    - name: Generate benchmark summary
+      if: always()
+      run: |
+        echo "## 📊 Benchmark Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -d "benchmark-results" ]; then
+          # Find the latest JSON report
+          JSON_REPORT=$(find benchmark-results -name "*.json" -type f | sort | tail -1)
+          
+          if [ -n "$JSON_REPORT" ]; then
+            echo "### Performance Metrics" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            jq -r '.benchmarks[] | "\(.name): \(.mean)ms (±\(.std)ms)"' "$JSON_REPORT" 2>/dev/null | head -10 >> $GITHUB_STEP_SUMMARY || echo "Unable to parse benchmark results" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check for regressions
+          if [ -f "benchmark-results/regressions.txt" ]; then
+            echo "### ⚠️ Performance Regressions Detected" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat benchmark-results/regressions.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "⚠️ No benchmark results found" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "$BENCHMARK_FAILED" == "true" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "❌ **Benchmarks failed to complete**" >> $GITHUB_STEP_SUMMARY
+        fi
+    
     - name: Comment PR with benchmark results
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && always()
       uses: actions/github-script@v7
       with:
         script: |
@@ -64,29 +99,46 @@ jobs:
           const files = fs.readdirSync(resultsDir);
           const markdownFiles = files.filter(f => f.endsWith('.md') && f.includes('benchmark-report'));
           
+          let commentBody = '## 📊 Performance Benchmark Results\n\n';
+          
           if (markdownFiles.length === 0) {
-            console.log('No markdown benchmark reports found');
-            return;
+            commentBody += '⚠️ No benchmark report generated. Check the workflow logs for details.\n';
+          } else {
+            // Get the latest report
+            const latestReport = markdownFiles.sort().pop();
+            const reportPath = path.join(resultsDir, latestReport);
+            const reportContent = fs.readFileSync(reportPath, 'utf8');
+            commentBody += reportContent + '\n';
           }
           
-          // Get the latest report
-          const latestReport = markdownFiles.sort().pop();
-          const reportPath = path.join(resultsDir, latestReport);
-          const reportContent = fs.readFileSync(reportPath, 'utf8');
+          // Check for regressions file
+          const regressionsPath = path.join(resultsDir, 'regressions.txt');
+          if (fs.existsSync(regressionsPath)) {
+            const regressions = fs.readFileSync(regressionsPath, 'utf8');
+            commentBody += '\n### ⚠️ Performance Regressions\n```\n' + regressions + '\n```\n';
+          }
+          
+          commentBody += `\n---\n*Benchmarks run on commit ${context.sha.substring(0, 7)}*`;
           
           // Post comment with benchmark results
           await github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: `## 📊 Performance Benchmark Results\n\n${reportContent}\n\n---\n*Benchmarks run on commit ${context.sha.substring(0, 7)}*`
+            body: commentBody
           });
     
-    - name: Fail if performance regressions detected
-      if: failure()
+    - name: Check benchmark results
+      if: env.BENCHMARK_FAILED == 'true'
       run: |
-        echo "❌ Performance regressions detected!"
-        echo "Check the benchmark results for details."
+        echo "❌ Performance benchmarks failed!"
+        echo ""
+        echo "This could be due to:"
+        echo "  - Performance regressions exceeding thresholds"
+        echo "  - Benchmark execution errors"
+        echo "  - Infrastructure issues"
+        echo ""
+        echo "Check the benchmark summary above for details."
         exit 1
 
   trend-analysis:
@@ -110,8 +162,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
-        cache: 'npm'
+        node-version: '22'
     
     - name: Install dependencies
       run: npm install
