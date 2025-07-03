@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Test Organization** - Reorganized tests into unit/integration/e2e/performance categories
 - **Mock System** - Replaced vi.mock with proper test doubles for better maintainability
 - **Provider Learning** - Updated to use test doubles instead of mocks
+- **Coverage Thresholds** - Temporarily adjusted to 50% for lines/statements during migration (CLI commands need direct testing)
 
 ## [0.1.4] - 2025-07-01
 
