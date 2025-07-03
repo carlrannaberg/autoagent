@@ -20,6 +20,7 @@ export class CliExecutor {
       ...process.env,
       NODE_ENV: 'test',
       FORCE_COLOR: '0', // Disable colors for predictable output
+      AUTOAGENT_MOCK_PROVIDER: 'true', // Enable mock provider for E2E tests
     };
   }
 
