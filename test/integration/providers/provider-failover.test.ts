@@ -305,7 +305,8 @@ describe('Provider Failover Integration Tests', () => {
 
       const duration = Date.now() - startTime;
       
-      expect(duration).toBeGreaterThanOrEqual(claudeSim['responseDelay'] * 2);
+      // Allow 5ms tolerance for timing variations in CI
+      expect(duration).toBeGreaterThanOrEqual(claudeSim['responseDelay'] * 2 - 5);
     });
   });
 });
