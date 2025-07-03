@@ -665,17 +665,17 @@ export class AutonomousAgent extends EventEmitter {
     let issueContent: string;
     
     // If we have explicit content, use it directly
-    if (description || acceptanceCriteria || details) {
+    if (description !== undefined || acceptanceCriteria !== undefined || details !== undefined) {
       issueContent = `# Issue ${nextNumber}: ${title}
 
 ## Description
-${description || 'To be defined'}
+${description ?? 'To be defined'}
 
 ## Acceptance Criteria
-${acceptanceCriteria ? acceptanceCriteria.map(ac => `- [ ] ${ac}`).join('\n') : '- [ ] To be defined'}
+${acceptanceCriteria !== undefined && acceptanceCriteria.length > 0 ? acceptanceCriteria.map(ac => `- [ ] ${ac}`).join('\n') : '- [ ] To be defined'}
 
 ## Technical Details
-${details || 'To be defined'}`;
+${details ?? 'To be defined'}`;
     } else {
       // Otherwise try to use a provider to generate content
       const provider = await this.getProviderForOperation();
