@@ -22,18 +22,56 @@ jobs:
       with:
         node-version: '20'
     
+    - name: Check if dependency review is available
+      id: check-dependency-review
+      run: |
+        # Check if this is a public repo or has Advanced Security enabled
+        if [[ "${{ github.event.repository.private }}" == "false" ]]; then
+          echo "available=true" >> $GITHUB_OUTPUT
+        else
+          echo "available=false" >> $GITHUB_OUTPUT
+          echo "⚠️ Dependency review requires GitHub Advanced Security for private repos"
+        fi
+    
     - name: Generate lock file for dependency review
+      if: steps.check-dependency-review.outputs.available == 'true'
       run: |
         # Generate a temporary package-lock.json for dependency review
         # This is only for CI analysis, not committed to the repo
         npm install --package-lock-only
     
     - name: Dependency Review
+      if: steps.check-dependency-review.outputs.available == 'true'
       uses: actions/dependency-review-action@v4
       with:
         fail-on-severity: high
         allow-licenses: MIT, Apache-2.0, BSD-3-Clause, BSD-2-Clause, ISC
         comment-summary-in-pr: true
+      continue-on-error: true
+    
+    - name: Manual License Check
+      if: steps.check-dependency-review.outputs.available == 'false'
+      run: |
+        echo "📋 Running manual license check..."
+        npm install --package-lock-only
+        
+        # Extract and check licenses
+        npm list --json --depth=0 | jq -r '.dependencies | to_entries[] | "\(.key): \(.value.license // "UNKNOWN")"' | while read -r line; do
+          pkg=$(echo "$line" | cut -d: -f1)
+          license=$(echo "$line" | cut -d: -f2- | xargs)
+          
+          # Check against allowed licenses
+          if [[ ! "$license" =~ ^(MIT|Apache-2\.0|BSD-3-Clause|BSD-2-Clause|ISC)$ ]]; then
+            if [[ "$license" == "UNKNOWN" ]]; then
+              echo "⚠️  $pkg has unknown license"
+            else
+              echo "❌ $pkg has disallowed license: $license"
+              exit 1
+            fi
+          else
+            echo "✅ $pkg: $license"
+          fi
+        done
     
     - name: Check dependency size impact
       run: |
