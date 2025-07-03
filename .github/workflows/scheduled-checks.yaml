@@ -19,7 +19,7 @@ jobs:
     if: github.event.schedule == '0 2 * * *' || github.event_name == 'workflow_dispatch'
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [22.x]
     
     steps:
     - name: Checkout repository

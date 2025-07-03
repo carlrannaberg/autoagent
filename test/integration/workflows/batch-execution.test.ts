@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { ConfigManager } from '@/core/config-manager';
@@ -21,6 +21,8 @@ describe('Batch Execution Integration Tests', () => {
 
   afterEach(async () => {
     await cleanupIntegrationContext(context);
+    vi.clearAllMocks();
+    vi.resetModules();
   });
 
   describe('Multi-Issue Batch Processing', () => {
@@ -514,6 +516,22 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
       if (claudeProvider) {
         claudeProvider.setResponse('execute', 'export const testFunction = () => "Hello from batch execution";');
       }
+
+      // Mock the provider module to return our test provider
+      const mockProvider = {
+        name: 'claude',
+        checkAvailability: vi.fn().mockResolvedValue(true),
+        execute: vi.fn().mockResolvedValue({
+          success: true,
+          content: 'export const testFunction = () => "Hello from batch execution";'
+        })
+      };
+
+      vi.doMock('@/providers', () => ({
+        createProvider: vi.fn().mockReturnValue(mockProvider),
+        getFirstAvailableProvider: vi.fn().mockResolvedValue(mockProvider),
+        getAvailableProviders: vi.fn().mockResolvedValue(['claude'])
+      }));
 
       // Test the AutonomousAgent's batch execution
       const { AutonomousAgent } = await import('@/core/autonomous-agent');
