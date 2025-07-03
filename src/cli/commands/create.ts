@@ -34,8 +34,13 @@ export function registerCreateCommand(program: Command): void {
           workspace: options.workspace
         });
 
-        // Create issue with additional parameters (but simplified for now)
-        const issueNumber = await agent.createIssue(options.title);
+        // Create issue with additional parameters
+        const issueNumber = await agent.createIssue(
+          options.title,
+          options.description,
+          options.acceptance,
+          options.details
+        );
         
         // Update status tracking
         const fs = await import('fs/promises');

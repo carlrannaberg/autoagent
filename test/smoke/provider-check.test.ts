@@ -83,6 +83,9 @@ describe('Provider Factory Smoke Tests', () => {
   });
 
   it('should get first available provider', async () => {
+    // Enable mock provider for test
+    process.env.AUTOAGENT_MOCK_PROVIDER = 'true';
+    
     const { getFirstAvailableProvider } = await import('../../src/providers');
     
     const provider = await getFirstAvailableProvider();
@@ -92,5 +95,8 @@ describe('Provider Factory Smoke Tests', () => {
     if (provider) {
       expect(['claude', 'gemini', 'mock']).toContain(provider.name);
     }
+    
+    // Clean up
+    delete process.env.AUTOAGENT_MOCK_PROVIDER;
   });
 });

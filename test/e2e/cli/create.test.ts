@@ -39,7 +39,8 @@ describe('autoagent create', () => {
     const issueContent = await context.workspace.readFile(`issues/${issues[0]}`);
     expect(issueContent).toContain('CLI Test Issue');
     expect(issueContent).toContain('# Issue');
-    expect(issueContent).toContain('Success');
+    expect(issueContent).toContain('## Description');
+    expect(issueContent).toContain('To be defined');
   });
 
   it('should validate issue format', async () => {
