@@ -76,7 +76,20 @@ echo "Timeout set to 15 minutes for safety."
 # Use AI CLI to prepare the release with faster model and longer timeout
 # Temporarily disable exit on error for AI command
 set +e
-timeout 900 $AI_CLI $AI_MODEL $AI_FLAGS -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
+
+# Check if timeout command is available (not on macOS by default)
+if command -v timeout >/dev/null 2>&1; then
+    TIMEOUT_CMD="timeout 900"
+else
+    # On macOS, use gtimeout if available, otherwise no timeout
+    if command -v gtimeout >/dev/null 2>&1; then
+        TIMEOUT_CMD="gtimeout 900"
+    else
+        TIMEOUT_CMD=""
+    fi
+fi
+
+$TIMEOUT_CMD $AI_CLI $AI_MODEL $AI_FLAGS -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 
 Current version: $CURRENT_VERSION
 
