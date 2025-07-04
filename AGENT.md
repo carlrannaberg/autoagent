@@ -132,6 +132,24 @@ The main branch for this project is called "master"
 
 **Before making any commits**, ensure that CHANGELOG.md is updated to reflect your changes:
 
+**IMPORTANT**: CHANGELOG.md should only document **package functionality changes** that affect end users, not project administration tasks.
+
+#### What TO Include:
+- New CLI commands or options
+- Bug fixes in core functionality
+- API changes or new features
+- Performance improvements
+- Breaking changes
+- Security fixes
+
+#### What NOT to Include:
+- Creating/updating specifications or issues
+- Internal project management tasks
+- Adding tests (unless they reveal new functionality)
+- Documentation updates (unless user-facing)
+- Issue decomposition or bootstrap activities
+- Dependency version updates (unless they affect functionality)
+
 1. **Add your changes to the "Unreleased" section** at the top of CHANGELOG.md
 2. **Categorize your changes** appropriately:
    - `Added` - for new features
@@ -144,26 +162,34 @@ The main branch for this project is called "master"
 3. **Format your entries** clearly and concisely:
    - Start each entry with a dash `-`
    - Use present tense ("Add feature" not "Added feature")
-   - Include PR/issue numbers if applicable
+   - **Do NOT include issue numbers** - they are internal/ephemeral
    - Keep entries user-focused (what it means for users, not implementation details)
 
-Example entry:
+**Example - Good entries:**
 ```markdown
 ## [Unreleased]
 
 ### Fixed
-- Fix TypeScript type errors in provider-learning.test.ts
-- Fix lint errors across all test files (166 errors resolved)
+- Fix bootstrap command overwriting existing TODO items
+- Fix bootstrap using hardcoded issue number 1 instead of next available
 
-### Changed
-- Update mock provider to use proper TypeScript types instead of `any`
+### Added
+- Add `--preserve-todo` flag to bootstrap command for explicit control
+```
+
+**Example - Avoid these entries:**
+```markdown
+### Added
+- Add specifications for bootstrap fixes
+- Create issues 22-38 for implementation tasks
+- Update project documentation
 ```
 
 This ensures that:
-- All changes are documented for users
-- The changelog is ready for the next release
-- Contributors can easily see what has changed
-- Release notes can be generated automatically
+- Only user-relevant changes are documented
+- The changelog focuses on package functionality
+- Release notes reflect actual feature/fix deliverables
+- Project management noise is excluded
 
 ## Coding Standards
 

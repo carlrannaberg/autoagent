@@ -20,6 +20,19 @@ The method should implement the following transformations:
 5. Replace multiple hyphens with single hyphen
 6. Remove leading/trailing hyphens
 
+Method signature:
+```typescript
+private generateFileSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9.-]/g, '')
+    .replace(/\.+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+```
+
 ## Resources
 - Current slug logic: `src/core/autonomous-agent.ts:867`
 - Target location: `src/utils/file-manager.ts`

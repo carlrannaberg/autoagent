@@ -7,7 +7,6 @@ Enhance the createIssue method to accept optional custom content, allowing boots
 - [ ] Add optional customContent parameter to createIssue method
 - [ ] When customContent is provided, use it instead of generating content
 - [ ] Fix issue number in custom content to match assigned number
-- [ ] Maintain backward compatibility for existing createIssue calls
 - [ ] Bootstrap can use createIssue with pre-generated content
 - [ ] Return the assigned issue number for plan creation
 

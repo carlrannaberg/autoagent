@@ -1,4 +1,4 @@
-# Issue 37: Add Bootstrap Integration Tests
+# Issue 37: Add Bootstrap TODO Integration Tests
 
 ## Requirement
 Add integration tests that verify the complete bootstrap workflow, including TODO preservation, issue creation, plan generation, and CLI integration.

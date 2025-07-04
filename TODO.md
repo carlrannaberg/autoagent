@@ -18,7 +18,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #34]** Fix Bootstrap TODO Overwrite - `issues/34-fix-bootstrap-todo-overwrite.md`
 - [ ] **[Issue #35]** Refactor createIssue to Support Optional Custom Content - `issues/35-refactor-createissue-optional-content.md`
 - [ ] **[Issue #36]** Add Bootstrap TODO Preservation Tests - `issues/36-add-bootstrap-todo-preservation-tests.md`
-- [ ] **[Issue #37]** Add Bootstrap Integration Tests - `issues/37-add-bootstrap-integration-tests.md`
+- [ ] **[Issue #37]** Add Bootstrap TODO Integration Tests - `issues/37-add-bootstrap-integration-tests.md`
 - [ ] **[Issue #38]** Update Bootstrap Documentation - `issues/38-update-bootstrap-documentation.md`
 
 ## Completed Issues

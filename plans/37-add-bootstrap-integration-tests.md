@@ -1,4 +1,4 @@
-# Plan for Issue 37: Add Bootstrap Integration Tests
+# Plan for Issue 37: Add Bootstrap TODO Integration Tests
 
 This document outlines the step-by-step plan to complete `issues/37-add-bootstrap-integration-tests.md`.
 
