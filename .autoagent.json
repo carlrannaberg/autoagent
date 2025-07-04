@@ -1,7 +1,0 @@
-{
-  "provider": "claude",
-  "autoMode": false,
-  "verbose": false,
-  "maxRetries": 3,
-  "timeout": 300000
-}

@@ -50,6 +50,10 @@ coverage/
 # Test results
 test-results/
 bench-results.json
+benchmark-results.json
+
+# Configuration files
+.autoagent.json
 
 # TypeScript cache
 *.tsbuildinfo
