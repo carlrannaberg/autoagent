@@ -47,6 +47,9 @@ coverage/
 *.lcov
 .nyc_output
 
+# Test results
+test-results/
+
 # TypeScript cache
 *.tsbuildinfo
 
