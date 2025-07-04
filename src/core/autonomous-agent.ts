@@ -500,6 +500,79 @@ export class AutonomousAgent extends EventEmitter {
   }
 
   /**
+   * Add issue to TODO list with consistent formatting
+   * Handles both new TODO creation and appending to existing TODO
+   */
+  private async addIssueToTodo(issueNumber: number, title: string): Promise<void> {
+    // Generate consistent filename slug
+    const slug = title
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+    
+    const issueFilename = `${issueNumber}-${slug}.md`;
+    const issueEntry = `- [ ] **[Issue #${issueNumber}]** ${title} - \`issues/${issueFilename}\``;
+
+    try {
+      // Try to read existing TODO content
+      const existingContent = await this.fileManager.readTodo();
+      
+      if (existingContent.trim()) {
+        // TODO exists, append to pending issues section
+        let updatedContent = existingContent;
+        
+        // Check if Pending Issues section exists
+        if (updatedContent.includes('## Pending Issues')) {
+          // Insert after the Pending Issues header
+          updatedContent = updatedContent.replace(
+            '## Pending Issues',
+            `## Pending Issues\n${issueEntry}`
+          );
+        } else {
+          // No Pending Issues section, add it before Completed Issues
+          if (updatedContent.includes('## Completed Issues')) {
+            updatedContent = updatedContent.replace(
+              '## Completed Issues',
+              `## Pending Issues\n${issueEntry}\n\n## Completed Issues`
+            );
+          } else {
+            // No sections, append at end
+            updatedContent += `\n\n## Pending Issues\n${issueEntry}\n\n## Completed Issues\n`;
+          }
+        }
+        
+        await this.fileManager.updateTodo(updatedContent);
+      } else {
+        // TODO doesn't exist or is empty, create new structure
+        const todoContent = `# To-Do
+
+This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
+
+## Pending Issues
+${issueEntry}
+
+## Completed Issues
+`;
+        
+        await this.fileManager.updateTodo(todoContent);
+      }
+    } catch (error) {
+      // If TODO doesn't exist, create new one
+      const todoContent = `# To-Do
+
+This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
+
+## Pending Issues
+${issueEntry}
+
+## Completed Issues
+`;
+      
+      await this.fileManager.updateTodo(todoContent);
+    }
+  }
+
+  /**
    * Perform git commit for completed issue
    */
   private async performGitCommit(issue: Issue, result: ExecutionResult): Promise<void> {
@@ -734,13 +807,8 @@ ${result.output ?? 'Success'}`;
 
     await this.fileManager.createIssue(nextNumber, title, issueContent);
 
-    // Update todo list
-    const todoContent = await this.fileManager.readTodo();
-    const updatedTodo = todoContent.replace(
-      '## Pending Issues',
-      `## Pending Issues\n- [ ] **[Issue #${nextNumber}]** ${title} - \`issues/${nextNumber}-${title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md\``
-    );
-    await this.fileManager.updateTodo(updatedTodo);
+    // Update todo list using shared method
+    await this.addIssueToTodo(nextNumber, title);
 
     return nextNumber;
   }
