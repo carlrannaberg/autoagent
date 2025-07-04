@@ -163,9 +163,9 @@ function isIssueFile(input: string): boolean {
 3. **Backward compatibility** - Ensure existing run behavior preserved
 
 ### Integration Tests
-1. **Plan file execution** - Run plan files end-to-end
-2. **Mixed workflows** - Plan followed by issue execution
-3. **Error scenarios** - Invalid files, missing plans, etc.
+1. **Spec file execution** - Run spec files end-to-end
+2. **Mixed workflows** - Spec followed by issue execution
+3. **Error scenarios** - Invalid files, missing specs, etc.
 4. **Backward compatibility** - All existing run scenarios
 
 ### E2E Tests
@@ -222,16 +222,24 @@ describe('Smart Run Command E2E', () => {
 
 ### README Updates
 ```markdown
+## File Types
+
+AutoAgent works with three types of files:
+
+- **Spec files**: High-level requirements and WHAT needs to be done (e.g., `project-spec.md`)
+- **Plan files**: Implementation details and HOW to do it (in `plans/` directory)
+- **Issue files**: Individual tasks broken down from specs (in `issues/` directory)
+
 ## Run Command
 
 The run command intelligently handles different input types for seamless execution:
 
 ```bash
-# Run a plan file - automatically decomposes and executes
-autoagent run master-plan.md
+# Run a spec file - automatically decomposes and executes
+autoagent run project-spec.md
 
 # Continue with all issues after decomposition
-autoagent run master-plan.md --all
+autoagent run feature-spec.md --all
 
 # Run specific issues
 autoagent run 1                    # By number
@@ -239,16 +247,29 @@ autoagent run implement-auth       # By name
 autoagent run                      # Next issue
 autoagent run --all               # All issues
 ```
+
+## Migration from Bootstrap
+
+The `bootstrap` command is deprecated. Use `run` with spec files instead:
+
+```bash
+# Old way
+autoagent bootstrap master-plan.md
+autoagent run 1
+
+# New way  
+autoagent run project-spec.md
+```
 ```
 
 ### Command Help Text
 ```
 Usage: autoagent run [target] [options]
 
-Run plan files, issues, or continue execution
+Run spec files, issues, or continue execution
 
 Arguments:
-  target                     Plan file, issue number/name, or empty for next issue
+  target                     Spec file, issue number/name, or empty for next issue
 
 Options:
   -p, --provider <provider>  Override AI provider (claude or gemini)
@@ -260,7 +281,7 @@ Options:
   -h, --help                 Display help
 
 Examples:
-  autoagent run master-plan.md     # Decompose and execute plan
+  autoagent run project-spec.md    # Decompose and execute spec
   autoagent run 1                  # Execute issue #1
   autoagent run implement-auth     # Execute issue by name
   autoagent run                    # Execute next pending issue
@@ -295,9 +316,12 @@ Examples:
 
 ### Phase 4: Documentation (Day 7)
 1. **Update README** with unified run examples
+   - Replace "master plan" terminology with "spec file"
+   - Update bootstrap section to point to run command
+   - Add spec file vs plan file vs issue file terminology clarification
 2. **Update CHANGELOG** with run enhancement
 3. **Create bootstrap migration guide**
-4. **Update all documentation** to use run command
+4. **Update all documentation** to use run command and correct terminology
 
 ## Open Questions
 
