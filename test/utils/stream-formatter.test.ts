@@ -94,8 +94,8 @@ describe('StreamFormatter', () => {
       const chunk = ' more content.';
       const formatted = StreamFormatter.formatGeminiOutput(chunk);
       
-      // When error occurs, it returns the buffer content (before the error)
-      expect(formatted).toBe('Initial content');
+      // When error occurs, it returns the entire buffer content (including the new chunk)
+      expect(formatted).toBe('Initial content more content.');
       
       // Restore original method
       String.prototype.matchAll = originalMatchAll;
@@ -104,6 +104,9 @@ describe('StreamFormatter', () => {
 
   describe('flushGeminiBuffer', () => {
     it('should return remaining buffer content', () => {
+      // Ensure buffer is clean
+      StreamFormatter.flushGeminiBuffer();
+      
       // Add content to buffer without complete sentence (no punctuation at end)
       const result = StreamFormatter.formatGeminiOutput('This is incomplete');
       

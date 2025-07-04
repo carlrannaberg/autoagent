@@ -1,0 +1,1 @@
+This is a basic response from Gemini. It contains multiple sentences that should be formatted. The formatter should add line breaks between sentences for better readability.

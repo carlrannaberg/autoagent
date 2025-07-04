@@ -1,0 +1,1 @@
+To run the tests, execute npm test. The configuration file is located at config.json. You should see output like "All tests passed." If tests fail, check the error logs. Run npm run build to compile the TypeScript files.
