@@ -336,7 +336,8 @@ export class AutonomousAgent extends EventEmitter {
       let shortestCooldown = Infinity;
       let nextProvider: ProviderName | null = null;
 
-      for (const providerName of ['claude', 'gemini'] as ProviderName[]) {
+      const userConfig = this.configManager.getConfig();
+      for (const providerName of userConfig.providers) {
         const status = await this.configManager.checkRateLimit(providerName);
         if (status.timeRemaining !== undefined && status.timeRemaining < shortestCooldown) {
           shortestCooldown = status.timeRemaining;
