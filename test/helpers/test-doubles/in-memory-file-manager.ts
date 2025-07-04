@@ -1,4 +1,4 @@
-import { Issue, Plan, Todo } from '../../src/types';
+import { Issue, Plan, Todo } from '../../../src/types';
 // Removed unused import: import * as path from 'path';
 
 export class InMemoryFileManager {
@@ -8,6 +8,7 @@ export class InMemoryFileManager {
   private todos: Todo[] = [];
   private providerInstructions: string = '';
   private changedFiles: string[] = [];
+  private mockIssueFiles?: string[];
 
   constructor(private rootPath: string = '/test') {}
 
@@ -87,8 +88,37 @@ export class InMemoryFileManager {
   }
 
   getNextIssueNumber(): number {
-    const maxIssue = Math.max(0, ...this.issues.keys(), ...this.todos.map(t => t.issueNumber));
-    return maxIssue + 1;
+    // This should match the real FileManager behavior which reads from the filesystem
+    // In our tests, we're directly adding files to mockFiles, so we need to check those too
+    const issueNumbers: number[] = [...this.issues.keys()];
+    
+    // Also check todos
+    this.todos.forEach(todo => {
+      if (!issueNumbers.includes(todo.issueNumber)) {
+        issueNumbers.push(todo.issueNumber);
+      }
+    });
+    
+    // For tests, we also need to consider files directly added to the filesystem mock
+    // This is passed in through setIssueFiles method
+    if (this.mockIssueFiles) {
+      this.mockIssueFiles.forEach(filename => {
+        const match = filename.match(/^(\d+)-.*\.md$/);
+        if (match && match[1]) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && !issueNumbers.includes(num)) {
+            issueNumbers.push(num);
+          }
+        }
+      });
+    }
+    
+    return issueNumbers.length > 0 ? Math.max(...issueNumbers) + 1 : 1;
+  }
+  
+  // Add a method to set mock issue files for testing
+  setIssueFiles(files: string[]): void {
+    this.mockIssueFiles = files;
   }
 
   readTodo(): string {

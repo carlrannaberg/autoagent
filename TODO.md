@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #23]** Add Bootstrap Issue Numbering Tests - `issues/23-add-bootstrap-issue-numbering-tests.md`
 - [ ] **[Issue #24]** Add Bootstrap Integration Tests - `issues/24-add-bootstrap-integration-tests.md`
 - [ ] **[Issue #25]** Update Bootstrap Documentation - `issues/25-update-bootstrap-documentation.md`
 - [ ] **[Issue #26]** Centralize Slug Generation in FileManager - `issues/26-centralize-slug-generation-in-filemanager.md`
@@ -30,6 +29,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #48]** Implement plan from git-auto-push-configuration - `issues/48-implement-plan-from-git-auto-push-configuration.md`
 
 ## Completed Issues
+- [x] **[Issue #23]** Add Bootstrap Issue Numbering Tests - `issues/23-add-bootstrap-issue-numbering-tests.md`
 - [x] **[Issue #22]** Fix Bootstrap Hardcoded Issue Number - `issues/22-fix-bootstrap-hardcoded-issue-number.md`
 - [x] **[Issue #39]** Implement plan from embed-bootstrap-templates - `issues/39-implement-plan-from-embed-bootstrap-templates.md`
 - [x] **[Issue #21]** Implement plan from fix-bootstrap-todo-overwrite - `issues/21-implement-plan-from-fix-bootstrap-todo-overwrite.md`

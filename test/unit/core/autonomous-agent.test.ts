@@ -172,6 +172,9 @@ describe('AutonomousAgent', () => {
     // Clear todos and add the default one
     fileManager.clearTodos();
     fileManager.addTodo(1, 'Test Issue', false);
+    
+    // Sync the fileManager with the mock filesystem
+    fileManager.setIssueFiles(['1-test-issue.md']);
 
     // Create agent with workspace config
     agent = new AutonomousAgent({ workspace: '/test', signal: true }); // Use signal: true to prevent signal handler setup
@@ -450,6 +453,15 @@ describe('AutonomousAgent', () => {
   });
 
   describe('bootstrap', () => {
+    beforeEach(async () => {
+      await agent.initialize();
+      
+      // Add template files needed for bootstrap
+      mockFiles.set('/test/templates', ['issue.md', 'plan.md']);
+      mockFileContents.set('/test/templates/issue.md', '# Issue Template\n\n## Requirements\n\n## Acceptance Criteria');
+      mockFileContents.set('/test/templates/plan.md', '# Plan Template\n\n## Implementation Plan\n\n### Phase 1');
+    });
+    
     it('should bootstrap from master plan', async () => {
       mockFileContents.set('/test/master-plan.md', `
 # Master Plan
@@ -467,6 +479,245 @@ describe('AutonomousAgent', () => {
       
       // Bootstrap creates issues, so we just verify it doesn't throw
       expect(true).toBe(true);
+    });
+
+    describe('issue numbering', () => {
+      // Helper function to create test issues in mock filesystem
+      const createTestIssue = (issueNumber: number, title: string = `test-issue-${issueNumber}`) => {
+        const filename = `${issueNumber}-${title}.md`;
+        const existingFiles = mockFiles.get('/test/issues') || [];
+        if (!existingFiles.includes(filename)) {
+          mockFiles.set('/test/issues', [...existingFiles, filename]);
+          mockFileContents.set(`/test/issues/${filename}`, `# Issue ${issueNumber}: ${title}\n\nTest content`);
+        }
+      };
+
+      it('should create issue #1 in empty project', async () => {
+        // Clear the issues directory
+        mockFiles.set('/test/issues', []);
+        
+        // Update fileManager to sync with empty filesystem
+        fileManager.setIssueFiles([]);
+        
+        // Mock file manager to track issue creation
+        const createIssueSpy = vi.spyOn(fileManager, 'createIssue');
+
+        mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nTest plan content');
+        
+        const claudeProvider = testProviders.get('claude')!;
+        claudeProvider.setResponse('decompose', 'Generated issues from master plan');
+
+        await agent.bootstrap('/test/master-plan.md');
+
+        // Verify that issue #1 was created
+        expect(createIssueSpy).toHaveBeenCalled();
+        const firstCall = createIssueSpy.mock.calls[0];
+        expect(firstCall[0]).toBe(1); // First argument is issue number
+      });
+
+      it('should create next sequential issue number with existing issues', async () => {
+        // Create existing issues 1, 2, 3
+        createTestIssue(1);
+        createTestIssue(2);
+        createTestIssue(3);
+        
+        // Update fileManager to sync with filesystem
+        fileManager.setIssueFiles(['1-test-issue-1.md', '2-test-issue-2.md', '3-test-issue-3.md']);
+        
+        const createIssueSpy = vi.spyOn(fileManager, 'createIssue');
+
+        mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nTest plan content');
+        
+        const claudeProvider = testProviders.get('claude')!;
+        claudeProvider.setResponse('decompose', 'Generated issues from master plan');
+
+        await agent.bootstrap('/test/master-plan.md');
+
+        // Verify that issue #4 was created
+        expect(createIssueSpy).toHaveBeenCalled();
+        const firstCall = createIssueSpy.mock.calls[0];
+        expect(firstCall[0]).toBe(4); // Should be 4, not 1
+      });
+
+      it('should handle gaps in issue numbering', async () => {
+        // Create issues with gaps: 1, 3, 7
+        createTestIssue(1);
+        createTestIssue(3);
+        createTestIssue(7);
+        
+        // Update fileManager to sync with filesystem
+        fileManager.setIssueFiles(['1-test-issue-1.md', '3-test-issue-3.md', '7-test-issue-7.md']);
+        
+        const createIssueSpy = vi.spyOn(fileManager, 'createIssue');
+
+        mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nTest plan content');
+        
+        const claudeProvider = testProviders.get('claude')!;
+        claudeProvider.setResponse('decompose', 'Generated issues from master plan');
+
+        await agent.bootstrap('/test/master-plan.md');
+
+        // Verify that issue #8 was created (max + 1)
+        expect(createIssueSpy).toHaveBeenCalled();
+        const firstCall = createIssueSpy.mock.calls[0];
+        expect(firstCall[0]).toBe(8);
+      });
+
+      it('should not overwrite existing issues', async () => {
+        // Create existing issue #1
+        createTestIssue(1, 'existing-issue');
+        
+        // Update fileManager to sync with filesystem
+        fileManager.setIssueFiles(['1-existing-issue.md']);
+        
+        // Store original content
+        const originalContent = mockFileContents.get('/test/issues/1-existing-issue.md');
+        
+        // Mock file manager to track issue creation
+        const createIssueSpy = vi.spyOn(fileManager, 'createIssue');
+        
+        mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nTest plan content');
+        
+        const claudeProvider = testProviders.get('claude')!;
+        claudeProvider.setResponse('decompose', 'Generated issues from master plan');
+
+        await agent.bootstrap('/test/master-plan.md');
+
+        // Verify that issue #1 was not overwritten
+        const afterContent = mockFileContents.get('/test/issues/1-existing-issue.md');
+        expect(afterContent).toBe(originalContent);
+        
+        // Verify new issue was created with number 2
+        expect(createIssueSpy).toHaveBeenCalled();
+        const firstCall = createIssueSpy.mock.calls[0];
+        expect(firstCall[0]).toBe(2);
+      });
+
+      it('should handle malformed issue filenames gracefully', async () => {
+        // Create issues with various malformed names
+        const issueFiles = [
+          '1-valid-issue.md',
+          'not-a-number-issue.md',      // No number prefix
+          'abc-invalid.md',             // Letters instead of number
+          '2.md',                       // Missing dash
+          '-3-no-number.md',            // Leading dash
+          '4-valid-issue.md',
+          '  5-spaces.md',              // Leading spaces
+          '6--double-dash.md'           // Double dash
+        ];
+        mockFiles.set('/test/issues', issueFiles);
+        
+        // Update fileManager to sync with filesystem
+        fileManager.setIssueFiles(issueFiles);
+        
+        // Add content for valid issues only
+        mockFileContents.set('/test/issues/1-valid-issue.md', '# Issue 1\n\nContent');
+        mockFileContents.set('/test/issues/4-valid-issue.md', '# Issue 4\n\nContent');
+        
+        const createIssueSpy = vi.spyOn(fileManager, 'createIssue');
+
+        mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nTest plan content');
+        
+        const claudeProvider = testProviders.get('claude')!;
+        claudeProvider.setResponse('decompose', 'Generated issues from master plan');
+
+        await agent.bootstrap('/test/master-plan.md');
+
+        // Should create issue #5 (max valid issue number 4 + 1)
+        expect(createIssueSpy).toHaveBeenCalled();
+        const firstCall = createIssueSpy.mock.calls[0];
+        expect(firstCall[0]).toBe(5);
+      });
+
+      it('should handle empty issues directory errors gracefully', async () => {
+        // Clear any existing issue files and sync fileManager
+        mockFiles.set('/test/issues', []);
+        fileManager.setIssueFiles([]);
+        
+        // Simulate directory read error
+        vi.mocked(fs.readdir).mockRejectedValueOnce(
+          Object.assign(new Error('ENOENT: no such file or directory'), { code: 'ENOENT' })
+        );
+        
+        const createIssueSpy = vi.spyOn(fileManager, 'createIssue');
+
+        mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nTest plan content');
+        
+        const claudeProvider = testProviders.get('claude')!;
+        claudeProvider.setResponse('decompose', 'Generated issues from master plan');
+
+        await agent.bootstrap('/test/master-plan.md');
+
+        // Should create issue #1 when directory doesn't exist
+        expect(createIssueSpy).toHaveBeenCalled();
+        const firstCall = createIssueSpy.mock.calls[0];
+        expect(firstCall[0]).toBe(1);
+      });
+
+      it('should handle filesystem permission errors', async () => {
+        // Simulate permission error when reading directory
+        vi.mocked(fs.readdir).mockRejectedValueOnce(
+          Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' })
+        );
+        
+        mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nTest plan content');
+        
+        const claudeProvider = testProviders.get('claude')!;
+        claudeProvider.setResponse('decompose', 'Generated issues from master plan');
+
+        // Should throw the permission error
+        await expect(agent.bootstrap('/test/master-plan.md')).rejects.toThrow('EACCES');
+      });
+
+      it('should handle concurrent bootstrap execution', async () => {
+        // Create a few existing issues
+        createTestIssue(1);
+        createTestIssue(2);
+        
+        mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nTest plan content');
+        mockFileContents.set('/test/master-plan-2.md', '# Another Master Plan\n\nDifferent content');
+        
+        const claudeProvider = testProviders.get('claude')!;
+        claudeProvider.setResponse('decompose', 'Generated issues from master plan');
+
+        // Reset the executing flag to allow first execution
+        (agent as any).isExecuting = false;
+
+        // Start first bootstrap
+        const promise1 = agent.bootstrap('/test/master-plan.md');
+        
+        // Try to start second bootstrap immediately (should fail)
+        const promise2 = agent.bootstrap('/test/master-plan-2.md');
+
+        // First should succeed
+        await expect(promise1).resolves.not.toThrow();
+        
+        // Second should fail with concurrent execution error
+        await expect(promise2).rejects.toThrow('Agent is already executing');
+      });
+
+      it('should create valid issue filenames from complex titles', async () => {
+        // Clear issues
+        mockFiles.set('/test/issues', []);
+        fileManager.setIssueFiles([]);
+        
+        const createIssueSpy = vi.spyOn(fileManager, 'createIssue');
+
+        mockFileContents.set('/test/master-plan.md', '# Master Plan with Special/Characters & Symbols!\n\n## Goals\n- Test special chars');
+        
+        const claudeProvider = testProviders.get('claude')!;
+        claudeProvider.setResponse('decompose', 'Generated issues from master plan');
+
+        await agent.bootstrap('/test/master-plan.md');
+
+        // Verify issue was created with sanitized filename
+        expect(createIssueSpy).toHaveBeenCalled();
+        const firstCall = createIssueSpy.mock.calls[0];
+        expect(firstCall[0]).toBe(1);
+        expect(firstCall[1]).toContain('Implement plan from');
+        // The filename should be sanitized (no special chars)
+        expect(firstCall[1]).not.toMatch(/[/&!]/);
+      });
     });
   });
 
