@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Migrate ESLint configuration from legacy `.eslintrc.js` to flat config format (`eslint.config.js`) for ESLint v9 compatibility
+- Update npm lint scripts to remove deprecated `--ext` flag
+
 ### Fixed
 - Fix Vitest benchmark reporter configuration - Remove invalid `--reporter=json` flag from npm script
 - Fix benchmark include path in vitest.bench.config.ts to match actual file locations
