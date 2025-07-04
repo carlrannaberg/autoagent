@@ -24,6 +24,11 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #41]** Update bootstrap to use embedded templates - `issues/41-update-bootstrap-to-use-embedded-templates.md`
 - [ ] **[Issue #42]** Add tests for embedded template functionality - `issues/42-add-tests-for-embedded-template-functionality.md`
 - [ ] **[Issue #43]** Update documentation for embedded templates - `issues/43-update-documentation-for-embedded-templates.md`
+- [ ] **[Issue #44]** Implement plan from smart-run-command - `issues/44-implement-plan-from-smart-run-command.md`
+- [ ] **[Issue #45]** Implement plan from reflective-improvement-loop - `issues/45-implement-plan-from-reflective-improvement-loop.md`
+- [ ] **[Issue #46]** Implement plan from git-repository-check-for-autocommit - `issues/46-implement-plan-from-git-repository-check-for-autocommit.md`
+- [ ] **[Issue #47]** Implement plan from git-commit-no-verify-configuration - `issues/47-implement-plan-from-git-commit-no-verify-configuration.md`
+- [ ] **[Issue #48]** Implement plan from git-auto-push-configuration - `issues/48-implement-plan-from-git-auto-push-configuration.md`
 
 ## Completed Issues
 - [x] **[Issue #39]** Implement plan from embed-bootstrap-templates - `issues/39-implement-plan-from-embed-bootstrap-templates.md`
