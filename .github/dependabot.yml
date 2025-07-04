@@ -1,3 +1,6 @@
+# Dependabot configuration for AutoAgent
+# This configuration implements a conservative update strategy to prevent breaking changes
+# from disrupting the development workflow, especially for major version updates.
 version: 2
 updates:
   # Enable version updates for npm
@@ -14,28 +17,72 @@ updates:
       prefix: "chore"
       prefix-development: "chore"
       include: "scope"
+    # Ignore major version updates for critical dependencies
+    # These require manual migration and testing
     ignore:
-      # Ignore major version updates for these packages
-      - dependency-name: "@types/node"
-        update-types: ["version-update:semver-major"]
+      # TypeScript: Major versions often have breaking changes
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
+      # Node types: Should match Node.js version in use
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # ESLint: v9+ requires configuration format migration
+      - dependency-name: "eslint"
+        versions: ["9.x", "10.x"]
+      # Testing framework: Major versions may break test suites
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitest/*"
+        update-types: ["version-update:semver-major"]
+    # Group updates to reduce PR noise and make testing easier
     groups:
-      # Group all ESLint-related updates
-      eslint:
+      # Group all minor and patch updates for easier testing
+      minor-and-patch:
         patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+        # Exclude packages that need individual attention
+        exclude-patterns:
           - "eslint*"
           - "@typescript-eslint/*"
-      # Group all test-related updates
+          - "typescript"
+          - "vitest*"
+          - "@vitest/*"
+      # ESLint ecosystem: Keep these in sync
+      eslint:
+        patterns:
+          - "eslint"
+          - "eslint-*"
+          - "@typescript-eslint/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Testing tools: Update together for compatibility
       testing:
         patterns:
-          - "jest*"
-          - "@types/jest"
-          - "ts-jest"
-      # Group all type definition updates
+          - "vitest"
+          - "@vitest/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Type definitions: Generally safe to update together
       types:
         patterns:
           - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Build tools: Keep in sync
+      build-tools:
+        patterns:
+          - "typescript"
+          - "npm-run-all"
+          - "dotenv"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Enable version updates for GitHub Actions
   - package-ecosystem: "github-actions"

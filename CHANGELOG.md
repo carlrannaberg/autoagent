@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Migrate ESLint configuration from legacy `.eslintrc.js` to flat config format (`eslint.config.js`) for ESLint v9 compatibility
 - Update npm lint scripts to remove deprecated `--ext` flag
+- Update Dependabot configuration to implement conservative update strategy for major versions
+- Configure Dependabot to group minor and patch updates for easier testing
+- Add version constraints for ESLint v9+ to prevent automatic breaking updates
 
 ### Fixed
 - Fix Vitest benchmark reporter configuration - Remove invalid `--reporter=json` flag from npm script
