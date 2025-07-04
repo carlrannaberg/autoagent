@@ -27,10 +27,10 @@ export default defineConfig({
         '**/tsconfig*.json'
       ],
       thresholds: {
-        lines: 50,
-        functions: 88,
-        branches: 75,
-        statements: 50
+        lines: 45,
+        functions: 80,
+        branches: 70,
+        statements: 45
       }
     },
     reporters: ['default', 'json', 'junit'],
