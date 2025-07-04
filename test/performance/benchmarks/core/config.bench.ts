@@ -1,47 +1,31 @@
 import { describe, bench, beforeAll } from 'vitest';
-import { loadConfig, mergeConfigs, validateConfig } from '~/utils/config';
+import { ConfigManager } from '../../../../src/core/config-manager';
 import { createBenchmark } from '../utils/benchmark.utils';
-import { createTempDir, createMockConfig } from '../../test-helpers';
+import { createTempDir, createConfiguration } from '../../../setup';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-describe('Configuration Performance Benchmarks', () => {
+describe('ConfigManager Performance Benchmarks', () => {
   let tempDir: string;
   let configPath: string;
+  let configManager: ConfigManager;
   let largeConfig: any;
 
   beforeAll(async () => {
     tempDir = await createTempDir();
-    configPath = path.join(tempDir, '.autoagent.json');
+    configPath = path.join(tempDir, '.autoagent', 'config.json');
+    await fs.mkdir(path.dirname(configPath), { recursive: true });
+    configManager = new ConfigManager(tempDir);
     
     largeConfig = {
-      providers: {
-        primary: 'claude',
-        fallback: 'gemini',
-        retryLimit: 5,
-        retryDelay: 2000
-      },
-      execution: {
-        timeout: 600000,
-        maxConcurrent: 3,
-        dryRun: false
-      },
-      git: {
-        enabled: true,
-        autoPush: false,
-        remote: 'origin',
-        branch: 'main'
-      },
-      logging: {
-        level: 'info',
-        format: 'json',
-        file: 'autoagent.log'
-      },
-      cache: {
-        enabled: true,
-        ttl: 3600,
-        maxSize: 100
-      },
+      providers: ['claude', 'gemini'],
+      failoverDelay: 5000,
+      retryAttempts: 3,
+      maxTokens: 100000,
+      rateLimitCooldown: 3600000,
+      gitAutoCommit: false,
+      gitCommitInterval: 600000,
+      logLevel: 'info' as const,
       customData: Array.from({ length: 100 }, (_, i) => ({
         id: i,
         value: `data-${i}`,
@@ -58,92 +42,75 @@ describe('Configuration Performance Benchmarks', () => {
 
   describe('Config Loading', () => {
     bench('load config from file', async () => {
-      await loadConfig(tempDir);
+      const manager = new ConfigManager(tempDir);
+      await manager.loadConfig();
     });
 
     bench('load config with defaults', async () => {
-      await loadConfig('/non/existent/path');
+      const manager = new ConfigManager('/non/existent/path');
+      await manager.loadConfig();
     });
 
     createBenchmark(
       'load large config',
       async () => {
-        await loadConfig(tempDir);
+        const manager = new ConfigManager(tempDir);
+        await manager.loadConfig();
       },
       { iterations: 100 }
     );
   });
 
-  describe('Config Merging', () => {
-    bench('merge two configs', () => {
-      const config1 = createMockConfig();
-      const config2 = createMockConfig({ providers: { primary: 'gemini' } });
-      mergeConfigs(config1, config2);
+  describe('Provider Management', () => {
+    bench('check rate limit status', async () => {
+      await configManager.isProviderRateLimited('claude');
     });
 
-    bench('merge multiple configs', () => {
-      const configs = Array.from({ length: 10 }, () => createMockConfig());
-      configs.reduce((acc, config) => mergeConfigs(acc, config));
+    bench('get available providers', async () => {
+      await configManager.getAvailableProviders();
     });
 
-    bench('deep merge nested configs', () => {
-      const config1 = {
-        level1: {
-          level2: {
-            level3: {
-              value: 'original'
-            }
-          }
+    bench('filter rate-limited providers', async () => {
+      const providers = ['claude', 'gemini', 'openai', 'anthropic'];
+      const available = [];
+      for (const provider of providers) {
+        if (!await configManager.isProviderRateLimited(provider as any)) {
+          available.push(provider);
         }
-      };
-      const config2 = {
-        level1: {
-          level2: {
-            level3: {
-              value: 'updated',
-              newProp: 'added'
-            }
-          }
-        }
-      };
-      mergeConfigs(config1, config2);
+      }
     });
   });
 
-  describe('Config Validation', () => {
-    bench('validate valid config', () => {
-      const config = createMockConfig();
-      validateConfig(config);
+  describe('Rate Limit Management', () => {
+    beforeAll(async () => {
+      // Setup some rate limit data
+      const rateLimits = {
+        claude: { timestamp: Date.now() - 1000000, count: 5 },
+        gemini: { timestamp: Date.now() - 2000000, count: 3 }
+      };
+      await fs.writeFile(
+        path.join(tempDir, '.autoagent', 'rate-limits.json'),
+        JSON.stringify(rateLimits)
+      );
     });
 
-    bench('validate complex config', () => {
-      validateConfig(largeConfig);
+    bench('load rate limits', async () => {
+      const manager = new ConfigManager(tempDir);
+      await manager.loadRateLimits();
+    });
+
+    bench('save rate limits', async () => {
+      await configManager.saveRateLimits();
     });
 
     createBenchmark(
-      'validate config 1000 times',
-      () => {
-        const config = createMockConfig();
-        for (let i = 0; i < 1000; i++) {
-          validateConfig(config);
+      'check rate limits 100 times',
+      async () => {
+        for (let i = 0; i < 100; i++) {
+          await configManager.isProviderRateLimited('claude');
         }
       },
       { iterations: 10 }
     );
-  });
-
-  describe('Config Serialization', () => {
-    bench('stringify config', () => {
-      JSON.stringify(largeConfig);
-    });
-
-    bench('parse config string', () => {
-      const configStr = JSON.stringify(largeConfig);
-      JSON.parse(configStr);
-    });
-
-    bench('pretty print config', () => {
-      JSON.stringify(largeConfig, null, 2);
-    });
   });
 });

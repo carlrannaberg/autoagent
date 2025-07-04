@@ -49,6 +49,7 @@ coverage/
 
 # Test results
 test-results/
+bench-results.json
 
 # TypeScript cache
 *.tsbuildinfo

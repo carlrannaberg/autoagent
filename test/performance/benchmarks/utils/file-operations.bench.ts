@@ -2,7 +2,7 @@ import { describe, bench, beforeAll } from 'vitest';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createBenchmark } from './benchmark.utils';
-import { createTempDir } from '../../test-helpers';
+import { createTempDir } from '../../../setup';
 
 describe('File Operations Benchmarks', () => {
   let tempDir: string;
