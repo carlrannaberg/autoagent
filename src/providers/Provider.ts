@@ -91,6 +91,13 @@ export abstract class Provider {
       const child: ChildProcess = spawn(command, args);
       let stdout = '';
       let stderr = '';
+      
+      // Show header for both providers
+      if (command === 'gemini') {
+        StreamFormatter.showHeader('gemini');
+      } else if (command === 'claude') {
+        StreamFormatter.showHeader('claude');
+      }
 
       child.on('error', (error) => {
         reject(error);
@@ -114,9 +121,11 @@ export abstract class Provider {
         
         // Stream output to console for real-time feedback
         if (command === 'gemini') {
-          // Gemini outputs plain text, not JSON
-          // Just print the output directly
-          process.stdout.write(chunk);
+          // Format Gemini text output with line breaks
+          const formatted = StreamFormatter.formatGeminiOutput(chunk);
+          if (formatted) {
+            StreamFormatter.displayGeminiText(formatted);
+          }
         } else {
           // Parse streaming JSON and output text content (for Claude)
           const lines = chunk.split('\n').filter(line => line.trim().length > 0);
@@ -147,6 +156,17 @@ export abstract class Provider {
       });
 
       child.on('close', (code) => {
+        // Flush any remaining buffer for Gemini
+        if (command === 'gemini') {
+          const remaining = StreamFormatter.flushGeminiBuffer();
+          if (remaining) {
+            StreamFormatter.displayGeminiText(remaining);
+          }
+          StreamFormatter.showFooter();
+        } else if (command === 'claude') {
+          StreamFormatter.showFooter();
+        }
+        
         resolve({ stdout, stderr, code });
       });
     });
@@ -172,6 +192,13 @@ export abstract class Provider {
       });
       let stdout = '';
       let stderr = '';
+      
+      // Show header for both providers
+      if (command === 'gemini') {
+        StreamFormatter.showHeader('gemini');
+      } else if (command === 'claude') {
+        StreamFormatter.showHeader('claude');
+      }
 
       if (signal) {
         signal.addEventListener('abort', () => {
@@ -197,9 +224,11 @@ export abstract class Provider {
         
         // Stream output to console for real-time feedback
         if (command === 'gemini') {
-          // Gemini outputs plain text, not JSON
-          // Just print the output directly
-          process.stdout.write(chunk);
+          // Format Gemini text output with line breaks
+          const formatted = StreamFormatter.formatGeminiOutput(chunk);
+          if (formatted) {
+            StreamFormatter.displayGeminiText(formatted);
+          }
         } else {
           // Parse streaming JSON and output text content (for Claude)
           const lines = chunk.split('\n').filter(line => line.trim().length > 0);
@@ -230,6 +259,17 @@ export abstract class Provider {
       });
 
       child.on('close', (code) => {
+        // Flush any remaining buffer for Gemini
+        if (command === 'gemini') {
+          const remaining = StreamFormatter.flushGeminiBuffer();
+          if (remaining) {
+            StreamFormatter.displayGeminiText(remaining);
+          }
+          StreamFormatter.showFooter();
+        } else if (command === 'claude') {
+          StreamFormatter.showFooter();
+        }
+        
         resolve({ stdout, stderr, code });
       });
     });

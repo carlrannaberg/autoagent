@@ -17,6 +17,8 @@ const colors = {
 };
 
 export class StreamFormatter {
+  private static buffer = '';
+  
   private static formatHeader(provider: string): void {
     const header = provider === 'claude' ? '🤖 CLAUDE AGENT' : '🤖 GEMINI AGENT';
     // eslint-disable-next-line no-console
@@ -196,5 +198,95 @@ export class StreamFormatter {
   static showFooter(): void {
     // eslint-disable-next-line no-console
     console.log(`${colors.CYAN}└─────────────────────────────────────────────────────────────┘${colors.NC}`);
+  }
+
+  /**
+   * Format Gemini output with line breaks at sentence boundaries.
+   * This method is stateful and handles partial sentences across chunks.
+   * @param chunk - The text chunk to format
+   * @returns The formatted text with remaining buffer
+   */
+  static formatGeminiOutput(chunk: string): string {
+    try {
+      // Add chunk to buffer
+      this.buffer += chunk;
+      
+      // Regex pattern to match sentence endings, including quoted sentences
+      // Matches: period/exclamation/question mark, optionally followed by quotes,
+      // followed by either whitespace or end of string
+      const sentencePattern = /[.!?]+["']?(?:\s+|$)/g;
+      
+      // Find all sentence boundaries
+      const matches = [...this.buffer.matchAll(sentencePattern)];
+      
+      if (matches.length === 0) {
+        // No complete sentences found
+        // If buffer is too large, force flush to prevent memory issues
+        if (this.buffer.length > 1000) {
+          const output = this.buffer;
+          this.buffer = '';
+          return output;
+        }
+        return '';
+      }
+      
+      // Process complete sentences
+      let lastIndex = 0;
+      let output = '';
+      
+      for (let i = 0; i < matches.length; i++) {
+        const match = matches[i];
+        if (!match || match.index === undefined) continue;
+        
+        const endIndex = match.index + match[0].length;
+        
+        // Check if this is the last match and there's more text after it
+        const isLastMatch = i === matches.length - 1;
+        const hasMoreText = endIndex < this.buffer.length;
+        
+        if (isLastMatch && hasMoreText) {
+          // Don't process the last sentence if there's more text after it
+          // (it might be incomplete)
+          break;
+        }
+        
+        const sentence = this.buffer.substring(lastIndex, endIndex).trim();
+        if (sentence) {
+          output += sentence + '\n\n';
+        }
+        lastIndex = endIndex;
+      }
+      
+      // Keep remaining text in buffer
+      this.buffer = this.buffer.substring(lastIndex);
+      
+      return output;
+    } catch (error) {
+      // On error, return the buffered content plus new chunk, then clear buffer
+      const output = this.buffer;
+      this.buffer = '';
+      return output;
+    }
+  }
+
+  /**
+   * Flush any remaining buffer content.
+   * Call this when the stream ends.
+   */
+  static flushGeminiBuffer(): string {
+    const output = this.buffer.trim();
+    this.buffer = '';
+    return output ? output + '\n' : '';
+  }
+
+  /**
+   * Format and display Gemini text output.
+   * @param text - The text to format and display
+   */
+  static displayGeminiText(text: string): void {
+    if (text.trim()) {
+      // eslint-disable-next-line no-console
+      console.log(`${colors.WHITE}${text.trim()}${colors.NC}`);
+    }
   }
 }
