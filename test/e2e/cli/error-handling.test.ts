@@ -15,14 +15,14 @@ describe('Error Handling E2E', () => {
       expect(result.stderr).toContain('autoagent --help');
     });
 
-    it('should handle missing required arguments', async () => {
+    it('should handle run command without issues present', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
 
-      const result = await context.cli.execute(['run']); // Missing issue name
+      const result = await context.cli.execute(['run']); // No issues exist yet
 
-      expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('Missing required argument');
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('No pending issues to execute');
     });
 
     it('should handle invalid option values', async () => {

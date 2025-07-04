@@ -49,11 +49,8 @@ export function registerRunCommand(program: Command): void {
       try {
         const workspacePath = options.workspace ?? process.cwd();
         
-        // Validate arguments
-        if ((issue === null || issue === undefined || issue.length === 0) && options.all !== true) {
-          Logger.error('Missing required argument: issue name. Use --all to run all issues.');
-          process.exit(1);
-        }
+        // No validation needed - if no issue is specified and --all is not set, 
+        // it will run the next pending issue
         
         const abortController = new AbortController();
         
@@ -255,6 +252,35 @@ export function registerRunCommand(program: Command): void {
             const path = await import('path');
             const statusFile = path.join(workspacePath, '.autoagent', 'status.json');
             
+            // Extract issue number for logging
+            let issueNumber: number;
+            issueNumber = parseInt(issue ?? '', 10);
+            if (isNaN(issueNumber)) {
+              const match = issue?.match(/^(\d+)-/);
+              if (match !== null && match !== undefined && match[1] !== null && match[1] !== undefined) {
+                issueNumber = parseInt(match[1], 10);
+              } else {
+                // Try to find the issue file and extract number from it
+                const files = await fs.readdir(issuesDir);
+                const matchingFile = files.find(f => f.includes(issue ?? '') && f.endsWith('.md'));
+                if (matchingFile !== null && matchingFile !== undefined) {
+                  const fileMatch = matchingFile.match(/^(\d+)-/);
+                  if (fileMatch !== null && fileMatch !== undefined && fileMatch[1] !== null && fileMatch[1] !== undefined) {
+                    issueNumber = parseInt(fileMatch[1], 10);
+                  }
+                }
+              }
+            }
+            
+            // Log execution start for non-error scenarios
+            if (process.env.AUTOAGENT_MOCK_FAIL !== 'true' &&
+                process.env.AUTOAGENT_MOCK_TIMEOUT !== 'true' &&
+                process.env.AUTOAGENT_MOCK_RATE_LIMIT !== 'true' &&
+                process.env.AUTOAGENT_MOCK_AUTH_FAIL !== 'true' &&
+                !isNaN(issueNumber)) {
+              Logger.info(`🚀 Executing issue #${issueNumber}`);
+            }
+            
             // Handle mock provider error scenarios first
             if (process.env.AUTOAGENT_MOCK_FAIL === 'true') {
               Logger.error('Mock execution failed');
@@ -337,12 +363,50 @@ export function registerRunCommand(program: Command): void {
             
             Logger.success(`✅ Mock execution completed for issue: ${issue}`);
           } else {
-            // Normal execution - for now just show that it's not implemented
-            Logger.info('📝 No pending issues to execute');
+            // Extract issue number from the issue string or filename
+            let issueNumber: number;
+            
+            // First try to parse as a number
+            issueNumber = parseInt(issue ?? '', 10);
+            
+            // If not a number, try to extract from filename pattern
+            if (isNaN(issueNumber)) {
+              const match = issue?.match(/^(\d+)-/);
+              if (match !== null && match !== undefined && match[1] !== null && match[1] !== undefined) {
+                issueNumber = parseInt(match[1], 10);
+              } else {
+                // Try to find the issue file and extract number from it
+                const files = await fs.readdir(issuesDir);
+                const matchingFile = files.find(f => f.includes(issue ?? '') && f.endsWith('.md'));
+                if (matchingFile !== null && matchingFile !== undefined) {
+                  const fileMatch = matchingFile.match(/^(\d+)-/);
+                  if (fileMatch !== null && fileMatch !== undefined && fileMatch[1] !== null && fileMatch[1] !== undefined) {
+                    issueNumber = parseInt(fileMatch[1], 10);
+                  } else {
+                    Logger.error(`Cannot extract issue number from: ${issue}`);
+                    process.exit(1);
+                    return;
+                  }
+                } else {
+                  Logger.error(`Invalid issue identifier: ${issue}`);
+                  process.exit(1);
+                  return;
+                }
+              }
+            }
+            
+            // Execute the specific issue
+            Logger.info(`🚀 Executing issue #${issueNumber}`);
+            const result = await agent.executeIssue(issueNumber);
+            
+            if (result.success !== true) {
+              Logger.error(`Failed to execute issue #${issueNumber}: ${result.error ?? 'Unknown error'}`);
+              process.exit(1);
+            }
           }
         } else {
           const result = await agent.executeNext();
-          if (!result.success && result.error !== undefined && result.error !== 'No pending issues to execute') {
+          if (!result.success && (result.error !== undefined && result.error !== '' && result.error !== 'No pending issues to execute')) {
             throw new Error(result.error !== undefined ? result.error : 'Execution failed');
           } else if (result.error === 'No pending issues to execute') {
             Logger.info('📝 No pending issues to execute');

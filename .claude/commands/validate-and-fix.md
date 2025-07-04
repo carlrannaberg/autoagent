@@ -1,0 +1,1 @@
+Run lint, test and type checking. Then think deeply how to fix the issues step by step and how they could be shared to subagents to fix. After that spawn subagents to implement tasks in parallel.
