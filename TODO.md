@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #28]** Refactor createIssue to Use Centralized Slug - `issues/28-refactor-createissue-to-use-centralized-slug.md`
 - [ ] **[Issue #29]** Remove Duplicate Slug Logic from Bootstrap - `issues/29-remove-duplicate-slug-logic-from-bootstrap.md`
 - [ ] **[Issue #30]** Add Unit Tests for Slug Generation - `issues/30-add-unit-tests-for-slug-generation.md`
 - [ ] **[Issue #31]** Add Integration Tests for Bootstrap Filenames - `issues/31-add-integration-tests-for-bootstrap-filenames.md`
@@ -25,6 +24,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #48]** Implement plan from git-auto-push-configuration - `issues/48-implement-plan-from-git-auto-push-configuration.md`
 
 ## Completed Issues
+- [x] **[Issue #28]** Refactor createIssue to Use Centralized Slug - `issues/28-refactor-createissue-to-use-centralized-slug.md`
 - [x] **[Issue #27]** Update createPlan for Consistent Filenames - `issues/27-update-createplan-for-consistent-filenames.md`
 - [x] **[Issue #26]** Centralize Slug Generation in FileManager - `issues/26-centralize-slug-generation-in-filemanager.md`
 - [x] **[Issue #25]** Update Bootstrap Documentation - `issues/25-update-bootstrap-documentation.md`
