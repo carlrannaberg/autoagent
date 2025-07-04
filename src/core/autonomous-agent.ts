@@ -873,7 +873,7 @@ IMPORTANT: For each issue you create:
 
 ${result.output ?? 'Success'}`;
 
-    await this.fileManager.createIssue(issueNumber, issueTitle, issueContent);
+    const issuePath = await this.fileManager.createIssue(issueNumber, issueTitle, issueContent);
 
     // Create corresponding plan file
     await this.fileManager.createPlan(issueNumber, { 
@@ -888,7 +888,8 @@ ${result.output ?? 'Success'}`;
     }, issueTitle);
 
     // Create initial todo list
-    const issueFilename = `${issueNumber}-${issueTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '').replace(/\.+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '')}.md`;
+    const path = await import('path');
+    const issueFilename = path.basename(issuePath);
     const todoContent = `# To-Do
 
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
