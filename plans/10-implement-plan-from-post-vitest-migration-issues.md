@@ -1,6 +1,6 @@
-# Plan for Issue 1: Implement plan from vitest-migration
+# Plan for Issue 10: Implement plan from POST-VITEST-MIGRATION-ISSUES
 
-This document outlines the step-by-step plan to complete `issues/1-implement-plan-from-vitest-migration.md`.
+This document outlines the step-by-step plan to complete `issues/1-implement-plan-from-post-vitest-migration-issues.md`.
 
 ## Implementation Plan
 

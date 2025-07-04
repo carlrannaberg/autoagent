@@ -71,6 +71,9 @@ coverage/
 !.yarn/sdks
 !.yarn/versions
 
+# Temp
+temp/
+
 # Agent-specific
 .agent-cache/
 .agent-history/

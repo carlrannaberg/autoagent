@@ -3,15 +3,10 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-
+- [ ] **[Issue #11]** Fix Vitest Benchmark Reporter Configuration (P0) - `issues/11-fix-vitest-benchmark-reporter.md`
+- [ ] **[Issue #12]** Migrate ESLint Configuration to v9 Format (P0) - `issues/12-migrate-eslint-to-v9.md`
+- [ ] **[Issue #13]** Fix Test Artifacts Generation and Upload (P1) - `issues/13-fix-test-artifacts.md`
+- [ ] **[Issue #14]** Update Dependabot Configuration (P1) - `issues/14-update-dependabot-config.md`
 
 ## Completed Issues
-- [x] **[Issue #9]** Clean Up Jest and Finalize Migration - `issues/9-cleanup-jest-finalize.md`
-- [x] **[Issue #8]** Update CI/CD Pipeline for Vitest - `issues/8-update-cicd-pipeline.md`
-- [x] **[Issue #7]** Add Benchmark Tests - `issues/7-add-benchmark-tests.md`
-- [x] **[Issue #6]** Create E2E Test Infrastructure - `issues/6-create-e2e-tests.md`
-- [x] **[Issue #5]** Create Integration Test Infrastructure - `issues/5-create-integration-tests.md`
-- [x] **[Issue #4]** Migrate Unit Tests from Jest to Vitest - `issues/4-migrate-unit-tests.md`
-- [x] **[Issue #3]** Create Test Setup and Utilities - `issues/3-create-test-setup-utilities.md`
-- [x] **[Issue #2]** Install and Configure Vitest - `issues/2-install-configure-vitest.md`
-- [x] **[Issue #1]** Implement plan from vitest-migration - `issues/1-implement-plan-from-vitest-migration.md`
+- [x] **[Issue #10]** Implement plan from POST-VITEST-MIGRATION-ISSUES - `issues/10-implement-plan-from-post-vitest-migration-issues.md`
