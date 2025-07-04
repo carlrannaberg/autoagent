@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #37]** Add Bootstrap TODO Integration Tests - `issues/37-add-bootstrap-integration-tests.md`
 - [ ] **[Issue #38]** Update Bootstrap Documentation - `issues/38-update-bootstrap-documentation.md`
 - [ ] **[Issue #40]** Create embedded template module - `issues/40-create-embedded-template-module.md`
 - [ ] **[Issue #41]** Update bootstrap to use embedded templates - `issues/41-update-bootstrap-to-use-embedded-templates.md`
@@ -16,6 +15,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #48]** Implement plan from git-auto-push-configuration - `issues/48-implement-plan-from-git-auto-push-configuration.md`
 
 ## Completed Issues
+- [x] **[Issue #37]** Add Bootstrap TODO Integration Tests - `issues/37-add-bootstrap-integration-tests.md`
 - [x] **[Issue #36]** Add Bootstrap TODO Preservation Tests - `issues/36-add-bootstrap-todo-preservation-tests.md`
 - [x] **[Issue #35]** Refactor createIssue to Support Optional Custom Content - `issues/35-refactor-createissue-optional-content.md`
 - [x] **[Issue #34]** Fix Bootstrap TODO Overwrite - `issues/34-fix-bootstrap-todo-overwrite.md`
