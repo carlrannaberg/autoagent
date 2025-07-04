@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="59" failures="1" errors="0" time="99.792935459">
+    <testsuite name="test/integration/performance/performance-benchmarks.test.ts" timestamp="2025-07-04T09:46:32.638Z" hostname="Carls-MBP-H.home" tests="10" failures="0" errors="0" skipped="0" time="12.849952375">
+        <testcase classname="test/integration/performance/performance-benchmarks.test.ts" name="Performance Integration Tests &gt; Concurrent Execution Performance &gt; should measure concurrent vs sequential execution time" time="1.675700209">
+        </testcase>
+        <testcase classname="test/integration/performance/performance-benchmarks.test.ts" name="Performance Integration Tests &gt; Concurrent Execution Performance &gt; should handle high concurrency levels" time="0.303954917">
+        </testcase>
+        <testcase classname="test/integration/performance/performance-benchmarks.test.ts" name="Performance Integration Tests &gt; Provider Switching Overhead &gt; should measure failover switching performance" time="0.560780208">
+        </testcase>
+        <testcase classname="test/integration/performance/performance-benchmarks.test.ts" name="Performance Integration Tests &gt; Provider Switching Overhead &gt; should optimize provider selection based on performance" time="9.081613125">
+        </testcase>
+        <testcase classname="test/integration/performance/performance-benchmarks.test.ts" name="Performance Integration Tests &gt; Large Issue Processing &gt; should handle large issue batches efficiently" time="0.039255625">
+        </testcase>
+        <testcase classname="test/integration/performance/performance-benchmarks.test.ts" name="Performance Integration Tests &gt; Large Issue Processing &gt; should optimize file I/O operations" time="0.026646292">
+        </testcase>
+        <testcase classname="test/integration/performance/performance-benchmarks.test.ts" name="Performance Integration Tests &gt; Memory Usage Patterns &gt; should monitor memory usage during execution" time="0.006098709">
+        </testcase>
+        <testcase classname="test/integration/performance/performance-benchmarks.test.ts" name="Performance Integration Tests &gt; Memory Usage Patterns &gt; should handle memory-intensive operations efficiently" time="0.110289459">
+        </testcase>
+        <testcase classname="test/integration/performance/performance-benchmarks.test.ts" name="Performance Integration Tests &gt; Cache Performance &gt; should demonstrate cache effectiveness" time="1.036005833">
+        </testcase>
+        <testcase classname="test/integration/performance/performance-benchmarks.test.ts" name="Performance Integration Tests &gt; Cache Performance &gt; should implement effective cache eviction" time="0.008010083">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/integration/error-recovery/recovery-scenarios.test.ts" timestamp="2025-07-04T09:46:32.641Z" hostname="Carls-MBP-H.home" tests="13" failures="0" errors="0" skipped="0" time="8.898571125">
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; Network Failure Recovery &gt; should recover from temporary network failures" time="0.308567458">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; Network Failure Recovery &gt; should handle DNS resolution failures" time="0.395661083">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; Network Failure Recovery &gt; should implement exponential backoff for retries" time="0.706512709">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; File System Error Recovery &gt; should handle permission denied errors" time="0.010385375">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; File System Error Recovery &gt; should handle disk space errors gracefully" time="0.004064375">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; File System Error Recovery &gt; should recover from file lock conflicts" time="0.004238417">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; Git Operation Recovery &gt; should recover from merge conflicts" time="0.209152458">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; Git Operation Recovery &gt; should handle detached HEAD state" time="0.227589458">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; Git Operation Recovery &gt; should recover from interrupted rebase" time="0.003170542">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; Timeout Recovery &gt; should handle operation timeouts gracefully" time="1.003672542">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; Timeout Recovery &gt; should implement progressive timeout strategies" time="6.00747725">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; State Corruption Recovery &gt; should recover from corrupted configuration" time="0.00776525">
+        </testcase>
+        <testcase classname="test/integration/error-recovery/recovery-scenarios.test.ts" name="Error Recovery Integration Tests &gt; State Corruption Recovery &gt; should handle incomplete execution state" time="0.008322416">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/integration/providers/multi-provider.test.ts" timestamp="2025-07-04T09:46:32.642Z" hostname="Carls-MBP-H.home" tests="9" failures="1" errors="0" skipped="0" time="72.1774105">
+        <testcase classname="test/integration/providers/multi-provider.test.ts" name="Multi-Provider Integration Tests &gt; Load Balancing &gt; should distribute load across multiple providers" time="4.556245959">
+        </testcase>
+        <testcase classname="test/integration/providers/multi-provider.test.ts" name="Multi-Provider Integration Tests &gt; Load Balancing &gt; should handle provider capacity differences" time="6.316587">
+        </testcase>
+        <testcase classname="test/integration/providers/multi-provider.test.ts" name="Multi-Provider Integration Tests &gt; Provider Selection Strategies &gt; should select provider based on performance metrics" time="0.355553417">
+        </testcase>
+        <testcase classname="test/integration/providers/multi-provider.test.ts" name="Multi-Provider Integration Tests &gt; Provider Selection Strategies &gt; should select provider based on success rate" time="30.410976625">
+            <failure message="expected 0.68 to be less than or equal to 0.6" type="AssertionError">
+AssertionError: expected 0.68 to be less than or equal to 0.6
+ ❯ test/integration/providers/multi-provider.test.ts:150:33
+            </failure>
+        </testcase>
+        <testcase classname="test/integration/providers/multi-provider.test.ts" name="Multi-Provider Integration Tests &gt; Provider Selection Strategies &gt; should implement cost-aware provider selection" time="30.104468708">
+        </testcase>
+        <testcase classname="test/integration/providers/multi-provider.test.ts" name="Multi-Provider Integration Tests &gt; Concurrent Provider Execution &gt; should execute tasks concurrently across providers" time="0.212764125">
+        </testcase>
+        <testcase classname="test/integration/providers/multi-provider.test.ts" name="Multi-Provider Integration Tests &gt; Concurrent Provider Execution &gt; should handle partial failures in concurrent execution" time="0.205471625">
+        </testcase>
+        <testcase classname="test/integration/providers/multi-provider.test.ts" name="Multi-Provider Integration Tests &gt; Provider Synchronization &gt; should maintain consistency across provider switches" time="0.006923167">
+        </testcase>
+        <testcase classname="test/integration/providers/multi-provider.test.ts" name="Multi-Provider Integration Tests &gt; Provider Synchronization &gt; should handle provider-specific capabilities" time="0.005987125">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/integration/providers/provider-failover.test.ts" timestamp="2025-07-04T09:46:32.644Z" hostname="Carls-MBP-H.home" tests="9" failures="0" errors="0" skipped="0" time="3.27659075">
+        <testcase classname="test/integration/providers/provider-failover.test.ts" name="Provider Failover Integration Tests &gt; Rate Limit Failover &gt; should failover from Claude to Gemini when rate limited" time="0.41363525">
+        </testcase>
+        <testcase classname="test/integration/providers/provider-failover.test.ts" name="Provider Failover Integration Tests &gt; Rate Limit Failover &gt; should handle both providers being rate limited" time="0.205953709">
+        </testcase>
+        <testcase classname="test/integration/providers/provider-failover.test.ts" name="Provider Failover Integration Tests &gt; Rate Limit Failover &gt; should track failover attempts correctly" time="0.206051958">
+        </testcase>
+        <testcase classname="test/integration/providers/provider-failover.test.ts" name="Provider Failover Integration Tests &gt; Provider Recovery &gt; should retry original provider after rate limit reset" time="0.407268709">
+        </testcase>
+        <testcase classname="test/integration/providers/provider-failover.test.ts" name="Provider Failover Integration Tests &gt; Provider Recovery &gt; should handle intermittent failures with retry" time="0.208236833">
+        </testcase>
+        <testcase classname="test/integration/providers/provider-failover.test.ts" name="Provider Failover Integration Tests &gt; Partial Execution Recovery &gt; should resume execution after provider failure mid-task" time="0.406224709">
+        </testcase>
+        <testcase classname="test/integration/providers/provider-failover.test.ts" name="Provider Failover Integration Tests &gt; Partial Execution Recovery &gt; should maintain execution state across provider switches" time="0.506029583">
+        </testcase>
+        <testcase classname="test/integration/providers/provider-failover.test.ts" name="Provider Failover Integration Tests &gt; Provider-Specific Error Handling &gt; should handle different error types appropriately" time="0.71419125">
+        </testcase>
+        <testcase classname="test/integration/providers/provider-failover.test.ts" name="Provider Failover Integration Tests &gt; Provider-Specific Error Handling &gt; should respect provider-specific retry policies" time="0.206267209">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/integration/workflows/batch-execution.test.ts" timestamp="2025-07-04T09:46:32.645Z" hostname="Carls-MBP-H.home" tests="10" failures="0" errors="0" skipped="0" time="1.877936084">
+        <testcase classname="test/integration/workflows/batch-execution.test.ts" name="Batch Execution Integration Tests &gt; Multi-Issue Batch Processing &gt; should process multiple issues in sequence" time="1.529480416">
+        </testcase>
+        <testcase classname="test/integration/workflows/batch-execution.test.ts" name="Batch Execution Integration Tests &gt; Multi-Issue Batch Processing &gt; should handle parallel batch execution" time="0.005410292">
+        </testcase>
+        <testcase classname="test/integration/workflows/batch-execution.test.ts" name="Batch Execution Integration Tests &gt; Multi-Issue Batch Processing &gt; should respect priority order in batch execution" time="0.002414166">
+        </testcase>
+        <testcase classname="test/integration/workflows/batch-execution.test.ts" name="Batch Execution Integration Tests &gt; Multi-Issue Batch Processing &gt; should execute batch processing using AutonomousAgent executeAll" time="0.009479042">
+        </testcase>
+        <testcase classname="test/integration/workflows/batch-execution.test.ts" name="Batch Execution Integration Tests &gt; TODO List Management &gt; should update TODO list during batch execution" time="0.309707625">
+        </testcase>
+        <testcase classname="test/integration/workflows/batch-execution.test.ts" name="Batch Execution Integration Tests &gt; TODO List Management &gt; should handle TODO dependencies" time="0.002729375">
+        </testcase>
+        <testcase classname="test/integration/workflows/batch-execution.test.ts" name="Batch Execution Integration Tests &gt; Progress Tracking &gt; should track execution progress accurately" time="0.002362625">
+        </testcase>
+        <testcase classname="test/integration/workflows/batch-execution.test.ts" name="Batch Execution Integration Tests &gt; Progress Tracking &gt; should generate execution summary report" time="0.003432458">
+        </testcase>
+        <testcase classname="test/integration/workflows/batch-execution.test.ts" name="Batch Execution Integration Tests &gt; Incremental Execution &gt; should support resuming interrupted batch execution" time="0.00554175">
+        </testcase>
+        <testcase classname="test/integration/workflows/batch-execution.test.ts" name="Batch Execution Integration Tests &gt; Incremental Execution &gt; should handle partial file updates in batch" time="0.005905125">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/integration/workflows/issue-lifecycle.test.ts" timestamp="2025-07-04T09:46:32.646Z" hostname="Carls-MBP-H.home" tests="8" failures="0" errors="0" skipped="0" time="0.712474625">
+        <testcase classname="test/integration/workflows/issue-lifecycle.test.ts" name="Issue Lifecycle Integration Tests &gt; Complete Issue Execution &gt; should execute a simple issue from start to finish" time="0.079808875">
+        </testcase>
+        <testcase classname="test/integration/workflows/issue-lifecycle.test.ts" name="Issue Lifecycle Integration Tests &gt; Complete Issue Execution &gt; should handle multi-file issue implementation" time="0.082355166">
+        </testcase>
+        <testcase classname="test/integration/workflows/issue-lifecycle.test.ts" name="Issue Lifecycle Integration Tests &gt; Issue Dependencies &gt; should respect issue dependencies order" time="0.062790416">
+        </testcase>
+        <testcase classname="test/integration/workflows/issue-lifecycle.test.ts" name="Issue Lifecycle Integration Tests &gt; Issue Dependencies &gt; should detect circular dependencies" time="0.066831416">
+        </testcase>
+        <testcase classname="test/integration/workflows/issue-lifecycle.test.ts" name="Issue Lifecycle Integration Tests &gt; Git Integration &gt; should create commits for completed issues" time="0.122940666">
+        </testcase>
+        <testcase classname="test/integration/workflows/issue-lifecycle.test.ts" name="Issue Lifecycle Integration Tests &gt; Git Integration &gt; should handle git workflow with branches" time="0.160159625">
+        </testcase>
+        <testcase classname="test/integration/workflows/issue-lifecycle.test.ts" name="Issue Lifecycle Integration Tests &gt; Configuration Updates &gt; should persist configuration changes during execution" time="0.071127584">
+        </testcase>
+        <testcase classname="test/integration/workflows/issue-lifecycle.test.ts" name="Issue Lifecycle Integration Tests &gt; Configuration Updates &gt; should track provider usage patterns" time="0.065198667">
+        </testcase>
+    </testsuite>
+</testsuites>

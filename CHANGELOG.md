@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix Vitest benchmark reporter configuration - Remove invalid `--reporter=json` flag from npm script
 - Fix benchmark include path in vitest.bench.config.ts to match actual file locations
 - Fix benchmark JSON output configuration to use outputJson option instead of CLI flag
+- Fix test artifacts generation for GitHub Actions - Configure Vitest to output coverage reports and test results to expected locations
+- Add coverage flag to test:unit and test:integration scripts to ensure coverage is generated in CI
+- Configure test result reporters (json, junit) to output to test-results directory for artifact upload
 
 ## [0.2.0] - 2025-07-03
 

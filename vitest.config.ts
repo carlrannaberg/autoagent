@@ -10,6 +10,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'json-summary', 'html', 'lcov'],
+      reportsDirectory: './coverage',
       exclude: [
         'coverage/**',
         'dist/**',
@@ -31,6 +32,11 @@ export default defineConfig({
         branches: 75,
         statements: 50
       }
+    },
+    reporters: ['default', 'json', 'junit'],
+    outputFile: {
+      json: './test-results/results.json',
+      junit: './test-results/junit.xml'
     },
     setupFiles: ['./test/setup.ts'],
     testTimeout: 30000,
