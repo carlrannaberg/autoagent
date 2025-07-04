@@ -71,22 +71,24 @@ git log ${LAST_TAG}..HEAD --oneline | head -20
 echo
 echo "Using $AI_CLI to analyze changes and prepare release..."
 echo "This process typically takes 3-5 minutes as the AI analyzes the codebase..."
-echo "Timeout set to 15 minutes for safety."
+echo "Timeout set to 10 minutes for safety."
 
 # Use AI CLI to prepare the release with faster model and longer timeout
 # Temporarily disable exit on error for AI command
 set +e
 
 # Check if timeout command is available (not on macOS by default)
-if command -v timeout >/dev/null 2>&1; then
-    TIMEOUT_CMD="timeout 900"
+# Timeout is set to 600 seconds (10 minutes) for AI processing
+if command -v gtimeout >/dev/null 2>&1; then
+    # On macOS with GNU coreutils installed
+    TIMEOUT_CMD="gtimeout 600"
+elif command -v timeout >/dev/null 2>&1; then
+    # On Linux or other systems with timeout
+    TIMEOUT_CMD="timeout 600"
 else
-    # On macOS, use gtimeout if available, otherwise no timeout
-    if command -v gtimeout >/dev/null 2>&1; then
-        TIMEOUT_CMD="gtimeout 900"
-    else
-        TIMEOUT_CMD=""
-    fi
+    # No timeout command available
+    echo "Warning: No timeout command available. Install coreutils on macOS: brew install coreutils"
+    TIMEOUT_CMD=""
 fi
 
 $TIMEOUT_CMD $AI_CLI $AI_MODEL $AI_FLAGS -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
