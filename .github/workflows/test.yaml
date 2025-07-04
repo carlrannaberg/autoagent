@@ -114,11 +114,14 @@ jobs:
     - name: Run benchmarks
       run: npm run bench
     
+    - name: Transform benchmark results
+      run: node scripts/transform-benchmark-results.js bench-results.json bench-results-transformed.json
+    
     - name: Store benchmark results
       uses: benchmark-action/github-action-benchmark@v1
       with:
-        tool: 'vitest'
-        output-file-path: bench-results.json
+        tool: 'customBiggerIsBetter'
+        output-file-path: bench-results-transformed.json
         github-token: ${{ secrets.GITHUB_TOKEN }}
         auto-push: true
         comment-on-alert: true

@@ -6,7 +6,7 @@ describe('Retry Utility Performance Benchmarks', () => {
   describe('Retry Logic', () => {
     bench('successful operation (no retry)', async () => {
       await retry(
-        async () => 'success',
+        () => Promise.resolve('success'),
         { retries: 3, minTimeout: 100 }
       );
     });
@@ -14,11 +14,11 @@ describe('Retry Utility Performance Benchmarks', () => {
     bench('operation with 1 retry', async () => {
       let attempt = 0;
       await retry(
-        async () => {
+        () => {
           if (++attempt < 2) {
-            throw new Error('Temporary failure');
+            return Promise.reject(new Error('Temporary failure'));
           }
-          return 'success';
+          return Promise.resolve('success');
         },
         { retries: 3, minTimeout: 10 }
       );
@@ -27,11 +27,11 @@ describe('Retry Utility Performance Benchmarks', () => {
     bench('operation with 2 retries', async () => {
       let attempt = 0;
       await retry(
-        async () => {
+        () => {
           if (++attempt < 3) {
-            throw new Error('Temporary failure');
+            return Promise.reject(new Error('Temporary failure'));
           }
-          return 'success';
+          return Promise.resolve('success');
         },
         { retries: 3, minTimeout: 10 }
       );
@@ -44,7 +44,7 @@ describe('Retry Utility Performance Benchmarks', () => {
         for (let i = 0; i < 100; i++) {
           promises.push(
             retryWithJitter(
-              async () => 'success',
+              () => Promise.resolve('success'),
               { retries: 1, minTimeout: 1 }
             )
           );

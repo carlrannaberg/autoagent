@@ -5,24 +5,24 @@ import { createTempDir } from '../../../setup';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { spawn } from 'child_process';
-import { promisify } from 'util';
-
-const exec = promisify(spawn);
 
 describe('Git Utilities Performance Benchmarks', () => {
   let tempDir: string;
   let hasGit = false;
 
   beforeAll(async () => {
-    tempDir = await createTempDir();
+    tempDir = createTempDir();
     
     // Check if git is available
     try {
       await new Promise((resolve, reject) => {
         const proc = spawn('git', ['--version']);
         proc.on('close', (code) => {
-          if (code === 0) resolve(true);
-          else reject(new Error('Git not available'));
+          if (code === 0) {
+            resolve(true);
+          } else {
+            reject(new Error('Git not available'));
+          }
         });
         proc.on('error', reject);
       });
@@ -33,8 +33,11 @@ describe('Git Utilities Performance Benchmarks', () => {
       await new Promise((resolve, reject) => {
         const proc = spawn('git', ['init']);
         proc.on('close', (code) => {
-          if (code === 0) resolve(true);
-          else reject(new Error('Git init failed'));
+          if (code === 0) {
+            resolve(true);
+          } else {
+            reject(new Error('Git init failed'));
+          }
         });
       });
       
@@ -47,14 +50,18 @@ describe('Git Utilities Performance Benchmarks', () => {
       }
       
       // Initial commit
-      await new Promise((resolve, reject) => {
+      await new Promise((resolve, _reject) => {
         const proc = spawn('git', ['add', '.']);
-        proc.on('close', () => resolve(true));
+        proc.on('close', () => {
+          resolve(true);
+        });
       });
       
-      await new Promise((resolve, reject) => {
+      await new Promise((resolve, _reject) => {
         const proc = spawn('git', ['commit', '-m', 'Initial commit']);
-        proc.on('close', () => resolve(true));
+        proc.on('close', () => {
+          resolve(true);
+        });
       });
       
       // Make some changes

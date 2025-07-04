@@ -12,7 +12,7 @@ describe('PatternAnalyzer Performance Benchmarks', () => {
   let sampleResults: ExecutionResult[];
 
   beforeAll(async () => {
-    tempDir = await createTempDir();
+    tempDir = createTempDir();
     analyzer = new PatternAnalyzer(tempDir);
     
     // Create sample execution results
@@ -50,38 +50,43 @@ describe('PatternAnalyzer Performance Benchmarks', () => {
         JSON.stringify(result, null, 2)
       );
     }
+    
+    // Add all sample results to the analyzer
+    for (const result of sampleResults) {
+      analyzer.addExecution(result);
+    }
   });
 
   describe('Pattern Analysis', () => {
-    bench('analyze all patterns', async () => {
-      await analyzer.analyzePatterns();
+    bench('add executions and analyze', () => {
+      const newAnalyzer = new PatternAnalyzer(tempDir);
+      for (const result of sampleResults) {
+        newAnalyzer.addExecution(result);
+      }
     });
 
-    bench('analyze success patterns', async () => {
-      await analyzer.analyzeSuccessPatterns(sampleResults);
+    bench('get patterns', () => {
+      analyzer.getPatterns();
     });
 
-    bench('analyze failure patterns', async () => {
-      await analyzer.analyzeFailurePatterns(sampleResults);
+    bench('get recommendations', () => {
+      analyzer.getRecommendations();
     });
 
-    bench('analyze file change patterns', async () => {
-      await analyzer.analyzeFileChangePatterns(sampleResults);
-    });
-
-    bench('analyze duration patterns', async () => {
-      await analyzer.analyzeDurationPatterns(sampleResults);
-    });
-
-    bench('analyze provider patterns', async () => {
-      await analyzer.analyzeProviderPatterns(sampleResults);
+    bench('get execution count', () => {
+      analyzer.getExecutionCount();
     });
 
     createBenchmark(
       'full analysis 10 times',
-      async () => {
+      () => {
         for (let i = 0; i < 10; i++) {
-          await analyzer.analyzePatterns();
+          const newAnalyzer = new PatternAnalyzer(tempDir);
+          for (const result of sampleResults) {
+            newAnalyzer.addExecution(result);
+          }
+          newAnalyzer.getPatterns();
+          newAnalyzer.getRecommendations();
         }
       },
       { iterations: 5 }
@@ -118,7 +123,7 @@ describe('PatternAnalyzer Performance Benchmarks', () => {
       const errorCounts = new Map<string, number>();
       for (const error of errors) {
         const key = error.split(' ').slice(0, 3).join(' '); // First 3 words
-        errorCounts.set(key, (errorCounts.get(key) || 0) + 1);
+        errorCounts.set(key, (errorCounts.get(key) ?? 0) + 1);
       }
       
       return Array.from(errorCounts.entries())
@@ -137,7 +142,7 @@ describe('PatternAnalyzer Performance Benchmarks', () => {
       for (const result of sampleResults) {
         const hour = new Date(result.timestamp).getHours();
         hourlyStats[hour].count++;
-        if (result.success) {
+        if (result.success === true) {
           hourlyStats[hour].successes++;
         }
       }
@@ -155,7 +160,7 @@ describe('PatternAnalyzer Performance Benchmarks', () => {
         }
         const stats = dailyStats.get(day)!;
         stats.count++;
-        if (result.success) {
+        if (result.success === true) {
           stats.successes++;
         }
       }
@@ -170,7 +175,7 @@ describe('PatternAnalyzer Performance Benchmarks', () => {
       
       for (const result of sampleResults) {
         for (const file of result.filesModified) {
-          fileFrequency.set(file, (fileFrequency.get(file) || 0) + 1);
+          fileFrequency.set(file, (fileFrequency.get(file) ?? 0) + 1);
         }
       }
       
@@ -184,7 +189,7 @@ describe('PatternAnalyzer Performance Benchmarks', () => {
       for (const result of sampleResults) {
         for (const file of result.filesModified) {
           const ext = path.extname(file);
-          typeCount.set(ext, (typeCount.get(ext) || 0) + 1);
+          typeCount.set(ext, (typeCount.get(ext) ?? 0) + 1);
         }
       }
       

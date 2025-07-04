@@ -12,7 +12,7 @@ describe('FileManager Performance Benchmarks', () => {
   let plansDir: string;
 
   beforeAll(async () => {
-    tempDir = await createTempDir();
+    tempDir = createTempDir();
     fileManager = new FileManager(tempDir);
     issuesDir = path.join(tempDir, 'issues');
     plansDir = path.join(tempDir, 'plans');
@@ -182,7 +182,14 @@ ${'Additional note text '.repeat(30)}
       async () => {
         for (let i = 0; i < 100; i++) {
           const todos = await fileManager.readTodoList();
-          todos.todos[0].completed = !todos.todos[0].completed;
+          if (todos.length > 0 && todos[0] !== undefined) {
+            // Toggle completion status in markdown format
+            if (todos[0].includes('[ ]')) {
+              todos[0] = todos[0].replace('[ ]', '[x]');
+            } else {
+              todos[0] = todos[0].replace('[x]', '[ ]');
+            }
+          }
           await fileManager.updateTodoList(todos);
         }
       },

@@ -1,7 +1,7 @@
 import { describe, bench, beforeAll } from 'vitest';
 import { ConfigManager } from '../../../../src/core/config-manager';
 import { createBenchmark } from '../utils/benchmark.utils';
-import { createTempDir, createConfiguration } from '../../../setup';
+import { createTempDir } from '../../../setup';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -12,7 +12,7 @@ describe('ConfigManager Performance Benchmarks', () => {
   let largeConfig: any;
 
   beforeAll(async () => {
-    tempDir = await createTempDir();
+    tempDir = createTempDir();
     configPath = path.join(tempDir, '.autoagent', 'config.json');
     await fs.mkdir(path.dirname(configPath), { recursive: true });
     configManager = new ConfigManager(tempDir);

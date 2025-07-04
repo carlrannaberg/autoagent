@@ -9,7 +9,7 @@ describe('File Operations Benchmarks', () => {
   let testFiles: string[];
 
   beforeAll(async () => {
-    tempDir = await createTempDir();
+    tempDir = createTempDir();
     testFiles = [];
     
     // Create test files of various sizes
