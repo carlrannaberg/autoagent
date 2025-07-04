@@ -95,6 +95,9 @@ jobs:
     name: Performance Benchmarks
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    permissions:
+      contents: write
+      deployments: write
     
     steps:
     - name: Checkout repository
@@ -128,6 +131,7 @@ jobs:
         alert-threshold: '200%'
         comment-always: true
         fail-on-alert: false
+        skip-fetch-gh-pages: true
   
   coverage-check:
     name: Coverage Report
