@@ -24,7 +24,7 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:ui": "vitest --coverage --ui",
     "test:bench": "vitest bench --config vitest.bench.config.ts",
-    "bench": "vitest bench --config vitest.bench.config.ts --reporter=json --outputFile=bench-results.json",
+    "bench": "vitest bench --config vitest.bench.config.ts",
     "bench:enhanced": "node -r esbuild-register test/performance/benchmarks/ci-runner.ts",
     "bench:ci": "node -r esbuild-register test/performance/benchmarks/ci-runner.ts --fail-on-regression false --iterations 10",
     "bench:stats": "node -r esbuild-register test/performance/benchmarks/ci-runner.ts --iterations 200 --output-dir ./benchmark-results",

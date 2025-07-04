@@ -4,9 +4,9 @@ import path from 'path';
 export default defineConfig({
   test: {
     benchmark: {
-      include: ['test/benchmarks/**/*.bench.ts'],
-      outputJson: 'test/benchmarks/results.json',
-      reporters: ['verbose', 'json'],
+      include: ['test/performance/benchmarks/**/*.bench.ts'],
+      outputJson: 'bench-results.json',
+      reporters: ['verbose'],
     },
     environment: 'node',
     globals: true,

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix Vitest benchmark reporter configuration - Remove invalid `--reporter=json` flag from npm script
+- Fix benchmark include path in vitest.bench.config.ts to match actual file locations
+- Fix benchmark JSON output configuration to use outputJson option instead of CLI flag
+
 ## [0.2.0] - 2025-07-03
 
 ### Added
