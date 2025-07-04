@@ -6,7 +6,7 @@ import { ProviderName } from '../../types';
 export function registerBootstrapCommand(program: Command): void {
   program
     .command('bootstrap [plan-file]')
-    .description('Create initial issue from master plan')
+    .description('Create initial issue from master plan (uses next available issue number)')
     .option('-p, --provider <provider>', 'Override AI provider for this operation (claude or gemini)')
     .option('-w, --workspace <path>', 'Workspace directory', process.cwd())
     .action(async (planFile: string | undefined, options: { provider?: string; workspace?: string }) => {

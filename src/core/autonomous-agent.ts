@@ -781,6 +781,8 @@ ${result.output ?? 'Success'}`;
 
   /**
    * Bootstrap from master plan
+   * Creates an initial issue that decomposes the master plan into individual actionable tasks.
+   * Uses dynamic issue numbering to avoid conflicts with existing issues.
    */
   async bootstrap(masterPlanPath: string): Promise<void> {
     const provider = await this.getProviderForOperation();
@@ -839,6 +841,7 @@ ${masterPlanContent}`;
 
     // Create initial issue for bootstrapping
     // Use dynamic issue numbering to avoid overwriting existing issues
+    // This ensures bootstrap works correctly even when issues already exist
     const issueNumber = await this.fileManager.getNextIssueNumber();
     const planBasename = path.basename(masterPlanPath, path.extname(masterPlanPath));
     const issueTitle = `Implement plan from ${planBasename}`;

@@ -277,7 +277,21 @@ autoagent bootstrap --provider gemini my-plan.md
 autoagent bootstrap --workspace /path/to/project
 ```
 
-The bootstrap command reads your master plan (markdown file) and creates the first actionable issue from it.
+The bootstrap command reads your master plan (markdown file) and creates the first actionable issue from it. It automatically uses the next available issue number, so it works correctly even when issues already exist.
+
+**Example with existing issues:**
+```bash
+# If issues 1-3 already exist, bootstrap will create issue #4
+$ ls issues/
+1-setup-project.md  2-add-tests.md  3-refactor-api.md
+
+$ autoagent bootstrap feature-plan.md
+✓ Created issue #4: Implement plan from feature-plan
+
+# Bootstrap can be run multiple times for different plans
+$ autoagent bootstrap phase2-plan.md
+✓ Created issue #5: Implement plan from phase2-plan
+```
 
 ### Command Options
 
