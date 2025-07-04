@@ -39,11 +39,16 @@ jobs:
     - name: Run benchmarks
       run: npm run bench
     
+    - name: Transform benchmark results
+      run: node scripts/transform-benchmark-results.js bench-results.json bench-results-transformed.json
+    
     - name: Upload benchmark results
       uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
-        path: bench-results.json
+        path: |
+          bench-results.json
+          bench-results-transformed.json
         retention-days: 30
     
     - name: Store benchmark result
@@ -51,7 +56,7 @@ jobs:
       with:
         name: TypeScript Benchmarks
         tool: 'customBiggerIsBetter'
-        output-file-path: bench-results.json
+        output-file-path: bench-results-transformed.json
         github-token: ${{ secrets.GITHUB_TOKEN }}
         auto-push: true
         comment-on-alert: true
