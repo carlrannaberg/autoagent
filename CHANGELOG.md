@@ -7,25 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-07-04
+
 ### Changed
-- **BREAKING**: Remove `init` command and `.autoagent.json` marker file - projects now use lazy initialization
-- Migrate ESLint configuration from legacy `.eslintrc.js` to flat config format (`eslint.config.js`) for ESLint v9 compatibility
-- Update npm lint scripts to remove deprecated `--ext` flag
-- Update Dependabot configuration to implement conservative update strategy for major versions
-- Configure Dependabot to group minor and patch updates for easier testing
-- Add version constraints for ESLint v9+ to prevent automatic breaking updates
+- **BREAKING**: Remove `init` command and `.autoagent.json` marker file - projects now use lazy initialization, directories are created on-demand when needed
+- Update semantic versioning guidelines in AGENT.md to clarify pre-1.0 versioning rules (breaking changes in minor releases, features in patch releases)
 
 ### Removed
-- **BREAKING**: Remove `autoagent init` command - no longer needed as directories are created on-demand
+- **BREAKING**: Remove `autoagent init` command - no longer needed as project structure is created automatically
 - **BREAKING**: Remove `.autoagent.json` project marker file - configuration is now handled entirely through `.autoagent/config.json`
+- Remove project initialization checks from all CLI commands - commands now work without explicit initialization
+
+### Added
+- Add Claude command file for generating technical specification documents (`.claude/commands/spec.md`)
+- Add Claude local settings configuration for permission management (`.claude/settings.local.json`)
+- Add comprehensive specification for Gemini output formatting improvements (`specs/gemini-output-formatting.md`)
+- Add issue and plan files for implementing Gemini output formatting (#15)
 
 ### Fixed
-- Fix Vitest benchmark reporter configuration - Remove invalid `--reporter=json` flag from npm script
-- Fix benchmark include path in vitest.bench.config.ts to match actual file locations
-- Fix benchmark JSON output configuration to use outputJson option instead of CLI flag
-- Fix test artifacts generation for GitHub Actions - Configure Vitest to output coverage reports and test results to expected locations
-- Add coverage flag to test:unit and test:integration scripts to ensure coverage is generated in CI
-- Configure test result reporters (json, junit) to output to test-results directory for artifact upload
+- Fix e2e tests to work without explicit project initialization
+- Update test helpers to remove init command dependencies
+- Fix error handling tests to expect graceful handling of missing configuration
 
 ## [0.2.0] - 2025-07-03
 
