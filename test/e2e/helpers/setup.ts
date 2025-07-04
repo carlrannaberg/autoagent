@@ -30,12 +30,11 @@ export function setupE2ETest(): E2EContext {
   };
 }
 
-export async function initializeProject(workspace: E2EWorkspace, cli: CliExecutor): Promise<void> {
+export async function initializeProject(workspace: E2EWorkspace, _cli: CliExecutor): Promise<void> {
   await workspace.initGit();
-  const result = await cli.execute(['init']);
-  if (result.exitCode !== 0) {
-    throw new Error(`Failed to initialize project: ${result.stderr}`);
-  }
+  // Create AGENT.md that would have been created by init
+  await workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+  // Note: issues/ and plans/ directories will be created on-demand by the commands
 }
 
 export async function createSampleIssue(workspace: E2EWorkspace, name: string, issueNumber?: number): Promise<void> {

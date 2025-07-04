@@ -18,15 +18,6 @@ export function registerConfigCommand(program: Command): void {
     .option('--show-source', 'Show the source of each configuration value')
     .action(async (key?: string, options?: { showSource?: boolean }) => {
       try {
-        // Check if project is initialized
-        const projectConfigPath = path.join(process.cwd(), '.autoagent.json');
-        try {
-          await fs.access(projectConfigPath);
-        } catch {
-          Logger.error(new Error('Project not initialized. Run: autoagent init'));
-          process.exit(1);
-        }
-        
         const configManager = new ConfigManager();
         
         // Check for corrupted JSON in config files before loading
@@ -98,17 +89,6 @@ export function registerConfigCommand(program: Command): void {
     .option('-g, --global', 'Set in global configuration')
     .action(async (key: string, value: string, options: { global?: boolean }) => {
       try {
-        // Check if project is initialized (unless setting global config)
-        if (options.global !== true) {
-          const projectConfigPath = path.join(process.cwd(), '.autoagent.json');
-          try {
-            await fs.access(projectConfigPath);
-          } catch {
-            Logger.error(new Error('Project not initialized. Run: autoagent init'));
-            process.exit(1);
-          }
-        }
-        
         const configManager = new ConfigManager();
         try {
           await configManager.loadConfig();

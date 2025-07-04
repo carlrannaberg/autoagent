@@ -15,11 +15,8 @@ describe('Git Integration Workflow E2E', () => {
     await context.workspace.createFile('README.md', '# Test Project\n');
     await context.workspace.commit('Initial commit');
 
-    // Set mock provider before initialization
+    // Set mock provider
     context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-    
-    await context.cli.execute(['init']);
-    await context.workspace.commit('Add autoagent configuration');
 
     // Create and run an issue with mock provider
     const createResult = await context.cli.execute([
@@ -51,7 +48,7 @@ describe('Git Integration Workflow E2E', () => {
       cwd: context.workspace.getPath(),
     });
     expect(log).toContain('Add test issue');
-    expect(log).toContain('Add autoagent configuration');
+    expect(log).toContain('Initial commit');
   });
 
   it('should create meaningful commit messages', async () => {
@@ -61,11 +58,8 @@ describe('Git Integration Workflow E2E', () => {
     await context.workspace.createFile('README.md', '# Test Project\n');
     await context.workspace.commit('Initial commit');
     
-    // Set mock provider before initialization
+    // Set mock provider
     context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-    
-    await context.cli.execute(['init']);
-    await context.workspace.commit('Initial setup');
 
     // Create multiple issues
     const issues = [
@@ -115,11 +109,8 @@ describe('Git Integration Workflow E2E', () => {
     await context.workspace.createFile('README.md', '# Test Project\n');
     await context.workspace.commit('Initial commit');
     
-    // Set mock provider before initialization
+    // Set mock provider
     context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-    
-    await context.cli.execute(['init']);
-    await context.workspace.commit('Add configuration');
 
     // Create issue but don't commit
     const createResult = await context.cli.execute([
@@ -153,11 +144,8 @@ describe('Git Integration Workflow E2E', () => {
     await context.workspace.createFile('README.md', '# Test Project\n');
     await context.workspace.commit('Initial commit');
     
-    // Set mock provider before initialization
+    // Set mock provider
     context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-    
-    await context.cli.execute(['init']);
-    await context.workspace.commit('Initial setup');
 
     // Get the default branch name
     const { stdout: defaultBranch } = await execFileAsync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {

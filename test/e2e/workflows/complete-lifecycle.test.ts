@@ -6,10 +6,9 @@ describe('Complete Issue Lifecycle E2E', () => {
   const context = setupE2ETest();
 
   it('should complete full issue lifecycle: create → run → status', async () => {
-    // Initialize project
+    // Initialize git repository
     await context.workspace.initGit();
-    let result = await context.cli.execute(['init']);
-    expect(result.exitCode).toBe(0);
+    let result;
 
     // Create an issue
     result = await context.cli.execute([

@@ -59,15 +59,6 @@ async function listIssues(workspace: string, options: { status?: string; json?: 
     }
   }
 
-  // Check if project is initialized
-  const projectConfigPath = path.join(workspace, '.autoagent.json');
-  try {
-    await fs.access(projectConfigPath);
-  } catch {
-    Logger.error('Project not initialized. Run "autoagent init" first.');
-    process.exit(1);
-  }
-
   const issuesDir = path.join(workspace, 'issues');
   const statusFile = path.join(workspace, '.autoagent', 'status.json');
 

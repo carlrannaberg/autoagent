@@ -47,15 +47,7 @@ export function registerRunCommand(program: Command): void {
     .option('--dry-run', 'Preview what would be done without making changes')
     .action(async (issue?: string, options: RunOptions = {}) => {
       try {
-        // Check if project is initialized
         const workspacePath = options.workspace ?? process.cwd();
-        const projectConfigPath = path.join(workspacePath, '.autoagent.json');
-        try {
-          await fs.access(projectConfigPath);
-        } catch {
-          Logger.error(new Error('Project not initialized. Run: autoagent init'));
-          process.exit(1);
-        }
         
         // Validate arguments
         if ((issue === null || issue === undefined || issue.length === 0) && options.all !== true) {

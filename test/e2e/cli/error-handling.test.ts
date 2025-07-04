@@ -34,20 +34,15 @@ describe('Error Handling E2E', () => {
   });
 
   describe('File System Errors', () => {
-    it('should handle missing configuration file', async () => {
+    it('should handle missing configuration file gracefully', async () => {
       const result = await context.cli.execute(['config', 'get']);
 
-      expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('not initialized');
-      expect(result.stderr).toContain('autoagent init');
+      // Should succeed with default config values
+      expect(result.exitCode).toBe(0);
     });
 
     it('should handle corrupted configuration file', async () => {
-      // First initialize the project
-      await context.workspace.initGit();
-      await context.cli.execute(['init']);
-      
-      // Then corrupt the actual config file
+      // Create a corrupted config file
       await context.workspace.createFile('.autoagent/config.json', '{ invalid json }');
 
       const result = await context.cli.execute(['config', 'get']);
