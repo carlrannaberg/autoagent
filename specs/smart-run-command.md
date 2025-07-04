@@ -287,34 +287,15 @@ Examples:
   autoagent run --all             # Execute all pending issues
 ```
 
-## Implementation Phases
+## Implementation Steps
 
-### Phase 1: Core Implementation (Day 1-2)
 1. **Add input type detection** to run command
 2. **Implement spec file handling** in run workflow
-3. **Maintain backward compatibility** for existing run usage
-4. **Add clear progress logging** for spec execution
-
-### Phase 2: Bootstrap Removal (Day 2-3)
-1. **Delete bootstrap command file** (`src/cli/commands/bootstrap.ts`)
-2. **Remove bootstrap registration** from CLI index
-3. **Clean up any bootstrap references** in code
-4. **Test that spec files work via run command**
-
-### Phase 3: Testing (Day 3-4)
-1. **Write unit tests** for input detection
-2. **Create integration tests** for spec execution
-3. **Add E2E tests** for all run scenarios
-4. **Verify backward compatibility** thoroughly
-
-### Phase 4: Documentation (Day 4-5)
-1. **Update README** with unified run examples
-   - Replace "master plan" terminology with "spec file"
-   - Remove bootstrap section entirely
-   - Add spec file vs plan file vs issue file terminology clarification
-2. **Update CHANGELOG** with run enhancement and bootstrap removal
-3. **Remove any bootstrap documentation**
-4. **Update all documentation** to use run command and correct terminology
+3. **Delete bootstrap command file** (`src/cli/commands/bootstrap.ts`)
+4. **Remove bootstrap registration** from CLI index
+5. **Clean up any bootstrap references** in code
+6. **Write comprehensive tests** for input detection and spec execution
+7. **Update documentation** to use spec file terminology
 
 ## Open Questions
 
