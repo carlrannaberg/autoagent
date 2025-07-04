@@ -320,12 +320,22 @@ export class AutonomousAgent extends EventEmitter {
       const isRateLimited = await this.configManager.isProviderRateLimited(this.config.provider);
 
       if (isRateLimited === false && await provider.checkAvailability()) {
+        if (this.config.debug) {
+          this.reportProgress(`Using requested provider: ${this.config.provider}`, 0);
+        }
         return provider;
       }
     }
 
     // Use failover logic
+    const userConfig = this.configManager.getConfig();
     const availableProviders = await this.configManager.getAvailableProviders();
+    
+    if (this.config.debug) {
+      this.reportProgress(`Configured providers: ${JSON.stringify(userConfig.providers)}`, 0);
+      this.reportProgress(`Available providers: ${JSON.stringify(availableProviders)}`, 0);
+    }
+    
     const provider = await getFirstAvailableProvider(availableProviders);
 
     if (provider === null) {
