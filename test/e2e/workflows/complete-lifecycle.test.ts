@@ -113,7 +113,7 @@ describe('Complete Issue Lifecycle E2E', () => {
     const result = await context.cli.execute(['run', 'provider-test', '--provider', 'claude']);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('Using provider: claude');
+    expect(result.stdout).toContain('Provider override: claude');
 
     // Verify config wasn't changed
     const configResult = await context.cli.execute(['config', 'get', 'provider']);

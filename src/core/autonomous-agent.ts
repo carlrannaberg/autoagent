@@ -314,16 +314,25 @@ export class AutonomousAgent extends EventEmitter {
    * Get an available provider with failover logic
    */
   private async getAvailableProvider(): Promise<Provider | null> {
+    // Always log provider selection process
+    this.reportProgress('🔍 Selecting provider...', 0);
+    
     // Check if specific provider is requested
     if (this.config.provider) {
+      this.reportProgress(`📌 Specific provider requested: ${this.config.provider}`, 0);
       const provider = createProvider(this.config.provider);
       const isRateLimited = await this.configManager.isProviderRateLimited(this.config.provider);
 
-      if (isRateLimited === false && await provider.checkAvailability()) {
-        if (this.config.debug) {
-          this.reportProgress(`Using requested provider: ${this.config.provider}`, 0);
+      if (isRateLimited === true) {
+        this.reportProgress(`⚠️  ${this.config.provider} is rate limited`, 0);
+      } else {
+        const isAvailable = await provider.checkAvailability();
+        if (isAvailable) {
+          this.reportProgress(`✅ Using requested provider: ${this.config.provider}`, 0);
+          return provider;
+        } else {
+          this.reportProgress(`❌ ${this.config.provider} is not available`, 0);
         }
-        return provider;
       }
     }
 
@@ -331,16 +340,14 @@ export class AutonomousAgent extends EventEmitter {
     const userConfig = this.configManager.getConfig();
     const availableProviders = await this.configManager.getAvailableProviders();
     
-    if (this.config.debug) {
-      this.reportProgress(`Configured providers: ${JSON.stringify(userConfig.providers)}`, 0);
-      this.reportProgress(`Available providers: ${JSON.stringify(availableProviders)}`, 0);
-    }
+    this.reportProgress(`📋 Configured providers: ${JSON.stringify(userConfig.providers)}`, 0);
+    this.reportProgress(`✅ Available providers: ${JSON.stringify(availableProviders)}`, 0);
     
     const provider = await getFirstAvailableProvider(availableProviders);
 
     if (provider === null) {
       // All providers are rate limited
-      this.reportProgress('All providers are rate limited. Waiting for cooldown...', 0);
+      this.reportProgress('❌ All providers are rate limited. Waiting for cooldown...', 0);
 
       // Find the provider with the shortest remaining cooldown
       let shortestCooldown = Infinity;
@@ -359,6 +366,8 @@ export class AutonomousAgent extends EventEmitter {
         const minutes = Math.ceil(shortestCooldown / 60000);
         throw new Error(`All providers rate limited. Next available: ${nextProvider} in ${minutes} minutes`);
       }
+    } else {
+      this.reportProgress(`🎯 Selected provider: ${provider.name}`, 0);
     }
 
     return provider;

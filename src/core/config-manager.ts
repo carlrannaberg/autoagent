@@ -53,6 +53,15 @@ export class ConfigManager {
       ...localConfig
     };
 
+    // Debug logging
+    if (process.env.AUTOAGENT_DEBUG === 'true') {
+      Logger.debug('Configuration loaded:');
+      Logger.debug(`  Default providers: ${JSON.stringify(ConfigManager.DEFAULT_CONFIG.providers)}`);
+      Logger.debug(`  Global config providers: ${JSON.stringify(globalConfig.providers)}`);
+      Logger.debug(`  Local config providers: ${JSON.stringify(localConfig.providers)}`);
+      Logger.debug(`  Final providers: ${JSON.stringify(this.config.providers)}`);
+    }
+
     return this.config;
   }
 
@@ -166,7 +175,11 @@ export class ConfigManager {
     try {
       const content = await fs.readFile(filePath, 'utf-8');
       try {
-        return JSON.parse(content) as Partial<UserConfig>;
+        const config = JSON.parse(content) as Partial<UserConfig>;
+        if (process.env.AUTOAGENT_DEBUG === 'true') {
+          Logger.debug(`Loaded config from ${filePath}: ${JSON.stringify(config)}`);
+        }
+        return config;
       } catch (parseError) {
         // Handle invalid JSON gracefully by returning empty config
         Logger.warning(`Invalid JSON in config file ${filePath}: ${String(parseError)}`);
@@ -174,6 +187,9 @@ export class ConfigManager {
       }
     } catch (error) {
       // Handle file read errors
+      if (process.env.AUTOAGENT_DEBUG === 'true') {
+        Logger.debug(`Config file not found: ${filePath}`);
+      }
       return {};
     }
   }

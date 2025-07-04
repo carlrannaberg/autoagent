@@ -107,7 +107,7 @@ export function registerRunCommand(program: Command): void {
 
         // Show provider being used
         if (options.provider !== null && options.provider !== undefined && options.provider.length > 0) {
-          Logger.info(`Using provider: ${options.provider}`);
+          Logger.info(`Provider override: ${options.provider}`);
         }
 
         if (options.all === true) {
