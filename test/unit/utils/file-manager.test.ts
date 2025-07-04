@@ -567,4 +567,175 @@ Technical details
       }
     });
   });
+
+  describe('generateFileSlug consistency and issue examples', () => {
+    beforeEach(() => {
+      (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    });
+
+    it('should generate slugs matching the exact examples from issue requirements', async () => {
+      // These are the specific examples from issue #30
+      const examples = [
+        { 
+          title: 'Implement User Authentication',
+          expectedSlug: 'implement-user-authentication'
+        },
+        { 
+          title: 'Fix Bug #123',
+          expectedSlug: 'fix-bug-123'
+        },
+        { 
+          title: 'Multiple...Dots',
+          expectedSlug: 'multiple-dots'
+        }
+      ];
+
+      for (let i = 0; i < examples.length; i++) {
+        const example = examples[i];
+        if (example) {
+          const issueNumber = i + 1;
+          
+          // Test issue creation
+          const issuePath = await fileManager.createIssue(issueNumber, example.title, 'content');
+          expect(issuePath).toBe(path.join(mockWorkspace, 'issues', `${issueNumber}-${example.expectedSlug}.md`));
+          
+          // Test plan creation with same title - should generate consistent filename
+          const plan: Plan = {
+            issueNumber,
+            file: '',
+            phases: [{ name: 'Test', tasks: ['Task'] }]
+          };
+          const planPath = await fileManager.createPlan(issueNumber, plan, example.title);
+          expect(planPath).toBe(path.join(mockWorkspace, 'plans', `${issueNumber}-${example.expectedSlug}-plan.md`));
+        }
+      }
+    });
+
+    it('should ensure consistent slug generation between createIssue and createPlan', async () => {
+      const titles = [
+        'Add User Authentication System',
+        'Fix Critical Bug in Payment Processing',
+        'Refactor Database Connection Pool',
+        'Update API Documentation',
+        'Implement Caching Layer'
+      ];
+
+      for (let i = 0; i < titles.length; i++) {
+        const title = titles[i];
+        if (title) {
+          const issueNumber = i + 1;
+          
+          // Create issue
+          const issuePath = await fileManager.createIssue(issueNumber, title, 'content');
+          const issueFilename = path.basename(issuePath);
+          const issueSlug = issueFilename.replace(`${issueNumber}-`, '').replace('.md', '');
+          
+          // Create plan with same title
+          const plan: Plan = {
+            issueNumber,
+            file: '',
+            phases: [{ name: 'Implementation', tasks: ['Implement feature'] }]
+          };
+          const planPath = await fileManager.createPlan(issueNumber, plan, title);
+          const planFilename = path.basename(planPath);
+          const planSlug = planFilename.replace(`${issueNumber}-`, '').replace('-plan.md', '');
+          
+          // Verify slugs are identical
+          expect(planSlug).toBe(issueSlug);
+          
+          // Verify plan content references the correct issue file
+          const planContent = (fs.writeFile as ReturnType<typeof vi.fn>).mock.calls.find(
+            call => call[0] === planPath
+          )?.[1] as string;
+          expect(planContent).toContain(`issues/${issueNumber}-${issueSlug}.md`);
+        }
+      }
+    });
+
+    it('should handle all slug generation edge cases consistently', async () => {
+      const edgeCases = [
+        // Special characters and punctuation
+        { title: 'Feature!!!...???', expected: 'feature' },
+        { title: '!!!@@@###$$$%%%', expected: '' },
+        { title: 'Test (with) [brackets] {and} <angles>', expected: 'test-with-brackets-and-angles' },
+        
+        // Spaces and whitespace
+        { title: '  Leading and Trailing Spaces  ', expected: 'leading-and-trailing-spaces' },
+        { title: 'Multiple     Spaces', expected: 'multiple-spaces' },
+        { title: '\tTabs\tand\tSpaces\t', expected: 'tabs-and-spaces' },
+        
+        // Dots and hyphens
+        { title: '.....dots.....', expected: 'dots' },
+        { title: '-----hyphens-----', expected: 'hyphens' },
+        { title: '...-...-...', expected: '' },
+        { title: 'dot.separated.words', expected: 'dot-separated-words' },
+        { title: 'hyphen-separated-words', expected: 'hyphen-separated-words' },
+        
+        // Mixed cases
+        { title: 'CamelCaseTitle', expected: 'camelcasetitle' },
+        { title: 'UPPERCASE TITLE', expected: 'uppercase-title' },
+        { title: 'mIxEd CaSe TiTlE', expected: 'mixed-case-title' },
+        
+        // Numbers
+        { title: '123 Numbers First', expected: '123-numbers-first' },
+        { title: 'Numbers 456 Middle', expected: 'numbers-456-middle' },
+        { title: 'Numbers Last 789', expected: 'numbers-last-789' },
+        { title: '123456789', expected: '123456789' },
+        
+        // Real-world examples
+        { title: 'TODO: Fix the bug', expected: 'todo-fix-the-bug' },
+        { title: '[URGENT] Security Update', expected: 'urgent-security-update' },
+        { title: 'Feature/branch-name', expected: 'featurebranch-name' },
+        { title: 'config.json parsing', expected: 'config-json-parsing' },
+        { title: 'v2.0.0 Release', expected: 'v2-0-0-release' }
+      ];
+
+      for (let i = 0; i < edgeCases.length; i++) {
+        const testCase = edgeCases[i];
+        if (testCase) {
+          const issueNumber = i + 1;
+          
+          // Test through createIssue
+          const issuePath = await fileManager.createIssue(issueNumber, testCase.title, 'content');
+          const actualSlug = path.basename(issuePath).replace(`${issueNumber}-`, '').replace('.md', '');
+          expect(actualSlug).toBe(testCase.expected);
+          
+          // Test through createPlan for consistency
+          if (testCase.expected !== '') {
+            const plan: Plan = {
+              issueNumber,
+              file: '',
+              phases: [{ name: 'Test', tasks: ['Task'] }]
+            };
+            const planPath = await fileManager.createPlan(issueNumber, plan, testCase.title);
+            const planSlug = path.basename(planPath).replace(`${issueNumber}-`, '').replace('-plan.md', '');
+            expect(planSlug).toBe(testCase.expected);
+          }
+        }
+      }
+    });
+
+    it('should handle null and undefined gracefully', async () => {
+      // Test with empty string (null/undefined would be handled by TypeScript)
+      const issueNumber = 1;
+      
+      // Empty string
+      const emptyPath = await fileManager.createIssue(issueNumber, '', 'content');
+      expect(emptyPath).toBe(path.join(mockWorkspace, 'issues', '1-.md'));
+      
+      // Plan without title (undefined)
+      const plan: Plan = {
+        issueNumber,
+        file: '',
+        phases: [{ name: 'Test', tasks: ['Task'] }]
+      };
+      const planPath = await fileManager.createPlan(issueNumber, plan);
+      expect(planPath).toBe(path.join(mockWorkspace, 'plans', '1-plan.md'));
+      
+      // Plan with empty string title
+      const planPath2 = await fileManager.createPlan(issueNumber, plan, '');
+      expect(planPath2).toBe(path.join(mockWorkspace, 'plans', '1-plan.md'));
+    });
+  });
 });
