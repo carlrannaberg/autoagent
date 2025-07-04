@@ -941,7 +941,7 @@ IMPORTANT: For each issue you create:
 
 ${result.output ?? 'Success'}`;
 
-    const issuePath = await this.fileManager.createIssue(issueNumber, issueTitle, issueContent);
+    await this.fileManager.createIssue(issueNumber, issueTitle, issueContent);
 
     // Create corresponding plan file
     await this.fileManager.createPlan(issueNumber, { 
@@ -955,19 +955,8 @@ ${result.output ?? 'Success'}`;
       challenges: ['Ensuring task independence', 'Managing dependencies']
     }, issueTitle);
 
-    // Create initial todo list
-    const issueFilename = path.basename(issuePath);
-    const todoContent = `# To-Do
-
-This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
-
-## Pending Issues
-- [ ] **[Issue #${issueNumber}]** ${issueTitle} - \`issues/${issueFilename}\`
-
-## Completed Issues
-`;
-
-    await this.fileManager.updateTodo(todoContent);
+    // Add issue to TODO list using shared method
+    await this.addIssueToTodo(issueNumber, issueTitle);
   }
 
   /**
