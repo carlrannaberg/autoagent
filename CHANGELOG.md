@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Update createPlan method to support optional title-based naming for consistency with issue filenames
 
+### Added
+- Add comprehensive documentation for filename conventions in README.md
+- Enhanced JSDoc documentation for generateFileSlug method with additional examples
+
 ## [0.3.3] - 2025-07-04
 
 ### Fixed

@@ -38,6 +38,8 @@ AutoAgent is a powerful npm package that enables running autonomous AI agents us
 - [Programmatic Usage](#programmatic-usage)
 - [Configuration](#configuration)
 - [Environment Variables](#environment-variables)
+- [Agent Instructions](#agent-instructions-agentmd)
+- [File Naming Conventions](#file-naming-conventions)
 - [Examples](#examples)
 - [Architecture](#architecture)
 - [Testing](#testing)
@@ -486,6 +488,42 @@ The `AGENT.md` file is automatically created when you run AutoAgent for the firs
 For backward compatibility, `CLAUDE.md` and `GEMINI.md` are created as symlinks to `AGENT.md` (or stub files on systems that don't support symlinks).
 
 Learn more about the AGENT.md standard at [https://agent.md](https://agent.md).
+
+## File Naming Conventions
+
+AutoAgent creates consistent filename patterns for issues and plans:
+
+- **Issue files**: `{number}-{title-slug}.md`
+- **Plan files**: `{number}-{title-slug}-plan.md`
+
+### How Slugs Are Generated
+
+Titles are converted to URL-friendly slugs by:
+1. Converting to lowercase
+2. Replacing spaces with hyphens
+3. Removing special characters (except dots and hyphens)
+4. Normalizing multiple dots/hyphens to single hyphens
+5. Removing leading/trailing hyphens
+
+### Examples
+
+| Issue Title | Issue Filename | Plan Filename |
+|------------|----------------|---------------|
+| Implement User Authentication | `1-implement-user-authentication.md` | `1-implement-user-authentication-plan.md` |
+| Fix Bug #123 | `2-fix-bug-123.md` | `2-fix-bug-123-plan.md` |
+| Add @mentions & #hashtags | `3-add-mentions-hashtags.md` | `3-add-mentions-hashtags-plan.md` |
+| Feature...Test!!! | `4-feature-test.md` | `4-feature-test-plan.md` |
+| Update CI/CD Pipeline | `5-update-cicd-pipeline.md` | `5-update-cicd-pipeline-plan.md` |
+
+### Backward Compatibility
+
+The consistent naming pattern ensures:
+- Easy identification of issue/plan pairs
+- Predictable file locations
+- Better organization of the issues and plans directories
+- Simplified scripting and automation
+
+When using the `bootstrap` command, both issue and plan files will follow this naming convention automatically.
 
 ## Examples
 

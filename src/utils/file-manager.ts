@@ -529,7 +529,8 @@ Please see AGENT.md for the actual instructions.
   }
 
   /**
-   * Generates a URL-friendly slug from a title.
+   * Generates a URL-friendly slug from a title for use in filenames.
+   * Converts spaces to hyphens, removes special characters, and normalizes formatting.
    * 
    * This method converts a title string into a standardized filename slug by:
    * 1. Converting to lowercase
@@ -540,12 +541,15 @@ Please see AGENT.md for the actual instructions.
    * 6. Removing leading/trailing hyphens
    * 
    * @param title - The title to convert to a slug
-   * @returns A URL-friendly slug string
+   * @returns A sanitized slug suitable for filenames
+   * 
    * @example
    * ```typescript
-   * generateFileSlug("Implement User Authentication") // "implement-user-authentication"
-   * generateFileSlug("Fix Bug #123") // "fix-bug-123"
-   * generateFileSlug("Feature...Test") // "feature-test"
+   * generateFileSlug('Implement User Authentication') // 'implement-user-authentication'
+   * generateFileSlug('Fix Bug #123') // 'fix-bug-123'
+   * generateFileSlug('Add @mentions & #hashtags') // 'add-mentions-hashtags'
+   * generateFileSlug('Feature...Test!!!') // 'feature-test'
+   * generateFileSlug('  Trim  Spaces  ') // 'trim-spaces'
    * ```
    */
   private generateFileSlug(title: string): string {
