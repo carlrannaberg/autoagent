@@ -153,19 +153,27 @@ ${(issue.resources !== undefined && issue.resources.length > 0) ? issue.resource
     }
   }
 
-  async createPlan(issueNumber: number, plan: Plan, issueTitle: string): Promise<string> {
+  async createPlan(issueNumber: number, plan: Plan, issueTitle?: string): Promise<string> {
     await this.ensureDirectories();
     
-    const filename = `${issueNumber}-plan.md`;
+    const filename = (issueTitle !== undefined && issueTitle !== '') 
+      ? `${issueNumber}-${this.generateFileSlug(issueTitle)}-plan.md`
+      : `${issueNumber}-plan.md`;
     const filepath = path.join(this.plansDir, filename);
     
     const phasesContent = plan.phases.map(phase => `
 ### ${phase.name}
 ${phase.tasks.map(task => `- [ ] ${task}`).join('\n')}`).join('\n');
     
-    const content = `# Plan for Issue ${issueNumber}: ${issueTitle}
+    const content = (issueTitle !== undefined && issueTitle !== '') 
+      ? `# Plan for Issue ${issueNumber}: ${issueTitle}
 
-This document outlines the step-by-step plan to complete \`issues/${issueNumber}-${this.generateFileSlug(issueTitle)}.md\`.
+This document outlines the step-by-step plan to complete \`issues/${issueNumber}-${this.generateFileSlug(issueTitle)}.md\`.`
+      : `# Plan for Issue ${issueNumber}
+
+This document outlines the step-by-step plan to complete the issue.`;
+
+    const fullContent = `${content}
 
 ## Implementation Plan
 ${phasesContent}
@@ -176,7 +184,7 @@ ${plan.technicalApproach ?? 'Technical approach to be determined.'}
 ## Potential Challenges
 ${(plan.challenges !== undefined && plan.challenges.length > 0) ? plan.challenges.map(c => `- ${c}`).join('\n') : '- No specific challenges identified.'}`;
     
-    await fs.writeFile(filepath, content, 'utf-8');
+    await fs.writeFile(filepath, fullContent, 'utf-8');
     return filepath;
   }
 

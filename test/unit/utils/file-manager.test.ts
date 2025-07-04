@@ -182,7 +182,7 @@ Technical details
   });
   
   describe('createPlan', () => {
-    it('should create plan file with correct content', async () => {
+    it('should create plan file with title-based naming when issueTitle is provided', async () => {
       (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       
@@ -201,10 +201,73 @@ Technical details
       
       const filepath = await fileManager.createPlan(1, plan, 'Test Issue');
       
-      expect(filepath).toBe(path.join(mockWorkspace, 'plans', '1-plan.md'));
+      expect(filepath).toBe(path.join(mockWorkspace, 'plans', '1-test-issue-plan.md'));
       expect(fs.writeFile).toHaveBeenCalledWith(
         filepath,
         expect.stringContaining('# Plan for Issue 1: Test Issue'),
+        'utf-8'
+      );
+    });
+
+    it('should create plan file with numeric naming when issueTitle is not provided', async () => {
+      (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      
+      const plan: Plan = {
+        issueNumber: 2,
+        file: '',
+        phases: [
+          {
+            name: 'Phase 1',
+            tasks: ['Task 1']
+          }
+        ]
+      };
+      
+      const filepath = await fileManager.createPlan(2, plan);
+      
+      expect(filepath).toBe(path.join(mockWorkspace, 'plans', '2-plan.md'));
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        filepath,
+        expect.stringContaining('# Plan for Issue 2'),
+        'utf-8'
+      );
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        filepath,
+        expect.not.stringContaining('# Plan for Issue 2:'),
+        'utf-8'
+      );
+    });
+
+    it('should match issue filename format when title is provided', async () => {
+      (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      
+      const plan: Plan = {
+        issueNumber: 1,
+        file: '',
+        phases: [
+          {
+            name: 'Implementation',
+            tasks: ['Implement feature']
+          }
+        ]
+      };
+      
+      // Create plan with title that should match issue filename format
+      const filepath = await fileManager.createPlan(1, plan, 'Implement User Authentication');
+      
+      // Expected format: 1-implement-user-authentication-plan.md
+      // This should match the issue file: 1-implement-user-authentication.md
+      expect(filepath).toBe(path.join(mockWorkspace, 'plans', '1-implement-user-authentication-plan.md'));
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        filepath,
+        expect.stringContaining('# Plan for Issue 1: Implement User Authentication'),
+        'utf-8'
+      );
+      expect(fs.writeFile).toHaveBeenCalledWith(
+        filepath,
+        expect.stringContaining('issues/1-implement-user-authentication.md'),
         'utf-8'
       );
     });
