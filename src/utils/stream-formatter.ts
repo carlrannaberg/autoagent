@@ -19,6 +19,32 @@ const colors = {
 export class StreamFormatter {
   private static buffer = '';
   
+  // Compile regex patterns once for performance
+  private static readonly SENTENCE_PATTERN = /[.!?]+["']?(?:\s+|$)/g;
+  
+  // Common abbreviations that shouldn't end sentences
+  private static readonly ABBREVIATIONS = new Set([
+    // Titles
+    'Dr', 'Mr', 'Mrs', 'Ms', 'Prof', 'Rev', 'Hon', 'Capt', 'Lt', 'Sgt',
+    // Business
+    'Inc', 'Corp', 'Ltd', 'LLC', 'Co', 'Assoc', 'Dept', 'Mgmt',
+    // Academic
+    'Ph.D', 'M.A', 'B.A', 'B.S', 'M.S', 'etc', 'vs', 'i.e', 'e.g',
+    // Geographic
+    'St', 'Ave', 'Blvd', 'Rd', 'U.S.A', 'U.K', 'N.Y', 'L.A',
+    // Time/Date
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'a.m', 'p.m',
+    // Technical
+    'API', 'URL', 'HTTP', 'HTTPS', 'TCP', 'UDP', 'SQL', 'JSON', 'XML', 'HTML', 'CSS', 'JS'
+  ]);
+  
+  // Pattern to check if a period is part of an abbreviation or number
+  private static readonly NUMBER_PATTERN = /\d+\.\d+/;
+  private static readonly URL_PATTERN = /https?:\/\/[^\s]+/;
+  private static readonly EMAIL_PATTERN = /\S+@\S+\.\S+/;
+  private static readonly FILE_PATH_PATTERN = /(?:\.\/|\/|[A-Za-z]:\\)[^\s]+/;
+  
   private static formatHeader(provider: string): void {
     const header = provider === 'claude' ? '🤖 CLAUDE AGENT' : '🤖 GEMINI AGENT';
     // eslint-disable-next-line no-console
@@ -201,6 +227,57 @@ export class StreamFormatter {
   }
 
   /**
+   * Check if a potential sentence ending is actually an abbreviation
+   * @param textBefore - Text before the period
+   * @returns True if this is an abbreviation
+   */
+  private static isAbbreviation(textBefore: string): boolean {
+    const words = textBefore.trim().split(/\s+/);
+    const lastWord = words[words.length - 1];
+    if (!lastWord) return false;
+    
+    // Remove the period to check against abbreviations
+    const wordWithoutPeriod = lastWord.replace(/\.$/, '');
+    return this.ABBREVIATIONS.has(wordWithoutPeriod);
+  }
+  
+  /**
+   * Check if a period is part of a special pattern (number, URL, email, etc.)
+   * @param fullText - The full text to check
+   * @param periodIndex - Index of the period in the text
+   * @returns True if the period is part of a special pattern
+   */
+  private static isSpecialPattern(fullText: string, periodIndex: number): boolean {
+    // Check for decimal numbers (e.g., 3.14)
+    const beforePeriod = fullText.substring(Math.max(0, periodIndex - 10), periodIndex);
+    const afterPeriod = fullText.substring(periodIndex + 1, periodIndex + 10);
+    if (/\d$/.test(beforePeriod) && /^\d/.test(afterPeriod)) {
+      return true;
+    }
+    
+    // Check if period is within a URL, email, or file path
+    // Look for these patterns around the period position
+    const contextStart = Math.max(0, periodIndex - 50);
+    const contextEnd = Math.min(fullText.length, periodIndex + 50);
+    const context = fullText.substring(contextStart, contextEnd);
+    const relativeIndex = periodIndex - contextStart;
+    
+    // Check each pattern to see if the period falls within it
+    for (const pattern of [this.URL_PATTERN, this.EMAIL_PATTERN, this.FILE_PATH_PATTERN]) {
+      const matches = [...context.matchAll(new RegExp(pattern, 'g'))];
+      for (const match of matches) {
+        if (match.index !== undefined && 
+            match.index <= relativeIndex && 
+            match.index + match[0].length > relativeIndex) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
+  /**
    * Format Gemini output with line breaks at sentence boundaries.
    * This method is stateful and handles partial sentences across chunks.
    * @param chunk - The text chunk to format
@@ -208,21 +285,24 @@ export class StreamFormatter {
    */
   static formatGeminiOutput(chunk: string): string {
     try {
+      // Skip formatting if disabled
+      if (process.env.AUTOAGENT_DISABLE_GEMINI_FORMATTING === 'true') {
+        return chunk;
+      }
+      
       // Add chunk to buffer
       this.buffer += chunk;
       
-      // Regex pattern to match sentence endings, including quoted sentences
-      // Matches: period/exclamation/question mark, optionally followed by quotes,
-      // followed by either whitespace or end of string
-      const sentencePattern = /[.!?]+["']?(?:\s+|$)/g;
+      // Custom buffer size from environment
+      const bufferSize = parseInt(process.env.AUTOAGENT_GEMINI_BUFFER_SIZE || '1000', 10);
       
-      // Find all sentence boundaries
-      const matches = [...this.buffer.matchAll(sentencePattern)];
+      // Find all potential sentence boundaries
+      const matches = [...this.buffer.matchAll(this.SENTENCE_PATTERN)];
       
       if (matches.length === 0) {
         // No complete sentences found
         // If buffer is too large, force flush to prevent memory issues
-        if (this.buffer.length > 1000) {
+        if (this.buffer.length > bufferSize) {
           const output = this.buffer;
           this.buffer = '';
           return output;
@@ -250,7 +330,22 @@ export class StreamFormatter {
           break;
         }
         
-        const sentence = this.buffer.substring(lastIndex, endIndex).trim();
+        // Check if this is a real sentence ending
+        const sentenceCandidate = this.buffer.substring(lastIndex, endIndex);
+        const textBeforePeriod = this.buffer.substring(lastIndex, match.index);
+        
+        // Skip if this is an abbreviation
+        if (match[0].startsWith('.') && this.isAbbreviation(textBeforePeriod)) {
+          continue;
+        }
+        
+        // Skip if this period is part of a number, URL, email, or file path
+        if (match[0].startsWith('.') && this.isSpecialPattern(this.buffer, match.index)) {
+          continue;
+        }
+        
+        // This is a real sentence ending
+        const sentence = sentenceCandidate.trim();
         if (sentence) {
           output += sentence + '\n\n';
         }
@@ -259,6 +354,12 @@ export class StreamFormatter {
       
       // Keep remaining text in buffer
       this.buffer = this.buffer.substring(lastIndex);
+      
+      // Debug logging
+      if (process.env.AUTOAGENT_DEBUG_FORMATTING === 'true') {
+        console.error('[DEBUG] Buffer size:', this.buffer.length);
+        console.error('[DEBUG] Output size:', output.length);
+      }
       
       return output;
     } catch (error) {
