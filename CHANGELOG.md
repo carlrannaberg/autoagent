@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Create comprehensive plan decomposition for fixing bootstrap TODO.md overwrite issue
+  - Issue #33: Extract Common TODO Update Logic
+  - Issue #34: Fix Bootstrap TODO Overwrite (main fix)
+  - Issue #35: Refactor createIssue to Support Optional Custom Content
+  - Issue #36: Add Bootstrap TODO Preservation Tests
+  - Issue #37: Add Bootstrap Integration Tests
+  - Issue #38: Update Bootstrap Documentation
+- Successfully completed issue #21: Implement plan from fix-bootstrap-todo-overwrite
+
 ## [0.3.1] - 2025-07-04
 
 ### Added
