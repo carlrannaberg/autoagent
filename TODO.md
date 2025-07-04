@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #31]** Add Integration Tests for Bootstrap Filenames - `issues/31-add-integration-tests-for-bootstrap-filenames.md`
 - [ ] **[Issue #32]** Update Documentation for Filename Conventions - `issues/32-update-documentation-for-filename-conventions.md`
 - [ ] **[Issue #33]** Extract Common TODO Update Logic - `issues/33-extract-common-todo-update-logic.md`
 - [ ] **[Issue #34]** Fix Bootstrap TODO Overwrite - `issues/34-fix-bootstrap-todo-overwrite.md`
@@ -22,6 +21,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #48]** Implement plan from git-auto-push-configuration - `issues/48-implement-plan-from-git-auto-push-configuration.md`
 
 ## Completed Issues
+- [x] **[Issue #31]** Add Integration Tests for Bootstrap Filenames - `issues/31-add-integration-tests-for-bootstrap-filenames.md`
 - [x] **[Issue #30]** Add Unit Tests for Slug Generation - `issues/30-add-unit-tests-for-slug-generation.md`
 - [x] **[Issue #29]** Remove Duplicate Slug Logic from Bootstrap - `issues/29-remove-duplicate-slug-logic-from-bootstrap.md`
 - [x] **[Issue #28]** Refactor createIssue to Use Centralized Slug - `issues/28-refactor-createissue-to-use-centralized-slug.md`

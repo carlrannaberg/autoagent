@@ -888,7 +888,6 @@ ${result.output ?? 'Success'}`;
     }, issueTitle);
 
     // Create initial todo list
-    const path = await import('path');
     const issueFilename = path.basename(issuePath);
     const todoContent = `# To-Do
 

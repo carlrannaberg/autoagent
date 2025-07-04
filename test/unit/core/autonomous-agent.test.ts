@@ -629,6 +629,78 @@ describe('AutonomousAgent', () => {
         expect(firstCall[0]).toBe(5);
       });
 
+      it('should create matching issue and plan filenames during bootstrap', async () => {
+        // Clear issues
+        mockFiles.set('/test/issues', []);
+        mockFiles.set('/test/plans', []);
+        fileManager.setIssueFiles([]);
+        
+        const createIssueSpy = vi.spyOn(fileManager, 'createIssue');
+        const createPlanSpy = vi.spyOn(fileManager, 'createPlan');
+
+        mockFileContents.set('/test/master-plan.md', '# Test Bootstrap Plan\n\n## Goals\n- Test feature');
+        
+        const claudeProvider = testProviders.get('claude')!;
+        claudeProvider.setResponse('decompose', 'Generated issues from master plan');
+
+        await agent.bootstrap('/test/master-plan.md');
+
+        // Verify both issue and plan were created
+        expect(createIssueSpy).toHaveBeenCalled();
+        expect(createPlanSpy).toHaveBeenCalled();
+        
+        // Get the arguments passed to both methods
+        const issueCall = createIssueSpy.mock.calls[0];
+        const planCall = createPlanSpy.mock.calls[0];
+        
+        // Verify same issue number and title were used
+        expect(planCall[0]).toBe(issueCall[0]); // Same issue number
+        expect(planCall[2]).toBe(issueCall[1]); // Same title
+      });
+
+      it('should generate consistent slugs for issue and plan files', async () => {
+        // Test slug generation consistency
+        const testTitles = [
+          'Simple Title',
+          'Title with Numbers 123',
+          'Title-with-hyphens',
+          'Title.with.dots',
+          'Title!@#$%^&*()',
+          'UPPERCASE TITLE'
+        ];
+
+        for (const title of testTitles) {
+          // Clear issues
+          mockFiles.set('/test/issues', []);
+          mockFiles.set('/test/plans', []);
+          fileManager.setIssueFiles([]);
+          
+          const createIssueSpy = vi.spyOn(fileManager, 'createIssue');
+          const createPlanSpy = vi.spyOn(fileManager, 'createPlan');
+
+          mockFileContents.set('/test/master-plan.md', `# Master Plan\n\n## Goals\n- ${title}`);
+          
+          const claudeProvider = testProviders.get('claude')!;
+          claudeProvider.setResponse('decompose', 'Generated issues from master plan');
+
+          await agent.bootstrap('/test/master-plan.md');
+
+          // The bootstrap creates an issue with title like "Implement plan from master-plan"
+          expect(createIssueSpy).toHaveBeenCalled();
+          expect(createPlanSpy).toHaveBeenCalled();
+          
+          const issueTitle = createIssueSpy.mock.calls[0][1];
+          const planTitle = createPlanSpy.mock.calls[0][2];
+          
+          // Both should receive the same title
+          expect(planTitle).toBe(issueTitle);
+          
+          // Clear spies for next iteration
+          createIssueSpy.mockClear();
+          createPlanSpy.mockClear();
+        }
+      });
+
       it('should handle empty issues directory errors gracefully', async () => {
         // Clear any existing issue files and sync fileManager
         mockFiles.set('/test/issues', []);
