@@ -3,6 +3,7 @@ import { StreamFormatter } from '../../src/utils/stream-formatter';
 
 describe('StreamFormatter', () => {
   // Store original console.log
+  // eslint-disable-next-line no-console
   const originalConsoleLog = console.log;
   
   beforeEach(() => {
@@ -10,11 +11,13 @@ describe('StreamFormatter', () => {
     // Reset the buffer before each test
     StreamFormatter.flushGeminiBuffer();
     // Mock console.log
+    // eslint-disable-next-line no-console
     console.log = vi.fn();
   });
   
   afterEach(() => {
     // Restore console.log
+    // eslint-disable-next-line no-console
     console.log = originalConsoleLog;
   });
 
@@ -140,6 +143,7 @@ describe('StreamFormatter', () => {
     it('should display non-empty text with color codes', () => {
       StreamFormatter.displayGeminiText('Hello world\n\n');
       
+      // eslint-disable-next-line no-console
       expect(console.log).toHaveBeenCalledWith(
         expect.stringContaining('Hello world')
       );
@@ -149,6 +153,7 @@ describe('StreamFormatter', () => {
       StreamFormatter.displayGeminiText('');
       StreamFormatter.displayGeminiText('   \n  ');
       
+      // eslint-disable-next-line no-console
       expect(console.log).not.toHaveBeenCalled();
     });
   });
@@ -162,8 +167,11 @@ describe('StreamFormatter', () => {
       const chunk = 'Dr. Smith met Ms. Johnson at 3 p.m. They discussed the Inc. merger.';
       const formatted = StreamFormatter.formatGeminiOutput(chunk);
       
-      // Should only split at the final period
-      expect(formatted).toBe('Dr. Smith met Ms. Johnson at 3 p.m. They discussed the Inc. merger.\n\n');
+      // Should correctly split into two sentences while preserving abbreviations
+      const sentences = formatted.split('\n\n').filter(s => s);
+      expect(sentences).toHaveLength(2);
+      expect(sentences[0]).toBe('Dr. Smith met Ms. Johnson at 3 p.m.');
+      expect(sentences[1]).toBe('They discussed the Inc. merger.');
     });
 
     it('should handle decimal numbers', () => {
@@ -209,8 +217,11 @@ describe('StreamFormatter', () => {
       const chunk = 'Prof. Brown from the U.S.A. arrived at 9 a.m. on Jan. 15th. He works for Tech Corp. and has a Ph.D. in CS.';
       const formatted = StreamFormatter.formatGeminiOutput(chunk);
       
-      // Should treat this as one sentence
-      expect(formatted).toBe('Prof. Brown from the U.S.A. arrived at 9 a.m. on Jan. 15th. He works for Tech Corp. and has a Ph.D. in CS.\n\n');
+      // Should correctly split into two sentences while preserving abbreviations
+      const sentences = formatted.split('\n\n').filter(s => s);
+      expect(sentences).toHaveLength(2);
+      expect(sentences[0]).toBe('Prof. Brown from the U.S.A. arrived at 9 a.m. on Jan. 15th.');
+      expect(sentences[1]).toBe('He works for Tech Corp. and has a Ph.D. in CS.');
     });
 
     it('should handle code snippets with dots', () => {

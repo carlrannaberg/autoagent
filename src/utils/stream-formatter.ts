@@ -40,10 +40,9 @@ export class StreamFormatter {
   ]);
   
   // Pattern to check if a period is part of an abbreviation or number
-  private static readonly NUMBER_PATTERN = /\d+\.\d+/;
-  private static readonly URL_PATTERN = /https?:\/\/[^\s]+/;
-  private static readonly EMAIL_PATTERN = /\S+@\S+\.\S+/;
-  private static readonly FILE_PATH_PATTERN = /(?:\.\/|\/|[A-Za-z]:\\)[^\s]+/;
+  private static readonly URL_PATTERN = /https?:\/\/[^\s]*[^\s.,!?;:]/;
+  private static readonly EMAIL_PATTERN = /\S+@\S+\.\S*[^\s.,!?;:]/;
+  private static readonly FILE_PATH_PATTERN = /(?:\.\/|\/|[A-Za-z]:\\)[^\s]*[^\s.,!?;:]/;
   
   private static formatHeader(provider: string): void {
     const header = provider === 'claude' ? '🤖 CLAUDE AGENT' : '🤖 GEMINI AGENT';
@@ -229,16 +228,44 @@ export class StreamFormatter {
   /**
    * Check if a potential sentence ending is actually an abbreviation
    * @param textBefore - Text before the period
+   * @param textAfter - Text after the period (for context)
    * @returns True if this is an abbreviation
    */
-  private static isAbbreviation(textBefore: string): boolean {
+  private static isAbbreviation(textBefore: string, textAfter: string): boolean {
     const words = textBefore.trim().split(/\s+/);
     const lastWord = words[words.length - 1];
-    if (!lastWord) return false;
+    if (lastWord === undefined || lastWord === null || lastWord.length === 0) {
+      return false;
+    }
     
     // Remove the period to check against abbreviations
     const wordWithoutPeriod = lastWord.replace(/\.$/, '');
-    return this.ABBREVIATIONS.has(wordWithoutPeriod);
+    const isInAbbreviationList = this.ABBREVIATIONS.has(wordWithoutPeriod);
+    
+    // If it's not in our abbreviation list, it's not an abbreviation
+    if (!isInAbbreviationList) {
+      return false;
+    }
+    
+    // If the text after the period starts with a capital letter (after optional whitespace),
+    // it's likely a new sentence, not an abbreviation
+    const afterTrimmed = textAfter.trim();
+    if (afterTrimmed.length > 0 && /^[A-Z]/.test(afterTrimmed)) {
+      // Special case: titles like "Dr.", "Mr.", "Mrs.", etc. followed by proper nouns
+      // should still be considered abbreviations
+      if (['Dr', 'Mr', 'Mrs', 'Ms', 'Prof', 'Rev', 'Hon', 'Capt', 'Lt', 'Sgt'].includes(wordWithoutPeriod)) {
+        // Check if it's followed by a single capitalized word (likely a name)
+        const afterWords = afterTrimmed.split(/\s+/);
+        const firstWord = afterWords[0];
+        if (afterWords.length > 0 && firstWord !== undefined && /^[A-Z][a-z]/.test(firstWord)) {
+          return true; // This is likely a title + name, keep as abbreviation
+        }
+      }
+      
+      return false;
+    }
+    
+    return true;
   }
   
   /**
@@ -294,7 +321,7 @@ export class StreamFormatter {
       this.buffer += chunk;
       
       // Custom buffer size from environment
-      const bufferSize = parseInt(process.env.AUTOAGENT_GEMINI_BUFFER_SIZE || '1000', 10);
+      const bufferSize = parseInt(process.env.AUTOAGENT_GEMINI_BUFFER_SIZE ?? '1000', 10);
       
       // Find all potential sentence boundaries
       const matches = [...this.buffer.matchAll(this.SENTENCE_PATTERN)];
@@ -316,7 +343,9 @@ export class StreamFormatter {
       
       for (let i = 0; i < matches.length; i++) {
         const match = matches[i];
-        if (!match || match.index === undefined) continue;
+        if (!match || match.index === undefined) {
+          continue;
+        }
         
         const endIndex = match.index + match[0].length;
         
@@ -333,9 +362,10 @@ export class StreamFormatter {
         // Check if this is a real sentence ending
         const sentenceCandidate = this.buffer.substring(lastIndex, endIndex);
         const textBeforePeriod = this.buffer.substring(lastIndex, match.index);
+        const textAfterPeriod = this.buffer.substring(endIndex);
         
         // Skip if this is an abbreviation
-        if (match[0].startsWith('.') && this.isAbbreviation(textBeforePeriod)) {
+        if (match[0].startsWith('.') && this.isAbbreviation(textBeforePeriod, textAfterPeriod)) {
           continue;
         }
         
