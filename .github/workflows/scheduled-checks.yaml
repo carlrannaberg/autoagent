@@ -4,6 +4,8 @@ on:
   schedule:
     # Run every Monday at 9 AM UTC
     - cron: '0 9 * * 1'
+    # Run nightly tests at 2 AM UTC
+    - cron: '0 2 * * *'
   workflow_dispatch:
 
 permissions:
@@ -11,9 +13,56 @@ permissions:
   issues: write
 
 jobs:
+  nightly-tests:
+    name: Nightly Test Suite
+    runs-on: ubuntu-latest
+    if: github.event.schedule == '0 2 * * *' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        node-version: [22.x]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - name: Install dependencies
+      run: npm install
+    
+    - name: Run comprehensive test suite
+      run: |
+        echo "## 🌙 Nightly Test Results - Node ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Run all test suites
+        npm run test:unit && echo "✅ Unit tests passed" >> $GITHUB_STEP_SUMMARY || echo "❌ Unit tests failed" >> $GITHUB_STEP_SUMMARY
+        npm run test:integration && echo "✅ Integration tests passed" >> $GITHUB_STEP_SUMMARY || echo "❌ Integration tests failed" >> $GITHUB_STEP_SUMMARY
+        npm run test:e2e && echo "✅ E2E tests passed" >> $GITHUB_STEP_SUMMARY || echo "❌ E2E tests failed" >> $GITHUB_STEP_SUMMARY
+        
+        # Run coverage check
+        npm run test:coverage
+        
+        # Run benchmarks for performance regression
+        npm run bench || true
+    
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: nightly-results-node-${{ matrix.node-version }}
+        path: |
+          coverage/
+          test-results/
+          bench-results.json
+        retention-days: 7
   dependency-updates:
     name: Check for Dependency Updates
     runs-on: ubuntu-latest
+    if: github.event.schedule == '0 9 * * 1' || github.event_name == 'workflow_dispatch'
     
     steps:
     - name: Checkout repository
@@ -60,6 +109,7 @@ jobs:
   link-checker:
     name: Check Documentation Links
     runs-on: ubuntu-latest
+    if: github.event.schedule == '0 9 * * 1' || github.event_name == 'workflow_dispatch'
     
     steps:
     - name: Checkout repository
@@ -100,6 +150,7 @@ jobs:
   performance-check:
     name: Performance and Size Check
     runs-on: ubuntu-latest
+    if: github.event.schedule == '0 9 * * 1' || github.event_name == 'workflow_dispatch'
     
     steps:
     - name: Checkout repository

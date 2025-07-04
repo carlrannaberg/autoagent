@@ -16,8 +16,7 @@ module.exports = {
   ],
   env: {
     node: true,
-    es2020: true,
-    jest: true
+    es2020: true
   },
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'error',
@@ -58,6 +57,12 @@ module.exports = {
     },
     {
       files: ['src/utils/logger.ts', 'src/core/config-manager.ts'],
+      rules: {
+        'no-console': 'off'
+      }
+    },
+    {
+      files: ['test/benchmarks/**/*.ts', 'test/performance/benchmarks/**/*.ts'],
       rules: {
         'no-console': 'off'
       }

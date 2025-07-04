@@ -1,0 +1,91 @@
+name: PR Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validation-summary:
+    name: Generate Validation Summary
+    runs-on: ubuntu-latest
+    needs: [test, code-quality, security]
+    if: always()
+    
+    steps:
+    - name: Create PR Summary
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: jobs } = await github.rest.actions.listJobsForWorkflowRun({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            run_id: context.runId
+          });
+          
+          let summary = '## 📋 PR Validation Summary\n\n';
+          
+          // Test Results
+          const testJobs = jobs.jobs.filter(j => j.name.includes('Test'));
+          if (testJobs.length > 0) {
+            summary += '### 🧪 Test Results\n';
+            summary += '| Node Version | Test Suite | Status |\n';
+            summary += '|--------------|------------|--------|\n';
+            testJobs.forEach(job => {
+              const status = job.conclusion === 'success' ? '✅' : '❌';
+              summary += `| ${job.name} | ${status} |\n`;
+            });
+            summary += '\n';
+          }
+          
+          // Code Quality
+          const qualityJob = jobs.jobs.find(j => j.name.includes('Code Quality'));
+          if (qualityJob) {
+            const status = qualityJob.conclusion === 'success' ? '✅ Passed' : '❌ Failed';
+            summary += `### 🎨 Code Quality: ${status}\n\n`;
+          }
+          
+          // Security
+          const securityJob = jobs.jobs.find(j => j.name.includes('Security'));
+          if (securityJob) {
+            const status = securityJob.conclusion === 'success' ? '✅ No issues' : '⚠️ Review needed';
+            summary += `### 🔒 Security Scan: ${status}\n\n`;
+          }
+          
+          // Coverage (if available)
+          summary += '### 📊 Coverage Report\n';
+          summary += 'See [Codecov Report](https://codecov.io/gh/${{ github.repository }}/pull/${{ github.event.pull_request.number }})\n\n';
+          
+          // E2E Tests
+          const e2eJob = jobs.jobs.find(j => j.name.includes('E2E'));
+          if (e2eJob) {
+            const status = e2eJob.conclusion === 'success' ? '✅ Passed' : '❌ Failed';
+            summary += `### 🌐 E2E Tests: ${status}\n\n`;
+          }
+          
+          // Post comment
+          const comments = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number
+          });
+          
+          const botComment = comments.data.find(comment => 
+            comment.user.type === 'Bot' && 
+            comment.body.includes('PR Validation Summary')
+          );
+          
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: summary
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: summary
+            });
+          }

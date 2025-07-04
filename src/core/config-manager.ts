@@ -165,9 +165,15 @@ export class ConfigManager {
   private async loadConfigFile(filePath: string): Promise<Partial<UserConfig>> {
     try {
       const content = await fs.readFile(filePath, 'utf-8');
-      return JSON.parse(content) as Partial<UserConfig>;
+      try {
+        return JSON.parse(content) as Partial<UserConfig>;
+      } catch (parseError) {
+        // Handle invalid JSON gracefully by returning empty config
+        Logger.warning(`Invalid JSON in config file ${filePath}: ${String(parseError)}`);
+        return {};
+      }
     } catch (error) {
-      // File doesn't exist or is invalid - return empty config
+      // Handle file read errors
       return {};
     }
   }
@@ -177,7 +183,14 @@ export class ConfigManager {
    */
   private async saveConfigFile(filePath: string, config: Partial<UserConfig>): Promise<void> {
     await this.ensureDirectoryExists(path.dirname(filePath));
-    await fs.writeFile(filePath, JSON.stringify(config, null, 2));
+    try {
+      await fs.writeFile(filePath, JSON.stringify(config, null, 2));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'EACCES' || (error as NodeJS.ErrnoException).code === 'EPERM') {
+        throw new Error(`Permission denied: Cannot write to ${filePath}`);
+      }
+      throw error;
+    }
   }
 
   /**

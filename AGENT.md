@@ -7,7 +7,8 @@ AutoAgent is an npm package that enables running autonomous AI agents using Clau
 
 ## Building and Running
 
-Before submitting any changes, validate them by running the full test suite. The following commands ensure your changes meet all quality requirements:
+Before submitting any changes, validate them by running the full test suite with `npm test` and running validations with `npm run check`.
+The following commands ensure your changes meet all quality requirements:
 
 ```bash
 # Run complete validation (recommended before commits)
@@ -52,7 +53,7 @@ npm view autoagent-cli@x.x.x
 
 **Release Process Rules:**
 1. **Check npm first**: Always verify if a version is published before touching tags
-2. **No tag modifications**: Never delete/move tags for published versions 
+2. **No tag modifications**: Never delete/move tags for published versions
 3. **Forward only**: If you need to include more changes, bump to next version
 4. **Rollback safely**: Only use `npm run release:rollback` for unpublished versions
 5. **No manual tag creation**: NEVER create git tags manually - tags are automatically created by GitHub workflows after successful release preparation
@@ -87,7 +88,7 @@ When deciding between patch, minor, or major releases, consider the **user's per
 - **Language**: TypeScript (targeting ES2020)
 - **Runtime**: Node.js >= 22.0.0
 - **Build**: TypeScript compiler (tsc)
-- **Testing**: Jest with ts-jest
+- **Testing**: Vitest
 - **CLI Framework**: Commander.js
 - **Dependencies**: chalk (colors), commander (CLI)
 - **Package Manager**: npm
@@ -101,6 +102,43 @@ The main branch for this project is called "master"
 - After running `npm run release:*` commands, simply push to master
 - The GitHub release workflow will create the appropriate tag
 - Only use `git tag` for listing/viewing tags, not for creating them
+
+### Updating CHANGELOG.md
+
+**Before making any commits**, ensure that CHANGELOG.md is updated to reflect your changes:
+
+1. **Add your changes to the "Unreleased" section** at the top of CHANGELOG.md
+2. **Categorize your changes** appropriately:
+   - `Added` - for new features
+   - `Changed` - for changes in existing functionality
+   - `Deprecated` - for soon-to-be removed features
+   - `Removed` - for now removed features
+   - `Fixed` - for any bug fixes
+   - `Security` - in case of vulnerabilities
+
+3. **Format your entries** clearly and concisely:
+   - Start each entry with a dash `-`
+   - Use present tense ("Add feature" not "Added feature")
+   - Include PR/issue numbers if applicable
+   - Keep entries user-focused (what it means for users, not implementation details)
+
+Example entry:
+```markdown
+## [Unreleased]
+
+### Fixed
+- Fix TypeScript type errors in provider-learning.test.ts
+- Fix lint errors across all test files (166 errors resolved)
+
+### Changed
+- Update mock provider to use proper TypeScript types instead of `any`
+```
+
+This ensures that:
+- All changes are documented for users
+- The changelog is ready for the next release
+- Contributors can easily see what has changed
+- Release notes can be generated automatically
 
 ## Coding Standards
 
@@ -117,6 +155,47 @@ The main branch for this project is called "master"
 - **Single responsibility**: Keep functions focused on one task. If a function does multiple things, split it up.
 - **Comprehensive error handling**: Always handle errors appropriately. Use try-catch for async operations.
 
+### Avoiding `any` Types and Type Assertions; Preferring `unknown`
+
+TypeScript's power lies in its ability to provide static type checking, catching potential errors before your code runs. To fully leverage this, it's crucial to avoid the `any` type and be judicious with type assertions.
+
+- **The Dangers of `any`**: Using any effectively opts out of TypeScript's type checking for that particular variable or expression. While it might seem convenient in the short term, it introduces significant risks:
+  - **Loss of Type Safety**: You lose all the benefits of type checking, making it easy to introduce runtime errors that TypeScript would otherwise have caught.
+  - **Reduced Readability and Maintainability**: Code with `any` types is harder to understand and maintain, as the expected type of data is no longer explicitly defined.
+  - **Masking Underlying Issues**: Often, the need for any indicates a deeper problem in the design of your code or the way you're interacting with external libraries. It's a sign that you might need to refine your types or refactor your code.
+
+- **Preferring `unknown` over `any`**: When you absolutely cannot determine the type of a value at compile time, and you're tempted to reach for any, consider using unknown instead. unknown is a type-safe counterpart to any. While a variable of type unknown can hold any value, you must perform type narrowing (e.g., using typeof or instanceof checks, or a type assertion) before you can perform any operations on it. This forces you to handle the unknown type explicitly, preventing accidental runtime errors.
+
+  ```
+  function processValue(value: unknown) {
+     if (typeof value === 'string') {
+        // value is now safely a string
+        console.log(value.toUpperCase());
+     } else if (typeof value === 'number') {
+        // value is now safely a number
+        console.log(value * 2);
+     }
+     // Without narrowing, you cannot access properties or methods on 'value'
+     // console.log(value.someProperty); // Error: Object is of type 'unknown'.
+  }
+  ```
+
+- **Type Assertions (`as Type`) - Use with Caution**: Type assertions tell the TypeScript compiler, "Trust me, I know what I'm doing; this is definitely of this type." While there are legitimate use cases (e.g., when dealing with external libraries that don't have perfect type definitions, or when you have more information than the compiler), they should be used sparingly and with extreme caution.
+  - **Bypassing Type Checking**: Like `any`, type assertions bypass TypeScript's safety checks. If your assertion is incorrect, you introduce a runtime error that TypeScript would not have warned you about.
+  - **Code Smell in Testing**: A common scenario where `any` or type assertions might be tempting is when trying to test "private" implementation details (e.g., spying on or stubbing an unexported function within a module). This is a strong indication of a "code smell" in your testing strategy and potentially your code structure. Instead of trying to force access to private internals, consider whether those internal details should be refactored into a separate module with a well-defined public API. This makes them inherently testable without compromising encapsulation.
+
+### Embracing JavaScript's Array Operators
+
+To further enhance code cleanliness and promote safe functional programming practices, leverage JavaScript's rich set of array operators as much as possible. Methods like `.map()`, `.filter()`, `.reduce()`, `.slice()`, `.sort()`, and others are incredibly powerful for transforming and manipulating data collections in an immutable and declarative way.
+
+Using these operators:
+
+- Promotes Immutability: Most array operators return new arrays, leaving the original array untouched. This functional approach helps prevent unintended side effects and makes your code more predictable.
+- Improves Readability: Chaining array operators often leads to more concise and expressive code than traditional for loops or imperative logic. The intent of the operation is clear at a glance.
+- Facilitates Functional Programming: These operators are cornerstones of functional programming, encouraging the creation of pure functions that take inputs and produce outputs without causing side effects. This paradigm is highly beneficial for writing robust and testable code that pairs well with React.
+
+By consistently applying these principles, we can maintain a codebase that is not only efficient and performant but also a joy to work with, both now and in the future.
+
 ## Directory Structure
 ```
 autoagent/
@@ -126,7 +205,7 @@ autoagent/
 │   ├── providers/  # AI provider implementations
 │   ├── utils/      # Utility functions
 │   └── types/      # TypeScript type definitions
-├── test/           # Jest test files
+├── test/           # Test files
 ├── templates/      # Issue and plan templates
 ├── bin/            # CLI entry point
 ├── dist/           # Compiled JavaScript (gitignored)
@@ -136,32 +215,45 @@ autoagent/
 ## Key Dependencies
 - **chalk**: Terminal color output
 - **commander**: CLI framework
-- Development dependencies include TypeScript, Jest, ESLint
+- Development dependencies include TypeScript, Vitest, ESLint
 
 ## Environment Setup
 - Node.js version specified in `.nvmrc` (22.0.0)
 - TypeScript configuration in `tsconfig.json`
-- Jest configuration in `package.json`
+- Vitest configuration in `vitest.config.ts`
 - ESLint configuration in `.eslintrc.js`
 
 ## Writing Tests
 
-This project uses **Jest** as its testing framework. When writing tests, follow these conventions:
+This project uses **Vitest** as its testing framework. When writing tests, follow these conventions:
 
 ### Test Structure and Framework
 
-- **Framework**: All tests use Jest (`describe`, `it`, `expect`, `jest`)
+- **Framework**: All tests use Vitest (`describe`, `it`, `expect`, `vi`)
 - **File Location**: Test files (`*.test.ts`) are located in the `test/` directory, mirroring the `src/` structure
-- **Configuration**: Jest configuration is in `package.json`
-- **Setup/Teardown**: Use `beforeEach` and `afterEach`. Call `jest.clearAllMocks()` in `beforeEach`
+- **Configuration**: Vitest configuration is in `vitest.config.ts`
+- **Setup/Teardown**: Use `beforeEach` and `afterEach`. Call `vi.clearAllMocks()` in `beforeEach`
 
-### Mocking (Jest)
+### Mocking (Vitest)
 
-- **ES Modules**: Mock with `jest.mock('module-name')` at the top of test files
-- **Mock Functions**: Create with `jest.fn()`. Use `mockResolvedValue()`, `mockRejectedValue()`, or `mockImplementation()`
-- **Spying**: Use `jest.spyOn(object, 'methodName')`. Clean up in `afterEach`
+- **ES Modules**: Mock with `vi.mock('module-name', async (importOriginal) => { ... })`. Use `importOriginal` for selective mocking.
+  - _Example_: `vi.mock('os', async (importOriginal) => { const actual = await importOriginal(); return { ...actual, homedir: vi.fn() }; });`
+- **Mock Functions**: Create with `vi.fn()`. Use `mockResolvedValue()`, `mockRejectedValue()`, or `mockImplementation()`
+- **Spying**: Use `vi.spyOn(object, 'methodName')`. Restore spies with `mockRestore()` in `afterEach`.
+- **Hoisting**: Use `const myMock = vi.hoisted(() => vi.fn());` if a mock function needs to be defined before its use in a `vi.mock` factory.
 - **File System**: Mock `fs` and `fs/promises` operations to avoid actual file I/O
 - **Child Process**: Mock `spawn` and `exec` for testing command execution
+- **Mocking Order**: For critical dependencies (e.g., `os`, `fs`) that affect module-level constants, place `vi.mock` at the _very top_ of the test file, before other imports.
+
+
+### Mocking (`vi` from Vitest)
+
+- **ES Modules**: Mock with `vi.mock('module-name', async (importOriginal) => { ... })`. Use `importOriginal` for selective mocking.
+  - _Example_: `vi.mock('os', async (importOriginal) => { const actual = await importOriginal(); return { ...actual, homedir: vi.fn() }; });`
+- **Mocking Order**: For critical dependencies (e.g., `os`, `fs`) that affect module-level constants, place `vi.mock` at the _very top_ of the test file, before other imports.
+- **Hoisting**: Use `const myMock = vi.hoisted(() => vi.fn());` if a mock function needs to be defined before its use in a `vi.mock` factory.
+  - **Mock Functions**: Create with `vi.fn()`. Define behavior with `mockImplementation()`, `mockResolvedValue()`, or `mockRejectedValue()`.
+- **Spying**: Use `vi.spyOn(object, 'methodName')`. Restore spies with `mockRestore()` in `afterEach`.
 
 ### Commonly Mocked Modules
 
@@ -279,4 +371,3 @@ gemini --debug --include-all "Analyze this project structure"
 # YOLO mode for automated workflows
 gemini --yolo "Fix all linting errors in the project"
 ```
-

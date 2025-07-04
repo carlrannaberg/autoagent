@@ -658,14 +658,42 @@ export class AutonomousAgent extends EventEmitter {
   /**
    * Create a new issue
    */
-  async createIssue(title: string): Promise<number> {
-    const provider = await this.getProviderForOperation();
-    if (!provider) {
-      throw new Error('No available providers for creating issue');
-    }
+  async createIssue(title: string, description?: string, acceptanceCriteria?: string[], details?: string): Promise<number> {
+    // Get next issue number
+    const nextNumber = await this.fileManager.getNextIssueNumber();
+    
+    let issueContent: string;
+    
+    // If we have explicit content, use it directly
+    if (description !== undefined || acceptanceCriteria !== undefined || details !== undefined) {
+      issueContent = `# Issue ${nextNumber}: ${title}
 
-    // Create prompt for provider
-    const prompt = `Create a detailed software development issue for the following task:
+## Description
+${description ?? 'To be defined'}
+
+## Acceptance Criteria
+${acceptanceCriteria !== undefined && acceptanceCriteria.length > 0 ? acceptanceCriteria.map(ac => `- [ ] ${ac}`).join('\n') : '- [ ] To be defined'}
+
+## Technical Details
+${details ?? 'To be defined'}`;
+    } else {
+      // Otherwise try to use a provider to generate content
+      const provider = await this.getProviderForOperation();
+      if (!provider) {
+        // If no provider is available, create a basic issue
+        issueContent = `# Issue ${nextNumber}: ${title}
+
+## Description
+To be defined
+
+## Acceptance Criteria
+- [ ] To be defined
+
+## Technical Details
+To be defined`;
+      } else {
+        // Create prompt for provider
+        const prompt = `Create a detailed software development issue for the following task:
 Title: ${title}
 
 Generate a comprehensive issue document with:
@@ -676,16 +704,13 @@ Generate a comprehensive issue document with:
 
 Format as a proper issue document.`;
 
-    // Execute with provider
-    const result = await provider.execute(prompt, '');
-
-    // Get next issue number
-    const nextNumber = await this.fileManager.getNextIssueNumber();
-
-    // Create issue file
-    const issueContent = `# Issue ${nextNumber}: ${title}
+        // Execute with provider
+        const result = await provider.execute(prompt, '');
+        issueContent = `# Issue ${nextNumber}: ${title}
 
 ${result.output ?? 'Success'}`;
+      }
+    }
 
     await this.fileManager.createIssue(nextNumber, title, issueContent);
 

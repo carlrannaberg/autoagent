@@ -1,6 +1,6 @@
 {
   "name": "autoagent-cli",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Run autonomous AI agents using Claude or Gemini for task execution",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,9 +12,24 @@
     "build:dev": "tsc",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration",
+    "test:e2e": "vitest run test/e2e",
+    "test:smoke": "vitest run test/smoke",
+    "test:performance": "vitest run test/performance",
+    "test:contract": "vitest run test/contract",
+    "test:coverage": "vitest run --coverage",
+    "test:coverage:ui": "vitest --coverage --ui",
+    "test:bench": "vitest bench --config vitest.bench.config.ts",
+    "bench": "vitest bench --config vitest.bench.config.ts --reporter=json --outputFile=bench-results.json",
+    "bench:enhanced": "node -r esbuild-register test/performance/benchmarks/ci-runner.ts",
+    "bench:ci": "node -r esbuild-register test/performance/benchmarks/ci-runner.ts --fail-on-regression false --iterations 10",
+    "bench:stats": "node -r esbuild-register test/performance/benchmarks/ci-runner.ts --iterations 200 --output-dir ./benchmark-results",
+    "test:ci": "vitest run --coverage --reporter=json --reporter=default",
+    "test:debug": "vitest --inspect-brk --inspect --logHeapUsage --threads=false",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
@@ -61,32 +76,16 @@
     "commander": "^12.1.0"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.12",
     "@types/node": "^20.11.30",
     "@typescript-eslint/eslint-plugin": "^7.3.1",
     "@typescript-eslint/parser": "^7.3.1",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
+    "dotenv": "^17.0.1",
     "eslint": "^8.57.0",
-    "jest": "^29.7.0",
+    "memfs": "^4.11.1",
     "npm-run-all": "^4.1.5",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.4.3"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/test/**/*.test.ts"
-    ],
-    "collectCoverageFrom": [
-      "src/**/*.ts",
-      "!src/**/*.d.ts",
-      "!src/types/**"
-    ],
-    "coverageDirectory": "coverage",
-    "coverageReporters": [
-      "text",
-      "lcov",
-      "html"
-    ]
+    "typescript": "^5.4.3",
+    "vitest": "^3.2.4"
   }
 }

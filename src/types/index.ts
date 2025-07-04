@@ -59,7 +59,7 @@ export interface ExecutionResult {
   /** Error message if execution failed */
   error?: string;
   /** Provider used for execution */
-  provider?: 'claude' | 'gemini';
+  provider?: ProviderName;
   /** List of files modified during execution */
   filesChanged?: string[];
   /** Data needed for potential rollback */
@@ -96,7 +96,7 @@ export interface ProgressCallback {
  */
 export interface AgentConfig {
   /** AI provider to use */
-  provider?: 'claude' | 'gemini';
+  provider?: ProviderName;
   /** Working directory for the agent */
   workspace?: string;
   /** Whether to automatically commit changes */
@@ -173,7 +173,7 @@ export interface Status {
 /**
  * Provider name type
  */
-export type ProviderName = 'claude' | 'gemini';
+export type ProviderName = 'claude' | 'gemini' | 'mock';
 
 /**
  * Rate limit tracking data for a provider

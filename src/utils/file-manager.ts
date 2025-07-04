@@ -5,8 +5,8 @@ import { Issue, Plan, Phase } from '../types';
 export class FileManager {
   private workspace: string;
 
-  constructor(workspace: string = process.cwd()) {
-    this.workspace = workspace;
+  constructor(workspace: string | undefined = process.cwd()) {
+    this.workspace = workspace ?? process.cwd();
   }
 
   private get issuesDir(): string {
@@ -21,7 +21,7 @@ export class FileManager {
     return path.join(this.workspace, 'TODO.md');
   }
 
-  private async ensureDirectories(): Promise<void> {
+  async ensureDirectories(): Promise<void> {
     await fs.mkdir(this.issuesDir, { recursive: true });
     await fs.mkdir(this.plansDir, { recursive: true });
   }
@@ -87,12 +87,18 @@ ${(issue.resources !== undefined && issue.resources.length > 0) ? issue.resource
   async readIssue(filepath: string): Promise<Issue | null> {
     try {
       const content = await fs.readFile(filepath, 'utf-8');
+      
+      // Check for empty file
+      if (content.trim() === '') {
+        throw new Error('Invalid issue format: Empty file');
+      }
+      
       const lines = content.split('\n');
       
       // Parse issue number and title from header
       const headerMatch = lines[0]?.match(/^#\s+Issue\s+(\d+):\s+(.+)$/);
       if (!headerMatch) {
-        return null;
+        throw new Error('Invalid issue format: Missing or malformed header');
       }
       
       const number = parseInt(headerMatch[1] ?? '0', 10);
@@ -383,11 +389,56 @@ Please see AGENT.md for the actual instructions.
   }
 
   async getTodoStats(): Promise<{ total: number; completed: number; pending: number }> {
-    const todos = await this.readTodoList();
-    const total = todos.length;
-    const completed = todos.filter(t => t.includes('[x]')).length;
-    const pending = total - completed;
+    // First, count all issues in the issues directory
+    const issuesDir = path.join(this.workspace, 'issues');
+    let issueFiles: string[] = [];
     
+    try {
+      const files = await fs.readdir(issuesDir);
+      issueFiles = files.filter(f => f.endsWith('.md'));
+    } catch {
+      // Issues directory doesn't exist
+    }
+
+    // Then load status data if available
+    const statusFile = path.join(this.workspace, '.autoagent', 'status.json');
+    let statusData: Record<string, { status: string }> = {};
+    
+    try {
+      const statusContent = await fs.readFile(statusFile, 'utf-8');
+      statusData = JSON.parse(statusContent) as Record<string, { status: string }>;
+    } catch {
+      // Status file doesn't exist, that's ok
+    }
+
+    // Count issues from files
+    let total = issueFiles.length;
+    let completed = 0;
+    let pending = 0;
+
+    // Process issues from files
+    for (const file of issueFiles) {
+      const issueName = file.replace('.md', '');
+      const status = statusData[issueName]?.status ?? 'pending';
+      if (status === 'completed') {
+        completed++;
+      } else {
+        pending++;
+      }
+    }
+
+    // Also include issues that only exist in status.json
+    for (const [issueName, data] of Object.entries(statusData)) {
+      if (!issueFiles.some(f => f.replace('.md', '') === issueName)) {
+        total++;
+        if (data.status === 'completed') {
+          completed++;
+        } else {
+          pending++;
+        }
+      }
+    }
+
     return { total, completed, pending };
   }
 

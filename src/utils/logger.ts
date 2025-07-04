@@ -53,10 +53,10 @@ export class Logger {
 
   static error(message: string | Error, options?: LoggerOptions): void {
     const errorMessage = message instanceof Error ? message.message : message;
-    console.error(chalk.red(`✗ ${Logger.formatMessage(errorMessage, options)}`));
+    console.error(chalk.red(`Error: ${Logger.formatMessage(errorMessage, options)}`));
     
     if (message instanceof Error && Logger.debugEnabled) {
-      console.error(chalk.gray(message.stack ?? ''));
+      console.error(chalk.gray(`Stack trace: ${message.stack ?? ''}`));
     }
   }
 

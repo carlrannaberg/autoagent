@@ -3,7 +3,8 @@
   "include": [
     "src/**/*",
     "test/**/*",
-    "bin/**/*"
+    "bin/**/*",
+    "vitest.*.ts"
   ],
   "exclude": [
     "node_modules",
