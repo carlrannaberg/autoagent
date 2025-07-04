@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix bootstrap command using hardcoded issue number 1 instead of next available
+- Fix bootstrap command overwriting existing TODO items instead of preserving them
 - Centralize slug generation in FileManager to ensure consistent filename generation
 
 ### Changed

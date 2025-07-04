@@ -500,8 +500,31 @@ export class AutonomousAgent extends EventEmitter {
   }
 
   /**
-   * Add issue to TODO list with consistent formatting
-   * Handles both new TODO creation and appending to existing TODO
+   * Add issue to TODO list with consistent formatting while preserving existing content.
+   * 
+   * This method safely appends new issues to the TODO.md file without overwriting
+   * existing issues. It intelligently handles the section structure, ensuring new
+   * issues are added to the "Pending Issues" section while preserving any existing
+   * TODO items.
+   * 
+   * @param issueNumber - The sequential issue number to add
+   * @param title - The title of the issue
+   * 
+   * @remarks
+   * - If TODO.md doesn't exist, creates it with proper structure
+   * - If TODO.md exists, appends the new issue to the Pending Issues section
+   * - Preserves all existing TODO content (both pending and completed issues)
+   * - Generates consistent filename slugs for issue references
+   * - Maintains proper section structure (Pending Issues / Completed Issues)
+   * 
+   * @example
+   * // First bootstrap creates TODO.md with issue 1
+   * await addIssueToTodo(1, "Add User Authentication");
+   * 
+   * // Second bootstrap appends issue 2, preserving issue 1
+   * await addIssueToTodo(2, "Implement Error Handling");
+   * 
+   * @throws Will create a new TODO.md if file operations fail
    */
   private async addIssueToTodo(issueNumber: number, title: string): Promise<void> {
     // Generate consistent filename slug
@@ -858,9 +881,35 @@ ${result.output ?? 'Success'}`;
   }
 
   /**
-   * Bootstrap from master plan
-   * Creates an initial issue that decomposes the master plan into individual actionable tasks.
-   * Uses dynamic issue numbering to avoid conflicts with existing issues.
+   * Bootstrap a project from a master plan file.
+   * 
+   * Creates an initial decomposition issue that breaks down the master plan into
+   * individual actionable tasks. This method is safe to use in active projects
+   * as it preserves all existing TODO items and uses dynamic issue numbering.
+   * 
+   * @param masterPlanPath - Path to the master plan markdown file
+   * 
+   * @remarks
+   * Key safety features:
+   * - Automatically uses the next available issue number (not hardcoded)
+   * - Preserves all existing TODO items when adding new issues
+   * - Safe to run multiple times without data loss
+   * - Appends new issues to the Pending Issues section
+   * - Never overwrites existing TODO.md content
+   * 
+   * @example
+   * // First bootstrap in a new project
+   * await agent.bootstrap('master-plan.md'); // Creates issue #1
+   * 
+   * // Second bootstrap in the same project  
+   * await agent.bootstrap('phase2-plan.md'); // Creates issue #2, preserves #1
+   * 
+   * // Bootstrap in a project with existing issues
+   * // If issues 1-5 exist, creates issue #6
+   * await agent.bootstrap('new-feature.md');
+   * 
+   * @throws Error if no providers are available
+   * @throws Error if master plan file cannot be read
    */
   async bootstrap(masterPlanPath: string): Promise<void> {
     const provider = await this.getProviderForOperation();

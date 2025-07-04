@@ -279,7 +279,13 @@ autoagent bootstrap --provider gemini my-plan.md
 autoagent bootstrap --workspace /path/to/project
 ```
 
-The bootstrap command reads your master plan (markdown file) and creates the first actionable issue from it. It automatically uses the next available issue number, so it works correctly even when issues already exist.
+The bootstrap command reads your master plan (markdown file) and creates the first actionable issue from it. **Bootstrap is safe to use in active projects** - it preserves all existing TODO items and automatically uses the next available issue number.
+
+**Key Safety Features:**
+- ✅ **Preserves existing TODO items** - Never overwrites your current TODO.md
+- ✅ **Dynamic issue numbering** - Automatically finds the next available issue number
+- ✅ **Appends to TODO.md** - Adds new issues to the "Pending Issues" section
+- ✅ **Safe for multiple runs** - Can bootstrap different plans without data loss
 
 **Example with existing issues:**
 ```bash
@@ -293,6 +299,17 @@ $ autoagent bootstrap feature-plan.md
 # Bootstrap can be run multiple times for different plans
 $ autoagent bootstrap phase2-plan.md
 ✓ Created issue #5: Implement plan from phase2-plan
+
+# Your TODO.md now contains all 5 issues - nothing was lost!
+$ cat TODO.md
+# To-Do
+...
+## Pending Issues
+- [ ] **[Issue #1]** Setup Project - `issues/1-setup-project.md`
+- [ ] **[Issue #2]** Add Tests - `issues/2-add-tests.md`
+- [ ] **[Issue #3]** Refactor API - `issues/3-refactor-api.md`
+- [ ] **[Issue #4]** Implement plan from feature-plan - `issues/4-implement-plan-from-feature-plan.md`
+- [ ] **[Issue #5]** Implement plan from phase2-plan - `issues/5-implement-plan-from-phase2-plan.md`
 ```
 
 ### Command Options
