@@ -838,7 +838,8 @@ ${masterPlanContent}`;
     const result = await provider.execute(prompt, '');
 
     // Create initial issue for bootstrapping
-    const issueNumber = 1;
+    // Use dynamic issue numbering to avoid overwriting existing issues
+    const issueNumber = await this.fileManager.getNextIssueNumber();
     const planBasename = path.basename(masterPlanPath, path.extname(masterPlanPath));
     const issueTitle = `Implement plan from ${planBasename}`;
     const issueContent = `# Issue ${issueNumber}: ${issueTitle}

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix bootstrap command using hardcoded issue number 1 instead of next available
+
 ## [0.3.3] - 2025-07-04
 
 ### Fixed
