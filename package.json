@@ -16,7 +16,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:unit": "vitest run test/unit --coverage",
-    "test:integration": "vitest run test/integration --coverage",
+    "test:integration": "vitest run test/integration",
     "test:e2e": "npm run build && vitest run test/e2e",
     "test:smoke": "npm run build && vitest run test/smoke",
     "test:performance": "vitest run test/performance",
