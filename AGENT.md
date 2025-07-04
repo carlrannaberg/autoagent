@@ -62,27 +62,52 @@ npm view autoagent-cli@x.x.x
 
 ## Semantic Versioning Guidelines
 
-When deciding between patch, minor, or major releases, consider the **user's perspective** and **intended behavior**:
+When deciding between patch, minor, or major releases, consider the **user's perspective** and **intended behavior**.
+
+### Pre-1.0 Versions (0.x.x)
+
+For pre-1.0 versions, semantic versioning rules are different:
+- **Breaking changes** go in **minor** releases (0.x.0)
+- **New features and fixes** go in **patch** releases (0.0.x)
+- The **major** version remains at 0 until the API is stable
 
 **Patch Release (0.0.x)**:
 - Bug fixes that restore intended functionality
 - Performance improvements
 - Documentation updates
+- New features (in pre-1.0)
 - **Key question**: "Was this supposed to work this way already?"
 
 **Minor Release (0.x.0)**:
+- **Breaking changes** (in pre-1.0)
+- Removal of features
+- Changes requiring user migration
+- Major architectural changes
+- **Key question**: "Will existing users need to change their code?"
+
+### Post-1.0 Versions (x.x.x)
+
+After version 1.0.0, follow standard semantic versioning:
+
+**Patch Release (x.x.X)**:
+- Bug fixes that restore intended functionality
+- Performance improvements
+- Documentation updates
+- **Key question**: "Was this supposed to work this way already?"
+
+**Minor Release (x.X.0)**:
 - New features that weren't part of the original design
 - New configuration options
 - New commands or APIs
 - **Key question**: "Is this adding something that wasn't planned before?"
 
-**Major Release (x.0.0)**:
+**Major Release (X.0.0)**:
 - Breaking changes to existing APIs
 - Removal of features
 - Changes requiring user migration
 - **Key question**: "Will existing users need to change their code?"
 
-**Example**: If streaming output was always intended but wasn't working, fixing it is a patch. If it was never planned and we're adding it as an enhancement, it's a minor release.
+**Example**: If streaming output was always intended but wasn't working, fixing it is a patch. If it was never planned and we're adding it as an enhancement, it's a minor release (post-1.0) or patch (pre-1.0).
 
 ## Technology Stack
 - **Language**: TypeScript (targeting ES2020)
