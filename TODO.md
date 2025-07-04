@@ -3,10 +3,8 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-
+- [ ] **[Issue #19]** Implement plan from fix-bootstrap-issue-numbering - `issues/19-implement-plan-from-fix-bootstrap-issue-numbering.md`
+- [ ] **[Issue #20]** Implement plan from fix-bootstrap-filename-consistency - `issues/20-implement-plan-from-fix-bootstrap-filename-consistency.md`
+- [ ] **[Issue #21]** Implement plan from fix-bootstrap-todo-overwrite - `issues/21-implement-plan-from-fix-bootstrap-todo-overwrite.md`
 
 ## Completed Issues
-- [x] **[Issue #18]** Polish and Document Gemini Output Formatting - `issues/18-polish-and-document-gemini-output-formatting.md`
-- [x] **[Issue #17]** Add Testing for Gemini Output Formatting - `issues/17-add-testing-for-gemini-output-formatting.md`
-- [x] **[Issue #16]** Implement Gemini Output Formatting - `issues/16-implement-gemini-output-formatting.md`
-- [x] **[Issue #15]** Implement plan from gemini-output-formatting - `issues/15-implement-plan-from-gemini-output-formatting.md`
