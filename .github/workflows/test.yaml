@@ -122,16 +122,17 @@ jobs:
     
     - name: Store benchmark results
       uses: benchmark-action/github-action-benchmark@v1
+      continue-on-error: true
       with:
         tool: 'customBiggerIsBetter'
         output-file-path: bench-results-transformed.json
         github-token: ${{ secrets.GITHUB_TOKEN }}
         auto-push: true
-        comment-on-alert: true
+        comment-on-alert: false
         alert-threshold: '200%'
-        comment-always: true
+        comment-always: false
         fail-on-alert: false
-        skip-fetch-gh-pages: true
+        benchmark-data-dir-path: 'dev/bench'
   
   coverage-check:
     name: Coverage Report
