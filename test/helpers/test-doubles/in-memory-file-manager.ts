@@ -140,12 +140,13 @@ export class InMemoryFileManager {
     return content;
   }
 
-  createIssue(issueNumber: number, content: string): string {
-    const filePath = `issues/${issueNumber}-new-issue.md`;
+  createIssue(issueNumber: number, title: string, content: string): string {
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const filePath = `issues/${issueNumber}-${slug}.md`;
     this.files.set(filePath, content);
     this.issues.set(issueNumber, {
       number: issueNumber,
-      title: `New Issue ${issueNumber}`,
+      title: title,
       file: filePath,
       requirements: 'New requirements',
       acceptanceCriteria: ['New criteria']
@@ -153,14 +154,17 @@ export class InMemoryFileManager {
     return filePath;
   }
 
-  createPlan(issueNumber: number, content: string): string {
-    const filePath = `plans/${issueNumber}-plan.md`;
+  createPlan(issueNumber: number, plan: any, issueTitle?: string): string {
+    const slug = issueTitle ? issueTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : 'plan';
+    const filePath = `plans/${issueNumber}-${slug}.md`;
+    
+    // Store the plan object
+    this.plans.set(issueNumber, plan);
+    
+    // Create a simple content representation
+    const content = `# Plan for Issue ${issueNumber}\n\n${JSON.stringify(plan, null, 2)}`;
     this.files.set(filePath, content);
-    this.plans.set(issueNumber, {
-      issueNumber,
-      file: filePath,
-      phases: [{ name: 'New Phase', tasks: ['New Task'] }]
-    });
+    
     return filePath;
   }
 

@@ -751,14 +751,24 @@ ${issueEntry}
   /**
    * Create a new issue
    */
-  async createIssue(title: string, description?: string, acceptanceCriteria?: string[], details?: string): Promise<number> {
+  async createIssue(title: string, description?: string, acceptanceCriteria?: string[], details?: string, customContent?: string): Promise<number> {
     // Get next issue number
     const nextNumber = await this.fileManager.getNextIssueNumber();
     
     let issueContent: string;
     
+    // If we have custom content, use it with corrected issue number
+    if (customContent !== undefined) {
+      // If content doesn't start with a header, add it
+      if (!customContent.startsWith('#')) {
+        issueContent = `# Issue ${nextNumber}: ${title}\n\n${customContent}`;
+      } else {
+        // Replace placeholder issue number with the actual assigned number
+        issueContent = customContent.replace(/^#\s*Issue\s*\d*:\s*/m, `# Issue ${nextNumber}: `);
+      }
+    }
     // If we have explicit content, use it directly
-    if (description !== undefined || acceptanceCriteria !== undefined || details !== undefined) {
+    else if (description !== undefined || acceptanceCriteria !== undefined || details !== undefined) {
       issueContent = `# Issue ${nextNumber}: ${title}
 
 ## Description
@@ -908,12 +918,11 @@ ${masterPlanContent}`;
     const result = await provider.execute(prompt, '');
 
     // Create initial issue for bootstrapping
-    // Use dynamic issue numbering to avoid overwriting existing issues
-    // This ensures bootstrap works correctly even when issues already exist
-    const issueNumber = await this.fileManager.getNextIssueNumber();
     const planBasename = path.basename(masterPlanPath, path.extname(masterPlanPath));
     const issueTitle = `Implement plan from ${planBasename}`;
-    const issueContent = `# Issue ${issueNumber}: ${issueTitle}
+    
+    // Create the issue content with placeholder issue number
+    const issueContent = `# Issue: ${issueTitle}
 
 ## Requirement
 Decompose the plan into individual actionable issues and create corresponding plan files for each issue.
@@ -941,7 +950,8 @@ IMPORTANT: For each issue you create:
 
 ${result.output ?? 'Success'}`;
 
-    await this.fileManager.createIssue(issueNumber, issueTitle, issueContent);
+    // Use createIssue with custom content
+    const issueNumber = await this.createIssue(issueTitle, undefined, undefined, undefined, issueContent);
 
     // Create corresponding plan file
     await this.fileManager.createPlan(issueNumber, { 
@@ -954,9 +964,6 @@ ${result.output ?? 'Success'}`;
       technicalApproach: 'AI-assisted decomposition of master plan',
       challenges: ['Ensuring task independence', 'Managing dependencies']
     }, issueTitle);
-
-    // Add issue to TODO list using shared method
-    await this.addIssueToTodo(issueNumber, issueTitle);
   }
 
   /**
