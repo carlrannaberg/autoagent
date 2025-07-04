@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2025-07-04
+
 ### Fixed
 - Provider selection now correctly uses user's configured providers instead of hardcoded defaults
 - Added comprehensive logging for provider selection process to aid debugging
 - Fixed issue where configuration appeared to reset after npm updates
+
+### Changed
+- Improved release script timeout handling for better cross-platform compatibility
+- Updated CLI output message from "Using provider:" to "Provider override:" for clarity
 
 ## [0.3.2] - 2025-07-04
 
