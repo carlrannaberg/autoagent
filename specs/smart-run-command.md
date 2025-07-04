@@ -128,12 +128,11 @@ function isIssueFile(input: string): boolean {
 
 1. **Run command argument** changes:
    - From: `[issue]` (issue number or name only)
-   - To: `[target]` (plan files, issues, or names)
+   - To: `[target]` (spec files, issues, or names)
 
-2. **Bootstrap command deprecation**:
-   - Mark as deprecated in help text
-   - Redirect users to `run <plan-file>`
-   - Eventually remove in future version
+2. **Bootstrap command removal**:
+   - Delete bootstrap command entirely
+   - Move bootstrap logic into run command
 
 ### Error Handling
 
@@ -145,20 +144,20 @@ function isIssueFile(input: string): boolean {
 
 ## Migration Strategy
 
-### Backward Compatibility
-1. **Run command enhancement** - Now accepts plan files as input
-2. **Bootstrap deprecation** - Gradual removal with migration guidance
+### Direct Replacement
+1. **Run command enhancement** - Now accepts spec files as input
+2. **Bootstrap removal** - Delete bootstrap command entirely
 3. **No breaking changes** - All existing run usage continues to work
 
 ### Migration Steps
 1. **Update documentation** - Show new run usage patterns
-2. **Add deprecation notice** - Point bootstrap users to run command
-3. **Provide migration guide** - Clear steps to update workflows
+2. **Remove bootstrap references** - Clean up all mentions
+3. **Update personal workflows** - Switch to `run <spec-file>`
 
 ## Testing Strategy
 
 ### Unit Tests
-1. **Input type detection** - Test plan vs issue vs number detection
+1. **Input type detection** - Test spec vs issue vs number detection
 2. **Command routing** - Verify correct execution path for each input type
 3. **Backward compatibility** - Ensure existing run behavior preserved
 
@@ -292,35 +291,29 @@ Examples:
 
 ### Phase 1: Core Implementation (Day 1-2)
 1. **Add input type detection** to run command
-2. **Implement plan file handling** in run workflow
+2. **Implement spec file handling** in run workflow
 3. **Maintain backward compatibility** for existing run usage
-4. **Add clear progress logging** for plan execution
+4. **Add clear progress logging** for spec execution
 
-### Phase 2: Bootstrap Deprecation (Day 3-4)
-1. **Mark bootstrap command as deprecated**
-2. **Add migration guidance** in bootstrap help text
-3. **Update error messages** to point to run command
-4. **Test migration scenarios** thoroughly
+### Phase 2: Bootstrap Removal (Day 2-3)
+1. **Delete bootstrap command file** (`src/cli/commands/bootstrap.ts`)
+2. **Remove bootstrap registration** from CLI index
+3. **Clean up any bootstrap references** in code
+4. **Test that spec files work via run command**
 
-### Phase 5: Bootstrap Removal (Future Release)
-1. **Remove bootstrap command entirely** (after 2-3 releases)
-2. **Clean up related code** and documentation
-3. **Update changelog** with removal notice
-4. **Verify no internal dependencies** on bootstrap
-
-### Phase 3: Testing (Day 5-6)
+### Phase 3: Testing (Day 3-4)
 1. **Write unit tests** for input detection
-2. **Create integration tests** for plan execution
+2. **Create integration tests** for spec execution
 3. **Add E2E tests** for all run scenarios
 4. **Verify backward compatibility** thoroughly
 
-### Phase 4: Documentation (Day 7)
+### Phase 4: Documentation (Day 4-5)
 1. **Update README** with unified run examples
    - Replace "master plan" terminology with "spec file"
-   - Update bootstrap section to point to run command
+   - Remove bootstrap section entirely
    - Add spec file vs plan file vs issue file terminology clarification
-2. **Update CHANGELOG** with run enhancement
-3. **Create bootstrap migration guide**
+2. **Update CHANGELOG** with run enhancement and bootstrap removal
+3. **Remove any bootstrap documentation**
 4. **Update all documentation** to use run command and correct terminology
 
 ## Open Questions
