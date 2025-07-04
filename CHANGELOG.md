@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-07-04
+
+### Added
+- Enhanced Gemini output formatting with automatic sentence boundary detection
+  - Smart detection of sentence endings with proper handling of abbreviations and edge cases
+  - Configurable via environment variables (AUTOAGENT_DISABLE_GEMINI_FORMATTING, AUTOAGENT_GEMINI_BUFFER_SIZE)
+  - Performance optimized with <1ms overhead per 1KB of text
+- Comprehensive test suite for stream formatter functionality
+- Benchmark results transformation script for GitHub Actions integration
+- New performance benchmarks for file manager, pattern analyzer, git operations, and retry utilities
+
+### Fixed
+- Improved stream formatter sentence boundary detection for edge cases
+- Resolved linting issues across the codebase
+
+### Changed
+- Moved `.autoagent.json` to gitignore (configuration now handled through `.autoagent/config.json`)
+- Updated benchmark workflow to use custom transformer for better GitHub Pages integration
+- Reorganized and optimized performance benchmarks
+- Updated vitest configuration to properly handle benchmark files
+
+### Removed
+- Removed obsolete benchmark files (execution.bench.ts, parsing.bench.ts, memory.bench.ts, provider.bench.ts)
+
 ## [0.3.0] - 2025-07-04
 
 ### Changed
