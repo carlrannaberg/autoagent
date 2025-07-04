@@ -7,15 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2025-07-04
+
 ### Added
-- Create comprehensive plan decomposition for fixing bootstrap TODO.md overwrite issue
-  - Issue #33: Extract Common TODO Update Logic
-  - Issue #34: Fix Bootstrap TODO Overwrite (main fix)
-  - Issue #35: Refactor createIssue to Support Optional Custom Content
-  - Issue #36: Add Bootstrap TODO Preservation Tests
-  - Issue #37: Add Bootstrap Integration Tests
-  - Issue #38: Update Bootstrap Documentation
-- Successfully completed issue #21: Implement plan from fix-bootstrap-todo-overwrite
+- Enhanced `run` command with flexible issue execution
+  - Execute specific issues by number (e.g., `autoagent run 39`)
+  - Execute issues by filename prefix (e.g., `autoagent run 39-implement-plan`)
+  - Execute issues by partial name match (e.g., `autoagent run embed-bootstrap`)
+  - Better error handling for non-existent or invalid issues
+- Comprehensive test coverage for run command functionality
+  - End-to-end tests for various issue matching scenarios
+  - Edge case handling for multiple matching files
+  - Mock provider support for testing
+
+### Fixed
+- Release script compatibility with macOS systems
+  - Handle missing `timeout` command on macOS (fallback to `gtimeout` or no timeout)
+  - Improved cross-platform compatibility for release preparation
 
 ## [0.3.1] - 2025-07-04
 
