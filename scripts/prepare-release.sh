@@ -1,12 +1,27 @@
 #!/bin/bash
 
-# prepare-release.sh - Automate release preparation using Claude
+# prepare-release.sh - Automate release preparation using Claude or Gemini
 
 set -e  # Exit on error
 
-# Check if claude CLI is available
-if ! command -v claude &> /dev/null; then
-    echo "Error: claude CLI is not installed"
+# Check which AI CLI is available
+AI_CLI=""
+AI_MODEL=""
+AI_FLAGS=""
+
+if command -v claude &> /dev/null; then
+    AI_CLI="claude"
+    AI_MODEL="--model sonnet"
+    AI_FLAGS="--add-dir . --dangerously-skip-permissions --output-format stream-json --verbose --max-turns 30"
+    echo "Using Claude CLI with sonnet model"
+elif command -v gemini &> /dev/null; then
+    AI_CLI="gemini"
+    AI_MODEL="--model gemini-2.5-flash"
+    AI_FLAGS="--include-all"
+    echo "Using Gemini CLI with gemini-2.5-flash model"
+else
+    echo "Error: Neither claude nor gemini CLI is installed"
+    echo "Please install one of them to use this script"
     exit 1
 fi
 
@@ -54,13 +69,14 @@ COMMIT_COUNT=$(git rev-list ${LAST_TAG}..HEAD --count)
 echo "Found $COMMIT_COUNT commits since $LAST_TAG"
 git log ${LAST_TAG}..HEAD --oneline | head -20
 echo
-echo "Using Claude to analyze changes and prepare release..."
-echo "This process typically takes 3-5 minutes as Claude analyzes the codebase..."
+echo "Using $AI_CLI to analyze changes and prepare release..."
+echo "This process typically takes 3-5 minutes as the AI analyzes the codebase..."
+echo "Timeout set to 15 minutes for safety."
 
-# Use Claude to prepare the release
-# Temporarily disable exit on error for Claude command
+# Use AI CLI to prepare the release with faster model and longer timeout
+# Temporarily disable exit on error for AI command
 set +e
-claude --add-dir . --dangerously-skip-permissions --output-format stream-json --verbose --max-turns 30 -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
+timeout 900 $AI_CLI $AI_MODEL $AI_FLAGS -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 
 Current version: $CURRENT_VERSION
 
@@ -83,11 +99,15 @@ Follow the Keep a Changelog format and include the date. Only include categories
 
 DO NOT create a git tag - the GitHub Actions workflow will create it during the release process."
 
-CLAUDE_EXIT_CODE=$?
+AI_EXIT_CODE=$?
 set -e  # Re-enable exit on error
 
-if [ $CLAUDE_EXIT_CODE -ne 0 ]; then
-    echo "Error: Claude command failed with exit code $CLAUDE_EXIT_CODE"
+if [ $AI_EXIT_CODE -eq 124 ]; then
+    echo "Error: $AI_CLI command timed out after 15 minutes. You can try running it manually with:"
+    echo "$AI_CLI $AI_MODEL $AI_FLAGS -p 'Prepare $RELEASE_TYPE release for AutoAgent package'"
+    exit 1
+elif [ $AI_EXIT_CODE -ne 0 ]; then
+    echo "Error: $AI_CLI command failed with exit code $AI_EXIT_CODE"
     exit 1
 fi
 
