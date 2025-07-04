@@ -104,7 +104,7 @@ export class InMemoryFileManager {
     if (this.mockIssueFiles) {
       this.mockIssueFiles.forEach(filename => {
         const match = filename.match(/^(\d+)-.*\.md$/);
-        if (match && match[1]) {
+        if (match !== null && match[1] !== undefined && match[1] !== '') {
           const num = parseInt(match[1], 10);
           if (!isNaN(num) && !issueNumbers.includes(num)) {
             issueNumbers.push(num);

@@ -386,4 +386,122 @@ Technical details
       expect(fs.writeFile).toHaveBeenCalledWith(absolutePath, 'content', 'utf-8');
     });
   });
+
+  describe('generateFileSlug (via createIssue)', () => {
+    beforeEach(() => {
+      (fs.mkdir as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      (fs.writeFile as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    });
+
+    it('should handle common cases correctly', async () => {
+      const testCases = [
+        { title: 'Implement User Authentication', expected: '1-implement-user-authentication.md' },
+        { title: 'Fix Bug #123', expected: '2-fix-bug-123.md' },
+        { title: 'Add New Feature', expected: '3-add-new-feature.md' },
+        { title: 'Update Documentation', expected: '4-update-documentation.md' },
+        { title: 'Refactor Code Base', expected: '5-refactor-code-base.md' }
+      ];
+
+      for (let i = 0; i < testCases.length; i++) {
+        const testCase = testCases[i];
+        if (testCase) {
+          const filepath = await fileManager.createIssue(i + 1, testCase.title, 'content');
+          expect(filepath).toBe(path.join(mockWorkspace, 'issues', testCase.expected));
+        }
+      }
+    });
+
+    it('should handle edge cases with special characters', async () => {
+      const testCases = [
+        { title: 'Fix Bug!!! @#$%^&*()', expected: '1-fix-bug.md' },
+        { title: 'Feature...Test', expected: '2-feature-test.md' },
+        { title: 'Multiple   Spaces   Between', expected: '3-multiple-spaces-between.md' },
+        { title: '---Leading-And-Trailing-Hyphens---', expected: '4-leading-and-trailing-hyphens.md' },
+        { title: '...Multiple...Dots...', expected: '5-multiple-dots.md' }
+      ];
+
+      for (let i = 0; i < testCases.length; i++) {
+        const testCase = testCases[i];
+        if (testCase) {
+          const filepath = await fileManager.createIssue(i + 1, testCase.title, 'content');
+          expect(filepath).toBe(path.join(mockWorkspace, 'issues', testCase.expected));
+        }
+      }
+    });
+
+    it('should handle edge cases with dots and hyphens', async () => {
+      const testCases = [
+        { title: 'file.config.json', expected: '1-file-config-json.md' },
+        { title: 'feature-with-hyphens', expected: '2-feature-with-hyphens.md' },
+        { title: 'test...multiple...dots', expected: '3-test-multiple-dots.md' },
+        { title: 'mixed---hyphens---test', expected: '4-mixed-hyphens-test.md' },
+        { title: '.startWithDot', expected: '5-startwithdot.md' }
+      ];
+
+      for (let i = 0; i < testCases.length; i++) {
+        const testCase = testCases[i];
+        if (testCase) {
+          const filepath = await fileManager.createIssue(i + 1, testCase.title, 'content');
+          expect(filepath).toBe(path.join(mockWorkspace, 'issues', testCase.expected));
+        }
+      }
+    });
+
+    it('should handle empty and whitespace-only strings', async () => {
+      const testCases = [
+        { title: '', expected: '1-.md' },
+        { title: '   ', expected: '2-.md' },
+        { title: '\t\n', expected: '3-.md' }
+      ];
+
+      for (let i = 0; i < testCases.length; i++) {
+        const testCase = testCases[i];
+        if (testCase) {
+          const filepath = await fileManager.createIssue(i + 1, testCase.title, 'content');
+          expect(filepath).toBe(path.join(mockWorkspace, 'issues', testCase.expected));
+        }
+      }
+    });
+
+    it('should handle unicode and non-ASCII characters', async () => {
+      const testCases = [
+        { title: 'Café Implementation', expected: '1-caf-implementation.md' },
+        { title: 'Unicode 你好 Test', expected: '2-unicode-test.md' },
+        { title: 'Emoji 😀 Feature', expected: '3-emoji-feature.md' },
+        { title: 'Résumé Parser', expected: '4-rsum-parser.md' }
+      ];
+
+      for (let i = 0; i < testCases.length; i++) {
+        const testCase = testCases[i];
+        if (testCase) {
+          const filepath = await fileManager.createIssue(i + 1, testCase.title, 'content');
+          expect(filepath).toBe(path.join(mockWorkspace, 'issues', testCase.expected));
+        }
+      }
+    });
+
+    it('should handle very long titles', async () => {
+      const longTitle = 'This is a very long title that goes on and on and on with many words to test how the slug generation handles extremely long inputs that might need to be processed';
+      const expectedSlug = '1-this-is-a-very-long-title-that-goes-on-and-on-and-on-with-many-words-to-test-how-the-slug-generation-handles-extremely-long-inputs-that-might-need-to-be-processed.md';
+      
+      const filepath = await fileManager.createIssue(1, longTitle, 'content');
+      expect(filepath).toBe(path.join(mockWorkspace, 'issues', expectedSlug));
+    });
+
+    it('should match examples from the issue', async () => {
+      // These are the specific examples from the issue requirements
+      const testCases = [
+        { title: 'Implement User Authentication', expected: '1-implement-user-authentication.md' },
+        { title: 'Fix Bug #123', expected: '2-fix-bug-123.md' }
+      ];
+
+      for (let i = 0; i < testCases.length; i++) {
+        const testCase = testCases[i];
+        if (testCase) {
+          const filepath = await fileManager.createIssue(i + 1, testCase.title, 'content');
+          expect(filepath).toBe(path.join(mockWorkspace, 'issues', testCase.expected));
+        }
+      }
+    });
+  });
 });

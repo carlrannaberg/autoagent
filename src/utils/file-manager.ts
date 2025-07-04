@@ -55,14 +55,14 @@ export class FileManager {
     
     if (typeof issueOrNumber === 'number') {
       // New signature for CLI usage
-      const filename = `${issueOrNumber}-${(title ?? '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '').replace(/\.+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '')}.md`;
+      const filename = `${issueOrNumber}-${this.generateFileSlug(title ?? '')}.md`;
       const filepath = path.join(this.issuesDir, filename);
       await fs.writeFile(filepath, content ?? '', 'utf-8');
       return filepath;
     } else {
       // Original signature
       const issue = issueOrNumber;
-      const filename = `${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9.-]/g, '').replace(/\.+/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '')}.md`;
+      const filename = `${issue.number}-${this.generateFileSlug(issue.title)}.md`;
       const filepath = path.join(this.issuesDir, filename);
       
       const issueContent = `# Issue ${issue.number}: ${issue.title}
@@ -165,7 +165,7 @@ ${phase.tasks.map(task => `- [ ] ${task}`).join('\n')}`).join('\n');
     
     const content = `# Plan for Issue ${issueNumber}: ${issueTitle}
 
-This document outlines the step-by-step plan to complete \`issues/${issueNumber}-${issueTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md\`.
+This document outlines the step-by-step plan to complete \`issues/${issueNumber}-${this.generateFileSlug(issueTitle)}.md\`.
 
 ## Implementation Plan
 ${phasesContent}
@@ -518,5 +518,35 @@ Please see AGENT.md for the actual instructions.
     }
     
     return checklist;
+  }
+
+  /**
+   * Generates a URL-friendly slug from a title.
+   * 
+   * This method converts a title string into a standardized filename slug by:
+   * 1. Converting to lowercase
+   * 2. Replacing spaces with hyphens
+   * 3. Removing special characters (except dots and hyphens)
+   * 4. Replacing multiple dots with single hyphen
+   * 5. Replacing multiple hyphens with single hyphen
+   * 6. Removing leading/trailing hyphens
+   * 
+   * @param title - The title to convert to a slug
+   * @returns A URL-friendly slug string
+   * @example
+   * ```typescript
+   * generateFileSlug("Implement User Authentication") // "implement-user-authentication"
+   * generateFileSlug("Fix Bug #123") // "fix-bug-123"
+   * generateFileSlug("Feature...Test") // "feature-test"
+   * ```
+   */
+  private generateFileSlug(title: string): string {
+    return title
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9.-]/g, '')
+      .replace(/\.+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
   }
 }
