@@ -20,9 +20,13 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #36]** Add Bootstrap TODO Preservation Tests - `issues/36-add-bootstrap-todo-preservation-tests.md`
 - [ ] **[Issue #37]** Add Bootstrap TODO Integration Tests - `issues/37-add-bootstrap-integration-tests.md`
 - [ ] **[Issue #38]** Update Bootstrap Documentation - `issues/38-update-bootstrap-documentation.md`
-- [ ] **[Issue #39]** Implement plan from embed-bootstrap-templates - `issues/39-implement-plan-from-embed-bootstrap-templates.md`
+- [ ] **[Issue #40]** Create embedded template module - `issues/40-create-embedded-template-module.md`
+- [ ] **[Issue #41]** Update bootstrap to use embedded templates - `issues/41-update-bootstrap-to-use-embedded-templates.md`
+- [ ] **[Issue #42]** Add tests for embedded template functionality - `issues/42-add-tests-for-embedded-template-functionality.md`
+- [ ] **[Issue #43]** Update documentation for embedded templates - `issues/43-update-documentation-for-embedded-templates.md`
 
 ## Completed Issues
+- [x] **[Issue #39]** Implement plan from embed-bootstrap-templates - `issues/39-implement-plan-from-embed-bootstrap-templates.md`
 - [x] **[Issue #21]** Implement plan from fix-bootstrap-todo-overwrite - `issues/21-implement-plan-from-fix-bootstrap-todo-overwrite.md`
 - [x] **[Issue #19]** Implement plan from fix-bootstrap-issue-numbering - `issues/19-implement-plan-from-fix-bootstrap-issue-numbering.md`
 - [x] **[Issue #20]** Implement plan from fix-bootstrap-filename-consistency - `issues/20-implement-plan-from-fix-bootstrap-filename-consistency.md`
