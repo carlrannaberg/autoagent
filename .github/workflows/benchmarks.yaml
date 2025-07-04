@@ -65,6 +65,8 @@ jobs:
         fail-on-alert: true
         comment-always: true
         benchmark-data-dir-path: 'benchmarks'
+        gh-pages-branch: 'gh-pages'
+        skip-fetch-gh-pages: true
     
     - name: Compare with base branch
       if: github.event_name == 'pull_request'
