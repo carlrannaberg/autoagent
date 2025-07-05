@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-07-05
+
 ### Fixed
 - Fix bootstrap command using hardcoded issue number 1 instead of next available
 - Fix bootstrap command overwriting existing TODO items instead of preserving them
