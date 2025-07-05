@@ -88,8 +88,7 @@ describe('CLI Integration Tests', () => {
         pendingIssues: 3,
         availableProviders: ['claude', 'gemini'],
         rateLimitedProviders: []
-      }),
-      bootstrap: vi.fn().mockResolvedValue(undefined)
+      })
     } as unknown as any;
 
     (ConfigManager as unknown as any).mockImplementation(() => mockConfigManager);
@@ -164,13 +163,6 @@ describe('CLI Integration Tests', () => {
       const issueNumber = await mockAgent.createIssue('New test issue');
       expect(issueNumber).toBe(1);
       expect(mockAgent.createIssue).toHaveBeenCalledWith('New test issue');
-    });
-  });
-
-  describe('bootstrap command', () => {
-    it('should bootstrap from master plan', async () => {
-      await mockAgent.bootstrap('master-plan.md');
-      expect(mockAgent.bootstrap).toHaveBeenCalledWith('master-plan.md');
     });
   });
 });

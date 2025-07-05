@@ -262,66 +262,6 @@ autoagent check
 autoagent check claude
 ```
 
-#### `autoagent bootstrap`
-Create initial issue from master plan.
-
-```bash
-# Create bootstrap issue from default master-plan.md
-autoagent bootstrap
-
-# Use a custom plan file
-autoagent bootstrap project-roadmap.md
-
-# Specify provider
-autoagent bootstrap --provider gemini my-plan.md
-
-# Use in different workspace
-autoagent bootstrap --workspace /path/to/project
-```
-
-The bootstrap command reads your master plan (markdown file) and creates the first actionable issue from it. **Bootstrap is safe to use in active projects** - it preserves all existing TODO items and automatically uses the next available issue number.
-
-##### Built-in Templates
-
-AutoAgent includes embedded templates for issue and plan creation, so you can start using bootstrap immediately without any setup. The templates are automatically included with the package and work out-of-the-box.
-
-**Features of Built-in Templates:**
-- ✅ **Zero configuration** - Templates are embedded in the package
-- ✅ **Consistent formatting** - Same template structure for all users
-- ✅ **Always up-to-date** - Templates update when you update AutoAgent
-- ✅ **Future-ready** - Support for custom template overrides coming soon
-
-**Key Safety Features:**
-- ✅ **Preserves existing TODO items** - Never overwrites your current TODO.md
-- ✅ **Dynamic issue numbering** - Automatically finds the next available issue number
-- ✅ **Appends to TODO.md** - Adds new issues to the "Pending Issues" section
-- ✅ **Safe for multiple runs** - Can bootstrap different plans without data loss
-
-**Example with existing issues:**
-```bash
-# If issues 1-3 already exist, bootstrap will create issue #4
-$ ls issues/
-1-setup-project.md  2-add-tests.md  3-refactor-api.md
-
-$ autoagent bootstrap feature-plan.md
-✓ Created issue #4: Implement plan from feature-plan
-
-# Bootstrap can be run multiple times for different plans
-$ autoagent bootstrap phase2-plan.md
-✓ Created issue #5: Implement plan from phase2-plan
-
-# Your TODO.md now contains all 5 issues - nothing was lost!
-$ cat TODO.md
-# To-Do
-...
-## Pending Issues
-- [ ] **[Issue #1]** Setup Project - `issues/1-setup-project.md`
-- [ ] **[Issue #2]** Add Tests - `issues/2-add-tests.md`
-- [ ] **[Issue #3]** Refactor API - `issues/3-refactor-api.md`
-- [ ] **[Issue #4]** Implement plan from feature-plan - `issues/4-implement-plan-from-feature-plan.md`
-- [ ] **[Issue #5]** Implement plan from phase2-plan - `issues/5-implement-plan-from-phase2-plan.md`
-```
-
 ### Command Options
 
 Most commands support these common options:

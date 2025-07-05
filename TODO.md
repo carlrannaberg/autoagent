@@ -3,9 +3,17 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #51]** Delete bootstrap command and clean up references - `issues/51-delete-bootstrap-command-and-clean-up-references.md`
 - [ ] **[Issue #52]** Write tests for smart run command - `issues/52-write-tests-for-smart-run-command.md`
 - [ ] **[Issue #53]** Update documentation for smart run command - `issues/53-update-documentation-for-smart-run-command.md`
+- [ ] **[Issue #54]** Create reflection engine core types and interfaces - `issues/54-create-reflection-engine-core-types.md`
+- [ ] **[Issue #55]** Implement reflection configuration support - `issues/55-implement-reflection-configuration-support.md`
+- [ ] **[Issue #56]** Build reflection engine core logic - `issues/56-build-reflection-engine-core-logic.md`
+- [ ] **[Issue #57]** Create improvement analyzer utility - `issues/57-create-improvement-analyzer-utility.md`
+- [ ] **[Issue #58]** Integrate reflection with bootstrap process - `issues/58-integrate-reflection-with-bootstrap-process.md`
+- [ ] **[Issue #59]** Add CLI options for reflection control - `issues/59-add-cli-options-for-reflection-control.md`
+- [ ] **[Issue #60]** Implement improvement application logic - `issues/60-implement-improvement-application-logic.md`
+- [ ] **[Issue #61]** Add unit tests for reflection engine - `issues/61-add-unit-tests-for-reflection-engine.md`
+- [ ] **[Issue #62]** Add integration tests for reflection system - `issues/62-add-integration-tests-for-reflection-system.md`
 - [ ] **[Issue #63]** Add git validation method to AutonomousAgent - `issues/63-add-git-validation-method-to-autonomousagent.md`
 - [ ] **[Issue #64]** Integrate git validation into executeIssue method - `issues/64-integrate-git-validation-into-executeissue-method.md`
 - [ ] **[Issue #65]** Enhance git utilities with comprehensive validation - `issues/65-enhance-git-utilities-with-comprehensive-validation.md`
@@ -21,8 +29,17 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #75]** Add configuration commands - `issues/75-add-configuration-commands.md`
 - [ ] **[Issue #76]** Write tests for git no-verify functionality - `issues/76-write-tests-for-git-no-verify-functionality.md`
 - [ ] **[Issue #77]** Update documentation - `issues/77-update-documentation.md`
+- [ ] **[Issue #78]** Create git push utility functions and types - `issues/78-create-git-push-utility-functions.md`
+- [ ] **[Issue #79]** Update configuration interfaces for auto-push - `issues/79-update-configuration-interfaces-for-auto-push.md`
+- [ ] **[Issue #80]** Implement configuration manager auto-push methods - `issues/80-implement-configuration-manager-auto-push-methods.md`
+- [ ] **[Issue #81]** Update autonomous agent for auto-push functionality - `issues/81-update-autonomousagent-for-auto-push.md`
+- [ ] **[Issue #82]** Add CLI flags for push control - `issues/82-add-cli-flags-for-push-control.md`
+- [ ] **[Issue #83]** Implement configuration commands for auto-push - `issues/83-implement-configuration-commands-for-auto-push.md`
+- [ ] **[Issue #84]** Write tests for git push functionality - `issues/84-write-tests-for-git-push-functionality.md`
+- [ ] **[Issue #85]** Update documentation for auto-push feature - `issues/85-update-documentation-for-auto-push-feature.md`
 
 ## Completed Issues
+- [x] **[Issue #51]** Delete bootstrap command and clean up references - `issues/51-delete-bootstrap-command-and-clean-up-references.md`
 - [x] **[Issue #50]** Implement spec file handling in run command - `issues/50-implement-spec-file-handling-in-run-command.md`
 - [x] **[Issue #49]** Add input type detection to run command - `issues/49-add-input-type-detection-to-run-command.md`
 - [x] **[Issue #48]** Implement plan from git-auto-push-configuration - `issues/48-implement-plan-from-git-auto-push-configuration.md`

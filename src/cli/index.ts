@@ -3,7 +3,6 @@
 import { Command } from 'commander';
 import { registerConfigCommand } from './commands/config';
 import { registerCreateCommand } from './commands/create';
-import { registerBootstrapCommand } from './commands/bootstrap';
 import { registerCheckCommand } from './commands/check';
 import { registerRunCommand } from './commands/run';
 import { registerStatusCommand } from './commands/status';
@@ -60,7 +59,6 @@ registerRunCommand(program);
 registerCreateCommand(program);
 registerStatusCommand(program);
 registerCheckCommand(program);
-registerBootstrapCommand(program);
 registerListCommand(program);
 
 // Handle unknown commands
