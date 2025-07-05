@@ -32,10 +32,29 @@ interface ExecutionData {
   timestamp: string;
 }
 
+async function isPlanFile(filePath: string): Promise<boolean> {
+  try {
+    const content = await fs.readFile(filePath, 'utf-8');
+    const issueMarkerPattern = /^#\s+Issue\s+\d+:/m;
+    return !issueMarkerPattern.test(content);
+  } catch {
+    return false;
+  }
+}
+
+// These functions will be used in future updates for more sophisticated routing
+// function isIssueNumber(target: string): boolean {
+//   return /^\d+$/.test(target);
+// }
+
+// function isIssueFile(target: string): boolean {
+//   return /^\d+-[\w-]+\.md$/.test(target);
+// }
+
 export function registerRunCommand(program: Command): void {
   program
-    .command('run [issue]')
-    .description('Run the specified issue, next issue, or all issues')
+    .command('run [target]')
+    .description('Run the specified target (issue, spec file, or next issue)')
     .option('-p, --provider <provider>', 'Override AI provider for this run (claude or gemini)')
     .option('-w, --workspace <path>', 'Workspace directory', process.cwd())
     .option('--all', 'Run all pending issues')
@@ -45,7 +64,7 @@ export function registerRunCommand(program: Command): void {
     .option('--no-co-author', 'Disable co-authorship for this run')
     .option('--co-author', 'Enable co-authorship for this run')
     .option('--dry-run', 'Preview what would be done without making changes')
-    .action(async (issue?: string, options: RunOptions = {}) => {
+    .action(async (target?: string, options: RunOptions = {}) => {
       try {
         const workspacePath = options.workspace ?? process.cwd();
         
@@ -217,7 +236,35 @@ export function registerRunCommand(program: Command): void {
           } else {
             Logger.warning(`⚠️  Completed ${successful} issues, ${failed} failed`);
           }
-        } else if (issue !== null && issue !== undefined && issue.length > 0) {
+        } else if (target !== null && target !== undefined && target.length > 0) {
+          // Detect target type and route accordingly
+          if (target.endsWith('.md')) {
+            // It's a markdown file - check if it's a plan/spec file
+            const targetPath = path.isAbsolute(target) ? target : path.join(workspacePath, target);
+            
+            try {
+              await fs.access(targetPath);
+              
+              if (await isPlanFile(targetPath)) {
+                // This is a spec/plan file - prepare for bootstrap (issue 50)
+                Logger.info(`🔍 Detected spec/plan file: ${target}`);
+                Logger.warning('Spec file execution will be implemented in the next update');
+                process.exit(0);
+                return;
+              } else {
+                // It's an issue file with issue marker
+                target = path.basename(target, '.md');
+              }
+            } catch (error) {
+              Logger.error(`File not found: ${target}`);
+              process.exit(1);
+              return;
+            }
+          }
+          
+          // Handle issue references (number or name)
+          const issue = target;
+          
           // Check if issue exists and is valid
           const issuesDir = path.join(workspacePath, 'issues');
           let issueFile: string | null = null;

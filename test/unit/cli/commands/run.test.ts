@@ -228,4 +228,67 @@ describe('Run Command', () => {
       );
     });
   });
+
+  describe('Input Type Detection', () => {
+    it('should detect spec/plan files when .md file has no issue marker', async () => {
+      vi.mocked(fs.access).mockResolvedValue(undefined);
+      vi.mocked(fs.readFile).mockResolvedValue('# Specification\n\nThis is a spec file without issue marker.');
+      
+      await expect(program.parseAsync(['node', 'test', 'run', 'spec.md'])).rejects.toThrow('process.exit called');
+      
+      expect(Logger.info).toHaveBeenCalledWith('🔍 Detected spec/plan file: spec.md');
+      expect(Logger.warning).toHaveBeenCalledWith('Spec file execution will be implemented in the next update');
+      expect(processExitSpy).toHaveBeenCalledWith(0);
+    });
+
+    it('should handle issue files when .md file has issue marker', async () => {
+      vi.mocked(fs.access).mockResolvedValue(undefined);
+      vi.mocked(fs.readFile).mockResolvedValue('# Issue 42: Test Issue\n\nThis is an issue file.');
+      vi.mocked(fs.readdir).mockResolvedValue(['42-test-issue.md'] as any);
+      
+      mockAgent.executeIssue.mockResolvedValue({ success: true });
+      
+      await program.parseAsync(['node', 'test', 'run', '42-test-issue.md']);
+      
+      expect(mockAgent.executeIssue).toHaveBeenCalledWith(42);
+    });
+
+    it('should handle numeric issue references', async () => {
+      vi.mocked(fs.readdir).mockResolvedValue(['42-test-issue.md'] as any);
+      mockAgent.executeIssue.mockResolvedValue({ success: true });
+      
+      await program.parseAsync(['node', 'test', 'run', '42']);
+      
+      expect(mockAgent.executeIssue).toHaveBeenCalledWith(42);
+    });
+
+    it('should handle issue file names without .md extension', async () => {
+      vi.mocked(fs.readdir).mockResolvedValue(['42-test-issue.md'] as any);
+      mockAgent.executeIssue.mockResolvedValue({ success: true });
+      
+      await program.parseAsync(['node', 'test', 'run', '42-test-issue']);
+      
+      expect(mockAgent.executeIssue).toHaveBeenCalledWith(42);
+    });
+
+    it('should error when spec/plan file does not exist', async () => {
+      vi.mocked(fs.access).mockRejectedValue(new Error('File not found'));
+      
+      await expect(program.parseAsync(['node', 'test', 'run', 'nonexistent.md'])).rejects.toThrow('process.exit called');
+      
+      expect(Logger.error).toHaveBeenCalledWith('File not found: nonexistent.md');
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+    });
+
+    it('should handle absolute paths for spec files', async () => {
+      const absolutePath = '/absolute/path/to/spec.md';
+      vi.mocked(fs.access).mockResolvedValue(undefined);
+      vi.mocked(fs.readFile).mockResolvedValue('# Specification\n\nNo issue marker here.');
+      
+      await expect(program.parseAsync(['node', 'test', 'run', absolutePath])).rejects.toThrow('process.exit called');
+      
+      expect(fs.readFile).toHaveBeenCalledWith(absolutePath, 'utf-8');
+      expect(Logger.info).toHaveBeenCalledWith(`🔍 Detected spec/plan file: ${absolutePath}`);
+    });
+  });
 });

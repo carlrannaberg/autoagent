@@ -18,10 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Templates are bundled with the package for zero-configuration setup
   - No external template files required - bootstrap works out-of-the-box
   - Templates automatically update when you update AutoAgent
+- Run command now accepts [target] parameter instead of [issue] for more flexible input types
 
 ### Added
 - Add comprehensive documentation for filename conventions in README.md
 - Enhanced JSDoc documentation for generateFileSlug method with additional examples
+- Add input type detection to run command to support spec files, issue numbers, and issue names
+  - Detects spec/plan files (markdown files without issue markers)
+  - Detects numeric issue references
+  - Detects issue file names with format `number-slug.md`
+  - Routes different input types to appropriate execution paths
 
 ## [0.3.3] - 2025-07-04
 

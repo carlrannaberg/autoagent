@@ -68,7 +68,7 @@ describe('Bootstrap TODO Preservation', () => {
     
     // Setup fs mocks
     vi.mocked(fs.readFile).mockImplementation(async (path: string) => {
-      const content = mockFileContents.get(path as string);
+      const content = mockFileContents.get(path);
       if (content === undefined) {
         throw new Error(`ENOENT: no such file or directory, open '${path}'`);
       }
@@ -76,7 +76,7 @@ describe('Bootstrap TODO Preservation', () => {
     });
     
     vi.mocked(fs.readdir).mockImplementation(async (dir: string) => {
-      const files = mockFiles.get(dir as string);
+      const files = mockFiles.get(dir);
       if (!files) {
         return [] as any;
       }
