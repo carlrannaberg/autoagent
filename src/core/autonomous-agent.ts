@@ -9,6 +9,7 @@ import {
   Status,
   RollbackData
 } from '../types';
+import { DEFAULT_REFLECTION_CONFIG } from './reflection-defaults';
 import { ConfigManager } from './config-manager';
 import { FileManager } from '../utils/file-manager';
 import { Provider, createProvider, getFirstAvailableProvider } from '../providers';
@@ -50,6 +51,7 @@ export class AutonomousAgent extends EventEmitter {
       debug: false,
       dryRun: false,
       enableRollback: false,
+      reflection: DEFAULT_REFLECTION_CONFIG,
       ...config
     };
 
