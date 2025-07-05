@@ -22,7 +22,7 @@ describe('CLI Smoke Tests', () => {
 
   it('should list available commands', async () => {
     const { stdout } = await execAsync(`${cliPath} --help`);
-    const commands = ['config', 'status', 'list', 'init', 'create'];
+    const commands = ['config', 'status', 'list', 'run', 'create'];
     
     commands.forEach(command => {
       expect(stdout).toContain(command);

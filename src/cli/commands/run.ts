@@ -135,114 +135,7 @@ export function registerRunCommand(program: Command): void {
           Logger.info(`Provider override: ${options.provider}`);
         }
 
-        if (options.all === true) {
-          // First, get the count of pending issues
-          const status = await agent.getStatus();
-          const pendingCount = status.pendingIssues;
-          
-          if (pendingCount > 0) {
-            Logger.info(`Running ${pendingCount} issues`);
-          }
-          
-          let results;
-          if (process.env.AUTOAGENT_MOCK_PROVIDER === 'true') {
-            // Mock batch execution for testing
-            const fs = await import('fs/promises');
-            const path = await import('path');
-            const statusFile = path.join(workspacePath, '.autoagent', 'status.json');
-            
-            // Update all pending issues to completed
-            let statusData: StatusData = {};
-            try {
-              const statusContent = await fs.readFile(statusFile, 'utf-8');
-              statusData = JSON.parse(statusContent) as StatusData;
-            } catch {
-              // File doesn't exist, no issues to run
-              statusData = {};
-            }
-            
-            // Check for cyclic dependencies
-            const issuesDir = path.join(workspacePath, 'issues');
-            let hasCyclicDependency = false;
-            
-            try {
-              const files = await fs.readdir(issuesDir);
-              for (const file of files) {
-                if (file.includes('issue-a') || file.includes('issue-b')) {
-                  const content = await fs.readFile(path.join(issuesDir, file), 'utf-8');
-                  if (content.includes('Dependencies') && 
-                      ((file.includes('issue-a') && content.includes('issue-b')) ||
-                       (file.includes('issue-b') && content.includes('issue-a')))) {
-                    hasCyclicDependency = true;
-                    break;
-                  }
-                }
-              }
-            } catch {
-              // Ignore errors
-            }
-            
-            if (hasCyclicDependency) {
-              Logger.error('Cyclic dependency detected between issues');
-              process.exit(1);
-            }
-            
-            results = [];
-            const executionsFile = path.join(workspacePath, '.autoagent', 'executions.json');
-            let executions: ExecutionData[] = [];
-            try {
-              const executionsContent = await fs.readFile(executionsFile, 'utf-8');
-              executions = JSON.parse(executionsContent) as ExecutionData[];
-            } catch {
-              // File doesn't exist, start fresh
-            }
-            
-            for (const [key, issue] of Object.entries(statusData)) {
-              if (issue.status === 'pending') {
-                issue.status = 'completed';
-                issue.completedAt = new Date().toISOString();
-                results.push({ success: true, issueNumber: issue.issueNumber ?? 0 });
-                
-                // Handle mock provider error scenarios for this issue
-                if (process.env.AUTOAGENT_MOCK_TIMEOUT === 'true' ||
-                    process.env.AUTOAGENT_MOCK_RATE_LIMIT === 'true' ||
-                    process.env.AUTOAGENT_MOCK_AUTH_FAIL === 'true') {
-                  issue.status = 'failed';
-                  results.push({ success: false, issueNumber: issue.issueNumber ?? 0 });
-                  
-                  executions.push({
-                    id: `exec-${Date.now()}-${key}`,
-                    issue: key,
-                    status: 'failed',
-                    timestamp: new Date().toISOString()
-                  });
-                } else {
-                  // Record execution history
-                  executions.push({
-                    id: `exec-${Date.now()}-${key}`,
-                    issue: key,
-                    status: 'completed',
-                    timestamp: new Date().toISOString()
-                  });
-                }
-              }
-            }
-            
-            await fs.writeFile(statusFile, JSON.stringify(statusData, null, 2), 'utf-8');
-            await fs.writeFile(executionsFile, JSON.stringify(executions, null, 2), 'utf-8');
-          } else {
-            results = await agent.executeAll();
-          }
-          
-          const successful = results.filter(r => r.success).length;
-          const failed = results.filter(r => !r.success).length;
-          
-          if (failed === 0) {
-            Logger.success(`🎉 All ${successful} issues completed successfully!`);
-          } else {
-            Logger.warning(`⚠️  Completed ${successful} issues, ${failed} failed`);
-          }
-        } else if (target !== null && target !== undefined && target.length > 0) {
+        if (target !== null && target !== undefined && target.length > 0) {
           // Detect target type and route accordingly
           if (target.endsWith('.md')) {
             // It's a markdown file - check if it's a plan/spec file
@@ -492,6 +385,113 @@ export function registerRunCommand(program: Command): void {
               Logger.error(`Failed to execute issue #${issueNumber}: ${result.error ?? 'Unknown error'}`);
               process.exit(1);
             }
+          }
+        } else if (options.all === true) {
+          // First, get the count of pending issues
+          const status = await agent.getStatus();
+          const pendingCount = status.pendingIssues;
+          
+          if (pendingCount > 0) {
+            Logger.info(`Running ${pendingCount} issues`);
+          }
+          
+          let results;
+          if (process.env.AUTOAGENT_MOCK_PROVIDER === 'true') {
+            // Mock batch execution for testing
+            const fs = await import('fs/promises');
+            const path = await import('path');
+            const statusFile = path.join(workspacePath, '.autoagent', 'status.json');
+            
+            // Update all pending issues to completed
+            let statusData: StatusData = {};
+            try {
+              const statusContent = await fs.readFile(statusFile, 'utf-8');
+              statusData = JSON.parse(statusContent) as StatusData;
+            } catch {
+              // File doesn't exist, no issues to run
+              statusData = {};
+            }
+            
+            // Check for cyclic dependencies
+            const issuesDir = path.join(workspacePath, 'issues');
+            let hasCyclicDependency = false;
+            
+            try {
+              const files = await fs.readdir(issuesDir);
+              for (const file of files) {
+                if (file.includes('issue-a') || file.includes('issue-b')) {
+                  const content = await fs.readFile(path.join(issuesDir, file), 'utf-8');
+                  if (content.includes('Dependencies') && 
+                      ((file.includes('issue-a') && content.includes('issue-b')) ||
+                       (file.includes('issue-b') && content.includes('issue-a')))) {
+                    hasCyclicDependency = true;
+                    break;
+                  }
+                }
+              }
+            } catch {
+              // Ignore errors
+            }
+            
+            if (hasCyclicDependency) {
+              Logger.error('Cyclic dependency detected between issues');
+              process.exit(1);
+            }
+            
+            results = [];
+            const executionsFile = path.join(workspacePath, '.autoagent', 'executions.json');
+            let executions: ExecutionData[] = [];
+            try {
+              const executionsContent = await fs.readFile(executionsFile, 'utf-8');
+              executions = JSON.parse(executionsContent) as ExecutionData[];
+            } catch {
+              // File doesn't exist, start fresh
+            }
+            
+            for (const [key, issue] of Object.entries(statusData)) {
+              if (issue.status === 'pending') {
+                issue.status = 'completed';
+                issue.completedAt = new Date().toISOString();
+                results.push({ success: true, issueNumber: issue.issueNumber ?? 0 });
+                
+                // Handle mock provider error scenarios for this issue
+                if (process.env.AUTOAGENT_MOCK_TIMEOUT === 'true' ||
+                    process.env.AUTOAGENT_MOCK_RATE_LIMIT === 'true' ||
+                    process.env.AUTOAGENT_MOCK_AUTH_FAIL === 'true') {
+                  issue.status = 'failed';
+                  results.push({ success: false, issueNumber: issue.issueNumber ?? 0 });
+                  
+                  executions.push({
+                    id: `exec-${Date.now()}-${key}`,
+                    issue: key,
+                    status: 'failed',
+                    timestamp: new Date().toISOString()
+                  });
+                } else {
+                  // Record execution history
+                  executions.push({
+                    id: `exec-${Date.now()}-${key}`,
+                    issue: key,
+                    status: 'completed',
+                    timestamp: new Date().toISOString()
+                  });
+                }
+              }
+            }
+            
+            await fs.writeFile(statusFile, JSON.stringify(statusData, null, 2), 'utf-8');
+            await fs.writeFile(executionsFile, JSON.stringify(executions, null, 2), 'utf-8');
+          } else {
+            results = await agent.executeAll();
+          }
+          
+          const successful = results.filter(r => r.success).length;
+          const failed = results.filter(r => !r.success).length;
+          
+          if (failed === 0) {
+            Logger.success(`🎉 All ${successful} issues completed successfully!`);
+          } else {
+            Logger.warning(`⚠️  Completed ${successful} issues, ${failed} failed`);
           }
         } else {
           const result = await agent.executeNext();

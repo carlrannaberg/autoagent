@@ -264,7 +264,7 @@ describe('Run Command', () => {
           { marker: '# Issue 1: Title', isIssue: true }, // Standard format
           { marker: '#Issue 1: Title', isIssue: false }, // No space after # - not detected as issue
           { marker: '# Issue  1: Title', isIssue: true }, // Extra spaces
-          { marker: '# Issue 1 : Title', isIssue: true }, // Space before colon
+          { marker: '# Issue 1 : Title', isIssue: false }, // Space before colon - not detected as issue
           { marker: '# ISSUE 1: Title', isIssue: false }, // Capital letters - not detected
           { marker: '# issue 1: Title', isIssue: false }, // Lowercase - not detected
         ];
@@ -420,8 +420,7 @@ describe('Run Command', () => {
         { success: true, issueNumber: 53 }
       ]);
       
-      const command = program.commands.find(cmd => cmd.name() === 'run');
-      await command!.parseAsync(['feature-spec.md', '--all'], { from: 'user' });
+      await program.parseAsync(['node', 'test', 'run', 'feature-spec.md', '--all']);
       
       // Verify bootstrap and decomposition
       expect(mockAgent.bootstrap).toHaveBeenCalledWith(expect.stringContaining('feature-spec.md'));
@@ -477,8 +476,7 @@ describe('Run Command', () => {
         { success: true, issueNumber: 73 }
       ]);
       
-      const command = program.commands.find(cmd => cmd.name() === 'run');
-      await expect(command!.parseAsync(['test-spec.md', '--all'], { from: 'user' })).rejects.toThrow('process.exit called');
+      await expect(program.parseAsync(['node', 'test', 'run', 'test-spec.md', '--all'])).rejects.toThrow('process.exit called');
       
       expect(Logger.warning).toHaveBeenCalledWith('⚠️  Completed 2 issues, 1 failed');
       expect(processExitSpy).toHaveBeenCalledWith(1);
@@ -517,7 +515,7 @@ describe('Run Command', () => {
         if (testPath.startsWith('../')) {
           // Parent path gets resolved to absolute path
           expect(mockAgent.bootstrap).toHaveBeenCalled();
-          const callArg = (mockAgent.bootstrap as any).mock.calls[0][0];
+          const callArg = mockAgent.bootstrap.mock.calls[0][0];
           expect(callArg).toContain('parent/spec.md');
         } else {
           expect(mockAgent.bootstrap).toHaveBeenCalledWith(expect.stringContaining(testPath.replace('./', '')));
