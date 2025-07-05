@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #47]** Implement plan from git-commit-no-verify-configuration - `issues/47-implement-plan-from-git-commit-no-verify-configuration.md`
 - [ ] **[Issue #48]** Implement plan from git-auto-push-configuration - `issues/48-implement-plan-from-git-auto-push-configuration.md`
 - [ ] **[Issue #49]** Add input type detection to run command - `issues/49-add-input-type-detection-to-run-command.md`
 - [ ] **[Issue #50]** Implement spec file handling in run command - `issues/50-implement-spec-file-handling-in-run-command.md`
@@ -17,8 +16,17 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #67]** Write tests for git validation functionality - `issues/67-write-tests-for-git-validation-functionality.md`
 - [ ] **[Issue #68]** Update documentation with git requirements - `issues/68-update-documentation-with-git-requirements.md`
 - [ ] **[Issue #69]** Add debug logging for git validation - `issues/69-add-debug-logging-for-git-validation.md`
+- [ ] **[Issue #70]** Update git commit interfaces and types - `issues/70-update-git-commit-interfaces-and-types.md`
+- [ ] **[Issue #71]** Implement git utility function updates - `issues/71-implement-git-utility-function-updates.md`
+- [ ] **[Issue #72]** Add configuration manager support - `issues/72-add-configuration-manager-support.md`
+- [ ] **[Issue #73]** Update autonomous agent git commit logic - `issues/73-update-autonomous-agent-git-commit-logic.md`
+- [ ] **[Issue #74]** Add CLI flags for run command - `issues/74-add-cli-flags-for-run-command.md`
+- [ ] **[Issue #75]** Add configuration commands - `issues/75-add-configuration-commands.md`
+- [ ] **[Issue #76]** Write tests for git no-verify functionality - `issues/76-write-tests-for-git-no-verify-functionality.md`
+- [ ] **[Issue #77]** Update documentation - `issues/77-update-documentation.md`
 
 ## Completed Issues
+- [x] **[Issue #47]** Implement plan from git-commit-no-verify-configuration - `issues/47-implement-plan-from-git-commit-no-verify-configuration.md`
 - [x] **[Issue #46]** Implement plan from git-repository-check-for-autocommit - `issues/46-implement-plan-from-git-repository-check-for-autocommit.md`
 - [x] **[Issue #45]** Implement plan from reflective-improvement-loop - `issues/45-implement-plan-from-reflective-improvement-loop.md`
 - [x] **[Issue #44]** Implement plan from smart-run-command - `issues/44-implement-plan-from-smart-run-command.md`

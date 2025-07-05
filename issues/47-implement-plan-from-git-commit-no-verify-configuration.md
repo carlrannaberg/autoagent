@@ -24,4 +24,13 @@ IMPORTANT: For each issue you create:
 
 ## Generated Issues
 
+- [Issue 70: Update git commit interfaces and types](./70-update-git-commit-interfaces-and-types.md)
+- [Issue 71: Implement git utility function updates](./71-implement-git-utility-function-updates.md)
+- [Issue 72: Add configuration manager support](./72-add-configuration-manager-support.md)
+- [Issue 73: Update autonomous agent git commit logic](./73-update-autonomous-agent-git-commit-logic.md)
+- [Issue 74: Add CLI flags for run command](./74-add-cli-flags-for-run-command.md)
+- [Issue 75: Add configuration commands](./75-add-configuration-commands.md)
+- [Issue 76: Write tests for git no-verify functionality](./76-write-tests-for-git-no-verify-functionality.md)
+- [Issue 77: Update documentation](./77-update-documentation.md)
+
 Success
