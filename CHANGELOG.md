@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2025-07-05
+
 ### Added
 - Add reflection engine core types and interfaces for iterative decomposition improvement
   - ReflectionConfig interface for configuring reflection behavior
