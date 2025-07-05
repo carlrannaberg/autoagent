@@ -54,6 +54,7 @@ benchmark-results.json
 
 # Configuration files
 .autoagent.json
+.autoagent/rate-limits.json
 
 # TypeScript cache
 *.tsbuildinfo
