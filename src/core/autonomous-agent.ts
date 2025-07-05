@@ -576,11 +576,24 @@ export class AutonomousAgent extends EventEmitter {
         
         // Check if Pending Issues section exists
         if (updatedContent.includes('## Pending Issues')) {
-          // Insert after the Pending Issues header
-          updatedContent = updatedContent.replace(
-            '## Pending Issues',
-            `## Pending Issues\n${issueEntry}`
-          );
+          // Find the position after "## Pending Issues" and any existing issues
+          const pendingIndex = updatedContent.indexOf('## Pending Issues');
+          const nextSectionIndex = updatedContent.indexOf('\n## ', pendingIndex + 1);
+          
+          if (nextSectionIndex !== -1) {
+            // Find the blank line before the next section
+            const beforeNextSection = updatedContent.lastIndexOf('\n\n', nextSectionIndex);
+            const insertPosition = beforeNextSection !== -1 && beforeNextSection > pendingIndex 
+              ? beforeNextSection + 1  // Insert after the last newline, keeping one blank line
+              : nextSectionIndex;      // Fallback to before next section
+            
+            updatedContent = updatedContent.slice(0, insertPosition) + 
+                           `${issueEntry}\n` + 
+                           updatedContent.slice(insertPosition);
+          } else {
+            // No next section, append at end
+            updatedContent = updatedContent.trimEnd() + `\n${issueEntry}\n`;
+          }
         } else {
           // No Pending Issues section, add it before Completed Issues
           if (updatedContent.includes('## Completed Issues')) {
@@ -880,6 +893,78 @@ ${result.output ?? 'Success'}`;
     await this.addIssueToTodo(nextNumber, title);
 
     return nextNumber;
+  }
+
+  /**
+   * Sync TODO.md with newly created issues after decomposition
+   * This scans the issues directory for any issues not in TODO.md and adds them
+   */
+  async syncTodoWithIssues(): Promise<void> {
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    
+    try {
+      // Get current TODO content
+      const todoContent = await this.fileManager.readTodo();
+      const issuesDir = path.join(this.config.workspace ?? process.cwd(), 'issues');
+      
+      // Get all issue files
+      const files = await fs.readdir(issuesDir);
+      const issueFiles = files.filter(f => f.endsWith('.md'));
+      
+      // Extract issue numbers from TODO
+      const todoIssueNumbers = new Set<number>();
+      const todoLines = todoContent.split('\n');
+      for (const line of todoLines) {
+        const match = line.match(/\*\*\[Issue #(\d+)\]\*\*/);
+        if (match !== null && match[1] !== undefined && match[1] !== '') {
+          todoIssueNumbers.add(parseInt(match[1], 10));
+        }
+      }
+      
+      // Find issues not in TODO
+      const missingIssues: Array<{ number: number; title: string; filename: string }> = [];
+      
+      for (const file of issueFiles) {
+        const match = file.match(/^(\d+)-(.+)\.md$/);
+        if (match !== null && match[1] !== undefined && match[1] !== '') {
+          const issueNumber = parseInt(match[1], 10);
+          
+          if (!todoIssueNumbers.has(issueNumber)) {
+            // Read the issue file to get the title
+            const issuePath = path.join(issuesDir, file);
+            const issueContent = await fs.readFile(issuePath, 'utf-8');
+            
+            // Extract title from the issue content
+            const titleMatch = issueContent.match(/^#\s*Issue\s*\d*:\s*(.+)$/m);
+            const title = (titleMatch !== null && titleMatch[1] !== undefined && titleMatch[1] !== '') ? titleMatch[1].trim() : file.replace('.md', '');
+            
+            missingIssues.push({
+              number: issueNumber,
+              title,
+              filename: file
+            });
+          }
+        }
+      }
+      
+      // Sort missing issues by number
+      missingIssues.sort((a, b) => a.number - b.number);
+      
+      // Add missing issues to TODO
+      for (const issue of missingIssues) {
+        await this.addIssueToTodo(issue.number, issue.title);
+      }
+      
+      if (missingIssues.length > 0) {
+        this.reportProgress(`Added ${missingIssues.length} new issues to TODO.md`, 95);
+      }
+    } catch (error) {
+      // Log error but don't fail - TODO sync is not critical
+      if (this.config.debug === true) {
+        this.reportProgress(`Failed to sync TODO: ${error instanceof Error ? error.message : String(error)}`, 0);
+      }
+    }
   }
 
   /**

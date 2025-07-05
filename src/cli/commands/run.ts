@@ -188,6 +188,9 @@ export function registerRunCommand(program: Command): void {
                   if (decompositionResult.success) {
                     Logger.success(`✅ Decomposition complete! ${decompositionResult.issueTitle ?? ''}`);
                     
+                    // Sync TODO.md with newly created issues
+                    await agent.syncTodoWithIssues();
+                    
                     // If --all flag is set, continue with all created issues
                     if (options.all !== undefined && options.all !== false) {
                       Logger.info('📋 Continuing with all created issues...');

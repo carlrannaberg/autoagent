@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix TODO.md not being updated after decomposition creates new issues
+- Fix addIssueToTodo overwriting existing pending issues instead of appending
+
 ## [0.5.3] - 2025-07-05
 
 ### Fixed
