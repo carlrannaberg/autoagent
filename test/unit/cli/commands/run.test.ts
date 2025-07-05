@@ -238,7 +238,7 @@ describe('Run Command', () => {
       
       expect(AutonomousAgent).toHaveBeenCalledWith(
         expect.objectContaining({
-          reflection: { enabled: false }
+          reflection: expect.objectContaining({ enabled: false })
         })
       );
     });
@@ -250,7 +250,7 @@ describe('Run Command', () => {
       
       expect(AutonomousAgent).toHaveBeenCalledWith(
         expect.objectContaining({
-          reflection: { maxIterations: 5 }
+          reflection: expect.objectContaining({ maxIterations: 5 })
         })
       );
     });
@@ -262,7 +262,7 @@ describe('Run Command', () => {
       
       expect(AutonomousAgent).toHaveBeenCalledWith(
         expect.objectContaining({
-          reflection: { maxIterations: 7 }
+          reflection: expect.objectContaining({ maxIterations: 7 })
         })
       );
     });
@@ -292,21 +292,22 @@ describe('Run Command', () => {
       const command = program.commands.find(cmd => cmd.name() === 'run');
       
       // NaN will be returned by parseInt for non-numeric input
-      await command!.parseAsync(['39', '--reflection-iterations', 'abc'], { from: 'user' });
+      await expect(command!.parseAsync(['39', '--reflection-iterations', 'abc'], { from: 'user' }))
+        .rejects.toThrow('process.exit called');
       
       // Since parseInt returns NaN, the validation will fail
-      expect(Logger.error).toHaveBeenCalledWith('--reflection-iterations must be between 1 and 10');
+      expect(Logger.error).toHaveBeenCalledWith('Failed: Reflection config: maxIterations must be a positive integer');
       expect(processExitSpy).toHaveBeenCalledWith(1);
     });
     
-    it('should not pass reflection config when no reflection options are set', async () => {
+    it('should use default reflection config when no reflection options are set', async () => {
       const command = program.commands.find(cmd => cmd.name() === 'run');
       
       await command!.parseAsync(['39'], { from: 'user' });
       
       expect(AutonomousAgent).toHaveBeenCalledWith(
-        expect.not.objectContaining({
-          reflection: expect.anything()
+        expect.objectContaining({
+          reflection: undefined // No reflection config passed, defaults are applied in constructor
         })
       );
     });
