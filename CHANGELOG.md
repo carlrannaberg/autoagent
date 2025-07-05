@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add comprehensive test coverage for smart run command functionality
+  - Unit tests for isPlanFile() detection with various edge cases
+  - Integration tests for spec file execution flow
+  - E2E tests for complete spec → bootstrap → execute workflows
+  - Tests for spec file with --all flag continuation
+  - Error handling tests for bootstrap and decomposition failures
+
 ## [0.4.0] - 2025-07-05
 
 ### Fixed
