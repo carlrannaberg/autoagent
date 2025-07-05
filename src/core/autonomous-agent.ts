@@ -14,6 +14,7 @@ import { ConfigManager } from './config-manager';
 import { FileManager } from '../utils/file-manager';
 import { Provider, createProvider, getFirstAvailableProvider } from '../providers';
 import { ProviderLearning } from './provider-learning';
+import { reflectiveDecomposition } from './reflection-engine';
 import {
   checkGitAvailable,
   isGitRepository,
@@ -984,6 +985,25 @@ ${masterPlanContent}`;
     // Execute with provider
     const result = await provider.execute(prompt, '');
 
+    // If reflection is enabled, perform reflective improvement
+    if (this.config.reflection?.enabled === true) {
+      const reflectionResult = await this.performReflectiveImprovement(
+        provider,
+        masterPlanPath,
+        masterPlanContent,
+        result.output ?? ''
+      );
+      
+      // Log reflection results
+      if (reflectionResult.enabled) {
+        this.reportProgress(
+          `Reflection completed: ${reflectionResult.performedIterations} iterations, ` +
+          `${reflectionResult.totalImprovements} improvements`,
+          85
+        );
+      }
+    }
+
     // Create initial issue for bootstrapping
     const planBasename = path.basename(masterPlanPath, path.extname(masterPlanPath));
     const issueTitle = `Implement plan from ${planBasename}`;
@@ -1059,6 +1079,82 @@ ${result.output ?? 'Success'}`;
     return getFirstAvailableProvider(config.providers);
   }
 
+
+  /**
+   * Perform reflective improvement on bootstrap decomposition
+   * 
+   * This method integrates the reflection engine to iteratively improve
+   * the decomposed issues and plans based on the original specification.
+   * It respects the reflection configuration and handles errors gracefully.
+   * 
+   * @param provider - The AI provider to use for reflection
+   * @param masterPlanPath - Path to the master plan file
+   * @param masterPlanContent - Content of the master plan
+   * @param initialDecomposition - Initial decomposition output from provider
+   * @returns Reflection result with improvement details
+   */
+  private async performReflectiveImprovement(
+    provider: Provider,
+    masterPlanPath: string,
+    masterPlanContent: string,
+    initialDecomposition: string
+  ): Promise<import('../types').ReflectionResult> {
+    try {
+      this.reportProgress('Starting reflective improvement process...', 70);
+
+      // Extract issue and plan file information from the decomposition
+      // This is a simplified extraction - in production, you might parse the actual generated files
+      const issueMatches = initialDecomposition.match(/issues\/\d+-[\w-]+\.md/g) || [];
+      const planMatches = initialDecomposition.match(/plans\/\d+-[\w-]+\.md/g) || [];
+      
+      // Calculate word count for skip check
+      const totalWordCount = masterPlanContent.split(/\s+/).length;
+
+      // Create a decomposition result structure
+      const decompositionResult = {
+        specFile: masterPlanPath,
+        specContent: masterPlanContent,
+        issueFiles: issueMatches,
+        planFiles: planMatches,
+        issueCount: issueMatches.length,
+        totalWordCount
+      };
+
+      // Perform reflective decomposition
+      const reflectionResult = await reflectiveDecomposition(
+        provider,
+        decompositionResult,
+        this.config
+      );
+
+      // Log improvements if any were found
+      if (reflectionResult.enabled && reflectionResult.improvements) {
+        for (const improvement of reflectionResult.improvements) {
+          if (improvement.changes.length > 0) {
+            this.reportProgress(
+              `Iteration ${improvement.iterationNumber}: ${improvement.changes.length} improvements identified`,
+              75 + (improvement.iterationNumber * 5)
+            );
+          }
+        }
+      }
+
+      return reflectionResult;
+    } catch (error) {
+      // Log error but don't fail the bootstrap process
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.reportProgress(`Reflection process failed: ${errorMessage}`, 70);
+      
+      // Return disabled result on error
+      return {
+        enabled: false,
+        performedIterations: 0,
+        totalImprovements: 0,
+        finalScore: 0,
+        skippedReason: `Error: ${errorMessage}`
+      };
+    }
+  }
 
   /**
    * Capture pre-execution state for potential rollback
