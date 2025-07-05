@@ -397,11 +397,21 @@ Please see AGENT.md for the actual instructions.
   }
 
   async getTodoStats(): Promise<{ total: number; completed: number; pending: number }> {
-    // Read TODO.md as the source of truth for issue status
-    const todos = await this.readTodoList();
+    // Count total issues from the issues directory
+    const issuesDir = path.join(this.workspace, 'issues');
+    let total = 0;
     
-    // Count total issues
-    const total = todos.length;
+    try {
+      const files = await fs.readdir(issuesDir);
+      const issueFiles = files.filter(f => f.endsWith('.md'));
+      total = issueFiles.length;
+    } catch {
+      // Issues directory doesn't exist
+      total = 0;
+    }
+    
+    // Read TODO.md for completion status
+    const todos = await this.readTodoList();
     
     // Count completed issues (those with [x])
     const completed = todos.filter(t => t.includes('[x]')).length;
