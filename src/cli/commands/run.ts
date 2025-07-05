@@ -517,6 +517,16 @@ export function registerRunCommand(program: Command): void {
             
             await fs.writeFile(statusFile, JSON.stringify(statusData, null, 2), 'utf-8');
             await fs.writeFile(executionsFile, JSON.stringify(executions, null, 2), 'utf-8');
+            
+            // Also update TODO.md to mark issues as completed
+            const todoPath = path.join(workspacePath, 'TODO.md');
+            try {
+              const todoContent = await fs.readFile(todoPath, 'utf-8');
+              const updatedTodoContent = todoContent.replace(/- \[ \]/g, '- [x]');
+              await fs.writeFile(todoPath, updatedTodoContent, 'utf-8');
+            } catch {
+              // TODO.md doesn't exist, skip this step
+            }
           } else {
             results = await agent.executeAll();
           }

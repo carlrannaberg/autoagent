@@ -55,4 +55,84 @@ Sample technical details for ${name}.
   // Create issue with proper naming format: {number}-{name}.md
   const fileName = `${number}-${name}`;
   await workspace.createIssue(fileName, issueContent);
+  
+  // Create or update TODO.md to include this issue
+  await createOrUpdateTodoMd(workspace, number, name);
+}
+
+async function createOrUpdateTodoMd(workspace: E2EWorkspace, issueNumber: number, issueTitle: string): Promise<void> {
+  const slug = issueTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const issueFilename = `${issueNumber}-${slug}.md`;
+  const issueEntry = `- [ ] **[Issue #${issueNumber}]** ${issueTitle} - \`issues/${issueFilename}\``;
+  
+  try {
+    // Try to read existing TODO.md
+    const existingContent = await workspace.readFile('TODO.md');
+    
+    if (existingContent.trim()) {
+      // TODO exists, append to pending issues section
+      let updatedContent = existingContent;
+      
+      // Check if Pending Issues section exists
+      if (updatedContent.includes('## Pending Issues')) {
+        // Find the position after "## Pending Issues" and any existing issues
+        const pendingIndex = updatedContent.indexOf('## Pending Issues');
+        const nextSectionIndex = updatedContent.indexOf('\n## ', pendingIndex + 1);
+        
+        if (nextSectionIndex !== -1) {
+          // Find the blank line before the next section
+          const beforeNextSection = updatedContent.lastIndexOf('\n\n', nextSectionIndex);
+          const insertPosition = beforeNextSection !== -1 && beforeNextSection > pendingIndex 
+            ? beforeNextSection + 1  // Insert after the last newline, keeping one blank line
+            : nextSectionIndex;      // Fallback to before next section
+          
+          updatedContent = updatedContent.slice(0, insertPosition) + 
+                         `${issueEntry}\n` + 
+                         updatedContent.slice(insertPosition);
+        } else {
+          // No next section, append at end
+          updatedContent = updatedContent.trimEnd() + `\n${issueEntry}\n`;
+        }
+      } else {
+        // No Pending Issues section, add it before Completed Issues
+        if (updatedContent.includes('## Completed Issues')) {
+          updatedContent = updatedContent.replace(
+            '## Completed Issues',
+            `## Pending Issues\n${issueEntry}\n\n## Completed Issues`
+          );
+        } else {
+          // No sections, append at end
+          updatedContent += `\n\n## Pending Issues\n${issueEntry}\n\n## Completed Issues\n`;
+        }
+      }
+      
+      await workspace.createFile('TODO.md', updatedContent);
+    } else {
+      // TODO doesn't exist or is empty, create new structure
+      const todoContent = `# To-Do
+
+This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
+
+## Pending Issues
+${issueEntry}
+
+## Completed Issues
+`;
+      
+      await workspace.createFile('TODO.md', todoContent);
+    }
+  } catch (error) {
+    // If TODO doesn't exist, create new one
+    const todoContent = `# To-Do
+
+This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
+
+## Pending Issues
+${issueEntry}
+
+## Completed Issues
+`;
+    
+    await workspace.createFile('TODO.md', todoContent);
+  }
 }

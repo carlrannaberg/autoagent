@@ -63,7 +63,7 @@ describe('Complete Issue Lifecycle E2E', () => {
     // Create AGENT.md that would have been created by init
     await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
 
-    // Create multiple issues
+    // Create multiple issues and ensure TODO.md tracks them
     const issues = ['feature-1', 'feature-2', 'feature-3'];
     for (let i = 0; i < issues.length; i++) {
       const issue = issues[i];
@@ -105,6 +105,20 @@ Standard implementation approach for ${issue}.
 - Testing framework
 `);
     }
+
+    // Ensure TODO.md exists with all issues as pending
+    const todoContent = `# To-Do
+
+This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
+
+## Pending Issues
+- [ ] **[Issue #1]** feature-1 - \`issues/1-feature-1.md\`
+- [ ] **[Issue #2]** feature-2 - \`issues/2-feature-2.md\`
+- [ ] **[Issue #3]** feature-3 - \`issues/3-feature-3.md\`
+
+## Completed Issues
+`;
+    await context.workspace.createFile('TODO.md', todoContent);
 
     // Run all issues
     context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
