@@ -385,9 +385,9 @@ This guide helps you resolve common issues when using AutoAgent. If you can't fi
    mkdir -p issues plans
    ```
 
-2. **Run bootstrap:**
+2. **Run a spec file:**
    ```bash
-   autoagent bootstrap
+   autoagent run specs/initial-plan.md
    ```
 
 ## Rate Limiting

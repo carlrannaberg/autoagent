@@ -120,22 +120,94 @@ autoagent run --provider gemini
 autoagent run 1-add-authentication
 ```
 
+## File Types
+
+AutoAgent works with three types of markdown files:
+
+### 1. Specification Files (Specs)
+High-level project descriptions that define what needs to be built. These files describe the overall goal, requirements, and constraints without implementation details.
+
+**Example:** `update-authentication-system.md`
+```markdown
+# Update Authentication System
+
+## Goal
+Modernize the authentication system to support OAuth2 and improve security.
+
+## Requirements
+- Support for OAuth2 providers (Google, GitHub)
+- Backward compatibility with existing JWT tokens
+- Enhanced security with refresh tokens
+- Rate limiting on auth endpoints
+```
+
+### 2. Plan Files
+Detailed implementation plans that break down how to achieve a specification. Plans include specific technical steps, dependencies, and sequencing.
+
+**Example:** `1-update-authentication-system-plan.md`
+```markdown
+# Plan: Update Authentication System
+
+## Implementation Steps
+1. Add OAuth2 dependencies
+2. Create OAuth provider abstraction
+3. Implement Google OAuth flow
+4. Add refresh token support
+5. Update user model for OAuth data
+6. Add rate limiting middleware
+```
+
+### 3. Issue Files
+Actionable work items with specific acceptance criteria. Issues are the atomic units of work that agents execute.
+
+**Example:** `2-add-oauth2-dependencies.md`
+```markdown
+# Issue 2: Add OAuth2 dependencies
+
+## Description
+Add required npm packages for OAuth2 implementation.
+
+## Acceptance Criteria
+- [ ] passport-oauth2 added to package.json
+- [ ] passport-google-oauth20 added
+- [ ] passport-github2 added
+- [ ] Dependencies installed and lock file updated
+```
+
+### File Flow: Spec → Plan → Issues
+The typical workflow is:
+1. **Write a spec** describing what you want to build
+2. **Run the spec** to automatically generate a plan and decomposed issues
+3. **Execute issues** to implement the changes
+
 ## CLI Usage
 
 ### Core Commands
 
-#### `autoagent run [issue]`
-Execute one or all pending issues.
+#### `autoagent run [target]`
+Intelligently execute specs, issues, or plans based on the target type.
 
 ```bash
 # Run next pending issue
 autoagent run
 
+# Run a specification file (creates plan + issues, then executes)
+autoagent run specs/add-authentication.md
+
+# Run specific issue by number
+autoagent run 5
+
 # Run specific issue by name
 autoagent run 5-update-dependencies
 
+# Run specific issue by filename
+autoagent run issues/5-update-dependencies.md
+
 # Run all pending issues
 autoagent run --all
+
+# Run spec and continue with all created issues
+autoagent run specs/refactor-api.md --all
 
 # Dry run (preview without execution)
 autoagent run --dry-run
@@ -149,6 +221,11 @@ autoagent run --no-auto-commit
 # Use mock provider for testing
 AUTOAGENT_MOCK_PROVIDER=true autoagent run
 ```
+
+**Smart Detection:**
+- **Spec/Plan files**: Automatically detected by content (no "Issue #:" marker)
+- **Issue files**: Detected by "Issue #:" marker in content
+- **Issue references**: Can use number (5), name (5-update-dependencies), or path
 
 #### `autoagent create <description>`
 Create a new issue with AI assistance.
@@ -398,6 +475,48 @@ AutoAgent uses a layered configuration system:
 
 For detailed configuration documentation, see [docs/CONFIG.md](docs/CONFIG.md).
 
+## Migration Guide: Bootstrap to Run
+
+### What Changed?
+The `bootstrap` command has been integrated into the `run` command for a unified interface. The `run` command now intelligently detects file types and routes to the appropriate action.
+
+### Before (Old Way)
+```bash
+# Bootstrap from a spec file
+autoagent bootstrap plan.md
+
+# Then manually run the decomposition issue
+autoagent run 1-decompose-project
+
+# Then run created issues
+autoagent run --all
+```
+
+### After (New Way)
+```bash
+# Just run the spec file directly!
+autoagent run plan.md --all
+
+# Or step by step:
+autoagent run plan.md      # Creates and runs decomposition
+autoagent run --all        # Runs all created issues
+```
+
+### Key Benefits
+- **Simpler**: One command instead of multiple
+- **Smarter**: Automatically detects file types
+- **Flexible**: Works with specs, plans, issues, or issue numbers
+- **Backward Compatible**: All existing issue files still work
+
+### Quick Reference
+| Task | Old Command | New Command |
+|------|------------|-------------|
+| Bootstrap from spec | `autoagent bootstrap spec.md` | `autoagent run spec.md` |
+| Run issue by number | `autoagent run 5` | `autoagent run 5` |
+| Run issue by name | `autoagent run 5-fix-bug` | `autoagent run 5-fix-bug` |
+| Run all issues | `autoagent run --all` | `autoagent run --all` |
+| Bootstrap + run all | `bootstrap` then `run 1` then `run --all` | `autoagent run spec.md --all` |
+
 ## Environment Variables
 
 AutoAgent supports configuration through environment variables, which take precedence over configuration files:
@@ -490,11 +609,46 @@ The consistent naming pattern ensures:
 - Better organization of the issues and plans directories
 - Simplified scripting and automation
 
-When using the `bootstrap` command, both issue and plan files will follow this naming convention automatically.
+When specs are processed, both issue and plan files follow this naming convention automatically.
 
 ## Examples
 
-### Example 1: Query Issues and Status
+### Example 1: Complete Workflow from Spec to Implementation
+
+```bash
+# Create a specification for a new feature
+cat > specs/add-user-profiles.md << 'EOF'
+# Add User Profiles Feature
+
+## Goal
+Implement user profiles with avatars and bio information.
+
+## Requirements
+- User profile page at /users/:id
+- Editable bio field (max 500 chars)
+- Avatar upload with image resizing
+- Privacy settings (public/private profile)
+EOF
+
+# Run the spec - this creates a plan and issues, then executes them
+autoagent run specs/add-user-profiles.md --all
+
+# Or run step by step:
+# 1. Process spec to create plan and issues
+autoagent run specs/add-user-profiles.md
+
+# 2. Review created issues
+autoagent list issues --status pending
+
+# 3. Execute specific issues
+autoagent run 2-create-profile-model
+autoagent run 3-add-avatar-upload
+
+# 4. Or execute remaining issues
+autoagent run --all
+```
+
+### Example 2: Query Issues and Status
 
 ```bash
 # List all pending issues

@@ -8,6 +8,7 @@ This directory contains examples demonstrating various features and usage patter
 
 - **[basic-usage.js](basic-usage.js)** - Start here! Shows the simplest way to use AutoAgent
 - **[cli-usage.js](cli-usage.js)** - Complete CLI command reference with examples
+- **[spec-driven-workflow.js](spec-driven-workflow.js)** - NEW! Spec → Implementation workflow
 
 ### 🔧 Core Features
 

@@ -106,11 +106,11 @@ autoagent create
 # Create issue with specific title
 autoagent create "Add user authentication"
 
-# Bootstrap from master plan
-autoagent bootstrap
+# Run a spec file to create plan and issues
+autoagent run specs/project-plan.md
 
-# Bootstrap and execute immediately
-autoagent bootstrap --execute
+# Run spec and execute all created issues
+autoagent run specs/project-plan.md --all
 `);
 
   // Advanced Usage
@@ -159,7 +159,7 @@ AUTOAGENT_PROVIDER=gemini autoagent run
   console.log(`
 # 1. Initial Project Setup
 autoagent config init
-autoagent bootstrap
+autoagent run specs/initial-plan.md  # Create plan and issues from spec
 autoagent status
 
 # 2. Daily Development Workflow

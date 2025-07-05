@@ -54,7 +54,13 @@ async function isPlanFile(filePath: string): Promise<boolean> {
 export function registerRunCommand(program: Command): void {
   program
     .command('run [target]')
-    .description('Run the specified target (issue, spec file, or next issue)')
+    .description('Run issues or specs intelligently - detects file type and executes accordingly\n\n' +
+      'Examples:\n' +
+      '  autoagent run                    # Run next pending issue\n' +
+      '  autoagent run specs/feature.md   # Run spec file (creates plan + issues)\n' +
+      '  autoagent run 5                  # Run issue #5\n' +
+      '  autoagent run 5-add-auth         # Run issue by name\n' +
+      '  autoagent run --all              # Run all pending issues')
     .option('-p, --provider <provider>', 'Override AI provider for this run (claude or gemini)')
     .option('-w, --workspace <path>', 'Workspace directory', process.cwd())
     .option('--all', 'Run all pending issues')
