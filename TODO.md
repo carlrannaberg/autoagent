@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #46]** Implement plan from git-repository-check-for-autocommit - `issues/46-implement-plan-from-git-repository-check-for-autocommit.md`
 - [ ] **[Issue #47]** Implement plan from git-commit-no-verify-configuration - `issues/47-implement-plan-from-git-commit-no-verify-configuration.md`
 - [ ] **[Issue #48]** Implement plan from git-auto-push-configuration - `issues/48-implement-plan-from-git-auto-push-configuration.md`
 - [ ] **[Issue #49]** Add input type detection to run command - `issues/49-add-input-type-detection-to-run-command.md`
@@ -11,8 +10,16 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #51]** Delete bootstrap command and clean up references - `issues/51-delete-bootstrap-command-and-clean-up-references.md`
 - [ ] **[Issue #52]** Write tests for smart run command - `issues/52-write-tests-for-smart-run-command.md`
 - [ ] **[Issue #53]** Update documentation for smart run command - `issues/53-update-documentation-for-smart-run-command.md`
+- [ ] **[Issue #63]** Add git validation method to AutonomousAgent - `issues/63-add-git-validation-method-to-autonomousagent.md`
+- [ ] **[Issue #64]** Integrate git validation into executeIssue method - `issues/64-integrate-git-validation-into-executeissue-method.md`
+- [ ] **[Issue #65]** Enhance git utilities with comprehensive validation - `issues/65-enhance-git-utilities-with-comprehensive-validation.md`
+- [ ] **[Issue #66]** Add user-friendly error messages for git validation - `issues/66-add-user-friendly-error-messages-for-git-validation.md`
+- [ ] **[Issue #67]** Write tests for git validation functionality - `issues/67-write-tests-for-git-validation-functionality.md`
+- [ ] **[Issue #68]** Update documentation with git requirements - `issues/68-update-documentation-with-git-requirements.md`
+- [ ] **[Issue #69]** Add debug logging for git validation - `issues/69-add-debug-logging-for-git-validation.md`
 
 ## Completed Issues
+- [x] **[Issue #46]** Implement plan from git-repository-check-for-autocommit - `issues/46-implement-plan-from-git-repository-check-for-autocommit.md`
 - [x] **[Issue #45]** Implement plan from reflective-improvement-loop - `issues/45-implement-plan-from-reflective-improvement-loop.md`
 - [x] **[Issue #44]** Implement plan from smart-run-command - `issues/44-implement-plan-from-smart-run-command.md`
 - [x] **[Issue #43]** Update documentation for embedded templates - `issues/43-update-documentation-for-embedded-templates.md`
