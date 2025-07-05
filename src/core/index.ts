@@ -6,3 +6,10 @@ export {
   validateReflectionConfig, 
   mergeReflectionConfig 
 } from './reflection-defaults';
+export { 
+  DefaultImprovementApplier, 
+  applyImprovements,
+  type ImprovementApplier,
+  type ApplicationResult,
+  type BackupInfo
+} from './improvement-applier';
