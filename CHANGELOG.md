@@ -7,18 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- Fix TODO.md not being updated after decomposition creates new issues
-- Fix addIssueToTodo overwriting existing pending issues instead of appending
-
-## [0.5.3] - 2025-07-05
-
-### Fixed
-- Fix Gemini rate limit fallback not working due to early provider rejection
-- Fix Gemini Pro → Flash model fallback when Flash is selected from start
-- Fix provider switching to Claude when all Gemini models are exhausted
-- Fix Gemini text output appearing as bold white formatting
-
 ## [0.5.2] - 2025-07-05
 
 ### Added
@@ -29,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Early termination of rate-limited requests to prevent waiting
 
 ### Fixed
+- Fix Gemini rate limit fallback not working due to early provider rejection
+- Fix Gemini Pro → Flash model fallback when Flash is selected from start
+- Fix provider switching to Claude when all Gemini models are exhausted
+- Fix Gemini text output appearing as bold white formatting
+- Fix TODO.md not being updated after decomposition creates new issues
+- Fix addIssueToTodo overwriting existing pending issues instead of appending
 - Rate limit detection now happens immediately instead of after long delays
 - Gemini provider gracefully handles quota exceeded errors
 - Better error messages with time estimates for rate limit recovery
