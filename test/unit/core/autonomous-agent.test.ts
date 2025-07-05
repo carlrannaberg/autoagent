@@ -801,6 +801,283 @@ describe('AutonomousAgent', () => {
     });
   });
 
+  describe('embedded template functionality', () => {
+    beforeEach(async () => {
+      await agent.initialize();
+    });
+
+    it('should use embedded templates when no template files exist', async () => {
+      // Ensure no template files exist on filesystem
+      mockFiles.delete('/test/templates');
+      mockFileContents.delete('/test/templates/issue.md');
+      mockFileContents.delete('/test/templates/plan.md');
+      
+      // Clear issues directory
+      mockFiles.set('/test/issues', []);
+      fileManager.setIssueFiles([]);
+      fileManager.clearTodos();
+      
+      // Set up test provider to capture the prompt
+      const testProvider = testProviders.get('claude')!;
+      let capturedPrompt = '';
+      testProvider.execute = vi.fn().mockImplementation((issueFile: string, planFile?: string) => {
+        // If this is a bootstrap call (single string argument), capture the prompt
+        if (typeof issueFile === 'string' && !planFile) {
+          capturedPrompt = issueFile;
+          return Promise.resolve({ output: 'Bootstrap completed', success: true });
+        }
+        // Otherwise it's a normal execution
+        return Promise.resolve({
+          success: true,
+          issueNumber: 1,
+          duration: 100,
+          output: 'Success',
+          provider: 'claude' as const
+        });
+      });
+
+      mockFileContents.set('/test/master-plan.md', '# Master Plan\n\n## Goals\n- Test embedded templates');
+      
+      await agent.bootstrap('/test/master-plan.md');
+
+      // Verify the prompt includes embedded templates
+      expect(capturedPrompt).toContain('ISSUE TEMPLATE:');
+      expect(capturedPrompt).toContain('# Issue [NUMBER]: [TITLE]');
+      expect(capturedPrompt).toContain('## Requirement');
+      expect(capturedPrompt).toContain('## Acceptance Criteria');
+      expect(capturedPrompt).toContain('## Technical Details');
+      
+      expect(capturedPrompt).toContain('PLAN TEMPLATE:');
+      expect(capturedPrompt).toContain('# Plan for Issue [NUMBER]: [TITLE]');
+      expect(capturedPrompt).toContain('## Implementation Plan');
+      expect(capturedPrompt).toContain('### Phase 1: Initial Setup');
+    });
+
+    it('should not attempt to read template files from filesystem', async () => {
+      // Clear issues
+      mockFiles.set('/test/issues', []);
+      fileManager.setIssueFiles([]);
+      fileManager.clearTodos();
+      
+      // Create a spy to track fs.readFile calls
+      const readFileSpy = vi.mocked(fs.readFile);
+      readFileSpy.mockClear();
+
+      mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nTest content');
+      
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('bootstrap', 'Generated issues');
+
+      await agent.bootstrap('/test/master-plan.md');
+
+      // Verify no attempts were made to read template files
+      const readFileCalls = readFileSpy.mock.calls;
+      const templateReadAttempts = readFileCalls.filter(call => {
+        const path = call[0] as string;
+        return path.includes('templates/issue.md') || path.includes('templates/plan.md');
+      });
+      
+      expect(templateReadAttempts).toHaveLength(0);
+    });
+
+    it('should use embedded templates even when template directory exists', async () => {
+      // Create template directory with files (these should be ignored)
+      mockFiles.set('/test/templates', ['issue.md', 'plan.md']);
+      mockFileContents.set('/test/templates/issue.md', '# Wrong Template - Should Not Be Used');
+      mockFileContents.set('/test/templates/plan.md', '# Wrong Plan Template - Should Not Be Used');
+      
+      // Clear issues
+      mockFiles.set('/test/issues', []);
+      fileManager.setIssueFiles([]);
+      fileManager.clearTodos();
+      
+      // Capture the prompt
+      const testProvider = testProviders.get('claude')!;
+      let capturedPrompt = '';
+      testProvider.execute = vi.fn().mockImplementation((issueFile: string, planFile?: string) => {
+        if (typeof issueFile === 'string' && !planFile) {
+          capturedPrompt = issueFile;
+          return Promise.resolve({ output: 'Bootstrap completed', success: true });
+        }
+        return Promise.resolve({
+          success: true,
+          issueNumber: 1,
+          duration: 100,
+          output: 'Success',
+          provider: 'claude' as const
+        });
+      });
+
+      mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nTest content');
+      
+      await agent.bootstrap('/test/master-plan.md');
+
+      // Verify embedded templates were used, not filesystem templates
+      expect(capturedPrompt).not.toContain('Wrong Template');
+      expect(capturedPrompt).not.toContain('Wrong Plan Template');
+      expect(capturedPrompt).toContain('# Issue [NUMBER]: [TITLE]');
+      expect(capturedPrompt).toContain('# Plan for Issue [NUMBER]: [TITLE]');
+    });
+
+    it('should include complete embedded template structure in prompt', async () => {
+      // Clear issues
+      mockFiles.set('/test/issues', []);
+      fileManager.setIssueFiles([]);
+      fileManager.clearTodos();
+      
+      const testProvider = testProviders.get('claude')!;
+      let capturedPrompt = '';
+      testProvider.execute = vi.fn().mockImplementation((issueFile: string, planFile?: string) => {
+        if (typeof issueFile === 'string' && !planFile) {
+          capturedPrompt = issueFile;
+          return Promise.resolve({ output: 'Bootstrap completed', success: true });
+        }
+        return Promise.resolve({
+          success: true,
+          issueNumber: 1,
+          duration: 100,
+          output: 'Success',
+          provider: 'claude' as const
+        });
+      });
+
+      mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nDetailed test plan');
+      
+      await agent.bootstrap('/test/master-plan.md');
+
+      // Verify all sections of embedded templates are present
+      // Issue template sections
+      expect(capturedPrompt).toContain('[REQUIREMENT]');
+      expect(capturedPrompt).toContain('[ACCEPTANCE_CRITERIA]');
+      expect(capturedPrompt).toContain('[TECHNICAL_DETAILS]');
+      expect(capturedPrompt).toContain('[DEPENDENCIES]');
+      expect(capturedPrompt).toContain('[RESOURCES]');
+      expect(capturedPrompt).toContain('[NOTES]');
+      
+      // Plan template sections
+      expect(capturedPrompt).toContain('[PHASE_1_TASKS]');
+      expect(capturedPrompt).toContain('[PHASE_2_TASKS]');
+      expect(capturedPrompt).toContain('[PHASE_3_TASKS]');
+      expect(capturedPrompt).toContain('[PHASE_4_TASKS]');
+      expect(capturedPrompt).toContain('[TECHNICAL_APPROACH]');
+      expect(capturedPrompt).toContain('[POTENTIAL_CHALLENGES]');
+      expect(capturedPrompt).toContain('[SUCCESS_METRICS]');
+      expect(capturedPrompt).toContain('[ROLLBACK_STRATEGY]');
+    });
+
+    it('should handle undefined embedded templates gracefully', async () => {
+      // Mock the templates to be undefined to test error handling
+      vi.doMock('@/templates/default-templates', () => ({
+        DEFAULT_ISSUE_TEMPLATE: undefined,
+        DEFAULT_PLAN_TEMPLATE: undefined
+      }));
+
+      // Create a new agent instance to pick up the mocked templates
+      const testAgent = new AutonomousAgent({ workspace: '/test', signal: true });
+      (testAgent as any).configManager = configManager;
+      (testAgent as any).fileManager = fileManager;
+      (testAgent as any).providerLearning = providerLearning;
+
+      mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nTest content');
+      
+      // Should throw an error when templates are undefined
+      await expect(testAgent.bootstrap('/test/master-plan.md')).rejects.toThrow('Embedded templates are not properly defined');
+      
+      // Restore the original module
+      vi.doUnmock('@/templates/default-templates');
+    });
+
+    it('should use embedded templates for generated issues in bootstrap output', async () => {
+      // Clear issues
+      mockFiles.set('/test/issues', []);
+      fileManager.setIssueFiles([]);
+      fileManager.clearTodos();
+      
+      const createIssueSpy = vi.spyOn(fileManager, 'createIssue');
+      
+      mockFileContents.set('/test/master-plan.md', '# Master Plan\n\n## Goals\n- Feature implementation');
+      
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('bootstrap', 'Generated issues based on templates');
+
+      await agent.bootstrap('/test/master-plan.md');
+
+      // Verify createIssue was called
+      expect(createIssueSpy).toHaveBeenCalled();
+      
+      // Get the issue content that was created
+      const issueContent = createIssueSpy.mock.calls[0][2];
+      
+      // Verify the created issue contains expected sections from bootstrap
+      expect(issueContent).toContain('# Issue');
+      expect(issueContent).toContain('## Requirement');
+      expect(issueContent).toContain('## Acceptance Criteria');
+      expect(issueContent).toContain('## Technical Details');
+      expect(issueContent).toContain('## Generated Issues');
+    });
+
+    it('should ensure bootstrap works without any filesystem template operations', async () => {
+      // Mock fs.readdir to throw for templates directory
+      const originalReaddir = vi.mocked(fs.readdir).getMockImplementation();
+      vi.mocked(fs.readdir).mockImplementation(async (path: string) => {
+        if (path.includes('templates')) {
+          throw new Error('ENOENT: no such file or directory');
+        }
+        return originalReaddir ? originalReaddir(path) : [];
+      });
+      
+      // Clear issues
+      mockFiles.set('/test/issues', []);
+      fileManager.setIssueFiles([]);
+      fileManager.clearTodos();
+      
+      mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nBootstrap without templates');
+      
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('bootstrap', 'Bootstrap completed successfully');
+
+      // Should complete successfully without reading template files
+      await expect(agent.bootstrap('/test/master-plan.md')).resolves.not.toThrow();
+      
+      // Verify issue was created
+      const issues = await fileManager.getIssues();
+      expect(issues).toHaveLength(1);
+    });
+
+    it('should maintain backwards compatibility with embedded templates', async () => {
+      // Test that bootstrap behavior remains consistent
+      mockFiles.set('/test/issues', ['1-existing.md', '2-another.md']);
+      fileManager.setIssueFiles(['1-existing.md', '2-another.md']);
+      fileManager.clearTodos();
+      fileManager.addTodo(1, 'Existing', false);
+      fileManager.addTodo(2, 'Another', false);
+      
+      const createIssueSpy = vi.spyOn(fileManager, 'createIssue');
+      const createPlanSpy = vi.spyOn(fileManager, 'createPlan');
+      
+      mockFileContents.set('/test/master-plan.md', '# Master Plan\n\nBackwards compatibility test');
+      
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('bootstrap', 'Bootstrap with embedded templates');
+
+      await agent.bootstrap('/test/master-plan.md');
+
+      // Should create issue #3 (next available)
+      expect(createIssueSpy).toHaveBeenCalledWith(
+        3,
+        expect.stringContaining('Implement plan from'),
+        expect.any(String)
+      );
+      
+      // Should create corresponding plan
+      expect(createPlanSpy).toHaveBeenCalledWith(
+        3,
+        expect.any(Object),
+        expect.stringContaining('Implement plan from')
+      );
+    });
+  });
+
   describe('error handling', () => {
     beforeEach(async () => {
       await agent.initialize();

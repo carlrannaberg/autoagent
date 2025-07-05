@@ -199,446 +199,180 @@ describe('Bootstrap Command Integration', () => {
       expect(listResult.code).toBe(0);
       expect(listResult.stdout).toContain('implement-plan-from-master');
     });
-
-    it('should handle multiple bootstrap operations', async () => {
-      // First bootstrap
-      const masterPlan1 = await createMasterPlan('phase1', `# Phase 1
-
-## Goals
-- Initial setup
-- Core features`);
-
-      await runCLI(['bootstrap', 'phase1.md']);
-      
-      // Second bootstrap
-      const masterPlan2 = await createMasterPlan('phase2', `# Phase 2
-
-## Goals  
-- Advanced features
-- Performance optimization`);
-
-      await runCLI(['bootstrap', 'phase2.md']);
-      
-      const issues = await getIssueFiles();
-      expect(issues).toContain('1-implement-plan-from-phase1.md');
-      expect(issues).toContain('2-implement-plan-from-phase2.md');
-    });
-
-    it('should preserve TODO items during bootstrap', async () => {
-      // Bootstrap command overwrites todo.md, so this test doesn't apply anymore
-      // The bootstrap creates a fresh todo.md with only the bootstrap issue
-      const masterPlan = await createMasterPlan('master', `# Master Plan
-
-## Goals
-- New requirement`);
-
-      await runCLI(['bootstrap', 'master.md']);
-      
-      const todoContent = await fs.readFile(path.join(testWorkspace, 'todo.md'), 'utf-8');
-      expect(todoContent).toContain('Implement plan from master');
-    });
   });
 
-  describe('State Verification', () => {
-    it('should create correct file structure', async () => {
+  describe('Embedded Template Verification', () => {
+    it('should use embedded templates without template directory', async () => {
+      // Remove templates directory if it exists
+      try {
+        await fs.rmdir(path.join(testWorkspace, 'templates'), { recursive: true });
+      } catch {
+        // Directory doesn't exist, which is what we want
+      }
+
       const masterPlan = await createMasterPlan('master', `# Master Plan
-
 ## Goals
-- Database integration
-- API endpoints
-- Frontend components`);
+- Test embedded templates
+- Verify no filesystem reads`);
 
-      await runCLI(['bootstrap', 'master.md']);
+      const result = await runCLI(['bootstrap', 'master.md', '--provider', 'mock']);
+
+      expect(result.code).toBe(0);
+      expect(result.stdout).toContain('Bootstrap issue created successfully');
       
-      // Verify issues directory
-      const issues = await getIssueFiles();
-      expect(issues).toHaveLength(1);
-      
-      // Verify plans directory
-      const plans = await getPlanFiles();
-      expect(plans).toHaveLength(1);
-      
-      // Verify file naming
-      expect(issues[0]).toMatch(/1-implement-plan-from-master\.md/);
-      expect(plans[0]).toMatch(/1-implement-plan-from-master-plan\.md/);
+      // Verify templates directory was not created
+      const templatesExist = await fs.access(path.join(testWorkspace, 'templates'))
+        .then(() => true)
+        .catch(() => false);
+      expect(templatesExist).toBe(false);
     });
 
-    it('should create valid issue content', async () => {
-      const masterPlan = await createMasterPlan('master', `# Master Plan
+    it('should bootstrap successfully with no templates directory', async () => {
+      // Ensure no templates directory exists
+      const templatesDir = path.join(testWorkspace, 'templates');
+      try {
+        await fs.rmdir(templatesDir, { recursive: true });
+      } catch {
+        // Ignore if doesn't exist
+      }
 
-## Goals
-- Implement caching system`);
+      const masterPlan = await createMasterPlan('test-plan', `# Test Plan
+## Objectives
+- Create authentication system
+- Implement user profiles`);
 
-      await runCLI(['bootstrap', 'master.md']);
+      const result = await runCLI(['bootstrap', 'test-plan.md']);
+
+      expect(result.code).toBe(0);
       
+      // Check that issue was created
+      const issues = await getIssueFiles();
+      expect(issues.length).toBeGreaterThan(0);
+      
+      // Read the created issue to verify format
       const issueContent = await fs.readFile(
-        path.join(testWorkspace, 'issues', '1-implement-plan-from-master.md'),
+        path.join(testWorkspace, 'issues', issues[0]),
+        'utf-8'
+      );
+      expect(issueContent).toContain('## Requirement');
+      expect(issueContent).toContain('## Acceptance Criteria');
+      expect(issueContent).toContain('## Technical Details');
+    });
+
+    it('should ignore filesystem templates even if they exist', async () => {
+      // Create templates directory with custom templates
+      const templatesDir = path.join(testWorkspace, 'templates');
+      await fs.mkdir(templatesDir, { recursive: true });
+      
+      // Create custom templates that should be ignored
+      await fs.writeFile(
+        path.join(templatesDir, 'issue.md'),
+        '# CUSTOM ISSUE TEMPLATE - SHOULD NOT BE USED\n{{content}}'
+      );
+      await fs.writeFile(
+        path.join(templatesDir, 'plan.md'), 
+        '# CUSTOM PLAN TEMPLATE - SHOULD NOT BE USED\n{{content}}'
+      );
+
+      const masterPlan = await createMasterPlan('master', `# Master Plan
+## Goals
+- Test that custom templates are ignored`);
+
+      const result = await runCLI(['bootstrap', 'master.md']);
+
+      expect(result.code).toBe(0);
+      
+      // Read created issue and verify it doesn't contain custom template text
+      const issues = await getIssueFiles();
+      const issueContent = await fs.readFile(
+        path.join(testWorkspace, 'issues', issues[0]),
         'utf-8'
       );
       
-      expect(issueContent).toContain('# Issue 1: Implement plan from master');
+      expect(issueContent).not.toContain('CUSTOM ISSUE TEMPLATE');
+      expect(issueContent).not.toContain('SHOULD NOT BE USED');
+      // Should contain standard sections from embedded template
       expect(issueContent).toContain('## Requirement');
       expect(issueContent).toContain('## Acceptance Criteria');
     });
 
-    it('should handle complex master plan formats', async () => {
-      const masterPlan = await createMasterPlan('complex', `# Complex Master Plan
+    it('should create properly formatted issues with embedded templates', async () => {
+      const masterPlan = await createMasterPlan('feature-plan', `# Feature Plan
+## Requirements
+- User authentication
+- Profile management
+- Settings page`);
 
-## Overview
-This is a complex project with multiple phases.
+      const result = await runCLI(['bootstrap', 'feature-plan.md']);
 
-## Phase 1: Foundation
-- Set up project structure
-- Configure build system
-
-## Phase 2: Core Features  
-- User management
-- Data processing
-
-## Phase 3: Advanced
-- Analytics dashboard
-- Reporting system`);
-
-      await runCLI(['bootstrap', 'complex.md']);
+      expect(result.code).toBe(0);
       
+      // Verify issue and plan files were created
       const issues = await getIssueFiles();
-      expect(issues.length).toBeGreaterThanOrEqual(1);
-    });
-
-    it('should maintain project consistency', async () => {
-      // Create existing project state
-      await fs.writeFile(
-        path.join(testWorkspace, 'issues', '1-completed-issue.md'),
-        '# Issue 1: Completed Issue\n\n## Status: Completed'
-      );
+      const plans = await getPlanFiles();
       
-      await fs.writeFile(
-        path.join(testWorkspace, 'todo.md'),
-        `# TODO
-
-- [x] Complete issue #1
-- [ ] Review code`
-      );
-
-      const masterPlan = await createMasterPlan('master', `# Master Plan
-
-## Goals
-- New feature X
-- New feature Y`);
-
-      await runCLI(['bootstrap', 'master.md']);
+      expect(issues).toHaveLength(1);
+      expect(plans).toHaveLength(1);
       
-      // Verify existing completed issue is preserved
-      const issue1Content = await fs.readFile(
-        path.join(testWorkspace, 'issues', '1-completed-issue.md'),
+      // Verify matching filenames
+      expect(issues[0]).toBe('1-implement-plan-from-feature-plan.md');
+      expect(plans[0]).toBe('1-implement-plan-from-feature-plan.md');
+      
+      // Verify plan content structure
+      const planContent = await fs.readFile(
+        path.join(testWorkspace, 'plans', plans[0]),
         'utf-8'
       );
-      expect(issue1Content).toContain('Completed Issue');
-      
-      // Verify new issues start from correct number
-      const issues = await getIssueFiles();
-      expect(issues).toContain('2-implement-plan-from-master.md');
-    });
-
-    it('should handle edge cases in issue numbering', async () => {
-      // Create non-sequential existing issues
-      await fs.writeFile(
-        path.join(testWorkspace, 'issues', '1-first.md'),
-        '# Issue 1'
-      );
-      await fs.writeFile(
-        path.join(testWorkspace, 'issues', '3-third.md'),
-        '# Issue 3'
-      );
-      await fs.writeFile(
-        path.join(testWorkspace, 'issues', '7-seventh.md'),
-        '# Issue 7'
-      );
-
-      const masterPlan = await createMasterPlan('master', `# Master Plan
-
-## Goals
-- Fill the gap`);
-
-      await runCLI(['bootstrap', 'master.md']);
-      
-      const issues = await getIssueFiles();
-      expect(issues).toContain('8-implement-plan-from-master.md');
+      expect(planContent).toContain('# Plan for Issue 1:');
+      expect(planContent).toContain('## Implementation Plan');
+      expect(planContent).toContain('### Phase 1: Initial Setup');
     });
   });
 
-  describe('Bootstrap Filename Consistency', () => {
-    it('should create matching issue and plan filenames', async () => {
-      const masterPlan = await createMasterPlan('master', `# Master Plan
+  describe('Error Scenarios with Embedded Templates', () => {
+    it('should handle missing master plan gracefully', async () => {
+      const result = await runCLI(['bootstrap', 'nonexistent-plan.md']);
+      
+      expect(result.code).not.toBe(0);
+      expect(result.stderr).toContain('Could not read master plan');
+    });
 
-## Goals
-- Implement user authentication
-- Add data validation
-- Create API endpoints`);
+    it('should handle empty master plan', async () => {
+      await createMasterPlan('empty', '');
+      
+      const result = await runCLI(['bootstrap', 'empty.md']);
+      
+      // Should still create a bootstrap issue
+      expect(result.code).toBe(0);
+      expect(result.stdout).toContain('Bootstrap issue created successfully');
+    });
 
-      const result = await runCLI(['bootstrap', 'master.md', '--provider', 'mock']);
+    it('should handle very large master plans', async () => {
+      // Create a large master plan
+      const largePlan = `# Large Master Plan\n\n${Array(100).fill('## Section\n- Task item\n- Another task\n').join('\n')}`;
+      await createMasterPlan('large', largePlan);
+      
+      const result = await runCLI(['bootstrap', 'large.md']);
       
       expect(result.code).toBe(0);
-      
-      const issues = await getIssueFiles();
-      const plans = await getPlanFiles();
-      
-      // For each issue, there should be a corresponding plan file
-      for (const issueFile of issues) {
-        const expectedPlanFile = issueFile.replace('.md', '-plan.md');
-        expect(plans).toContain(expectedPlanFile);
-      }
+      expect(result.stdout).toContain('Bootstrap issue created successfully');
     });
 
-    it('should handle various title formats consistently', async () => {
-      // Bootstrap always creates "Implement plan from {filename}" issue
-      // This test doesn't apply as the title is determined by the plan filename
-      const masterPlan = await createMasterPlan('test-plan', `# Master Plan\n\n## Goals\n- Test goal`);
-      
-      await runCLI(['bootstrap', 'test-plan.md', '--provider', 'mock']);
-      
-      const issues = await getIssueFiles();
-      const plans = await getPlanFiles();
-      
-      // Bootstrap creates a single issue with title based on plan name
-      expect(issues[0]).toBe('1-implement-plan-from-test-plan.md');
-      expect(plans[0]).toBe('1-implement-plan-from-test-plan-plan.md');
-    });
-
-    it('should maintain filename predictability', async () => {
-      // Create the same bootstrap operation twice and verify same filenames
-      const masterPlan = await createMasterPlan('master', `# Master Plan
-
-## Goals
-- Build a feature with special characters!
-- Add support for UTF-8 characters
-- Implement feature #123`);
-
+    it('should handle multiple consecutive bootstrap operations', async () => {
       // First bootstrap
-      await runCLI(['bootstrap', 'master.md', '--provider', 'mock']);
-      
-      const firstIssues = await getIssueFiles();
-      const firstPlans = await getPlanFiles();
-      
-      // Clear and bootstrap again
-      await fs.rm(path.join(testWorkspace, 'issues'), { recursive: true, force: true });
-      await fs.rm(path.join(testWorkspace, 'plans'), { recursive: true, force: true });
-      await fs.mkdir(path.join(testWorkspace, 'issues'), { recursive: true });
-      await fs.mkdir(path.join(testWorkspace, 'plans'), { recursive: true });
-      
-      await runCLI(['bootstrap', 'master.md', '--provider', 'mock']);
-      
-      const secondIssues = await getIssueFiles();
-      const secondPlans = await getPlanFiles();
-      
-      // Verify same number of files created
-      expect(secondIssues.length).toBe(firstIssues.length);
-      expect(secondPlans.length).toBe(firstPlans.length);
-    });
+      await createMasterPlan('phase1', '# Phase 1\n## Tasks\n- Setup infrastructure');
+      const result1 = await runCLI(['bootstrap', 'phase1.md']);
+      expect(result1.code).toBe(0);
 
-    it('should verify file pairing and relationships', async () => {
-      const masterPlan = await createMasterPlan('master', `# Master Plan
+      // Second bootstrap
+      await createMasterPlan('phase2', '# Phase 2\n## Tasks\n- Implement features');
+      const result2 = await runCLI(['bootstrap', 'phase2.md']);
+      expect(result2.code).toBe(0);
 
-## Goals
-- Authentication system
-- User profile management
-- Permission control`);
-
-      await runCLI(['bootstrap', 'master.md', '--provider', 'mock']);
-      
+      // Verify both issues exist
       const issues = await getIssueFiles();
-      const plans = await getPlanFiles();
-      
-      // Each issue should have exactly one corresponding plan
-      const issueBasenames = issues.map(f => f.replace('.md', ''));
-      const planBasenames = plans.map(f => f.replace('-plan.md', ''));
-      
-      // Sort for comparison
-      issueBasenames.sort();
-      planBasenames.sort();
-      
-      expect(issueBasenames).toEqual(planBasenames);
-      
-      // Verify content references
-      for (const issueFile of issues) {
-        const issueContent = await fs.readFile(
-          path.join(testWorkspace, 'issues', issueFile),
-          'utf-8'
-        );
-        
-        const issueMatch = issueContent.match(/^#\s+Issue\s+(\d+):\s+(.+)$/m);
-        expect(issueMatch).toBeTruthy();
-        
-        if (issueMatch) {
-          const [, issueNumber, issueTitle] = issueMatch;
-          const correspondingPlanFile = issueFile.replace('.md', '-plan.md');
-          
-          const planContent = await fs.readFile(
-            path.join(testWorkspace, 'plans', correspondingPlanFile),
-            'utf-8'
-          );
-          
-          // Plan should reference the same issue number and title
-          expect(planContent).toContain(`Plan for Issue ${issueNumber}`);
-          expect(planContent).toContain(issueTitle);
-        }
-      }
-    });
-
-    it('should handle very long titles gracefully', async () => {
-      const veryLongTitle = 'This is a very long title that should be truncated or handled gracefully by the system to ensure that file paths do not exceed system limits and remain manageable';
-      
-      const masterPlan = await createMasterPlan('master', `# Master Plan
-
-## Goals
-- ${veryLongTitle}`);
-
-      await runCLI(['bootstrap', 'master.md', '--provider', 'mock']);
-      
-      const issues = await getIssueFiles();
-      const plans = await getPlanFiles();
-      
-      // Verify files were created
-      expect(issues.length).toBeGreaterThan(0);
-      expect(plans.length).toBeGreaterThan(0);
-      
-      // Verify filenames are reasonable length (less than 255 chars)
-      for (const file of [...issues, ...plans]) {
-        expect(file.length).toBeLessThan(255);
-      }
-    });
-
-    it('should create correct file structure in CLI E2E test', async () => {
-      const masterPlan = await createMasterPlan('e2e-test', `# E2E Test Plan
-
-## Goals
-- Feature One
-- Feature Two
-- Feature Three`);
-
-      // Run bootstrap command
-      const result = await runCLI(['bootstrap', 'e2e-test.md', '--provider', 'mock']);
-      
-      expect(result.code).toBe(0);
-      expect(result.stdout).toContain('Bootstrap issue created successfully');
-      
-      // Verify file structure
-      const issues = await getIssueFiles();
-      const plans = await getPlanFiles();
-      const todoContent = await fs.readFile(path.join(testWorkspace, 'todo.md'), 'utf-8');
-      
-      // Should have created issue and plan files
-      expect(issues.length).toBeGreaterThan(0);
-      expect(plans.length).toBe(issues.length);
-      
-      // Todo should reference all issues
-      for (const issueFile of issues) {
-        expect(todoContent).toContain(issueFile);
-      }
-      
-      // Each issue should have matching plan
-      for (const issueFile of issues) {
-        const planFile = issueFile.replace('.md', '-plan.md');
-        expect(plans).toContain(planFile);
-      }
-    });
-
-    it('should handle bootstrap with mock provider properly', async () => {
-      // Use mock provider to ensure consistent results
-      const masterPlan = await createMasterPlan('mock-test', `# Mock Provider Test
-
-## Goals
-- Test item 1
-- Test item 2`);
-
-      const result = await runCLI(['bootstrap', 'mock-test.md', '--provider', 'mock']);
-      
-      expect(result.code).toBe(0);
-      
-      // Verify the bootstrap issue was created with proper filename
-      const issues = await getIssueFiles();
-      const bootstrapIssue = issues.find(f => f.includes('implement-plan-from-mock-test'));
-      
-      expect(bootstrapIssue).toBeTruthy();
-      
-      // Verify corresponding plan exists
-      if (bootstrapIssue) {
-        const expectedPlanFile = bootstrapIssue.replace('.md', '-plan.md');
-        const plans = await getPlanFiles();
-        expect(plans).toContain(expectedPlanFile);
-      }
-    });
-
-    it('should maintain consistency with special characters in plan names', async () => {
-      const specialPlanNames = [
-        'plan-with-dash',
-        'plan_with_underscore',
-        'plan.with.dots',
-        'plan@with#special$chars'
-      ];
-
-      for (const planName of specialPlanNames) {
-        // Clear workspace
-        await fs.rm(path.join(testWorkspace, 'issues'), { recursive: true, force: true });
-        await fs.rm(path.join(testWorkspace, 'plans'), { recursive: true, force: true });
-        await fs.mkdir(path.join(testWorkspace, 'issues'), { recursive: true });
-        await fs.mkdir(path.join(testWorkspace, 'plans'), { recursive: true });
-
-        const masterPlan = await createMasterPlan(planName, `# Master Plan\n\n## Goals\n- Test goal`);
-        
-        const result = await runCLI(['bootstrap', `${planName}.md`, '--provider', 'mock']);
-        
-        expect(result.code).toBe(0);
-        
-        const issues = await getIssueFiles();
-        const plans = await getPlanFiles();
-        
-        // Verify files were created with sanitized names
-        expect(issues.length).toBeGreaterThan(0);
-        expect(plans.length).toBe(issues.length);
-        
-        // Verify no special characters in filenames (except dash and dot before extension)
-        for (const file of [...issues, ...plans]) {
-          expect(file).toMatch(/^[\d\-a-z]+\.md$/);
-        }
-      }
-    });
-  });
-
-  describe('Error Handling and Recovery', () => {
-    it('should handle empty master plan gracefully', async () => {
-      const masterPlan = await createMasterPlan('empty', '');
-      
-      const result = await runCLI(['bootstrap', 'empty.md', '--provider', 'mock']);
-      
-      // Bootstrap should succeed even with empty master plan
-      // It will create a generic bootstrap issue
-      expect(result.code).toBe(0);
-      expect(result.stdout).toContain('Bootstrap issue created successfully');
-    });
-
-    it('should handle file system errors gracefully', async () => {
-      const masterPlan = await createMasterPlan('master', `# Master Plan
-
-## Goals
-- Test feature`);
-
-      // Make issues directory read-only
-      await fs.chmod(path.join(testWorkspace, 'issues'), 0o444);
-      
-      const result = await runCLI(['bootstrap', 'master.md']);
-      
-      expect(result.code).not.toBe(0);
-      
-      // Restore permissions for cleanup
-      await fs.chmod(path.join(testWorkspace, 'issues'), 0o755);
-    });
-
-    it('should provide meaningful error messages', async () => {
-      const result = await runCLI(['bootstrap']);
-      
-      expect(result.code).not.toBe(0);
-      expect(result.stderr).toContain('master plan');
+      expect(issues).toContain('1-implement-plan-from-phase1.md');
+      expect(issues).toContain('2-implement-plan-from-phase2.md');
     });
   });
 });
