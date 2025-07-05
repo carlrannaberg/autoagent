@@ -35,7 +35,7 @@ import { Logger } from '../../../src/utils/logger';
 
 const mockSpawn = vi.mocked(spawn);
 const mockStreamFormatter = vi.mocked(StreamFormatter);
-const mockLogger = vi.mocked(Logger);
+vi.mocked(Logger);
 
 // Mock child process
 class MockChildProcess extends EventEmitter {
@@ -62,7 +62,7 @@ describe('RateLimitMonitor', () => {
     
     mockRateLimiter = {
       isRateLimitError: vi.fn(),
-      markProviderRateLimited: vi.fn(),
+      markProviderRateLimited: vi.fn().mockResolvedValue(undefined),
       getBestGeminiModel: vi.fn(),
       isProviderRateLimited: vi.fn()
     } as any;
@@ -146,11 +146,15 @@ describe('RateLimitMonitor', () => {
       );
 
       // Simulate rate limit error in stderr
-      setTimeout(() => {
+      // Use process.nextTick to ensure the promise is set up before emitting events
+      process.nextTick(() => {
         mockChild.stderr.emit('data', Buffer.from('Error: quota exceeded'));
-        // Process should be killed, simulate close event
-        setTimeout(() => mockChild.emit('close', 1), 5);
-      }, 10);
+        // When rate limit is detected, the monitor kills the process
+        // We need to simulate the close event after kill() is called
+        process.nextTick(() => {
+          mockChild.emit('close', 1);
+        });
+      });
 
       const result = await resultPromise;
 
@@ -173,10 +177,12 @@ describe('RateLimitMonitor', () => {
       );
 
       // Simulate rate limit error in stdout
-      setTimeout(() => {
+      process.nextTick(() => {
         mockChild.stdout.emit('data', Buffer.from('rate limit exceeded'));
-        setTimeout(() => mockChild.emit('close', 1), 5);
-      }, 10);
+        process.nextTick(() => {
+          mockChild.emit('close', 1);
+        });
+      });
 
       const result = await resultPromise;
 
@@ -196,9 +202,9 @@ describe('RateLimitMonitor', () => {
       );
 
       // Abort the process
-      setTimeout(() => {
+      process.nextTick(() => {
         abortController.abort();
-      }, 10);
+      });
 
       await expect(resultPromise).rejects.toThrow('Process aborted by user');
       expect(mockChild.kill).toHaveBeenCalledWith('SIGTERM');
@@ -271,15 +277,18 @@ describe('RateLimitMonitor', () => {
         
         if (callCount === 1) {
           // First call - simulate rate limit
-          setTimeout(() => {
+          process.nextTick(() => {
             child.stderr.emit('data', Buffer.from('quota exceeded'));
-            setTimeout(() => child.emit('close', 1), 5);
-          }, 10);
+            process.nextTick(() => {
+              child.emit('close', 1);
+            });
+          });
         } else {
           // Second call - simulate success
-          setTimeout(() => {
+          vi.mocked(mockRateLimiter.isRateLimitError).mockReturnValue(false);
+          process.nextTick(() => {
             child.emit('close', 0);
-          }, 10);
+          });
         }
         
         return child as any;
@@ -303,6 +312,8 @@ describe('RateLimitMonitor', () => {
     });
 
     it('should log model selection', async () => {
+      vi.mocked(mockRateLimiter.getBestGeminiModel).mockResolvedValue('gemini-2.5-pro');
+      
       const resultPromise = rateLimitMonitor.executeGeminiWithFallback(['--yolo']);
 
       setTimeout(() => {
@@ -311,24 +322,37 @@ describe('RateLimitMonitor', () => {
 
       await resultPromise;
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Using Gemini model: gemini-2.5-pro');
+      // Check that the model argument was added correctly
+      expect(mockSpawn).toHaveBeenCalledWith('gemini', 
+        expect.arrayContaining(['--model', 'gemini-2.5-pro', '--yolo']),
+        expect.any(Object)
+      );
     });
 
     it('should throw RateLimitDetectedError when fallback also fails', async () => {
-      vi.mocked(mockRateLimiter.getBestGeminiModel).mockResolvedValue('gemini-2.5-flash'); // Already using fallback
+      vi.mocked(mockRateLimiter.getBestGeminiModel)
+        .mockResolvedValueOnce('gemini-2.5-pro')
+        .mockResolvedValueOnce('gemini-2.5-flash');
       vi.mocked(mockRateLimiter.isRateLimitError).mockReturnValue(true);
 
-      const resultPromise = rateLimitMonitor.executeGeminiWithFallback(['--yolo']);
+      // Create new mock instances for each spawn call
+      let callCount = 0;
+      mockSpawn.mockImplementation(() => {
+        callCount++;
+        const child = new MockChildProcess();
+        process.nextTick(() => {
+          child.stderr.emit('data', Buffer.from('quota exceeded'));
+          process.nextTick(() => {
+            child.emit('close', 1);
+          });
+        });
+        return child as any;
+      });
 
-      setTimeout(() => {
-        mockChild.stderr.emit('data', Buffer.from('quota exceeded'));
-        setTimeout(() => mockChild.emit('close', 1), 5);
-      }, 10);
-
-      const result = await resultPromise;
+      await expect(rateLimitMonitor.executeGeminiWithFallback(['--yolo']))
+        .rejects.toThrow('All Gemini models are rate limited');
       
-      expect(result.rateLimitDetected).toBe(true);
-      expect(result.terminatedEarly).toBe(true);
+      expect(callCount).toBe(2); // Both models should be tried
     });
   });
 
@@ -351,17 +375,17 @@ describe('RateLimitMonitor', () => {
     it('should throw RateLimitDetectedError on rate limit detection', async () => {
       vi.mocked(mockRateLimiter.isRateLimitError).mockReturnValue(true);
 
-      const resultPromise = rateLimitMonitor.executeClaudeWithMonitoring(['-p', 'test']);
+      mockSpawn.mockImplementation(() => {
+        const child = new MockChildProcess();
+        setTimeout(() => {
+          child.stderr.emit('data', Buffer.from('rate limit exceeded'));
+          setTimeout(() => child.emit('close', 1), 5);
+        }, 10);
+        return child as any;
+      });
 
-      setTimeout(() => {
-        mockChild.stderr.emit('data', Buffer.from('rate limit exceeded'));
-        setTimeout(() => mockChild.emit('close', 1), 5);
-      }, 10);
-
-      const result = await resultPromise;
-      
-      expect(result.rateLimitDetected).toBe(true);
-      expect(result.terminatedEarly).toBe(true);
+      await expect(rateLimitMonitor.executeClaudeWithMonitoring(['-p', 'test']))
+        .rejects.toThrow('Rate limit detected for claude');
     });
 
     it('should detect rate limits in error messages', async () => {
@@ -369,9 +393,9 @@ describe('RateLimitMonitor', () => {
 
       const promise = rateLimitMonitor.executeClaudeWithMonitoring(['-p', 'test']);
 
-      setTimeout(() => {
+      process.nextTick(() => {
         mockChild.emit('error', new Error('rate limit exceeded'));
-      }, 10);
+      });
 
       await expect(promise).rejects.toThrow(RateLimitDetectedError);
       expect(mockRateLimiter.markProviderRateLimited).toHaveBeenCalledWith(

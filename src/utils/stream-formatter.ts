@@ -416,8 +416,9 @@ export class StreamFormatter {
    */
   static displayGeminiText(text: string): void {
     if (text.trim()) {
+      // Use default terminal color for Gemini text output (no special formatting)
       // eslint-disable-next-line no-console
-      console.log(`${colors.WHITE}${text.trim()}${colors.NC}`);
+      console.log(text.trim());
     }
   }
 }

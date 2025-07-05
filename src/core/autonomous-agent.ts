@@ -325,17 +325,43 @@ export class AutonomousAgent extends EventEmitter {
     if (this.config.provider) {
       this.reportProgress(`📌 Specific provider requested: ${this.config.provider}`, 0);
       const provider = createProvider(this.config.provider);
-      const isRateLimited = await this.configManager.isProviderRateLimited(this.config.provider);
-
-      if (isRateLimited === true) {
-        this.reportProgress(`⚠️  ${this.config.provider} is rate limited`, 0);
-      } else {
+      
+      // Special handling for Gemini: check if it's available first, then let it handle model selection
+      if (this.config.provider === 'gemini') {
         const isAvailable = await provider.checkAvailability();
         if (isAvailable) {
           this.reportProgress(`✅ Using requested provider: ${this.config.provider}`, 0);
+          
+          // Show model information for Gemini
+          const geminiProvider = provider as { rateLimiter?: { getBestGeminiModel?: () => Promise<string> } };
+          if (geminiProvider.rateLimiter && typeof geminiProvider.rateLimiter.getBestGeminiModel === 'function') {
+            try {
+              const model = await geminiProvider.rateLimiter.getBestGeminiModel();
+              this.reportProgress(`🤖 Using Gemini model: ${model}`, 0);
+            } catch (error) {
+              // Fallback if model detection fails
+              this.reportProgress('🤖 Using Gemini model: gemini-2.5-pro (default)', 0);
+            }
+          }
+          
           return provider;
         } else {
           this.reportProgress(`❌ ${this.config.provider} is not available`, 0);
+        }
+      } else {
+        // For other providers, check rate limiting first
+        const isRateLimited = await this.configManager.isProviderRateLimited(this.config.provider);
+
+        if (isRateLimited === true) {
+          this.reportProgress(`⚠️  ${this.config.provider} is rate limited`, 0);
+        } else {
+          const isAvailable = await provider.checkAvailability();
+          if (isAvailable) {
+            this.reportProgress(`✅ Using requested provider: ${this.config.provider}`, 0);
+            return provider;
+          } else {
+            this.reportProgress(`❌ ${this.config.provider} is not available`, 0);
+          }
         }
       }
     }

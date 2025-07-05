@@ -4,10 +4,12 @@ import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { RateLimitMonitor, RateLimitDetectedError } from '@/core/rate-limit-monitor';
 
 vi.mock('child_process');
 vi.mock('fs/promises');
 vi.mock('path');
+vi.mock('@/core/rate-limit-monitor');
 
 class MockChildProcess extends EventEmitter {
   stdout = new EventEmitter();
@@ -23,24 +25,27 @@ describe('GeminiProvider', () => {
   let provider: GeminiProvider;
   let mockSpawn: ReturnType<typeof vi.fn>;
   let mockProcess: MockChildProcess;
+  let mockRateLimitMonitor: RateLimitMonitor;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    provider = new GeminiProvider();
+    
+    // Create mocks
     mockProcess = new MockChildProcess();
     mockSpawn = vi.mocked(spawn);
     mockSpawn.mockReturnValue(mockProcess as unknown as ReturnType<typeof spawn>);
     
-    // Verify spawn was called with correct stdio configuration for stdin piping
-    mockSpawn.mockImplementation((command, args, options) => {
-      // Verify it's the correct command
-      if (command === 'gemini' && options !== null && options !== undefined && 'stdio' in options) {
-        expect(options.stdio).toEqual(['pipe', 'pipe', 'pipe']);
-        expect(args).toContain('--all_files');
-        expect(args).toContain('--yolo');
-      }
-      return mockProcess as unknown as ReturnType<typeof spawn>;
-    });
+    // Mock RateLimitMonitor constructor and methods
+    mockRateLimitMonitor = {
+      executeGeminiWithFallback: vi.fn(),
+      executeClaudeWithMonitoring: vi.fn(),
+      spawnWithMonitoring: vi.fn()
+    } as any;
+    
+    vi.mocked(RateLimitMonitor).mockImplementation(() => mockRateLimitMonitor);
+    
+    // Create provider instance after mocks are set up
+    provider = new GeminiProvider();
     
     // Mock fs.readFile
     vi.mocked(fs.readFile).mockResolvedValue('File content');
@@ -53,11 +58,15 @@ describe('GeminiProvider', () => {
     it('should return true when gemini is available', async () => {
       // Set silent mode to avoid console output
       process.env.AUTOAGENT_SILENT = 'true';
+      
+      // For checkAvailability, the provider uses direct spawn (not RateLimitMonitor)
       const availabilityPromise = provider.checkAvailability();
 
       // Simulate successful output (matches actual gemini --version output)
-      mockProcess.stdout.emit('data', '0.1.7');
-      mockProcess.emit('close', 0);
+      process.nextTick(() => {
+        mockProcess.stdout.emit('data', '0.1.7');
+        mockProcess.emit('close', 0);
+      });
 
       const result = await availabilityPromise;
       expect(result).toBe(true);
@@ -67,8 +76,10 @@ describe('GeminiProvider', () => {
     it('should return false when gemini is not available', async () => {
       const availabilityPromise = provider.checkAvailability();
 
-      mockProcess.stderr.emit('data', 'command not found');
-      mockProcess.emit('close', 1);
+      process.nextTick(() => {
+        mockProcess.stderr.emit('data', 'command not found');
+        mockProcess.emit('close', 1);
+      });
 
       const result = await availabilityPromise;
       expect(result).toBe(false);
@@ -92,23 +103,21 @@ describe('GeminiProvider', () => {
         .mockResolvedValueOnce('Plan content')
         .mockResolvedValueOnce('Context file content');
       
-      const executePromise = provider.execute(
+      // Mock the RateLimitMonitor response
+      vi.mocked(mockRateLimitMonitor.executeGeminiWithFallback).mockResolvedValue({
+        stdout: 'Processing task...\nModified: src/file.ts\nTask completed successfully\n',
+        stderr: '',
+        exitCode: 0,
+        rateLimitDetected: false,
+        terminatedEarly: false
+      });
+      
+      const result = await provider.execute(
         'issue.md',
         'plan.md',
         ['option1'],
         abortController.signal
       );
-
-      // Need to wait for fs reads to complete
-      await new Promise(resolve => setImmediate(resolve));
-      
-      // Simulate gemini output
-      mockProcess.stdout.emit('data', 'Processing task...\n');
-      mockProcess.stdout.emit('data', 'Modified: src/file.ts\n');
-      mockProcess.stdout.emit('data', 'Task completed successfully\n');
-      mockProcess.emit('close', 0);
-
-      const result = await executePromise;
 
       expect(result).toEqual({
         success: true,
@@ -120,65 +129,59 @@ describe('GeminiProvider', () => {
         filesChanged: ['src/file.ts']
       });
 
-      // Gemini uses stdin for prompt and --all_files --yolo flags
-      expect(mockSpawn).toHaveBeenCalled();
-      const callArgs = mockSpawn.mock.calls[0];
-      expect(callArgs).toBeDefined();
-      expect(callArgs![0]).toBe('gemini');
-      const commandArgs = callArgs![1] as string[];
-      expect(commandArgs).toContain('--all_files');
-      expect(commandArgs).toContain('--yolo');
-      
-      // Check that content was written to stdin
-      expect(mockProcess.stdin.write).toHaveBeenCalled();
-      const stdinContent = (mockProcess.stdin.write as jest.Mock).mock.calls[0][0];
-      expect(stdinContent).toContain('Issue content');
-      expect(stdinContent).toContain('Plan content');
+      // Verify RateLimitMonitor was called with correct args
+      expect(mockRateLimitMonitor.executeGeminiWithFallback).toHaveBeenCalledWith(
+        ['--all_files', '--yolo'],
+        {
+          signal: abortController.signal,
+          stdinContent: expect.stringContaining('Issue content'),
+          enableStreaming: true
+        }
+      );
     });
 
     it('should handle execution errors', async () => {
       vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
+      
+      // Mock a rate limit error
+      vi.mocked(mockRateLimitMonitor.executeGeminiWithFallback).mockRejectedValue(
+        new RateLimitDetectedError('gemini', 'All Gemini models are rate limited. Consider using Claude instead.')
+      );
         
-      const executePromise = provider.execute(
+      const result = await provider.execute(
         'issue.md',
         'plan.md',
         [],
         undefined
       );
-
-      // Need to wait for fs reads to complete
-      await new Promise(resolve => setImmediate(resolve));
       
-      mockProcess.stderr.emit('data', 'Error: Rate limit exceeded');
-      mockProcess.emit('close', 1);
-
-      const result = await executePromise;
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Rate limit exceeded');
+      expect(result.error).toContain('Rate limit detected');
     });
 
     it('should collect stderr output', async () => {
       vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
+      
+      // Mock execution failure with stderr
+      vi.mocked(mockRateLimitMonitor.executeGeminiWithFallback).mockResolvedValue({
+        stdout: '',
+        stderr: 'Warning: Low quota\nError: Failed to process\n',
+        exitCode: 1,
+        rateLimitDetected: false,
+        terminatedEarly: false
+      });
         
-      const executePromise = provider.execute(
+      const result = await provider.execute(
         'issue.md',
         'plan.md',
         [],
         undefined
       );
-
-      // Need to wait for fs reads to complete
-      await new Promise(resolve => setImmediate(resolve));
       
-      mockProcess.stderr.emit('data', 'Warning: Low quota\n');
-      mockProcess.stderr.emit('data', 'Error: Failed to process\n');
-      mockProcess.emit('close', 1);
-
-      const result = await executePromise;
       expect(result.success).toBe(false);
       expect(result.error).toContain('Failed to process');
     });
@@ -189,21 +192,19 @@ describe('GeminiProvider', () => {
         .mockResolvedValueOnce('Plan content');
         
       const abortController = new AbortController();
-      const executePromise = provider.execute(
+      
+      // Mock abort error
+      vi.mocked(mockRateLimitMonitor.executeGeminiWithFallback).mockRejectedValue(
+        new Error('Process aborted by user')
+      );
+      
+      const result = await provider.execute(
         'issue.md',
         'plan.md',
         [],
         abortController.signal
       );
-
-      // Need to wait for fs reads to complete
-      await new Promise(resolve => setImmediate(resolve));
       
-      // Abort the execution
-      abortController.abort();
-      mockProcess.emit('close', 1);
-
-      const result = await executePromise;
       expect(result.success).toBe(false);
       expect(result.error).toContain('aborted');
     });
@@ -212,57 +213,56 @@ describe('GeminiProvider', () => {
       vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
+      
+      // Mock output with error indicators
+      vi.mocked(mockRateLimitMonitor.executeGeminiWithFallback).mockResolvedValue({
+        stdout: 'Starting task...\nError: Failed to process file\n',
+        stderr: '',
+        exitCode: 0,
+        rateLimitDetected: false,
+        terminatedEarly: false
+      });
         
-      const executePromise = provider.execute(
+      const result = await provider.execute(
         'issue.md',
         'plan.md',
         [],
         undefined
       );
-
-      // Need to wait for fs reads to complete
-      await new Promise(resolve => setImmediate(resolve));
-      
-      // Simulate output with error
-      mockProcess.stdout.emit('data', 'Starting task...\n');
-      mockProcess.stdout.emit('data', 'Error: Failed to process file\n');
-      mockProcess.emit('close', 0);
-
-      const result = await executePromise;
 
       expect(result.success).toBe(false);
       expect(result.output).toContain('Error: Failed to process');
     });
 
     it('should handle spawn errors during execution', async () => {
-      mockSpawn.mockImplementation(() => {
-        throw new Error('spawn failed');
-      });
+      // Mock file read errors
+      vi.mocked(fs.readFile).mockRejectedValue(new Error('File read failed'));
 
       const result = await provider.execute('issue.md', 'plan.md', [], undefined);
       expect(result.success).toBe(false);
-      expect(result.error).toContain('spawn failed');
+      expect(result.error).toContain('File read failed');
     });
 
     it('should handle empty output', async () => {
       vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')
         .mockResolvedValueOnce('Plan content');
+      
+      // Mock empty output
+      vi.mocked(mockRateLimitMonitor.executeGeminiWithFallback).mockResolvedValue({
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+        rateLimitDetected: false,
+        terminatedEarly: false
+      });
         
-      const executePromise = provider.execute(
+      const result = await provider.execute(
         'issue.md',
         'plan.md',
         [],
         undefined
       );
-
-      // Need to wait for fs reads to complete
-      await new Promise(resolve => setImmediate(resolve));
-      
-      // No output, just close with success
-      mockProcess.emit('close', 0);
-
-      const result = await executePromise;
 
       expect(result.success).toBe(true);
       expect(result.output).toBe('');

@@ -181,30 +181,52 @@ export class RateLimitMonitor {
       finalArgs.push('--model', bestModel);
     }
 
-    console.log(`Using Gemini model: ${bestModel}`);
+    // Model information is now displayed by the autonomous agent
 
     try {
       const result = await this.spawnWithMonitoring('gemini', finalArgs, 'gemini', options);
       
       // If rate limit was detected and we were using the primary model, try fallback
       if (result.rateLimitDetected && result.terminatedEarly && bestModel === 'gemini-2.5-pro') {
-        console.log('Switching to Gemini Flash model due to rate limit');
+        Logger.info('Switching to Gemini Flash model due to rate limit');
         
         // Update args to use fallback model
         finalArgs = args.filter(arg => arg !== '--model' && arg !== 'gemini-2.5-pro');
         finalArgs.push('--model', 'gemini-2.5-flash');
         
         // Try again with fallback model
-        return await this.spawnWithMonitoring('gemini', finalArgs, 'gemini', options);
+        const fallbackResult = await this.spawnWithMonitoring('gemini', finalArgs, 'gemini', options);
+        
+        // If fallback also fails with rate limit, throw special error
+        if (fallbackResult.rateLimitDetected && fallbackResult.terminatedEarly) {
+          throw new RateLimitDetectedError('gemini', 'All Gemini models are rate limited. Consider using Claude instead.');
+        }
+        
+        return fallbackResult;
+      }
+      
+      // If we were already using flash and got rate limited, all models are exhausted
+      if (result.rateLimitDetected && result.terminatedEarly && bestModel === 'gemini-2.5-flash') {
+        throw new RateLimitDetectedError('gemini', 'All Gemini models are rate limited. Consider using Claude instead.');
+      }
+      
+      // If any rate limit was detected (even without early termination), this means the process failed
+      if (result.rateLimitDetected) {
+        throw new RateLimitDetectedError('gemini', 'Gemini model failed due to rate limit. Consider using Claude instead.');
       }
       
       return result;
     } catch (error) {
-      // Check if the error message contains rate limit indicators
+      // Only throw RateLimitDetectedError for the special "All models exhausted" case
       const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('All Gemini models are rate limited')) {
+        throw new RateLimitDetectedError('gemini', errorMessage);
+      }
+      
+      // For other rate limit errors, still mark the provider as rate limited
+      // but don't throw RateLimitDetectedError (let the internal fallback handle it)
       if (this.rateLimiter.isRateLimitError('gemini', errorMessage)) {
         await this.rateLimiter.markProviderRateLimited('gemini', errorMessage);
-        throw new RateLimitDetectedError('gemini', errorMessage);
       }
       
       throw error;

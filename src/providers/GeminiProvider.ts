@@ -59,13 +59,8 @@ export class GeminiProvider extends Provider {
     const issueNumber = this.extractIssueNumber(issueFile);
 
     try {
-      // Check if Gemini is rate limited
-      const isRateLimited = await this.rateLimiter.isProviderRateLimited('gemini');
-      if (isRateLimited) {
-        const status = await this.rateLimiter.getRateLimitStatus('gemini');
-        const remainingTime = Math.ceil((status.timeRemaining ?? 0) / 1000 / 60);
-        throw new Error(`Gemini is rate limited. Try again in ${remainingTime} minutes.`);
-      }
+      // Note: Removed pre-check for rate limiting to allow model fallback behavior
+      // The RateLimitMonitor will handle pro→flash fallback automatically
 
       // Read issue and plan files
       const issueContent = await fs.readFile(issueFile, 'utf-8');
@@ -195,13 +190,8 @@ When you make changes to files, please clearly indicate which files were modifie
    */
   async chat(prompt: string, options?: ChatOptions): Promise<string> {
     try {
-      // Check if Gemini is rate limited
-      const isRateLimited = await this.rateLimiter.isProviderRateLimited('gemini');
-      if (isRateLimited) {
-        const status = await this.rateLimiter.getRateLimitStatus('gemini');
-        const remainingTime = Math.ceil((status.timeRemaining ?? 0) / 1000 / 60);
-        throw new Error(`Gemini is rate limited. Try again in ${remainingTime} minutes.`);
-      }
+      // Note: Removed pre-check for rate limiting to allow model fallback behavior
+      // The RateLimitMonitor will handle pro→flash fallback automatically
       
       // Build the full prompt with optional system prompt
       let fullPrompt = prompt;
