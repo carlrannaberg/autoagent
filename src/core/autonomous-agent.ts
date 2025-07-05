@@ -889,6 +889,9 @@ ${result.output ?? 'Success'}`;
    * individual actionable tasks. This method is safe to use in active projects
    * as it preserves all existing TODO items and uses dynamic issue numbering.
    * 
+   * Templates are embedded within the package, so no external template files
+   * are required - bootstrap works out-of-the-box with zero configuration.
+   * 
    * @param masterPlanPath - Path to the master plan markdown file
    * 
    * @remarks
@@ -898,6 +901,7 @@ ${result.output ?? 'Success'}`;
    * - Safe to run multiple times without data loss
    * - Appends new issues to the Pending Issues section
    * - Never overwrites existing TODO.md content
+   * - Uses embedded templates (no external files needed)
    * 
    * @example
    * // First bootstrap in a new project
@@ -934,11 +938,11 @@ ${result.output ?? 'Success'}`;
       throw new Error(`Could not read master plan: ${masterPlanPath}`);
     }
 
-    // Use embedded templates
+    // Use embedded templates from the package - no external files needed
     const issueTemplate = DEFAULT_ISSUE_TEMPLATE;
     const planTemplate = DEFAULT_PLAN_TEMPLATE;
 
-    // Validate templates are defined
+    // Validate embedded templates are available
     if (!issueTemplate || !planTemplate) {
       throw new Error('Embedded templates are not properly defined');
     }

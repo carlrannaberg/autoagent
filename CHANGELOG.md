@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Update createPlan method to support optional title-based naming for consistency with issue filenames
 - Bootstrap command now uses embedded templates instead of reading from filesystem
+  - Templates are bundled with the package for zero-configuration setup
+  - No external template files required - bootstrap works out-of-the-box
+  - Templates automatically update when you update AutoAgent
 
 ### Added
 - Add comprehensive documentation for filename conventions in README.md

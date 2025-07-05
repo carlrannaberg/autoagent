@@ -281,6 +281,16 @@ autoagent bootstrap --workspace /path/to/project
 
 The bootstrap command reads your master plan (markdown file) and creates the first actionable issue from it. **Bootstrap is safe to use in active projects** - it preserves all existing TODO items and automatically uses the next available issue number.
 
+##### Built-in Templates
+
+AutoAgent includes embedded templates for issue and plan creation, so you can start using bootstrap immediately without any setup. The templates are automatically included with the package and work out-of-the-box.
+
+**Features of Built-in Templates:**
+- ✅ **Zero configuration** - Templates are embedded in the package
+- ✅ **Consistent formatting** - Same template structure for all users
+- ✅ **Always up-to-date** - Templates update when you update AutoAgent
+- ✅ **Future-ready** - Support for custom template overrides coming soon
+
 **Key Safety Features:**
 - ✅ **Preserves existing TODO items** - Never overwrites your current TODO.md
 - ✅ **Dynamic issue numbering** - Automatically finds the next available issue number
