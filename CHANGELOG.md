@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2025-07-05
+
+### Documentation
+- Update README.md with comprehensive reflection engine documentation
+  - Add detailed reflection engine section with configuration examples
+  - Update CLI usage examples to show reflection-related flags (`--reflection-iterations`, `--no-reflection`)
+  - Update programmatic API examples to show modern constructor pattern
+  - Add environment variable documentation for testing scenarios
+  - Improve configuration examples with reflection settings
+
 ## [0.5.0] - 2025-07-05
 
 ### Added
