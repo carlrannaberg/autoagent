@@ -185,6 +185,60 @@ describe('ClaudeProvider', () => {
       expect(result.error).toContain('Rate limit exceeded');
     });
 
+    it('should detect Claude usage limit errors from JSON', async () => {
+      vi.mocked(fs.readFile)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content');
+      
+      const executePromise = provider.execute(
+        'issue.md',
+        'plan.md',
+        [],
+        undefined
+      );
+
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
+      // Emit spawn event first
+      mockProcess.emit('spawn');
+      
+      // Simulate error message in JSON format
+      const errorMessage = JSON.stringify({ type: 'error', message: 'Claude AI usage limit reached' });
+      mockProcess.stdout.emit('data', errorMessage);
+      mockProcess.emit('close', 1);
+
+      const result = await executePromise;
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Claude AI usage limit reached');
+    });
+
+    it('should detect Claude usage limit errors from stderr', async () => {
+      vi.mocked(fs.readFile)
+        .mockResolvedValueOnce('Issue content')
+        .mockResolvedValueOnce('Plan content');
+      
+      const executePromise = provider.execute(
+        'issue.md',
+        'plan.md',
+        [],
+        undefined
+      );
+
+      // Need to wait for fs reads to complete
+      await new Promise(resolve => setImmediate(resolve));
+      
+      // Emit spawn event first
+      mockProcess.emit('spawn');
+      
+      mockProcess.stderr.emit('data', 'Claude AI usage limit reached');
+      mockProcess.emit('close', 1);
+
+      const result = await executePromise;
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Claude AI usage limit reached');
+    });
+
     it('should handle context files correctly', async () => {
       vi.mocked(fs.readFile)
         .mockResolvedValueOnce('Issue content')

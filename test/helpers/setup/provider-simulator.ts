@@ -154,6 +154,7 @@ export class ProviderFailoverSimulator {
     }
     // Retryable errors
     if (errorMessage.includes('rate limit') ||
+        errorMessage.includes('usage limit') ||
         errorMessage.includes('network timeout') ||
         errorMessage.includes('model not available') ||
         errorMessage.includes('random failure')) {

@@ -125,6 +125,7 @@ ${planContent}`;
       let filesChanged: string[] = [];
       let output = '';
       let finalResult = '';
+      let errorMessage = '';
       
       // Split by newlines to process each JSON message
       const lines = result.stdout.split('\n').filter(line => line.trim().length > 0);
@@ -132,6 +133,11 @@ ${planContent}`;
       for (const line of lines) {
         try {
           const message = JSON.parse(line) as Record<string, unknown>;
+          
+          // Look for error messages
+          if (message.type === 'error' && typeof message.message === 'string') {
+            errorMessage = message.message;
+          }
           
           // Look for assistant messages with text content
           if (message.type === 'assistant' && message.message !== null && typeof message.message === 'object') {
@@ -155,6 +161,11 @@ ${planContent}`;
         } catch (parseError) {
           // Skip non-JSON lines
         }
+      }
+      
+      // If we found an error message in JSON, throw it
+      if (errorMessage) {
+        throw new Error(errorMessage);
       }
       
       // Use final result if available, otherwise use accumulated output
@@ -275,11 +286,26 @@ ${planContent}`;
             stderr
           });
         } else {
+          // Try to extract error message from stdout JSON first
+          let errorFromStdout = '';
+          const lines = stdout.split('\n').filter(line => line.trim() !== '');
+          for (const line of lines) {
+            try {
+              const message = JSON.parse(line) as Record<string, unknown>;
+              if (message.type === 'error' && typeof message.message === 'string') {
+                errorFromStdout = message.message;
+                break;
+              }
+            } catch (e) {
+              // Not JSON, ignore
+            }
+          }
+          
           resolve({
             success: false,
             stdout,
             stderr,
-            error: stderr || `Claude exited with code ${code}`
+            error: errorFromStdout || stderr || `Claude exited with code ${code}`
           });
         }
       });

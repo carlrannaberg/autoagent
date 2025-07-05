@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix Claude provider to properly detect "Claude AI usage limit reached" errors for failover
+  - Now checks both stdout JSON messages and stderr for usage limit errors
+  - Ensures proper failover to alternative providers when Claude hits usage limits
+
 ### Added
 - Add comprehensive test coverage for smart run command functionality
   - Unit tests for isPlanFile() detection with various edge cases

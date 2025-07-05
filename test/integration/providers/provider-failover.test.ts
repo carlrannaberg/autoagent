@@ -258,6 +258,7 @@ describe('Provider Failover Integration Tests', () => {
     it('should handle different error types appropriately', async () => {
       const errorTypes = [
         { error: new Error('Rate limit exceeded'), shouldFailover: true },
+        { error: new Error('Claude AI usage limit reached'), shouldFailover: true },
         { error: new Error('Invalid API key'), shouldFailover: false },
         { error: new Error('Network timeout'), shouldFailover: true },
         { error: new Error('Model not available'), shouldFailover: true }
