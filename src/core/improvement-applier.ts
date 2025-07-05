@@ -57,7 +57,7 @@ export class DefaultImprovementApplier implements ImprovementApplier {
           failedChanges.push({ change, error: errorMessage });
           Logger.error(`❌ Failed to apply ${change.type}: ${errorMessage}`);
           
-          await this.rollback(backup);
+          await this.rollback(backup, workDir);
           return {
             success: false,
             appliedChanges: [],
@@ -77,7 +77,7 @@ export class DefaultImprovementApplier implements ImprovementApplier {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
-      await this.rollback(backup);
+      await this.rollback(backup, workDir);
       
       return {
         success: false,
@@ -131,29 +131,19 @@ export class DefaultImprovementApplier implements ImprovementApplier {
       } else if (change.type === ChangeType.MODIFY_PLAN || change.type === ChangeType.ADD_PLAN) {
         files.add(path.join(workspace, 'plans', change.target));
       } else if (change.type === ChangeType.ADD_DEPENDENCY) {
-        const issueMatch = change.target.match(/^(\d+)-/);
-        if (issueMatch?.[1]) {
-          const issueFiles = this.findIssueFile(parseInt(issueMatch[1], 10), workspace);
-          for (const file of issueFiles) {
-            files.add(file);
-          }
-        }
+        // For ADD_DEPENDENCY, the target is the issue file being modified
+        files.add(path.join(workspace, 'issues', change.target));
       }
     }
     
     return Array.from(files);
   }
   
-  private findIssueFile(_issueNumber: number, _workspace: string): string[] {
-    // This method is not used anymore, keeping for backward compatibility
-    return [];
-  }
-  
-  private async rollback(backup: BackupInfo): Promise<void> {
+  private async rollback(backup: BackupInfo, workspace: string): Promise<void> {
     Logger.info(`🔄 Rolling back changes using backup from ${backup.timestamp}`);
     
     for (const [relativePath, content] of backup.files) {
-      const fullPath = path.join(process.cwd(), relativePath);
+      const fullPath = path.join(workspace, relativePath);
       await fs.mkdir(path.dirname(fullPath), { recursive: true });
       await fs.writeFile(fullPath, content, 'utf-8');
     }
@@ -179,7 +169,7 @@ export class DefaultImprovementApplier implements ImprovementApplier {
         await this.applyAddDependency(change, workspace);
         break;
       default:
-        throw new Error(`Unsupported change type: ${change.type}`);
+        throw new Error(`Unsupported change type: ${change.type as string}`);
     }
   }
   
@@ -239,14 +229,14 @@ export class DefaultImprovementApplier implements ImprovementApplier {
   
   private async applyAddDependency(change: ImprovementChange, workspace: string): Promise<void> {
     const issueMatch = change.target.match(/^(\d+)-/);
-    if (!issueMatch?.[1]) {
+    if (issueMatch?.[1] === null || issueMatch?.[1] === undefined || issueMatch[1] === '') {
       throw new Error(`Invalid dependency target format: ${change.target}`);
     }
     
     const issueNumber = parseInt(issueMatch[1], 10);
     const issueFile = await this.findIssueFileByNumber(issueNumber, workspace);
     
-    if (!issueFile) {
+    if (issueFile === null || issueFile === '') {
       throw new Error(`Issue file not found for number: ${issueNumber}`);
     }
     
@@ -258,12 +248,12 @@ export class DefaultImprovementApplier implements ImprovementApplier {
   
   private extractTitleFromContent(content: string): string {
     const titleMatch = content.match(/^#\s+Issue\s+\d+:\s+(.+)$/m);
-    if (titleMatch?.[1]) {
+    if (titleMatch?.[1] !== undefined && titleMatch[1] !== null && titleMatch[1] !== '') {
       return titleMatch[1];
     }
     
     const requirementMatch = content.match(/##\s+Requirement\s*\n(.+?)(?:\n|$)/);
-    if (requirementMatch?.[1]) {
+    if (requirementMatch?.[1] !== undefined && requirementMatch[1] !== null && requirementMatch[1] !== '') {
       return requirementMatch[1].trim().substring(0, 50);
     }
     
@@ -305,7 +295,10 @@ ${content}`;
         if (section === 'Acceptance Criteria' || section === 'Resources') {
           const existingItems = this.parseListItems(sections.get(section) ?? '');
           const newItems = this.parseListItems(content);
-          const mergedItems = [...new Set([...existingItems, ...newItems])];
+          // Create a set of item text to avoid duplicates
+          const itemTexts = new Set<string>();
+          [...existingItems, ...newItems].forEach(item => itemTexts.add(item));
+          const mergedItems = Array.from(itemTexts);
           sections.set(section, mergedItems.map(item => `- [ ] ${item}`).join('\n'));
         } else {
           sections.set(section, content);
@@ -381,7 +374,7 @@ ${content}`;
     
     for (const line of lines) {
       const match = line.match(/^-\s+(?:\[.\]\s+)?(.+)$/);
-      if (match?.[1]) {
+      if (match?.[1] !== undefined && match[1] !== null && match[1] !== '') {
         items.push(match[1]);
       }
     }
@@ -431,7 +424,7 @@ ${content}`;
   
   private extractIssueNumberFromPlan(target: string): number {
     const match = target.match(/(?:plan-for-issue-|^)(\d+)/);
-    if (match?.[1]) {
+    if (match?.[1] !== undefined && match[1] !== null && match[1] !== '') {
       return parseInt(match[1], 10);
     }
     throw new Error(`Could not extract issue number from plan target: ${target}`);
@@ -440,12 +433,12 @@ ${content}`;
   private async getIssueTitleByNumber(issueNumber: number, workspace: string): Promise<string> {
     const issueFile = await this.findIssueFileByNumber(issueNumber, workspace);
     
-    if (!issueFile) {
+    if (issueFile === null || issueFile === '') {
       return `Issue ${issueNumber}`;
     }
     
     const issue = await this.fileManager.readIssue(issueFile);
-    return issue?.title ?? `Issue ${issueNumber}`;
+    return (issue?.title !== null && issue?.title !== undefined && issue.title !== '') ? issue.title : `Issue ${issueNumber}`;
   }
   
   private async findIssueFileByNumber(issueNumber: number, workspace: string): Promise<string | null> {

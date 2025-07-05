@@ -82,7 +82,7 @@ ${improvedContent}
 
 ## Changes Made
 
-${improvements.map((imp, i) => `- ${imp}`).join('\n')}`;
+${improvements.map((imp) => `- ${imp}`).join('\n')}`;
 }
 
 export async function createReflectionContext(dir: string, specPath: string): Promise<ReflectionContext> {

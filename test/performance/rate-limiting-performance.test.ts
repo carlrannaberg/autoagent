@@ -104,7 +104,7 @@ describe('Rate Limiting Performance Tests', () => {
       // Should be very fast - less than 1ms per check on average
       expect(averageTime).toBeLessThan(1);
       
-      console.log(`Rate limit checks: ${iterations} operations in ${totalTime.toFixed(2)}ms (${averageTime.toFixed(3)}ms avg)`);
+      // Performance info: Rate limit checks: ${iterations} operations in ${totalTime.toFixed(2)}ms (${averageTime.toFixed(3)}ms avg)
     });
 
     it('should check rate limit status quickly when rate limited', async () => {
@@ -125,7 +125,7 @@ describe('Rate Limiting Performance Tests', () => {
       // Should be very fast even when rate limited
       expect(averageTime).toBeLessThan(1);
       
-      console.log(`Rate limited checks: ${iterations} operations in ${totalTime.toFixed(2)}ms (${averageTime.toFixed(3)}ms avg)`);
+      // Performance info: Rate limited checks: ${iterations} operations in ${totalTime.toFixed(2)}ms (${averageTime.toFixed(3)}ms avg)
     });
 
     it('should handle concurrent rate limit checks efficiently', async () => {
@@ -144,7 +144,7 @@ describe('Rate Limiting Performance Tests', () => {
       // Concurrent checks should complete quickly
       expect(totalTime).toBeLessThan(100);
       
-      console.log(`Concurrent rate limit checks: ${concurrentChecks} operations in ${totalTime.toFixed(2)}ms`);
+      // Performance info: Concurrent rate limit checks: ${concurrentChecks} operations in ${totalTime.toFixed(2)}ms
     });
   });
 
@@ -181,7 +181,7 @@ describe('Rate Limiting Performance Tests', () => {
       // Cache loading should be fast
       expect(averageTime).toBeLessThan(5);
       
-      console.log(`Cache loading: ${iterations} operations in ${totalTime.toFixed(2)}ms (${averageTime.toFixed(3)}ms avg)`);
+      // Performance info: Cache loading: ${iterations} operations in ${totalTime.toFixed(2)}ms (${averageTime.toFixed(3)}ms avg)
     });
 
     it('should handle cache saves efficiently', async () => {
@@ -199,7 +199,7 @@ describe('Rate Limiting Performance Tests', () => {
       // Cache saves should be reasonably fast
       expect(averageTime).toBeLessThan(10);
       
-      console.log(`Cache saves: ${iterations} operations in ${totalTime.toFixed(2)}ms (${averageTime.toFixed(3)}ms avg)`);
+      // Performance info: Cache saves: ${iterations} operations in ${totalTime.toFixed(2)}ms (${averageTime.toFixed(3)}ms avg)
     });
   });
 
@@ -234,7 +234,7 @@ describe('Rate Limiting Performance Tests', () => {
       // Pattern matching should be very fast
       expect(averageTime).toBeLessThan(0.01);
       
-      console.log(`Pattern matching: ${totalChecks} checks in ${totalTime.toFixed(2)}ms (${(averageTime * 1000).toFixed(3)}μs avg)`);
+      // Performance info: Pattern matching: ${totalChecks} checks in ${totalTime.toFixed(2)}ms (${(averageTime * 1000).toFixed(3)}μs avg)
     });
   });
 
@@ -266,7 +266,7 @@ describe('Rate Limiting Performance Tests', () => {
       // This is mainly testing that we don't have any blocking operations
       expect(averageTime).toBeLessThan(20); // 20ms per spawn call is reasonable
       
-      console.log(`Process monitoring: ${iterations} spawns in ${totalTime.toFixed(2)}ms (${averageTime.toFixed(2)}ms avg)`);
+      // Performance info: Process monitoring: ${iterations} spawns in ${totalTime.toFixed(2)}ms (${averageTime.toFixed(2)}ms avg)
     });
 
     it('should handle stream chunks efficiently during rate limit detection', async () => {
@@ -302,7 +302,7 @@ describe('Rate Limiting Performance Tests', () => {
       // Should handle many chunks quickly
       expect(totalTime).toBeLessThan(100);
       
-      console.log(`Stream processing with rate limit: ${totalTime.toFixed(2)}ms`);
+      // Performance info: Stream processing with rate limit: ${totalTime.toFixed(2)}ms
     });
   });
 
@@ -328,7 +328,7 @@ describe('Rate Limiting Performance Tests', () => {
       // Memory increase should be minimal (less than 2MB)
       expect(memoryIncrease).toBeLessThan(2 * 1024 * 1024);
       
-      console.log(`Memory increase after 1000 operations: ${(memoryIncrease / 1024).toFixed(2)}KB`);
+      // Performance info: Memory increase after 1000 operations: ${(memoryIncrease / 1024).toFixed(2)}KB
     });
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { reflectiveDecomposition } from '../../../src/core/reflection-engine.js';
+import { reflectiveDecomposition, DecompositionResult } from '../../../src/core/reflection-engine.js';
 import { Provider } from '../../../src/providers/Provider.js';
 import { AgentConfig, ChangeType } from '../../../src/types/index.js';
 
@@ -15,7 +15,7 @@ describe('Reflection Engine Integration Tests', () => {
     chat: vi.fn()
   } as unknown as Provider);
 
-  const createDecompositionResult = (overrides = {}) => ({
+  const createDecompositionResult = (overrides: Partial<DecompositionResult> = {}): DecompositionResult => ({
     specFile: 'test-spec.md',
     specContent: 'Test specification content with detailed requirements',
     issueFiles: ['1-feature.md', '2-bug-fix.md', '3-enhancement.md'],

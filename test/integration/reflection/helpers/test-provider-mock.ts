@@ -15,18 +15,18 @@ export class TestProviderMock implements Provider {
   constructor(name: string = 'test-provider') {
     this.name = name;
     this.checkAvailability = vi.fn().mockResolvedValue(true);
-    this.execute = vi.fn().mockImplementation(async (prompt: string) => ({
+    this.execute = vi.fn().mockImplementation((prompt: string) => ({
       success: true,
       output: `Executed: ${prompt}`
     }));
-    this.chat = vi.fn().mockImplementation(async (prompt: string) => {
+    this.chat = vi.fn().mockImplementation((prompt: string) => {
       if (this.customHandler) {
         return this.customHandler(prompt);
       }
       if (this.responseQueue.length > 0 && this.responseIndex < this.responseQueue.length) {
         return this.responseQueue[this.responseIndex++];
       }
-      return 'Default response';
+      return Promise.resolve('Default response');
     });
   }
   
@@ -35,7 +35,7 @@ export class TestProviderMock implements Provider {
   }
   
   setCustomResponse(keyword: string, response: string): void {
-    vi.mocked(this.execute).mockImplementation(async (prompt: string) => {
+    vi.mocked(this.execute).mockImplementation((prompt: string) => {
       if (prompt.includes(keyword)) {
         return { success: true, output: response };
       }
@@ -57,6 +57,6 @@ export class TestProviderMock implements Provider {
         recommendedChanges: []
       })
     };
-    return responses[keyword] || 'Default response';
+    return responses[keyword] ?? 'Default response';
   }
 }

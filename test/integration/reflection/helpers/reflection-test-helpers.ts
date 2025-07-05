@@ -228,7 +228,7 @@ export async function verifyImprovementsApplied(
           break;
           
         case ChangeType.MODIFY_ISSUE:
-        case ChangeType.MODIFY_PLAN:
+        case ChangeType.MODIFY_PLAN: {
           // Modified content should be present
           const contentLines = improvement.content.split('\n').filter(line => line.trim());
           for (const line of contentLines) {
@@ -238,6 +238,7 @@ export async function verifyImprovementsApplied(
             }
           }
           break;
+        }
           
         case ChangeType.ADD_DEPENDENCY:
           // Dependency section should exist with the content
@@ -247,7 +248,7 @@ export async function verifyImprovementsApplied(
           break;
       }
     } catch (error) {
-      errors.push(`Failed to verify ${improvement.target}: ${error}`);
+      errors.push(`Failed to verify ${improvement.target}: ${error as string}`);
     }
   }
   

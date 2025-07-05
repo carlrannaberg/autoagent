@@ -9,7 +9,6 @@ import {
   cleanupTempDir,
   createSpecFile,
   createIssueFiles,
-  readIssueFile,
   createMockProviderResponse,
   createMockReflectionResponse,
   createMockImprovementResponse,

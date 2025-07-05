@@ -6,6 +6,7 @@ import { AutonomousAgent } from '../../../src/core/autonomous-agent';
 import { applyImprovements } from '../../../src/core/improvement-applier';
 import { TestProviderMock } from './helpers/test-provider-mock';
 import { ProviderName, ChangeType } from '../../../src/types/index';
+import { Provider } from '../../../src/providers/Provider';
 
 describe('Bootstrap with Reflection Integration Tests', () => {
   let testDir: string;
@@ -25,8 +26,8 @@ describe('Bootstrap with Reflection Integration Tests', () => {
     
     // Mock provider creation to use our test provider
     vi.doMock('../../../src/providers', () => ({
-      createProvider: () => providerMock,
-      getFirstAvailableProvider: async () => providerMock
+      createProvider: (): Provider => providerMock,
+      getFirstAvailableProvider: (): Promise<Provider | null> => Promise.resolve(providerMock)
     }));
   });
 
@@ -203,7 +204,7 @@ Implement rate limiting for authentication endpoints to prevent brute force atta
       ];
 
       let reflectionCallCount = 0;
-      providerMock.setCustomHandler(async (prompt: string) => {
+      providerMock.setCustomHandler((prompt: string) => {
         if (prompt.includes('Reflection Instructions')) {
           const response = reflectionIterations[reflectionCallCount];
           reflectionCallCount++;
@@ -330,11 +331,11 @@ Implement add and subtract functions.
       await fs.writeFile(simpleSpecPath, '# Tiny Task\n\nAdd a hello function.');
 
       let reflectionCalled = false;
-      providerMock.setCustomHandler(async (prompt: string) => {
+      providerMock.setCustomHandler((prompt: string) => {
         if (prompt.includes('Reflection Instructions')) {
           reflectionCalled = true;
         }
-        return `Issues created: issues/1-hello-function.md`;
+        return 'Issues created: issues/1-hello-function.md';
       });
 
       agent = new AutonomousAgent({
@@ -378,7 +379,7 @@ Build a complete e-commerce platform with:
       ];
 
       let iterationIndex = 0;
-      providerMock.setCustomHandler(async (prompt: string) => {
+      providerMock.setCustomHandler((prompt: string) => {
         if (prompt.includes('Reflection Instructions')) {
           const iteration = iterations[iterationIndex++];
           return JSON.stringify({
@@ -419,7 +420,7 @@ Build a complete e-commerce platform with:
       await fs.writeFile(specPath, '# Complex System\n\nBuild everything.');
 
       let iterationCount = 0;
-      providerMock.setCustomHandler(async (prompt: string) => {
+      providerMock.setCustomHandler((prompt: string) => {
         if (prompt.includes('Reflection Instructions')) {
           iterationCount++;
           return JSON.stringify({
@@ -461,7 +462,7 @@ Build a complete e-commerce platform with:
       await fs.writeFile(specPath, '# Test Spec\n\nTest content.');
 
       let attemptCount = 0;
-      providerMock.setCustomHandler(async (prompt: string) => {
+      providerMock.setCustomHandler((prompt: string) => {
         if (prompt.includes('Reflection Instructions')) {
           attemptCount++;
           if (attemptCount === 1) {
@@ -515,7 +516,7 @@ Build a complete e-commerce platform with:
       await fs.writeFile(specPath, '# Config Test\n\n' + 'A'.repeat(1000)); // Make it complex
 
       let reflectionConfig: any;
-      providerMock.setCustomHandler(async (prompt: string) => {
+      providerMock.setCustomHandler((prompt: string) => {
         if (prompt.includes('Reflection Instructions')) {
           // Capture the iteration number from prompt
           const match = prompt.match(/Iteration (\d+)/);
@@ -596,11 +597,10 @@ Build a complete e-commerce platform with:
 
       const abortController = new AbortController();
       
-      providerMock.setCustomHandler(async (prompt: string) => {
+      providerMock.setCustomHandler((prompt: string) => {
         if (prompt.includes('Reflection Instructions')) {
           // Simulate interruption during reflection
           setTimeout(() => abortController.abort(), 50);
-          await new Promise(resolve => setTimeout(resolve, 100));
           
           return JSON.stringify({
             improvementScore: 0.5,

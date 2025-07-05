@@ -104,7 +104,7 @@ describe('Provider Integration with Reflection', () => {
 
   it('should handle provider failover during reflection', async () => {
     // First call returns Claude, subsequent calls return Gemini
-    const getProviderSpy = vi.spyOn(ProviderFactory, 'getProvider')
+    vi.spyOn(ProviderFactory, 'getProvider')
       .mockResolvedValueOnce(mockClaude)
       .mockResolvedValue(mockGemini);
     
@@ -189,11 +189,11 @@ describe('Provider Integration with Reflection', () => {
     
     // Track call timestamps
     const callTimes: number[] = [];
-    mockGenerate.mockImplementation(async () => {
+    mockGenerate.mockImplementation(() => {
       callTimes.push(Date.now());
-      return createMockProviderResponse(
+      return Promise.resolve(createMockProviderResponse(
         createMockReflectionResponse(['Some improvement'], 8.5)
-      );
+      ));
     });
 
     await runReflection({
@@ -207,7 +207,7 @@ describe('Provider Integration with Reflection', () => {
   });
 
   it('should handle provider timeout gracefully', async () => {
-    const getProviderSpy = vi.spyOn(ProviderFactory, 'getProvider')
+    vi.spyOn(ProviderFactory, 'getProvider')
       .mockResolvedValueOnce(mockClaude)
       .mockResolvedValue(mockGemini);
     
@@ -236,13 +236,14 @@ describe('Provider Integration with Reflection', () => {
   it('should handle provider switching mid-reflection', async () => {
     // Simulate provider becoming unavailable mid-process
     let claudeCallCount = 0;
-    mockClaude.isAvailable = vi.fn().mockImplementation(async () => {
-      return claudeCallCount++ < 2; // Available for first 2 calls only
+    mockClaude.isAvailable = vi.fn().mockImplementation(() => {
+      return Promise.resolve(claudeCallCount++ < 2); // Available for first 2 calls only
     });
     
-    const getProviderSpy = vi.spyOn(ProviderFactory, 'getProvider')
+    vi.spyOn(ProviderFactory, 'getProvider')
       .mockImplementation(async (preferred) => {
-        if (preferred === 'claude' && await mockClaude.isAvailable()) {
+        const isAvailable = await mockClaude.isAvailable();
+        if (preferred === 'claude' && isAvailable === true) {
           return mockClaude;
         }
         return mockGemini;

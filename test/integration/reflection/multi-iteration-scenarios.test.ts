@@ -52,7 +52,7 @@ describe('Multi-Iteration Reflection Scenarios', () => {
     ];
 
     // Mock responses for each iteration
-    iterations.forEach((iter, index) => {
+    iterations.forEach((iter, _index) => {
       // Reflection response
       mockGenerate.mockResolvedValueOnce(createMockProviderResponse(
         createMockReflectionResponse(iter.improvements, iter.score)
@@ -80,7 +80,6 @@ describe('Multi-Iteration Reflection Scenarios', () => {
     expect(result.improvements).toHaveLength(4);
     
     // Verify all improvements are tracked
-    const allImprovements = iterations.flatMap(iter => iter.improvements);
     result.improvements.forEach((improvement, index) => {
       expect(improvement.iteration).toBe(index + 1);
       expect(improvement.score).toBe(iterations[index].score);

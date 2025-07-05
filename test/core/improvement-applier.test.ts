@@ -4,9 +4,7 @@ import * as path from 'path';
 import { existsSync } from 'fs';
 import { 
   DefaultImprovementApplier,
-  applyImprovements,
-  type ApplicationResult,
-  type BackupInfo
+  applyImprovements
 } from '../../src/core/improvement-applier.js';
 import { ChangeType, type ImprovementChange } from '../../src/types/index.js';
 
@@ -405,8 +403,9 @@ Test requirements
       vi.mocked(fs.readFile).mockResolvedValue('Original content');
       
       const writeFileCalls: Array<[string, string]> = [];
-      vi.mocked(fs.writeFile).mockImplementation(async (path, content) => {
+      vi.mocked(fs.writeFile).mockImplementation((path, content) => {
         writeFileCalls.push([path as string, content as string]);
+        return Promise.resolve();
       });
       
       const result = await applier.applyImprovements(changes, mockWorkspace);
@@ -433,15 +432,15 @@ Test requirements
       };
       
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(fs.readFile).mockImplementation(async (filepath) => {
+      vi.mocked(fs.readFile).mockImplementation((filepath) => {
         if ((filepath as string).includes('1-test.md')) {
-          return `# Issue 1: Test
+          return Promise.resolve(`# Issue 1: Test
 
 ## Acceptance Criteria
 - [ ] Existing criterion
-- [ ] Old criterion`;
+- [ ] Old criterion`);
         }
-        return '';
+        return Promise.resolve('');
       });
       
       const result = await applier.applyImprovements([change], mockWorkspace);
@@ -450,15 +449,17 @@ Test requirements
       
       // Check all writeFile calls
       const allCalls = vi.mocked(fs.writeFile).mock.calls;
-      console.log('All writeFile calls:', allCalls.map(call => call[0]));
       
-      const writeCall = allCalls.find(
-        call => (call[0] as string).includes('1-test.md')
+      // Find the LAST writeFile call for the issue file (not the backup)
+      const issueCalls = allCalls.filter(
+        call => (call[0] as string).includes('issues/1-test.md')
       );
+      
+      expect(issueCalls.length).toBeGreaterThan(0);
+      const writeCall = issueCalls[issueCalls.length - 1]; // Get the last one
       
       expect(writeCall).toBeDefined();
       const content = writeCall?.[1] as string;
-      console.log('Written content:', content); // Debug output
       const criteriaMatches = content.match(/- \[ \] Existing criterion/g);
       expect(criteriaMatches?.length).toBe(1); // No duplicates
       expect(content).toContain('New criterion');
@@ -491,17 +492,20 @@ Requirements here
       
       expect(result.success).toBe(true);
       
-      const writeCall = vi.mocked(fs.writeFile).mock.calls.find(
-        call => (call[0] as string).includes('1-test.md')
+      // Find the LAST writeFile call for the issue file (not the backup)
+      const allCalls = vi.mocked(fs.writeFile).mock.calls;
+      const issueCalls = allCalls.filter(
+        call => (call[0] as string).includes('issues/1-test.md')
       );
+      const writeCall = issueCalls[issueCalls.length - 1];
       
       const content = writeCall?.[1] as string;
-      const sections = content.match(/## \w+/g);
+      const sections = content.match(/## [^\n]+/g);
       
       expect(sections).toEqual([
         '## Requirements',
-        '## Acceptance',
-        '## Technical',
+        '## Acceptance Criteria',
+        '## Technical Details',
         '## Resources'
       ]);
     });
@@ -548,11 +552,15 @@ describe('applyImprovements function', () => {
       type: ChangeType.ADD_ISSUE,
       target: 'test.md',
       description: 'Test',
-      content: 'Content',
+      content: '## Requirement\nTest requirement',
       rationale: 'Test'
     }];
     
     vi.mocked(fs.readdir).mockResolvedValue([]);
+    vi.mocked(fs.mkdir).mockResolvedValue(undefined);
+    vi.mocked(fs.writeFile).mockResolvedValue(undefined);
+    vi.mocked(fs.readFile).mockRejectedValueOnce({ code: 'ENOENT' } as any); // For TODO.md
+    vi.mocked(existsSync).mockReturnValue(false);
     
     const result = await applyImprovements(changes, '/workspace');
     

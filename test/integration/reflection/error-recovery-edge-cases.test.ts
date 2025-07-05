@@ -9,7 +9,6 @@ import {
   cleanupTempDir,
   createSpecFile,
   createMockProviderResponse,
-  createMockProviderError,
   createMockReflectionResponse,
   createSampleSpec
 } from './helpers/test-helpers.js';
@@ -316,8 +315,8 @@ describe('Error Recovery and Edge Cases', () => {
       ));
     
     // Make file read-only after first read
-    setTimeout(async () => {
-      await chmod(specPath, 0o444);
+    setTimeout(() => {
+      void chmod(specPath, 0o444);
     }, 50);
 
     const result = await runReflection({

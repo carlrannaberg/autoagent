@@ -12,7 +12,7 @@ import {
 } from '../types/index.js';
 import { DEFAULT_REFLECTION_CONFIG, mergeReflectionConfig } from './reflection-defaults.js';
 
-interface DecompositionResult {
+export interface DecompositionResult {
   specFile: string;
   specContent: string;
   issueFiles: string[];
@@ -224,10 +224,13 @@ export async function reflectiveDecomposition(
         iteration
       );
       
-      state.improvements.push(analysis);
+      // Only add to improvements if it's a valid analysis (not a failure)
+      if (analysis.reasoning !== 'Reflection analysis failed') {
+        state.improvements.push(analysis);
+      }
       state.currentScore = analysis.score;
       
-      if (analysis.score < reflectionConfig.improvementThreshold) {
+      if (analysis.score <= reflectionConfig.improvementThreshold) {
         Logger.info(`✅ Reflection complete - minimal improvements found (score: ${analysis.score.toFixed(2)})`);
         state.isComplete = true;
         break;
