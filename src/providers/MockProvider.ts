@@ -1,5 +1,6 @@
 import { Provider } from './Provider';
 import { ExecutionResult } from '../types';
+import { ChatOptions } from './types';
 
 /**
  * Mock provider for testing purposes.
@@ -94,5 +95,50 @@ export class MockProvider extends Provider {
       output: mockOutput,
       filesChanged
     };
+  }
+
+  /**
+   * Send a chat message and get a mock response.
+   * Used for testing reflection and other interactive AI operations.
+   * @param prompt - The prompt to send
+   * @param options - Optional configuration for the chat request
+   * @returns Promise resolving to mock response
+   */
+  chat(prompt: string, options?: ChatOptions): Promise<string> {
+    // Suppress unused parameter warnings
+    void options;
+
+    // Check for mock error conditions
+    if (process.env.AUTOAGENT_MOCK_CHAT_FAIL === 'true') {
+      throw new Error('Mock chat failed as requested');
+    }
+
+    // Check if we should return specific reflection analysis
+    if (prompt.includes('You are reviewing a project decomposition')) {
+      // Return a valid reflection analysis response
+      return Promise.resolve(JSON.stringify({
+        improvementScore: 0.2,
+        identifiedGaps: [
+          {
+            type: 'detail',
+            description: 'Mock gap for testing',
+            relatedIssues: ['issue-1']
+          }
+        ],
+        recommendedChanges: [
+          {
+            type: 'ADD_ISSUE',
+            target: 'new-issue',
+            description: 'Mock change for testing',
+            content: 'Mock content',
+            rationale: 'Mock rationale'
+          }
+        ],
+        reasoning: 'Mock reflection analysis for testing'
+      }));
+    }
+
+    // Default mock response
+    return Promise.resolve('Mock response to: ' + prompt.substring(0, 50) + '...');
   }
 }

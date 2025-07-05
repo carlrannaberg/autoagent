@@ -2,8 +2,9 @@ import { Provider } from './Provider';
 import { ClaudeProvider } from './ClaudeProvider';
 import { GeminiProvider } from './GeminiProvider';
 import { MockProvider } from './MockProvider';
+import { ProviderInterface, ChatOptions } from './types';
 
-export { Provider, ClaudeProvider, GeminiProvider, MockProvider };
+export { Provider, ClaudeProvider, GeminiProvider, MockProvider, ProviderInterface, ChatOptions };
 
 /**
  * Create a provider instance based on the provider type.

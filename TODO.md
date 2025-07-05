@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #56]** Build reflection engine core logic - `issues/56-build-reflection-engine-core-logic.md`
 - [ ] **[Issue #57]** Create improvement analyzer utility - `issues/57-create-improvement-analyzer-utility.md`
 - [ ] **[Issue #58]** Integrate reflection with bootstrap process - `issues/58-integrate-reflection-with-bootstrap-process.md`
 - [ ] **[Issue #59]** Add CLI options for reflection control - `issues/59-add-cli-options-for-reflection-control.md`
@@ -35,6 +34,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #85]** Update documentation for auto-push feature - `issues/85-update-documentation-for-auto-push-feature.md`
 
 ## Completed Issues
+- [x] **[Issue #56]** Build reflection engine core logic - `issues/56-build-reflection-engine-core-logic.md`
 - [x] **[Issue #55]** Implement reflection configuration support - `issues/55-implement-reflection-configuration-support.md`
 - [x] **[Issue #54]** Create reflection engine core types and interfaces - `issues/54-create-reflection-engine-core-types.md`
 - [x] **[Issue #53]** Update documentation for smart run command - `issues/53-update-documentation-for-smart-run-command.md`

@@ -230,13 +230,25 @@ export interface ImprovementChange {
   /** Type of change to make */
   type: ChangeType;
   /** Target issue or plan identifier (e.g., issue number or plan file) */
-  target: string | number;
+  target: string;
   /** Description of what to change and why */
   description: string;
   /** Specific content to add or modify */
-  content: string | object;
-  /** Priority of this change (higher = more important) */
-  priority?: number;
+  content: string;
+  /** Rationale for this change */
+  rationale: string;
+}
+
+/**
+ * A gap or missing element identified during reflection analysis.
+ */
+export interface IdentifiedGap {
+  /** Type of gap (e.g., "dependency", "scope", "detail", "testing") */
+  type: string;
+  /** Description of the gap */
+  description: string;
+  /** Issues related to this gap */
+  relatedIssues: string[];
 }
 
 /**
@@ -246,31 +258,33 @@ export interface ImprovementAnalysis {
   /** Overall improvement score (0.0-1.0) */
   score: ImprovementScore;
   /** List of identified gaps or missing elements */
-  gaps: string[];
+  gaps: IdentifiedGap[];
   /** List of recommended changes to apply */
   changes: ImprovementChange[];
   /** Reasoning explaining the most important changes */
   reasoning: string;
   /** Number of the current reflection iteration */
-  iteration: number;
+  iterationNumber: number;
+  /** Timestamp of when this analysis was performed */
+  timestamp: string;
 }
 
 /**
  * Result of applying reflection improvements to a decomposition.
  */
 export interface ReflectionResult {
-  /** Whether reflection was applied */
-  applied: boolean;
+  /** Whether reflection was enabled for this decomposition */
+  enabled: boolean;
   /** Number of iterations performed */
-  iterationsPerformed: number;
-  /** Total number of changes applied */
-  changesApplied: number;
-  /** List of improvement analyses from each iteration */
-  analyses: ImprovementAnalysis[];
+  performedIterations: number;
+  /** Total number of improvements identified across all iterations */
+  totalImprovements: number;
   /** Final improvement score after all iterations */
   finalScore: ImprovementScore;
-  /** Whether the process was stopped early due to low improvement scores */
-  stoppedEarly: boolean;
+  /** List of improvement analyses from each iteration */
+  improvements?: ImprovementAnalysis[];
+  /** Reason why reflection was skipped (if applicable) */
+  skippedReason?: string;
 }
 
 /**
@@ -279,17 +293,14 @@ export interface ReflectionResult {
 export interface ReflectionState {
   /** Current iteration number */
   currentIteration: number;
-  /** Maximum iterations allowed */
-  maxIterations: number;
-  /** Current decomposition result being improved */
-  currentResult: {
-    issues: Issue[];
-    plans: Plan[];
-  };
-  /** History of improvements applied */
-  improvementHistory: ImprovementAnalysis[];
-  /** Whether reflection is currently active */
-  isActive: boolean;
-  /** Start time of reflection process */
-  startTime: number;
+  /** List of improvement analyses from each iteration */
+  improvements: ImprovementAnalysis[];
+  /** Current improvement score */
+  currentScore: number;
+  /** Whether the reflection process is complete */
+  isComplete: boolean;
+  /** Current issue files being improved */
+  currentIssues: string[];
+  /** Current plan files being improved */
+  currentPlans: string[];
 }

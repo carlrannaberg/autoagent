@@ -1,6 +1,7 @@
 // Chalk import removed - use Logger instead
 import { Provider } from './Provider';
 import { ExecutionResult } from '../types';
+import { ChatOptions } from './types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { StreamFormatter } from '../utils/stream-formatter';
@@ -320,5 +321,61 @@ ${planContent}`;
   private extractIssueNumber(filePath: string): number {
     const match = filePath.match(/(\d+)-/);
     return (match !== null && match[1] !== undefined) ? parseInt(match[1], 10) : 0;
+  }
+
+  /**
+   * Send a chat message to Claude and get a response.
+   * Used for reflection and other interactive AI operations.
+   * @param prompt - The prompt to send to Claude
+   * @param options - Optional configuration for the chat request
+   * @returns Promise resolving to Claude's response
+   */
+  async chat(prompt: string, options?: ChatOptions): Promise<string> {
+    const args = [
+      '-p', // Print response without interactive mode
+      '--output-format', 'json' // Get structured output
+    ];
+
+    // Add max tokens if specified
+    if (options?.maxTokens !== undefined) {
+      args.push('--max-tokens', options.maxTokens.toString());
+    }
+
+    // Build the prompt with optional system prompt
+    let fullPrompt = prompt;
+    if (options?.systemPrompt !== undefined) {
+      fullPrompt = `System: ${options.systemPrompt}\n\nUser: ${prompt}`;
+    }
+
+    try {
+      const result = await this.executeWithStreaming(args, fullPrompt, options?.signal);
+      
+      if (result.success === false) {
+        throw new Error(result.error ?? 'Claude chat request failed');
+      }
+
+      // Parse the JSON output to extract the text response
+      const lines = result.stdout.split('\n').filter(line => line.trim() !== '');
+      let responseText = '';
+      
+      for (const line of lines) {
+        try {
+          const message = JSON.parse(line) as Record<string, unknown>;
+          if (message.type === 'text' && typeof message.text === 'string') {
+            responseText += message.text;
+          }
+        } catch (e) {
+          // Not JSON, ignore
+        }
+      }
+
+      if (!responseText) {
+        throw new Error('No response text received from Claude');
+      }
+
+      return responseText;
+    } catch (error) {
+      throw new Error(`Claude chat error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 }

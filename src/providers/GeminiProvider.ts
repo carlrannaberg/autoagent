@@ -1,5 +1,6 @@
 import { Provider } from './Provider';
 import { ExecutionResult } from '../types';
+import { ChatOptions } from './types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -147,5 +148,44 @@ When you make changes to files, please clearly indicate which files were modifie
     const outputLower = (stdout + stderr).toLowerCase();
     
     return !errorIndicators.some(indicator => outputLower.includes(indicator));
+  }
+
+  /**
+   * Send a chat message to Gemini and get a response.
+   * Used for reflection and other interactive AI operations.
+   * @param prompt - The prompt to send to Gemini
+   * @param options - Optional configuration for the chat request
+   * @returns Promise resolving to Gemini's response
+   */
+  async chat(prompt: string, options?: ChatOptions): Promise<string> {
+    try {
+      // Build the full prompt with optional system prompt
+      let fullPrompt = prompt;
+      if (options?.systemPrompt !== undefined) {
+        fullPrompt = `${options.systemPrompt}\n\n${prompt}`;
+      }
+
+      // Execute Gemini with the prompt
+      const { stdout, stderr, code } = await this.spawnProcess(
+        'gemini',
+        [fullPrompt],
+        options?.signal
+      );
+
+      if (code !== 0) {
+        throw new Error(stderr || `Gemini exited with code ${code}`);
+      }
+
+      // Extract the response text
+      const responseText = stdout.trim();
+      
+      if (!responseText) {
+        throw new Error('No response text received from Gemini');
+      }
+
+      return responseText;
+    } catch (error) {
+      throw new Error(`Gemini chat error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 }

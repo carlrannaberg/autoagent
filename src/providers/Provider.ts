@@ -1,12 +1,13 @@
 import { spawn, ChildProcess } from 'child_process';
 import { ExecutionResult } from '../types';
 import { StreamFormatter } from '../utils/stream-formatter';
+import { ProviderInterface, ChatOptions } from './types';
 
 /**
  * Abstract base class for AI provider implementations.
  * Provides common interface for executing tasks with different AI providers.
  */
-export abstract class Provider {
+export abstract class Provider implements ProviderInterface {
   /**
    * Get the name of this provider.
    */
@@ -32,6 +33,15 @@ export abstract class Provider {
     contextFiles?: string[],
     signal?: AbortSignal
   ): Promise<ExecutionResult>;
+
+  /**
+   * Send a chat message to the provider and get a response.
+   * Used for reflection and other interactive AI operations.
+   * @param prompt - The prompt to send to the AI
+   * @param options - Optional configuration for the chat request
+   * @returns Promise resolving to the AI response
+   */
+  abstract chat(prompt: string, options?: ChatOptions): Promise<string>;
 
   /**
    * Spawn a child process and handle output.
