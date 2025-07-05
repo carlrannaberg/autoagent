@@ -29,6 +29,7 @@ AutoAgent is a powerful npm package that enables running autonomous AI agents us
 - 🔍 **Enhanced Error Handling**: Proper exit codes and descriptive error messages
 - 🌍 **Environment Variables**: Full support for configuration via environment
 - 📖 **Enhanced Gemini Output**: Automatic formatting with smart sentence boundary detection
+- 🔄 **Reflection Engine**: Iterative improvement of decomposed plans and issues
 
 ## Table of Contents
 
@@ -220,6 +221,12 @@ autoagent run --no-auto-commit
 
 # Use mock provider for testing
 AUTOAGENT_MOCK_PROVIDER=true autoagent run
+
+# Run with custom reflection settings
+autoagent run --reflection-iterations 5
+
+# Run without reflection
+autoagent run --no-reflection
 ```
 
 **Smart Detection:**
@@ -346,6 +353,8 @@ Most commands support these common options:
 - `--workspace, -w <path>`: Set working directory
 - `--debug, -d`: Enable debug logging
 - `--provider, -p <name>`: Override provider
+- `--reflection-iterations <n>`: Set maximum reflection iterations (1-10)
+- `--no-reflection`: Disable reflection for this run
 - `--help, -h`: Show help
 
 ## Programmatic Usage
@@ -634,7 +643,7 @@ EOF
 autoagent run specs/add-user-profiles.md --all
 
 # Or run step by step:
-# 1. Process spec to create plan and issues
+# 1. Process spec to create plan and issues (with reflection)
 autoagent run specs/add-user-profiles.md
 
 # 2. Review created issues
@@ -811,9 +820,56 @@ npm run test:ui
 - **Providers**: AI provider implementations (Claude, Gemini)
 - **FileManager**: Handles issue, plan, and todo file operations
 - **ConfigManager**: Manages configuration and rate limits
+- **ReflectionEngine**: Iterative improvement system for decomposed plans
 - **Logger**: Provides formatted console output
 - **Git Integration**: Handles automatic commits and rollbacks
 - **StreamFormatter**: Handles real-time output formatting for AI providers
+
+## Reflection Engine
+
+AutoAgent includes an intelligent reflection system that iteratively improves decomposed plans and issues:
+
+```bash
+# Use default reflection (3 iterations)
+autoagent run specs/feature.md
+
+# Customize reflection iterations
+autoagent run specs/feature.md --reflection-iterations 5
+
+# Disable reflection for faster execution
+autoagent run specs/feature.md --no-reflection
+```
+
+The reflection engine:
+- **Analyzes initial decomposition quality** using improvement scoring
+- **Identifies gaps and improvements** in plans and issues
+- **Iteratively refines** decomposed tasks for better clarity
+- **Skips reflection for simple specifications** (< 500 words)
+- **Provides progress tracking** during reflection iterations
+
+### Configuration
+
+Reflection behavior can be controlled through configuration:
+
+```json
+{
+  "reflection": {
+    "enabled": true,
+    "maxIterations": 3,
+    "improvementThreshold": 0.1,
+    "skipForSimpleSpecs": true
+  }
+}
+```
+
+Or via CLI options:
+```bash
+# Set custom iteration count
+autoagent run --reflection-iterations 5
+
+# Disable reflection entirely
+autoagent run --no-reflection
+```
 
 ## Enhanced Gemini Output Formatting
 
