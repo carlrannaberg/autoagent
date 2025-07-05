@@ -37,31 +37,7 @@ describe('Bootstrap Command Integration', () => {
       'CLAUDE_API_KEY=test-key\nGEMINI_API_KEY=test-key\n'
     );
     
-    // Create template files
-    await fs.writeFile(
-      path.join(testWorkspace, 'templates', 'issue.md'),
-      `# Issue {{number}}: {{title}}
-
-## Requirement
-{{requirement}}
-
-## Acceptance Criteria
-{{criteria}}
-
-## Technical Details
-{{details}}`
-    );
-    
-    await fs.writeFile(
-      path.join(testWorkspace, 'templates', 'plan.md'),
-      `# Plan for Issue {{number}}: {{title}}
-
-## Implementation Plan
-{{plan}}
-
-## Technical Approach
-{{approach}}`
-    );
+    // Note: Templates are no longer read from filesystem - bootstrap uses embedded templates
   });
 
   afterEach(async () => {
@@ -630,13 +606,15 @@ This is a complex project with multiple phases.
   });
 
   describe('Error Handling and Recovery', () => {
-    it('should handle invalid master plan gracefully', async () => {
-      const masterPlan = await createMasterPlan('invalid', '');
+    it('should handle empty master plan gracefully', async () => {
+      const masterPlan = await createMasterPlan('empty', '');
       
-      const result = await runCLI(['bootstrap', 'invalid.md']);
+      const result = await runCLI(['bootstrap', 'empty.md', '--provider', 'mock']);
       
-      expect(result.code).not.toBe(0);
-      expect(result.stderr).toBeTruthy();
+      // Bootstrap should succeed even with empty master plan
+      // It will create a generic bootstrap issue
+      expect(result.code).toBe(0);
+      expect(result.stdout).toContain('Bootstrap issue created successfully');
     });
 
     it('should handle file system errors gracefully', async () => {

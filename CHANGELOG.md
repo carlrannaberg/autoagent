@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Update createPlan method to support optional title-based naming for consistency with issue filenames
+- Bootstrap command now uses embedded templates instead of reading from filesystem
 
 ### Added
 - Add comprehensive documentation for filename conventions in README.md

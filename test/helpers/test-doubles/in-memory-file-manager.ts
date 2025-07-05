@@ -9,6 +9,7 @@ export class InMemoryFileManager {
   private providerInstructions: string = '';
   private changedFiles: string[] = [];
   private mockIssueFiles?: string[];
+  private rawTodoContent?: string;
 
   constructor(private rootPath: string = '/test') {}
 
@@ -70,7 +71,7 @@ export class InMemoryFileManager {
     this.providerInstructions = instructions;
   }
 
-  updateTodo(issueNumber: number, completed: boolean): void {
+  updateTodoStatus(issueNumber: number, completed: boolean): void {
     const todo = this.todos.find(t => t.issueNumber === issueNumber);
     if (todo !== null && todo !== undefined) {
       todo.completed = completed;
@@ -122,18 +123,35 @@ export class InMemoryFileManager {
   }
 
   readTodo(): string {
+    // If raw content was stored via updateTodo, return it
+    if (this.rawTodoContent !== undefined) {
+      return this.rawTodoContent;
+    }
+    
+    // If no todos exist, return empty string to simulate non-existent file
+    if (this.todos.length === 0) {
+      return '';
+    }
+    
     const pendingTodos = this.todos.filter((t: any) => t.completed === null || t.completed === undefined || t.completed === false);
     const completedTodos = this.todos.filter(t => t.completed);
     
-    let content = '## Pending Issues\n';
+    // Return full TODO format including header
+    let content = '# To-Do\n\n';
+    content += 'This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.\n\n';
+    content += '## Pending Issues\n';
     pendingTodos.forEach(todo => {
-      content += `- [ ] Issue #${todo.issueNumber}: ${todo.title}\n`;
+      const slug = todo.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      const filename = `${todo.issueNumber}-${slug}.md`;
+      content += `- [ ] **[Issue #${todo.issueNumber}]** ${todo.title} - \`issues/${filename}\`\n`;
     });
     
+    content += '\n## Completed Issues\n';
     if (completedTodos.length > 0) {
-      content += '\n## Completed Issues\n';
       completedTodos.forEach(todo => {
-        content += `- [x] Issue #${todo.issueNumber}: ${todo.title}\n`;
+        const slug = todo.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        const filename = `${todo.issueNumber}-${slug}.md`;
+        content += `- [x] **[Issue #${todo.issueNumber}]** ${todo.title} - \`issues/${filename}\`\n`;
       });
     }
     
@@ -202,5 +220,39 @@ export class InMemoryFileManager {
   // Helper method to clear todos for tests
   clearTodos(): void {
     this.todos = [];
+  }
+  
+  // Update TODO content (used by bootstrap)
+  updateTodo(content: string): void {
+    // Store the raw content for accurate readTodo()
+    this.rawTodoContent = content;
+    
+    // Parse the content to extract todos
+    const lines = content.split('\n');
+    this.todos = [];
+    
+    lines.forEach(line => {
+      const pendingMatch = line.match(/^- \[ \] \*\*\[Issue #(\d+)\]\*\* (.+) - /);
+      const completedMatch = line.match(/^- \[x\] \*\*\[Issue #(\d+)\]\*\* (.+) - /);
+      
+      if (pendingMatch) {
+        this.todos.push({
+          issueNumber: parseInt(pendingMatch[1]),
+          title: pendingMatch[2],
+          completed: false
+        });
+      } else if (completedMatch) {
+        this.todos.push({
+          issueNumber: parseInt(completedMatch[1]),
+          title: completedMatch[2],
+          completed: true
+        });
+      }
+    });
+  }
+  
+  // Check if TODO exists
+  hasTodo(): boolean {
+    return this.todos.length > 0;
   }
 }

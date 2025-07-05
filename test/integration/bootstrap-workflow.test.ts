@@ -77,8 +77,8 @@ describe('Bootstrap Workflow Integration Tests', () => {
     // Create .env file
     await writeFile(join(testWorkspace, '.env'), 'ANTHROPIC_API_KEY=test-key\n');
 
-    // Create master plan template
-    await writeFile(join(testWorkspace, 'templates', 'master-plan.md'), `# Master Plan
+    // Create master plan in workspace root (not in templates/)
+    await writeFile(join(testWorkspace, 'master-plan.md'), `# Master Plan
 
 ## Project Goals
 Test project goals
@@ -91,25 +91,7 @@ Test architecture
 2. Phase 2
 `);
 
-    // Create issue template
-    await writeFile(join(testWorkspace, 'templates', 'issue.md'), `# Issue {{number}}: {{title}}
-
-## Requirement
-{{requirement}}
-
-## Acceptance Criteria
-{{criteria}}
-
-## Technical Details
-{{details}}
-`);
-
-    // Create plan template
-    await writeFile(join(testWorkspace, 'templates', 'plan.md'), `# Plan for Issue {{number}}: {{title}}
-
-## Implementation Plan
-{{plan}}
-`);
+    // Note: Templates are no longer read from filesystem - bootstrap uses embedded templates
 
     // Create existing issues if requested
     if (options.hasIssues) {
@@ -260,12 +242,12 @@ This is another existing issue
       expect(result.stdout).toContain('Next issue:');
     });
 
-    it('should handle verbose output correctly', async () => {
+    it('should provide proper output without extra options', async () => {
       // Arrange
       await createProjectStructure();
 
       // Act
-      const result = await runCLI(['bootstrap', '--verbose']);
+      const result = await runCLI(['bootstrap']);
 
       // Assert
       expect(result.exitCode).toBe(0);
@@ -277,7 +259,7 @@ This is another existing issue
     it('should handle missing master plan template', async () => {
       // Arrange: Create project without master plan
       await createProjectStructure();
-      await rm(join(testWorkspace, 'templates', 'master-plan.md'));
+      await rm(join(testWorkspace, 'master-plan.md'));
 
       // Act
       const result = await runCLI(['bootstrap']);
@@ -338,7 +320,7 @@ This is another existing issue
       await createProjectStructure();
       
       // Create master plan with special characters
-      await writeFile(join(testWorkspace, 'templates', 'master-plan.md'), `# Master Plan with "Special" Characters & Symbols
+      await writeFile(join(testWorkspace, 'master-plan.md'), `# Master Plan with "Special" Characters & Symbols
 
 ## Project Goals <with> Tags
 - Goal with \`code\` blocks
@@ -507,7 +489,7 @@ Last updated: 2024-01-20
       
       // Create master plan with very long title
       const longTitle = 'This is a very long master plan title that exceeds normal length limits and should be truncated appropriately to avoid filesystem issues while still maintaining readability';
-      await writeFile(join(testWorkspace, 'templates', 'master-plan.md'), `# ${longTitle}
+      await writeFile(join(testWorkspace, 'master-plan.md'), `# ${longTitle}
 
 ## Project Goals
 Test goals

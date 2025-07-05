@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #41]** Update bootstrap to use embedded templates - `issues/41-update-bootstrap-to-use-embedded-templates.md`
 - [ ] **[Issue #42]** Add tests for embedded template functionality - `issues/42-add-tests-for-embedded-template-functionality.md`
 - [ ] **[Issue #43]** Update documentation for embedded templates - `issues/43-update-documentation-for-embedded-templates.md`
 - [ ] **[Issue #44]** Implement plan from smart-run-command - `issues/44-implement-plan-from-smart-run-command.md`
@@ -13,6 +12,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #48]** Implement plan from git-auto-push-configuration - `issues/48-implement-plan-from-git-auto-push-configuration.md`
 
 ## Completed Issues
+- [x] **[Issue #41]** Update bootstrap to use embedded templates - `issues/41-update-bootstrap-to-use-embedded-templates.md`
 - [x] **[Issue #40]** Create embedded template module - `issues/40-create-embedded-template-module.md`
 - [x] **[Issue #38]** Update Bootstrap Documentation - `issues/38-update-bootstrap-documentation.md`
 - [x] **[Issue #37]** Add Bootstrap TODO Integration Tests - `issues/37-add-bootstrap-integration-tests.md`

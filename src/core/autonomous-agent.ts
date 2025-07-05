@@ -23,6 +23,7 @@ import {
   hasChangesToCommit,
   revertToCommit
 } from '../utils/git';
+import { DEFAULT_ISSUE_TEMPLATE, DEFAULT_PLAN_TEMPLATE } from '../templates/default-templates';
 
 const execAsync = promisify(exec);
 
@@ -932,10 +933,14 @@ ${result.output ?? 'Success'}`;
       throw new Error(`Could not read master plan: ${masterPlanPath}`);
     }
 
-    // Read templates
-    const templateDir = path.join(this.config.workspace ?? process.cwd(), 'templates');
-    const issueTemplate = await this.fileManager.readFile(path.join(templateDir, 'issue.md'));
-    const planTemplate = await this.fileManager.readFile(path.join(templateDir, 'plan.md'));
+    // Use embedded templates
+    const issueTemplate = DEFAULT_ISSUE_TEMPLATE;
+    const planTemplate = DEFAULT_PLAN_TEMPLATE;
+
+    // Validate templates are defined
+    if (!issueTemplate || !planTemplate) {
+      throw new Error('Embedded templates are not properly defined');
+    }
 
     // Create prompt for bootstrapping
     const prompt = `You are an expert project manager. Decompose the following master plan into individual, actionable issues.

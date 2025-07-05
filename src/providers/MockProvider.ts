@@ -28,8 +28,11 @@ export class MockProvider extends Provider {
     
     const startTime = Date.now();
     
+    // Check if this is a direct prompt (bootstrap command) or a file path
+    const isDirectPrompt = !issueFile.includes('.md') || issueFile.includes('You are an expert');
+    
     // Extract issue number from file path or use 1 for direct prompts  
-    const issueMatch = issueFile.match(/(\d+)-/);
+    const issueMatch = isDirectPrompt ? null : issueFile.match(/(\d+)-/);
     const issueNumber = (issueMatch?.[1] !== undefined) ? parseInt(issueMatch[1], 10) : 1;
     
     // Check for mock error conditions

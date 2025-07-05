@@ -43,6 +43,28 @@ export class TestProvider extends EventEmitter {
     _contextFiles?: string[],
     _signal?: AbortSignal
   ): Promise<ExecutionResult> {
+    // Handle prompt-based calls (bootstrap/createIssue)
+    if (typeof issueFile === 'string' && !issueFile.includes('.md') && planFile === '') {
+      // This is a prompt-based call
+      let response = this.defaultResponse;
+      
+      // Look for matching response based on prompt content
+      for (const [key, value] of this.responses) {
+        if (issueFile.includes(key)) {
+          response = value;
+          break;
+        }
+      }
+      
+      return {
+        success: true,
+        issueNumber: 1,
+        duration: 0,
+        output: response || 'Success',
+        filesChanged: [],
+        provider: this.name as any
+      };
+    }
     this.executionCount++;
     
     if (this.failAfter >= 0 && this.executionCount > this.failAfter) {
