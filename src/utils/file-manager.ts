@@ -397,56 +397,18 @@ Please see AGENT.md for the actual instructions.
   }
 
   async getTodoStats(): Promise<{ total: number; completed: number; pending: number }> {
-    // First, count all issues in the issues directory
-    const issuesDir = path.join(this.workspace, 'issues');
-    let issueFiles: string[] = [];
+    // Read TODO.md as the source of truth for issue status
+    const todos = await this.readTodoList();
     
-    try {
-      const files = await fs.readdir(issuesDir);
-      issueFiles = files.filter(f => f.endsWith('.md'));
-    } catch {
-      // Issues directory doesn't exist
-    }
-
-    // Then load status data if available
-    const statusFile = path.join(this.workspace, '.autoagent', 'status.json');
-    let statusData: Record<string, { status: string }> = {};
+    // Count total issues
+    const total = todos.length;
     
-    try {
-      const statusContent = await fs.readFile(statusFile, 'utf-8');
-      statusData = JSON.parse(statusContent) as Record<string, { status: string }>;
-    } catch {
-      // Status file doesn't exist, that's ok
-    }
-
-    // Count issues from files
-    let total = issueFiles.length;
-    let completed = 0;
-    let pending = 0;
-
-    // Process issues from files
-    for (const file of issueFiles) {
-      const issueName = file.replace('.md', '');
-      const status = statusData[issueName]?.status ?? 'pending';
-      if (status === 'completed') {
-        completed++;
-      } else {
-        pending++;
-      }
-    }
-
-    // Also include issues that only exist in status.json
-    for (const [issueName, data] of Object.entries(statusData)) {
-      if (!issueFiles.some(f => f.replace('.md', '') === issueName)) {
-        total++;
-        if (data.status === 'completed') {
-          completed++;
-        } else {
-          pending++;
-        }
-      }
-    }
-
+    // Count completed issues (those with [x])
+    const completed = todos.filter(t => t.includes('[x]')).length;
+    
+    // Count pending issues (those with [ ])
+    const pending = todos.filter(t => !t.includes('[x]')).length;
+    
     return { total, completed, pending };
   }
 

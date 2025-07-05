@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix status command showing 0 completed issues by reading TODO.md for completion status
+
 ## [0.5.2] - 2025-07-05
 
 ### Added
