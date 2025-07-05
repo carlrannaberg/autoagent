@@ -144,7 +144,7 @@ export class DefaultImprovementApplier implements ImprovementApplier {
     return Array.from(files);
   }
   
-  private findIssueFile(issueNumber: number, workspace: string): string[] {
+  private findIssueFile(_issueNumber: number, _workspace: string): string[] {
     // This method is not used anymore, keeping for backward compatibility
     return [];
   }

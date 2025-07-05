@@ -609,5 +609,311 @@ describe('improvement-analyzer', () => {
       expect(score).toBeLessThanOrEqual(1.0);
       expect(score).toBeGreaterThanOrEqual(0.0);
     });
+
+    it('should handle multiple changes with varying scores', () => {
+      const analysis: ImprovementAnalysis = {
+        score: 0.6 as any,
+        gaps: [],
+        changes: [
+          {
+            type: ChangeType.ADD_ISSUE,
+            target: '10-critical.md',
+            description: 'Critical issue',
+            content: 'Essential content that must be addressed',
+            rationale: 'This is critical and required for the system to function properly'
+          },
+          {
+            type: ChangeType.MODIFY_PLAN,
+            target: 'plan-for-issue-1.md',
+            description: 'Update plan',
+            content: 'Small update',
+            rationale: 'Minor improvement'
+          },
+          {
+            type: ChangeType.ADD_DEPENDENCY,
+            target: '2-existing.md',
+            description: 'Add dependency',
+            content: 'Dependencies: Issue 3',
+            rationale: 'Required ordering'
+          }
+        ],
+        reasoning: 'Mixed importance changes',
+        iterationNumber: 2,
+        timestamp: new Date().toISOString()
+      };
+
+      const score = getAnalysisQualityScore(analysis);
+      expect(score).toBeGreaterThan(0.4);
+      expect(score).toBeLessThan(0.8);
+    });
+  });
+
+  describe('Edge cases and error handling', () => {
+    it('should handle empty rationale in validateChange', () => {
+      const change: ImprovementChange = {
+        type: ChangeType.ADD_ISSUE,
+        target: '10-test.md',
+        description: 'Test issue',
+        content: 'Test content',
+        rationale: ''
+      };
+
+      const result = validateChange(change);
+      expect(result.isValid).toBe(true);
+      expect(result.warnings).toContain('Change rationale is missing - this helps understand why the change is needed');
+    });
+
+    it('should handle very long content in changes', () => {
+      const change: ImprovementChange = {
+        type: ChangeType.ADD_ISSUE,
+        target: '10-large.md',
+        description: 'Large issue',
+        content: 'A'.repeat(60000), // Very large content
+        rationale: 'Need large content'
+      };
+
+      const result = validateChange(change);
+      expect(result.isValid).toBe(true);
+      expect(result.warnings).toContain('Change content is very large (>50KB) - consider splitting into smaller changes');
+    });
+
+    it('should handle malformed change objects gracefully', () => {
+      const malformedChange = {
+        // Missing type
+        target: '10-test.md',
+        description: 'Test',
+        content: 'Content',
+        rationale: 'Reason'
+      } as unknown as ImprovementChange;
+
+      const result = validateChange(malformedChange);
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Change type is required');
+    });
+
+    it('should handle special characters in filenames', () => {
+      const change: ImprovementChange = {
+        type: ChangeType.MODIFY_ISSUE,
+        target: '10-test@#$.md', // Special characters
+        description: 'Test issue',
+        content: 'Test content',
+        rationale: 'Test rationale'
+      };
+
+      const result = validateChange(change);
+      expect(result.isValid).toBe(false);
+      // The exact error will include the path
+      expect(result.errors.some(e => e.includes('Target file does not exist'))).toBe(true);
+    });
+
+    it('should handle circular dependencies gracefully', () => {
+      const changes: ImprovementChange[] = [
+        {
+          type: ChangeType.ADD_DEPENDENCY,
+          target: '1-issue.md',
+          description: 'Add dep to 2',
+          content: 'Dependencies: Issue 2',
+          rationale: 'Depends on 2'
+        },
+        {
+          type: ChangeType.ADD_DEPENDENCY,
+          target: '2-issue.md',
+          description: 'Add dep to 1',
+          content: 'Dependencies: Issue 1',
+          rationale: 'Depends on 1'
+        }
+      ];
+
+      const dependencies = detectDependencies(changes);
+      expect(dependencies.length).toBeGreaterThan(0);
+      // Should detect but not crash on circular dependencies
+    });
+
+    it('should handle empty analysis in analyzeImprovements', () => {
+      const emptyAnalysis: ImprovementAnalysis = {
+        score: 0 as any,
+        gaps: [],
+        changes: [],
+        reasoning: '',
+        iterationNumber: 1,
+        timestamp: new Date().toISOString()
+      };
+
+      const result = analyzeImprovements(emptyAnalysis);
+      expect(result.validChanges).toEqual([]);
+      expect(result.invalidChanges).toEqual([]);
+      expect(result.dependencies).toEqual([]);
+      expect(result.conflicts).toEqual([]);
+    });
+
+    it('should prioritize changes with no dependencies correctly', () => {
+      const changes: ImprovementChange[] = [
+        {
+          type: ChangeType.ADD_ISSUE,
+          target: '1-independent.md',
+          description: 'Independent issue',
+          content: 'No dependencies',
+          rationale: 'Standalone'
+        },
+        {
+          type: ChangeType.ADD_ISSUE,
+          target: '2-another.md',
+          description: 'Another independent',
+          content: 'Also no dependencies',
+          rationale: 'Also standalone'
+        }
+      ];
+
+      const prioritized = prioritizeChanges(changes, []);
+      expect(prioritized).toHaveLength(2);
+      expect(prioritized[0].priority).toBe(1);
+      expect(prioritized[1].priority).toBe(2);
+    });
+
+    it('should handle undefined values in categorizeChanges', () => {
+      const changes: ImprovementChange[] = [
+        {
+          type: ChangeType.ADD_ISSUE,
+          target: 'test.md', // No number prefix
+          description: 'Test',
+          content: 'Content',
+          rationale: 'Reason'
+        }
+      ];
+
+      const categories = categorizeChanges(changes);
+      expect(categories.size).toBeGreaterThan(0);
+      // Should handle gracefully without crashing
+    });
+
+    it('should handle content with only whitespace', () => {
+      const change: ImprovementChange = {
+        type: ChangeType.ADD_ISSUE,
+        target: '10-test.md',
+        description: 'Test',
+        content: '   \n\t   ', // Only whitespace
+        rationale: 'Test'
+      };
+
+      const result = validateChange(change);
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Change content is too short (minimum 10 characters)');
+    });
+
+    it('should handle detectDependencies with empty changes', () => {
+      const dependencies = detectDependencies([]);
+      expect(dependencies).toEqual([]);
+    });
+
+    it('should handle resolveConflicts with no conflicts', () => {
+      const changes: ImprovementChange[] = [
+        {
+          type: ChangeType.ADD_ISSUE,
+          target: '1-test.md',
+          description: 'Test',
+          content: 'Content',
+          rationale: 'Reason'
+        }
+      ];
+
+      const { resolved, conflicts } = resolveConflicts(changes, []);
+      expect(resolved).toEqual(changes);
+      expect(conflicts).toEqual([]);
+    });
+
+    it('should score very long rationale with high confidence', () => {
+      const change: ImprovementChange = {
+        type: ChangeType.ADD_ISSUE,
+        target: '10-test.md',
+        description: 'Test',
+        content: 'Test content',
+        rationale: 'A'.repeat(300) // Very long rationale
+      };
+
+      const score = scoreChange(change);
+      expect(score.confidence).toBeGreaterThanOrEqual(0.9);
+    });
+
+    it('should handle ADD_PLAN changes in scoring', () => {
+      const change: ImprovementChange = {
+        type: ChangeType.ADD_PLAN,
+        target: 'plan-for-issue-10.md',
+        description: 'Add plan',
+        content: 'Plan content',
+        rationale: 'Planning needed'
+      };
+
+      const score = scoreChange(change);
+      expect(score.impact).toBe(0.8); // Same as ADD_ISSUE
+    });
+
+    it('should detect multiple plan-issue dependencies', () => {
+      const changes: ImprovementChange[] = [
+        {
+          type: ChangeType.ADD_ISSUE,
+          target: '1-first.md',
+          description: 'First issue',
+          content: 'Content',
+          rationale: 'Reason'
+        },
+        {
+          type: ChangeType.ADD_ISSUE,
+          target: '2-second.md',
+          description: 'Second issue',
+          content: 'Content',
+          rationale: 'Reason'
+        },
+        {
+          type: ChangeType.ADD_PLAN,
+          target: 'plan-for-issue-1.md',
+          description: 'Plan for first',
+          content: 'Plan',
+          rationale: 'Plan needed'
+        },
+        {
+          type: ChangeType.ADD_PLAN,
+          target: 'plan-for-issue-2.md',
+          description: 'Plan for second',
+          content: 'Plan',
+          rationale: 'Plan needed'
+        }
+      ];
+
+      const dependencies = detectDependencies(changes);
+      const planDeps = dependencies.filter(d => d.from.type === ChangeType.ADD_PLAN);
+      expect(planDeps).toHaveLength(2);
+    });
+
+    it('should handle complex conflict resolution with multiple conflicts', () => {
+      const changes: ImprovementChange[] = [
+        {
+          type: ChangeType.MODIFY_ISSUE,
+          target: '1-test.md',
+          description: 'Change 1',
+          content: 'Content 1',
+          rationale: 'Minor change'
+        },
+        {
+          type: ChangeType.MODIFY_ISSUE,
+          target: '1-test.md',
+          description: 'Change 2',
+          content: 'Content 2',
+          rationale: 'Critical change that must be applied'
+        },
+        {
+          type: ChangeType.MODIFY_ISSUE,
+          target: '1-test.md',
+          description: 'Change 3',
+          content: 'Content 3',
+          rationale: 'Another important change'
+        }
+      ];
+
+      const dependencies = detectDependencies(changes);
+      const { resolved, conflicts } = resolveConflicts(changes, dependencies);
+      
+      expect(resolved).toHaveLength(1); // Only one should be selected
+      expect(conflicts.length).toBeGreaterThan(0);
+    });
   });
 });
