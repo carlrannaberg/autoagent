@@ -1037,6 +1037,14 @@ ${result.output ?? 'Success'}`;
    * Get provider for operation (with fallback to available provider)
    */
   private async getProviderForOperation(): Promise<Provider | null> {
+    // Check if mock provider is enabled for testing
+    if (process.env.AUTOAGENT_MOCK_PROVIDER === 'true') {
+      const mockProvider = createProvider('mock');
+      if (await mockProvider.checkAvailability()) {
+        return mockProvider;
+      }
+    }
+    
     if (this.config.provider) {
       const provider = createProvider(this.config.provider);
       if (await provider.checkAvailability()) {

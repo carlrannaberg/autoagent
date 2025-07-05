@@ -53,6 +53,7 @@ export class ConfigManager {
       ...localConfig
     };
 
+
     // Debug logging
     if (process.env.AUTOAGENT_DEBUG === 'true') {
       Logger.debug('Configuration loaded:');

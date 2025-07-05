@@ -7,33 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.4.1] - 2025-07-05
-
-### Fixed
-- Fix Claude provider to properly detect "Claude AI usage limit reached" errors for failover
-  - Now checks both stdout JSON messages and stderr for usage limit errors
-  - Ensures proper failover to alternative providers when Claude hits usage limits
-
-### Added
-- Add comprehensive test coverage for smart run command functionality
-  - Unit tests for isPlanFile() detection with various edge cases
-  - Integration tests for spec file execution flow
-  - E2E tests for complete spec → bootstrap → execute workflows
-  - Tests for spec file with --all flag continuation
-  - Error handling tests for bootstrap and decomposition failures
-
-### Removed
-- Remove bootstrap command in favor of unified run command
-  - Bootstrap functionality is now integrated into the run command
-  - Spec files are detected automatically and processed as bootstrap targets
-  - Maintains backward compatibility while simplifying the CLI interface
-
 ## [0.4.0] - 2025-07-05
 
 ### Fixed
 - Fix bootstrap command using hardcoded issue number 1 instead of next available
 - Fix bootstrap command overwriting existing TODO items instead of preserving them
 - Centralize slug generation in FileManager to ensure consistent filename generation
+- Fix Claude provider to properly detect "Claude AI usage limit reached" errors for failover
+  - Now checks both stdout JSON messages and stderr for usage limit errors
+  - Ensures proper failover to alternative providers when Claude hits usage limits
+- Fix mock provider integration in bootstrap workflow
+  - Mock provider is now prioritized when AUTOAGENT_MOCK_PROVIDER=true environment variable is set
+  - Ensures E2E tests can properly mock bootstrap operations without timing out
+  - Provider selection logic now checks for mock provider first in both getProviderForOperation and getFirstAvailableProvider
+- Fix E2E test failures in run-spec-file.test.ts
+  - Fixed workspace path access using getPath() method instead of accessing path property directly
+  - Fixed test expectations to match actual bootstrap output messages
+  - Fixed edge case test content to avoid false positive issue detection in markdown code blocks
 
 ### Changed
 - Update createPlan method to support optional title-based naming for consistency with issue filenames
@@ -51,6 +41,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Detects numeric issue references
   - Detects issue file names with format `number-slug.md`
   - Routes different input types to appropriate execution paths
+- Add comprehensive test coverage for smart run command functionality
+  - Unit tests for isPlanFile() detection with various edge cases
+  - Integration tests for spec file execution flow
+  - E2E tests for complete spec → bootstrap → execute workflows
+  - Tests for spec file with --all flag continuation
+  - Error handling tests for bootstrap and decomposition failures
+
+### Removed
+- Remove bootstrap command in favor of unified run command
+  - Bootstrap functionality is now integrated into the run command
+  - Spec files are detected automatically and processed as bootstrap targets
+  - Maintains backward compatibility while simplifying the CLI interface
 
 ## [0.3.3] - 2025-07-04
 

@@ -55,6 +55,18 @@ export async function getAvailableProviders(): Promise<string[]> {
 export async function getFirstAvailableProvider(
   preferredProviders?: ('claude' | 'gemini' | 'mock')[]
 ): Promise<Provider | null> {
+  // Check mock provider first if enabled
+  if (process.env.AUTOAGENT_MOCK_PROVIDER === 'true') {
+    try {
+      const mockProvider = createProvider('mock');
+      if (await mockProvider.checkAvailability()) {
+        return mockProvider;
+      }
+    } catch (error) {
+      // Continue to other providers
+    }
+  }
+  
   const checkOrder = preferredProviders || ['claude', 'gemini', 'mock'];
 
   for (const providerType of checkOrder) {
