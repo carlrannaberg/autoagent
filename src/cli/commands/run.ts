@@ -78,21 +78,27 @@ export function registerRunCommand(program: Command): void {
     .option('--reflection-iterations <n>', 'Set maximum number of reflection iterations (1-10)', parseInt)
     .option('--no-reflection', 'Disable reflection for this run')
     .action(async (target?: string, options: RunOptions = {}) => {
+      const abortController = new AbortController();
+      
+      const sigintHandler = (): void => {
+        Logger.warning('\n⚠️  Cancelling operation...');
+        abortController.abort();
+      };
+      
+      process.on('SIGINT', sigintHandler);
+      
       try {
         const workspacePath = options.workspace ?? process.cwd();
         
         // No validation needed - if no issue is specified and --all is not set, 
         // it will run the next pending issue
         
-        const abortController = new AbortController();
-        
-        process.on('SIGINT', () => {
-          Logger.warning('\n⚠️  Cancelling operation...');
-          abortController.abort();
-        });
-        
         // Validate reflection iterations if provided
         if (options.reflectionIterations !== undefined) {
+          if (isNaN(options.reflectionIterations)) {
+            Logger.error('Failed: Reflection config: maxIterations must be a positive integer');
+            process.exit(1);
+          }
           if (options.reflectionIterations < 1 || options.reflectionIterations > 10) {
             Logger.error('--reflection-iterations must be between 1 and 10');
             process.exit(1);
@@ -102,7 +108,7 @@ export function registerRunCommand(program: Command): void {
         // Build reflection config from CLI options
         const cliReflectionConfig: Partial<ReflectionConfig> = {
           ...(options.reflection === false ? { enabled: false } : {}),
-          ...(options.reflectionIterations !== undefined ? { maxIterations: options.reflectionIterations } : {})
+          ...(options.reflectionIterations !== undefined && !isNaN(options.reflectionIterations) ? { maxIterations: options.reflectionIterations } : {})
         };
         
         // Merge CLI options with defaults if any CLI options were provided
@@ -534,6 +540,9 @@ export function registerRunCommand(program: Command): void {
       } catch (error) {
         Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
+      } finally {
+        // Clean up the SIGINT listener
+        process.removeListener('SIGINT', sigintHandler);
       }
     });
 }

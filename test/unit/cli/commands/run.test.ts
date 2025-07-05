@@ -68,6 +68,7 @@ describe('Run Command', () => {
         pendingIssues: 2
       }),
       bootstrap: vi.fn().mockResolvedValue(42),
+      syncTodoWithIssues: vi.fn().mockResolvedValue(undefined),
       on: vi.fn(),
       emit: vi.fn()
     };
