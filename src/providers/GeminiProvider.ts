@@ -3,12 +3,24 @@ import { ExecutionResult } from '../types';
 import { ChatOptions } from './types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { ProviderRateLimiter } from '../core/provider-rate-limiter';
+import { RateLimitMonitor, RateLimitDetectedError } from '../core/rate-limit-monitor';
+import { Logger } from '../utils/logger';
 
 /**
  * Gemini provider implementation.
  * Uses the Gemini CLI tool to execute autonomous agent tasks.
  */
 export class GeminiProvider extends Provider {
+  private rateLimiter: ProviderRateLimiter;
+  private monitor: RateLimitMonitor;
+
+  constructor() {
+    super();
+    this.rateLimiter = new ProviderRateLimiter();
+    this.monitor = new RateLimitMonitor(this.rateLimiter);
+  }
+
   /**
    * Get the name of this provider.
    */
@@ -30,7 +42,7 @@ export class GeminiProvider extends Provider {
   }
 
   /**
-   * Execute a task with Gemini.
+   * Execute a task with Gemini using enhanced rate limiting.
    * @param issueFile - Path to the issue file to execute
    * @param planFile - Path to the plan file to execute
    * @param contextFiles - Optional array of context file paths
@@ -47,6 +59,14 @@ export class GeminiProvider extends Provider {
     const issueNumber = this.extractIssueNumber(issueFile);
 
     try {
+      // Check if Gemini is rate limited
+      const isRateLimited = await this.rateLimiter.isProviderRateLimited('gemini');
+      if (isRateLimited) {
+        const status = await this.rateLimiter.getRateLimitStatus('gemini');
+        const remainingTime = Math.ceil((status.timeRemaining ?? 0) / 1000 / 60);
+        throw new Error(`Gemini is rate limited. Try again in ${remainingTime} minutes.`);
+      }
+
       // Read issue and plan files
       const issueContent = await fs.readFile(issueFile, 'utf-8');
       const planContent = await fs.readFile(planFile, 'utf-8');
@@ -89,27 +109,43 @@ When you make changes to files, please clearly indicate which files were modifie
       // Enable YOLO mode for autonomous operation (auto-approve all tool calls)
       args.push('--yolo');
       
-      // Use stdin to pass the prompt (more reliable than -p flag for long prompts)
-      const { stdout, stderr, code } = await this.spawnProcessWithStreamingAndStdin('gemini', args, prompt, signal);
+      // Execute with rate limit monitoring and automatic model fallback
+      const result = await this.monitor.executeGeminiWithFallback(args, {
+        signal,
+        stdinContent: prompt,
+        enableStreaming: true
+      });
 
-      if (code !== 0) {
-        throw new Error(`Gemini execution failed with code ${code}: ${stderr}`);
+      if (result.exitCode !== 0) {
+        throw new Error(`Gemini execution failed with code ${result.exitCode}: ${result.stderr}`);
       }
 
       // Parse output for success indicators and file changes
-      const filesChanged = this.extractFilesChanged(stdout);
-      const success = this.determineSuccess(stdout, stderr, code);
+      const filesChanged = this.extractFilesChanged(result.stdout);
+      const success = this.determineSuccess(result.stdout, result.stderr, result.exitCode);
 
       return {
         success,
         issueNumber,
         duration: Date.now() - startTime,
-        output: stdout,
-        error: success ? undefined : stderr,
+        output: result.stdout,
+        error: success ? undefined : result.stderr,
         provider: 'gemini',
         filesChanged: filesChanged.length > 0 ? filesChanged : undefined
       };
     } catch (error) {
+      // Handle rate limit errors specifically
+      if (error instanceof RateLimitDetectedError) {
+        Logger.error(`Rate limit detected for Gemini: ${error.message}`);
+        return {
+          success: false,
+          issueNumber,
+          duration: Date.now() - startTime,
+          error: `Rate limit detected: ${error.message}`,
+          provider: 'gemini'
+        };
+      }
+
       return {
         success: false,
         issueNumber,
@@ -151,7 +187,7 @@ When you make changes to files, please clearly indicate which files were modifie
   }
 
   /**
-   * Send a chat message to Gemini and get a response.
+   * Send a chat message to Gemini and get a response with enhanced rate limiting.
    * Used for reflection and other interactive AI operations.
    * @param prompt - The prompt to send to Gemini
    * @param options - Optional configuration for the chat request
@@ -159,25 +195,32 @@ When you make changes to files, please clearly indicate which files were modifie
    */
   async chat(prompt: string, options?: ChatOptions): Promise<string> {
     try {
+      // Check if Gemini is rate limited
+      const isRateLimited = await this.rateLimiter.isProviderRateLimited('gemini');
+      if (isRateLimited) {
+        const status = await this.rateLimiter.getRateLimitStatus('gemini');
+        const remainingTime = Math.ceil((status.timeRemaining ?? 0) / 1000 / 60);
+        throw new Error(`Gemini is rate limited. Try again in ${remainingTime} minutes.`);
+      }
+      
       // Build the full prompt with optional system prompt
       let fullPrompt = prompt;
       if (options?.systemPrompt !== undefined) {
         fullPrompt = `${options.systemPrompt}\n\n${prompt}`;
       }
 
-      // Execute Gemini with the prompt
-      const { stdout, stderr, code } = await this.spawnProcess(
-        'gemini',
-        [fullPrompt],
-        options?.signal
-      );
+      // Execute with rate limit monitoring
+      const result = await this.monitor.executeGeminiWithFallback([fullPrompt], {
+        signal: options?.signal,
+        enableStreaming: false
+      });
 
-      if (code !== 0) {
-        throw new Error(stderr || `Gemini exited with code ${code}`);
+      if (result.exitCode !== 0) {
+        throw new Error(result.stderr || `Gemini exited with code ${result.exitCode}`);
       }
 
       // Extract the response text
-      const responseText = stdout.trim();
+      const responseText = result.stdout.trim();
       
       if (!responseText) {
         throw new Error('No response text received from Gemini');
@@ -185,6 +228,11 @@ When you make changes to files, please clearly indicate which files were modifie
 
       return responseText;
     } catch (error) {
+      // Handle rate limit errors specifically
+      if (error instanceof RateLimitDetectedError) {
+        throw new Error(`Gemini rate limit detected: ${error.message}`);
+      }
+      
       throw new Error(`Gemini chat error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

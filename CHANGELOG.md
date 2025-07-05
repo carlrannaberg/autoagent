@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Multi-layered rate limiting system with real-time detection
+- Automatic Gemini model fallback (Pro → Flash) when rate limits are hit
+- Model selection visibility showing which Gemini model is being used
+- Persistent rate limit memory across sessions with cooldown periods
+- Early termination of rate-limited requests to prevent waiting
+
+### Fixed
+- Rate limit detection now happens immediately instead of after long delays
+- Gemini provider gracefully handles quota exceeded errors
+- Better error messages with time estimates for rate limit recovery
+
 ## [0.5.1] - 2025-07-05
 
 ### Documentation
