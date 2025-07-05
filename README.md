@@ -362,18 +362,18 @@ Most commands support these common options:
 ### Basic Example
 
 ```typescript
-import { AutonomousAgent, ConfigManager, FileManager } from 'autoagent';
+import { AutonomousAgent } from 'autoagent';
 
 async function runAgent() {
-  // Initialize components
-  const configManager = new ConfigManager();
-  const fileManager = new FileManager();
-  
   // Create agent instance
-  const agent = new AutonomousAgent(configManager, fileManager);
+  const agent = new AutonomousAgent({
+    workspace: process.cwd(),
+    provider: 'claude',
+    autoCommit: true
+  });
   
-  // Execute a single issue
-  const result = await agent.executeIssue('issues/1-setup-project.md');
+  // Execute a single issue by number
+  const result = await agent.executeIssue(1);
   
   if (result.success) {
     console.log('Issue completed successfully!');
@@ -384,50 +384,45 @@ async function runAgent() {
 ### Advanced Usage
 
 ```typescript
-import { 
-  AutonomousAgent, 
-  ConfigManager, 
-  FileManager,
-  createProvider 
-} from 'autoagent';
+import { AutonomousAgent } from 'autoagent';
 
 async function advancedExample() {
-  const config = new ConfigManager('./my-project');
-  const files = new FileManager('./my-project');
-  const agent = new AutonomousAgent(config, files);
+  const agent = new AutonomousAgent({
+    workspace: './my-project',
+    provider: 'claude',
+    autoCommit: true,
+    debug: true
+  });
   
-  // Listen to progress events
-  agent.on('progress', (data) => {
-    console.log(`Progress: ${data.percentage}% - ${data.message}`);
+  // Listen to execution events
+  agent.on('execution-start', (issueNumber) => {
+    console.log(`Starting issue #${issueNumber}`);
+  });
+  
+  agent.on('execution-end', (result) => {
+    if (result.success) {
+      console.log(`✓ Issue #${result.issueNumber} completed`);
+    } else {
+      console.log(`✗ Issue #${result.issueNumber} failed: ${result.error}`);
+    }
   });
   
   // Execute all pending issues
-  const results = await agent.executeAll({
-    onProgress: (percent, message) => {
-      console.log(`[${percent}%] ${message}`);
-    },
-    dryRun: false,
-    autoCommit: true
-  });
+  const results = await agent.executeAll();
   
-  // Check results
-  results.forEach(result => {
-    if (result.success) {
-      console.log(`✓ ${result.issueNumber}: ${result.issueTitle}`);
-    } else {
-      console.log(`✗ ${result.issueNumber}: ${result.error}`);
-    }
-  });
+  console.log(`Completed ${results.length} issues`);
 }
 ```
 
 ### Custom Provider Integration
 
 ```typescript
-import { Provider, ProviderType } from 'autoagent';
+import { Provider, ExecutionResult } from 'autoagent';
 
 class CustomProvider extends Provider {
-  name: ProviderType = 'custom' as ProviderType;
+  get name(): string {
+    return 'custom';
+  }
   
   async checkAvailability(): Promise<boolean> {
     // Implement availability check
@@ -435,10 +430,19 @@ class CustomProvider extends Provider {
   }
   
   async execute(
-    issueFile: string, 
+    issueFile: string,
+    planFile: string,
+    contextFiles?: string[],
     signal?: AbortSignal
-  ): Promise<void> {
+  ): Promise<ExecutionResult> {
     // Implement execution logic
+    return {
+      success: true,
+      issueNumber: 1,
+      duration: 1000,
+      output: 'Custom provider executed successfully',
+      provider: 'custom'
+    };
   }
 }
 ```
