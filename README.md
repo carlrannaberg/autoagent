@@ -217,7 +217,7 @@ autoagent run --dry-run
 autoagent run --provider gemini
 
 # Disable auto-commit
-autoagent run --no-auto-commit
+autoagent run --no-commit
 
 # Use mock provider for testing
 AUTOAGENT_MOCK_PROVIDER=true autoagent run
@@ -532,19 +532,17 @@ AutoAgent supports configuration through environment variables, which take prece
 
 ### Core Configuration
 
-- `AUTOAGENT_PROVIDER` - Default AI provider (claude/gemini/mock)
-- `AUTOAGENT_VERBOSE` - Enable verbose output (true/false)
-- `AUTOAGENT_LOG_LEVEL` - Set log level (debug/info/warn/error)
-- `AUTOAGENT_AUTO_COMMIT` - Enable auto-commit (true/false)
-- `AUTOAGENT_RETRY_ATTEMPTS` - Number of retry attempts (default: 3)
-- `AUTOAGENT_MAX_TOKENS` - Maximum tokens per request
+- `AUTOAGENT_DEBUG` - Enable debug mode (true/false)
 
 ### Mock Provider (for testing)
 
 - `AUTOAGENT_MOCK_PROVIDER` - Enable mock provider (true/false)
 - `AUTOAGENT_MOCK_DELAY` - Simulated execution delay in ms
-- `AUTOAGENT_MOCK_ERROR` - Simulate specific errors (timeout/rate-limit/auth-failed)
-- `AUTOAGENT_MOCK_FAIL_ISSUE` - Issue number to simulate failure
+- `AUTOAGENT_MOCK_FAIL` - Simulate general execution failure (true/false)
+- `AUTOAGENT_MOCK_TIMEOUT` - Simulate timeout errors (true/false)
+- `AUTOAGENT_MOCK_RATE_LIMIT` - Simulate rate limit errors (true/false)
+- `AUTOAGENT_MOCK_AUTH_FAIL` - Simulate authentication failures (true/false)
+- `AUTOAGENT_MOCK_CHAT_FAIL` - Simulate chat/communication failures (true/false)
 
 ### Gemini Output Formatting
 
@@ -562,11 +560,11 @@ Example usage:
 # Use mock provider with custom delay
 AUTOAGENT_MOCK_PROVIDER=true AUTOAGENT_MOCK_DELAY=500 autoagent run
 
-# Enable verbose debug output
-DEBUG=true AUTOAGENT_VERBOSE=true autoagent run --all
+# Enable debug output
+AUTOAGENT_DEBUG=true autoagent run --all
 
-# Override provider via environment
-AUTOAGENT_PROVIDER=gemini autoagent run
+# Simulate rate limit errors for testing
+AUTOAGENT_MOCK_PROVIDER=true AUTOAGENT_MOCK_RATE_LIMIT=true autoagent run
 ```
 
 ## Agent Instructions (AGENT.md)
@@ -726,10 +724,10 @@ async function executeWithFailover() {
 ```bash
 # Check where configuration is coming from
 autoagent config get provider --show-source
-# Output: provider = claude (from environment)
+# Output: provider = claude (from configuration file)
 
-# Override with environment variable
-AUTOAGENT_PROVIDER=gemini autoagent run
+# Override provider for single run
+autoagent run --provider gemini
 
 # Set configuration programmatically
 autoagent config set retryAttempts 5
@@ -763,8 +761,8 @@ AUTOAGENT_MOCK_PROVIDER=true autoagent run
 AUTOAGENT_MOCK_PROVIDER=true npm test
 
 # Simulate specific scenarios
-AUTOAGENT_MOCK_ERROR=rate-limit autoagent run
-AUTOAGENT_MOCK_FAIL_ISSUE=3 autoagent run --all
+AUTOAGENT_MOCK_RATE_LIMIT=true autoagent run
+AUTOAGENT_MOCK_FAIL=true autoagent run --all
 ```
 
 ### Running Tests
