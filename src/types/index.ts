@@ -115,6 +115,8 @@ export interface AgentConfig {
   onProgress?: ProgressCallback;
   /** Enable rollback capability */
   enableRollback?: boolean;
+  /** Configuration for the reflection engine */
+  reflection?: ReflectionConfig;
 }
 
 /**
@@ -183,4 +185,111 @@ export interface RateLimitData {
   limitedAt?: number;
   /** Number of rate limit attempts */
   attempts?: number;
+}
+
+/**
+ * Configuration for the reflection engine that iteratively improves decomposition quality.
+ */
+export interface ReflectionConfig {
+  /** Whether reflection is enabled */
+  enabled: boolean;
+  /** Maximum number of reflection iterations to perform */
+  maxIterations: number;
+  /** Minimum improvement score (0.0-1.0) required to continue iterations */
+  improvementThreshold: number;
+  /** Skip reflection for simple specifications (< 500 words) */
+  skipForSimpleSpecs: boolean;
+}
+
+/**
+ * Score indicating how much improvement is needed for the current decomposition.
+ * Range: 0.0 (perfect, no improvement needed) to 1.0 (major gaps, significant improvement needed)
+ */
+export type ImprovementScore = number;
+
+/**
+ * Types of changes that can be made during reflection.
+ */
+export enum ChangeType {
+  /** Add a new issue to the decomposition */
+  ADD_ISSUE = 'ADD_ISSUE',
+  /** Modify an existing issue */
+  MODIFY_ISSUE = 'MODIFY_ISSUE',
+  /** Add a new plan for an issue */
+  ADD_PLAN = 'ADD_PLAN',
+  /** Modify an existing plan */
+  MODIFY_PLAN = 'MODIFY_PLAN',
+  /** Add a dependency between issues */
+  ADD_DEPENDENCY = 'ADD_DEPENDENCY'
+}
+
+/**
+ * A specific improvement change recommended by the reflection engine.
+ */
+export interface ImprovementChange {
+  /** Type of change to make */
+  type: ChangeType;
+  /** Target issue or plan identifier (e.g., issue number or plan file) */
+  target: string | number;
+  /** Description of what to change and why */
+  description: string;
+  /** Specific content to add or modify */
+  content: string | object;
+  /** Priority of this change (higher = more important) */
+  priority?: number;
+}
+
+/**
+ * Analysis result from the reflection engine containing improvement recommendations.
+ */
+export interface ImprovementAnalysis {
+  /** Overall improvement score (0.0-1.0) */
+  score: ImprovementScore;
+  /** List of identified gaps or missing elements */
+  gaps: string[];
+  /** List of recommended changes to apply */
+  changes: ImprovementChange[];
+  /** Reasoning explaining the most important changes */
+  reasoning: string;
+  /** Number of the current reflection iteration */
+  iteration: number;
+}
+
+/**
+ * Result of applying reflection improvements to a decomposition.
+ */
+export interface ReflectionResult {
+  /** Whether reflection was applied */
+  applied: boolean;
+  /** Number of iterations performed */
+  iterationsPerformed: number;
+  /** Total number of changes applied */
+  changesApplied: number;
+  /** List of improvement analyses from each iteration */
+  analyses: ImprovementAnalysis[];
+  /** Final improvement score after all iterations */
+  finalScore: ImprovementScore;
+  /** Whether the process was stopped early due to low improvement scores */
+  stoppedEarly: boolean;
+}
+
+/**
+ * State tracking for the reflection process during decomposition.
+ */
+export interface ReflectionState {
+  /** Current iteration number */
+  currentIteration: number;
+  /** Maximum iterations allowed */
+  maxIterations: number;
+  /** Current decomposition result being improved */
+  currentResult: {
+    issues: Issue[];
+    plans: Plan[];
+  };
+  /** History of improvements applied */
+  improvementHistory: ImprovementAnalysis[];
+  /** Whether reflection is currently active */
+  isActive: boolean;
+  /** Start time of reflection process */
+  startTime: number;
 }

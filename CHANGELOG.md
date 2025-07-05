@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add reflection engine core types and interfaces for iterative decomposition improvement
+  - ReflectionConfig interface for configuring reflection behavior
+  - ImprovementScore type for scoring decomposition quality (0.0-1.0)
+  - ChangeType enum for tracking improvement actions
+  - ImprovementChange, ImprovementAnalysis, ReflectionResult, and ReflectionState interfaces
+  - Integration with AgentConfig to support optional reflection configuration
+
 ## [0.4.0] - 2025-07-05
 
 ### Fixed

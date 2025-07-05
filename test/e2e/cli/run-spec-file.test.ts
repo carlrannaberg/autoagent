@@ -44,7 +44,6 @@ The system should support multiple user roles and provide real-time updates.
       expect(result.stdout).toContain('Decomposition complete!');
       
       // Verify decomposition issue was created
-      const issuesDir = path.join(context.workspace.getPath(), 'issues');
       const files = await context.workspace.listFiles('issues');
       // Bootstrap creates issue with title "Implement plan from {basename}"
       const decompositionIssue = files.find(f => f.includes('implement-plan-from'));
@@ -251,9 +250,9 @@ Each component should be implemented as a separate module with its own set of is
       expect(result.stdout).toContain('Bootstrap complete!');
       
       // Create a pending issue to verify resume works
-      await context.workspace.createFile('issues/2-test-issue.md', `# Issue 2: Test Issue\n\n## Description\nTest issue for resume functionality.\n`);
-      await context.workspace.createFile('plans/2-test-issue.md', `# Plan for Issue 2: Test Issue\n\n## Implementation Phases\n\n### Phase 1: Implementation\n- [ ] Implement test functionality\n\n## Technical Approach\nSimple test implementation.\n`);
-      await context.workspace.createFile('TODO.md', `# To-Do\n\n## Pending Issues\n- [ ] **[Issue #2]** Test Issue - \`issues/2-test-issue.md\`\n\n## Completed Issues\n`);
+      await context.workspace.createFile('issues/2-test-issue.md', '# Issue 2: Test Issue\n\n## Description\nTest issue for resume functionality.\n');
+      await context.workspace.createFile('plans/2-test-issue.md', '# Plan for Issue 2: Test Issue\n\n## Implementation Phases\n\n### Phase 1: Implementation\n- [ ] Implement test functionality\n\n## Technical Approach\nSimple test implementation.\n');
+      await context.workspace.createFile('TODO.md', '# To-Do\n\n## Pending Issues\n- [ ] **[Issue #2]** Test Issue - `issues/2-test-issue.md`\n\n## Completed Issues\n');
       
       // Verify that we can run next issue after spec execution
       const nextResult = await context.cli.execute(['run']);
