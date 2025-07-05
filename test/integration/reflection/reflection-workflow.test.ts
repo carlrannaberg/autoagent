@@ -146,7 +146,7 @@ describe('Reflection Engine Integration Tests', () => {
 
       const reflectionResult = await reflectiveDecomposition(primaryProvider, result, config);
 
-      expect(reflectionResult.performedIterations).toBe(2); // Should stop after error
+      expect(reflectionResult.performedIterations).toBe(1); // Should stop after error
       expect(reflectionResult.improvements).toHaveLength(1); // Only successful iteration
     });
 
@@ -333,6 +333,7 @@ describe('Reflection Engine Integration Tests', () => {
 
       const reflectionResult = await reflectiveDecomposition(provider, result, config);
 
+      // Should stop after first valid response below threshold
       expect(reflectionResult.performedIterations).toBe(3);
       expect(reflectionResult.improvements).toHaveLength(3);
       

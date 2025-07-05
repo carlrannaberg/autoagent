@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add comprehensive integration tests for reflection system
+  - Bootstrap with reflection integration tests
+  - Full reflection cycle tests (spec → bootstrap → reflection → improvement → application)
+  - Multi-iteration scenario tests
+  - Provider integration tests for Claude and Gemini
+  - Configuration integration tests
+  - Error recovery and edge case tests
+  - Test helpers and mock providers for reflection testing
+  - Sample specification files for testing different complexity levels
+
 ## [0.5.2] - 2025-07-05
 
 ### Added
