@@ -56,7 +56,7 @@ describe('Bootstrap Workflow Integration Tests', () => {
       });
 
       child.on('close', (exitCode) => {
-        resolve({ stdout, stderr, exitCode: exitCode || 0 });
+        resolve({ stdout, stderr, exitCode: exitCode ?? 0 });
       });
     });
   }
@@ -68,7 +68,7 @@ describe('Bootstrap Workflow Integration Tests', () => {
     hasIssues?: boolean;
     hasTodo?: boolean;
     todoContent?: string;
-  } = {}) {
+  } = {}): Promise<void> {
     // Create directories
     await mkdir(join(testWorkspace, 'issues'), { recursive: true });
     await mkdir(join(testWorkspace, 'plans'), { recursive: true });
@@ -94,7 +94,7 @@ Test architecture
     // Note: Templates are no longer read from filesystem - bootstrap uses embedded templates
 
     // Create existing issues if requested
-    if (options.hasIssues) {
+    if (options.hasIssues === true) {
       await writeFile(join(testWorkspace, 'issues', '1-existing-issue.md'), `# Issue 1: Existing Issue
 
 ## Requirement
@@ -115,8 +115,8 @@ This is another existing issue
     }
 
     // Create TODO.md if requested
-    if (options.hasTodo) {
-      const content = options.todoContent || `# Project TODO List
+    if (options.hasTodo === true) {
+      const content = options.todoContent ?? `# Project TODO List
 
 ## In Progress
 - [ ] Working on existing feature

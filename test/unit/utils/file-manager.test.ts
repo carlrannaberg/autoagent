@@ -201,7 +201,7 @@ Technical details
       
       const filepath = await fileManager.createPlan(1, plan, 'Test Issue');
       
-      expect(filepath).toBe(path.join(mockWorkspace, 'plans', '1-test-issue-plan.md'));
+      expect(filepath).toBe(path.join(mockWorkspace, 'plans', '1-test-issue.md'));
       expect(fs.writeFile).toHaveBeenCalledWith(
         filepath,
         expect.stringContaining('# Plan for Issue 1: Test Issue'),
@@ -257,9 +257,9 @@ Technical details
       // Create plan with title that should match issue filename format
       const filepath = await fileManager.createPlan(1, plan, 'Implement User Authentication');
       
-      // Expected format: 1-implement-user-authentication-plan.md
+      // Expected format: 1-implement-user-authentication.md
       // This should match the issue file: 1-implement-user-authentication.md
-      expect(filepath).toBe(path.join(mockWorkspace, 'plans', '1-implement-user-authentication-plan.md'));
+      expect(filepath).toBe(path.join(mockWorkspace, 'plans', '1-implement-user-authentication.md'));
       expect(fs.writeFile).toHaveBeenCalledWith(
         filepath,
         expect.stringContaining('# Plan for Issue 1: Implement User Authentication'),
@@ -607,7 +607,7 @@ Technical details
             phases: [{ name: 'Test', tasks: ['Task'] }]
           };
           const planPath = await fileManager.createPlan(issueNumber, plan, example.title);
-          expect(planPath).toBe(path.join(mockWorkspace, 'plans', `${issueNumber}-${example.expectedSlug}-plan.md`));
+          expect(planPath).toBe(path.join(mockWorkspace, 'plans', `${issueNumber}-${example.expectedSlug}.md`));
         }
       }
     });
@@ -623,7 +623,7 @@ Technical details
 
       for (let i = 0; i < titles.length; i++) {
         const title = titles[i];
-        if (title) {
+        if (title !== undefined && title !== '') {
           const issueNumber = i + 1;
           
           // Create issue
@@ -639,7 +639,7 @@ Technical details
           };
           const planPath = await fileManager.createPlan(issueNumber, plan, title);
           const planFilename = path.basename(planPath);
-          const planSlug = planFilename.replace(`${issueNumber}-`, '').replace('-plan.md', '');
+          const planSlug = planFilename.replace(`${issueNumber}-`, '').replace('.md', '');
           
           // Verify slugs are identical
           expect(planSlug).toBe(issueSlug);
@@ -709,7 +709,7 @@ Technical details
               phases: [{ name: 'Test', tasks: ['Task'] }]
             };
             const planPath = await fileManager.createPlan(issueNumber, plan, testCase.title);
-            const planSlug = path.basename(planPath).replace(`${issueNumber}-`, '').replace('-plan.md', '');
+            const planSlug = path.basename(planPath).replace(`${issueNumber}-`, '').replace('.md', '');
             expect(planSlug).toBe(testCase.expected);
           }
         }

@@ -1,7 +1,7 @@
 import { FileManager } from '../src/utils/file-manager';
 import { Plan } from '../src/types';
 
-async function createPlanExamples() {
+async function createPlanExamples(): Promise<void> {
   const fileManager = new FileManager('./workspace');
 
   // Create a plan with title-based naming
@@ -23,6 +23,7 @@ async function createPlanExamples() {
     planWithTitle, 
     'Implement User Authentication'
   );
+  // eslint-disable-next-line no-console
   console.log('Created plan with title:', planPath1);
   // Output: workspace/plans/1-implement-user-authentication-plan.md
 
@@ -39,6 +40,7 @@ async function createPlanExamples() {
   };
 
   const planPath2 = await fileManager.createPlan(2, planWithoutTitle);
+  // eslint-disable-next-line no-console
   console.log('Created plan without title:', planPath2);
   // Output: workspace/plans/2-plan.md
 }

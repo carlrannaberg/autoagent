@@ -4,7 +4,8 @@
     "src/**/*",
     "test/**/*",
     "bin/**/*",
-    "vitest.*.ts"
+    "vitest.*.ts",
+    "examples/**/*"
   ],
   "exclude": [
     "node_modules",

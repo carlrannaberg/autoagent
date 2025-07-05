@@ -157,7 +157,7 @@ ${(issue.resources !== undefined && issue.resources.length > 0) ? issue.resource
     await this.ensureDirectories();
     
     const filename = (issueTitle !== undefined && issueTitle !== '') 
-      ? `${issueNumber}-${this.generateFileSlug(issueTitle)}-plan.md`
+      ? `${issueNumber}-${this.generateFileSlug(issueTitle)}.md`
       : `${issueNumber}-plan.md`;
     const filepath = path.join(this.plansDir, filename);
     

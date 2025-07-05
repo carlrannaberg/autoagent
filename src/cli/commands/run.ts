@@ -260,10 +260,10 @@ export function registerRunCommand(program: Command): void {
                   const decompositionResult = await agent.executeIssue(issueNumber);
                   
                   if (decompositionResult.success) {
-                    Logger.success(`✅ Decomposition complete! ${decompositionResult.issueTitle ? decompositionResult.issueTitle : ''}`);
+                    Logger.success(`✅ Decomposition complete! ${decompositionResult.issueTitle ?? ''}`);
                     
                     // If --all flag is set, continue with all created issues
-                    if (options.all === true) {
+                    if (options.all !== undefined && options.all !== false) {
                       Logger.info('📋 Continuing with all created issues...');
                       
                       const results = await agent.executeAll();

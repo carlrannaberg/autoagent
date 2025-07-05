@@ -24,7 +24,6 @@ import {
   revertToCommit
 } from '../utils/git';
 import { isRateLimitOrUsageError } from '../utils/retry';
-import { DEFAULT_ISSUE_TEMPLATE, DEFAULT_PLAN_TEMPLATE } from '../templates/default-templates';
 
 const execAsync = promisify(exec);
 
@@ -834,6 +833,12 @@ Format as a proper issue document.`;
 
         // Execute with provider
         const result = await provider.execute(prompt, '');
+        
+        // Check if provider execution failed
+        if (!result.success) {
+          throw new Error(`Provider execution failed: ${result.error ?? 'Unknown error'}`);
+        }
+        
         issueContent = `# Issue ${nextNumber}: ${title}
 
 ${result.output ?? 'Success'}`;
@@ -940,8 +945,8 @@ ${result.output ?? 'Success'}`;
     }
 
     // Use embedded templates from the package - no external files needed
-    const issueTemplate = DEFAULT_ISSUE_TEMPLATE;
-    const planTemplate = DEFAULT_PLAN_TEMPLATE;
+    // Dynamic import for testability
+    const { DEFAULT_ISSUE_TEMPLATE: issueTemplate, DEFAULT_PLAN_TEMPLATE: planTemplate } = await import('../templates/default-templates');
 
     // Validate embedded templates are available
     if (!issueTemplate || !planTemplate) {

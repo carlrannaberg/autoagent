@@ -43,6 +43,24 @@ export class TestProvider extends EventEmitter {
     _contextFiles?: string[],
     _signal?: AbortSignal
   ): Promise<ExecutionResult> {
+    // Increment execution count first
+    this.executionCount++;
+    
+    // Check if we should fail
+    if (this.failAfter >= 0 && this.executionCount > this.failAfter) {
+      return {
+        success: false,
+        error: this.failureMessage,
+        result: '',
+        output: '',
+        provider: this.name,
+        issueNumber: 0,
+        tokensUsed: 0,
+        duration: 0,
+        filesModified: []
+      };
+    }
+    
     // Handle prompt-based calls (bootstrap/createIssue)
     if (typeof issueFile === 'string' && !issueFile.includes('.md') && planFile === '') {
       // This is a prompt-based call
@@ -64,11 +82,6 @@ export class TestProvider extends EventEmitter {
         filesChanged: [],
         provider: this.name as any
       };
-    }
-    this.executionCount++;
-    
-    if (this.failAfter >= 0 && this.executionCount > this.failAfter) {
-      throw new Error(this.failureMessage);
     }
 
     if (this.responseDelay > 0) {

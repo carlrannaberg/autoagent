@@ -69,15 +69,16 @@ describe('Bootstrap Command Integration', () => {
       proc.on('close', (code) => {
         // Log for debugging
         if (code !== 0) {
+          // eslint-disable-next-line no-console
           console.log('CLI failed with:', { code, stdout, stderr });
         }
-        resolve({ stdout, stderr, code: code || 0 });
+        resolve({ stdout, stderr, code: code ?? 0 });
       });
     });
   }
 
   // Helper to create a master plan file
-  async function createMasterPlan(name: string, content: string) {
+  async function createMasterPlan(name: string, content: string): Promise<string> {
     const planPath = path.join(testWorkspace, `${name}.md`);
     await fs.writeFile(planPath, content);
     return planPath;
@@ -99,7 +100,7 @@ describe('Bootstrap Command Integration', () => {
 
   describe('CLI Integration', () => {
     it('should bootstrap with empty project', async () => {
-      const masterPlan = await createMasterPlan('master', `# Master Plan
+      await createMasterPlan('master', `# Master Plan
 
 ## Goals
 - Build a test feature
@@ -131,7 +132,7 @@ describe('Bootstrap Command Integration', () => {
         '# Issue 2: Another Issue\n\nThis also exists.'
       );
 
-      const masterPlan = await createMasterPlan('master', `# Master Plan
+      await createMasterPlan('master', `# Master Plan
 
 ## Goals
 - New feature requirement
@@ -165,7 +166,7 @@ describe('Bootstrap Command Integration', () => {
 
   describe('Workflow Integration', () => {
     it('should integrate with status command after bootstrap', async () => {
-      const masterPlan = await createMasterPlan('master', `# Master Plan
+      await createMasterPlan('master', `# Master Plan
 
 ## Goals
 - Feature A
@@ -184,7 +185,7 @@ describe('Bootstrap Command Integration', () => {
     });
 
     it('should integrate with list command after bootstrap', async () => {
-      const masterPlan = await createMasterPlan('master', `# Master Plan
+      await createMasterPlan('master', `# Master Plan
 
 ## Goals
 - Implement search functionality
@@ -210,7 +211,7 @@ describe('Bootstrap Command Integration', () => {
         // Directory doesn't exist, which is what we want
       }
 
-      const masterPlan = await createMasterPlan('master', `# Master Plan
+      await createMasterPlan('master', `# Master Plan
 ## Goals
 - Test embedded templates
 - Verify no filesystem reads`);
@@ -236,7 +237,7 @@ describe('Bootstrap Command Integration', () => {
         // Ignore if doesn't exist
       }
 
-      const masterPlan = await createMasterPlan('test-plan', `# Test Plan
+      await createMasterPlan('test-plan', `# Test Plan
 ## Objectives
 - Create authentication system
 - Implement user profiles`);
@@ -274,7 +275,7 @@ describe('Bootstrap Command Integration', () => {
         '# CUSTOM PLAN TEMPLATE - SHOULD NOT BE USED\n{{content}}'
       );
 
-      const masterPlan = await createMasterPlan('master', `# Master Plan
+      await createMasterPlan('master', `# Master Plan
 ## Goals
 - Test that custom templates are ignored`);
 
@@ -297,7 +298,7 @@ describe('Bootstrap Command Integration', () => {
     });
 
     it('should create properly formatted issues with embedded templates', async () => {
-      const masterPlan = await createMasterPlan('feature-plan', `# Feature Plan
+      await createMasterPlan('feature-plan', `# Feature Plan
 ## Requirements
 - User authentication
 - Profile management
@@ -325,7 +326,7 @@ describe('Bootstrap Command Integration', () => {
       );
       expect(planContent).toContain('# Plan for Issue 1:');
       expect(planContent).toContain('## Implementation Plan');
-      expect(planContent).toContain('### Phase 1: Initial Setup');
+      expect(planContent).toContain('### Analysis and Decomposition');
     });
   });
 

@@ -137,8 +137,8 @@ EOF
     # Initialize directories
     mkdir -p issues plans logs
     
-    # Initialize the project
-    "$AUTOAGENT_BIN" init || return 1
+    # Initialize the project (init command not implemented yet)
+    # "$AUTOAGENT_BIN" init || return 1
 }
 
 # Build autoagent once at the start

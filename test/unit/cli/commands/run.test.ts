@@ -67,6 +67,7 @@ describe('Run Command', () => {
       getStatus: vi.fn().mockResolvedValue({
         pendingIssues: 2
       }),
+      bootstrap: vi.fn().mockResolvedValue(42),
       on: vi.fn(),
       emit: vi.fn()
     };
@@ -234,11 +235,15 @@ describe('Run Command', () => {
       vi.mocked(fs.access).mockResolvedValue(undefined);
       vi.mocked(fs.readFile).mockResolvedValue('# Specification\n\nThis is a spec file without issue marker.');
       
-      await expect(program.parseAsync(['node', 'test', 'run', 'spec.md'])).rejects.toThrow('process.exit called');
+      await program.parseAsync(['node', 'test', 'run', 'spec.md']);
       
       expect(Logger.info).toHaveBeenCalledWith('🔍 Detected spec/plan file: spec.md');
-      expect(Logger.warning).toHaveBeenCalledWith('Spec file execution will be implemented in the next update');
-      expect(processExitSpy).toHaveBeenCalledWith(0);
+      expect(Logger.info).toHaveBeenCalledWith('🏗️  Bootstrapping project from spec file...');
+      expect(mockAgent.bootstrap).toHaveBeenCalledWith(expect.stringContaining('spec.md'));
+      expect(Logger.success).toHaveBeenCalledWith('✅ Bootstrap complete! Created decomposition issue #42');
+      expect(Logger.info).toHaveBeenCalledWith('🚀 Executing decomposition issue #42...');
+      expect(mockAgent.executeIssue).toHaveBeenCalledWith(42);
+      expect(Logger.success).toHaveBeenCalledWith('✅ Decomposition complete! ');
     });
 
     it('should handle issue files when .md file has issue marker', async () => {
@@ -285,10 +290,11 @@ describe('Run Command', () => {
       vi.mocked(fs.access).mockResolvedValue(undefined);
       vi.mocked(fs.readFile).mockResolvedValue('# Specification\n\nNo issue marker here.');
       
-      await expect(program.parseAsync(['node', 'test', 'run', absolutePath])).rejects.toThrow('process.exit called');
+      await program.parseAsync(['node', 'test', 'run', absolutePath]);
       
       expect(fs.readFile).toHaveBeenCalledWith(absolutePath, 'utf-8');
       expect(Logger.info).toHaveBeenCalledWith(`🔍 Detected spec/plan file: ${absolutePath}`);
+      expect(mockAgent.bootstrap).toHaveBeenCalledWith(absolutePath);
     });
   });
 });
