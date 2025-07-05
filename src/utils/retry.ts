@@ -42,14 +42,12 @@ const defaultOptions: Required<RetryOptions> = {
     }
     
     // Check for common rate limit patterns in error messages
-    const message = error.message.toLowerCase();
-    if (message.includes('rate limit') || 
-        message.includes('too many requests') ||
-        message.includes('quota exceeded')) {
+    if (isRateLimitOrUsageError(error.message)) {
       return true;
     }
     
     // Don't retry on specific errors
+    const message = error.message.toLowerCase();
     if (message.includes('not found') ||
         message.includes('unauthorized') ||
         message.includes('forbidden')) {
@@ -158,10 +156,19 @@ export function isRateLimitError(error: Error): boolean {
     return true;
   }
   
-  const message = error.message.toLowerCase();
-  return message.includes('rate limit') || 
-         message.includes('too many requests') ||
-         message.includes('quota exceeded');
+  return isRateLimitOrUsageError(error.message);
+}
+
+/**
+ * Check if an error message indicates a rate limit or usage limit error.
+ * Centralized detection logic for consistent behavior across the codebase.
+ */
+export function isRateLimitOrUsageError(message: string): boolean {
+  const lowercaseMessage = message.toLowerCase();
+  return lowercaseMessage.includes('rate limit') ||
+         lowercaseMessage.includes('usage limit') ||
+         lowercaseMessage.includes('too many requests') ||
+         lowercaseMessage.includes('quota exceeded');
 }
 
 export function extractRetryAfter(error: Error): number | undefined {

@@ -23,6 +23,7 @@ import {
   hasChangesToCommit,
   revertToCommit
 } from '../utils/git';
+import { isRateLimitOrUsageError } from '../utils/retry';
 import { DEFAULT_ISSUE_TEMPLATE, DEFAULT_PLAN_TEMPLATE } from '../templates/default-templates';
 
 const execAsync = promisify(exec);
@@ -409,14 +410,14 @@ export class AutonomousAgent extends EventEmitter {
 
         const result = await provider.execute(issueFile, planFile, contextFiles, signal);
 
-        // Check for rate limiting
-        if (result.error !== undefined && result.error.toLowerCase().includes('rate limit')) {
+        // Check for rate limiting or usage limits
+        if (result.error !== undefined && isRateLimitOrUsageError(result.error)) {
           await this.configManager.updateRateLimit(provider.name as ProviderName, true);
 
           // Try failover if available
           const alternativeProvider = await this.tryFailover(provider.name as ProviderName);
           if (alternativeProvider) {
-            this.reportProgress(`Switching to ${alternativeProvider.name} due to rate limit`, 15);
+            this.reportProgress(`Switching to ${alternativeProvider.name} due to ${result.error.toLowerCase().includes('usage limit') ? 'usage limit' : 'rate limit'}`, 15);
             return this.executeWithProvider(
               alternativeProvider,
               issueFile,
