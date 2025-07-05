@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-07-05
+
 ### Fixed
 - Fix Claude provider to properly detect "Claude AI usage limit reached" errors for failover
   - Now checks both stdout JSON messages and stderr for usage limit errors
@@ -19,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - E2E tests for complete spec → bootstrap → execute workflows
   - Tests for spec file with --all flag continuation
   - Error handling tests for bootstrap and decomposition failures
+
+### Removed
+- Remove bootstrap command in favor of unified run command
+  - Bootstrap functionality is now integrated into the run command
+  - Spec files are detected automatically and processed as bootstrap targets
+  - Maintains backward compatibility while simplifying the CLI interface
 
 ## [0.4.0] - 2025-07-05
 
