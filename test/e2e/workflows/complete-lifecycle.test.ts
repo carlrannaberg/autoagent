@@ -60,11 +60,13 @@ describe('Complete Issue Lifecycle E2E', () => {
 
   it('should handle multi-issue batch execution', async () => {
     await context.workspace.initGit();
-    await context.cli.execute(['init']);
+    // Create AGENT.md that would have been created by init
+    await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
 
     // Create multiple issues
     const issues = ['feature-1', 'feature-2', 'feature-3'];
-    for (const issue of issues) {
+    for (let i = 0; i < issues.length; i++) {
+      const issue = issues[i];
       await context.cli.execute([
         'create',
         '--title',
@@ -74,6 +76,34 @@ describe('Complete Issue Lifecycle E2E', () => {
         '--acceptance',
         'Complete task',
       ]);
+      
+      // Create corresponding plan file for the issue
+      const issueNumber = i + 1; // Issues are numbered starting from 1
+      await context.workspace.createFile(`plans/${issueNumber}-${issue}.md`, `# Plan for Issue ${issueNumber}: ${issue}
+
+## Implementation Plan
+
+### Phase 1: Analysis
+- [ ] Review requirements for ${issue}
+- [ ] Design system architecture
+
+### Phase 2: Implementation
+- [ ] Implement core functionality
+- [ ] Add error handling
+- [ ] Write tests
+
+### Phase 3: Testing & Documentation
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] Update documentation
+
+## Technical Approach
+Standard implementation approach for ${issue}.
+
+## Resources
+- Development environment
+- Testing framework
+`);
     }
 
     // Run all issues
@@ -94,7 +124,8 @@ describe('Complete Issue Lifecycle E2E', () => {
 
   it('should support provider switching during execution', async () => {
     await context.workspace.initGit();
-    await context.cli.execute(['init']);
+    // Create AGENT.md that would have been created by init
+    await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
 
     // Create issue
     await context.cli.execute([

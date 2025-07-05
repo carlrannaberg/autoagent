@@ -8,7 +8,9 @@ describe('Run Spec File E2E', () => {
   describe('Spec File Detection and Execution', () => {
     beforeEach(async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
+      // Create AGENT.md that would have been created by init
+      await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+      // Note: issues/ and plans/ directories will be created on-demand by the commands
     });
 
     it('should bootstrap and execute from a spec file', async () => {
@@ -77,6 +79,51 @@ Implement user CRUD operations.
 
 ## Requirements
 Build reporting functionality.
+`);
+
+      // Create corresponding plan files for the pre-created issues
+      await context.workspace.createFile('plans/2-user-management.md', `# Plan for Issue 2: User Management
+
+## Implementation Plan
+
+### Phase 1: Setup
+- [ ] Create user model/schema
+- [ ] Set up database tables/collections
+
+### Phase 2: CRUD Operations
+- [ ] Implement Create user functionality
+- [ ] Implement Read user functionality  
+- [ ] Implement Update user functionality
+- [ ] Implement Delete user functionality
+
+### Phase 3: Testing
+- [ ] Write unit tests for user operations
+- [ ] Write integration tests
+
+## Technical Approach
+Standard CRUD implementation with proper validation and error handling.
+`);
+      
+      await context.workspace.createFile('plans/3-reporting-system.md', `# Plan for Issue 3: Reporting System
+
+## Implementation Plan
+
+### Phase 1: Data Collection
+- [ ] Identify data sources for reports
+- [ ] Set up data aggregation
+
+### Phase 2: Report Generation  
+- [ ] Create report templates
+- [ ] Implement report generation logic
+- [ ] Add export functionality
+
+### Phase 3: UI Components
+- [ ] Create dashboard components
+- [ ] Add filtering and sorting
+- [ ] Implement real-time updates
+
+## Technical Approach
+Use charting library for visualizations and background jobs for report generation.
 `);
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
@@ -163,7 +210,9 @@ This is the actual issue file.
   describe('Error Handling', () => {
     beforeEach(async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
+      // Create AGENT.md that would have been created by init
+      await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+      // Note: issues/ and plans/ directories will be created on-demand by the commands
     });
 
     it('should handle non-existent spec file', async () => {
@@ -217,7 +266,9 @@ This spec will cause bootstrap to fail.
   describe('Workflow Scenarios', () => {
     beforeEach(async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
+      // Create AGENT.md that would have been created by init
+      await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+      // Note: issues/ and plans/ directories will be created on-demand by the commands
     });
 
     it('should support interrupt and resume during spec execution', async () => {
@@ -390,7 +441,9 @@ Test provider failover handling.
   describe('Edge Cases', () => {
     beforeEach(async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
+      // Create AGENT.md that would have been created by init
+      await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+      // Note: issues/ and plans/ directories will be created on-demand by the commands
     });
 
     it('should handle spec file with various markdown edge cases', async () => {
