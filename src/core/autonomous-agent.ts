@@ -893,6 +893,7 @@ ${result.output ?? 'Success'}`;
    * are required - bootstrap works out-of-the-box with zero configuration.
    * 
    * @param masterPlanPath - Path to the master plan markdown file
+   * @returns The issue number of the created bootstrap issue
    * 
    * @remarks
    * Key safety features:
@@ -905,19 +906,19 @@ ${result.output ?? 'Success'}`;
    * 
    * @example
    * // First bootstrap in a new project
-   * await agent.bootstrap('master-plan.md'); // Creates issue #1
+   * const issueNumber = await agent.bootstrap('master-plan.md'); // Creates issue #1, returns 1
    * 
    * // Second bootstrap in the same project  
-   * await agent.bootstrap('phase2-plan.md'); // Creates issue #2, preserves #1
+   * const issueNumber2 = await agent.bootstrap('phase2-plan.md'); // Creates issue #2, preserves #1, returns 2
    * 
    * // Bootstrap in a project with existing issues
    * // If issues 1-5 exist, creates issue #6
-   * await agent.bootstrap('new-feature.md');
+   * const issueNumber3 = await agent.bootstrap('new-feature.md'); // Returns 6
    * 
    * @throws Error if no providers are available
    * @throws Error if master plan file cannot be read
    */
-  async bootstrap(masterPlanPath: string): Promise<void> {
+  async bootstrap(masterPlanPath: string): Promise<number> {
     const provider = await this.getProviderForOperation();
     if (!provider) {
       throw new Error('No available providers for bootstrap');
@@ -1023,6 +1024,8 @@ ${result.output ?? 'Success'}`;
       technicalApproach: 'AI-assisted decomposition of master plan',
       challenges: ['Ensuring task independence', 'Managing dependencies']
     }, issueTitle);
+
+    return issueNumber;
   }
 
   /**

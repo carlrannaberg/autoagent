@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #50]** Implement spec file handling in run command - `issues/50-implement-spec-file-handling-in-run-command.md`
 - [ ] **[Issue #51]** Delete bootstrap command and clean up references - `issues/51-delete-bootstrap-command-and-clean-up-references.md`
 - [ ] **[Issue #52]** Write tests for smart run command - `issues/52-write-tests-for-smart-run-command.md`
 - [ ] **[Issue #53]** Update documentation for smart run command - `issues/53-update-documentation-for-smart-run-command.md`
@@ -24,6 +23,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #77]** Update documentation - `issues/77-update-documentation.md`
 
 ## Completed Issues
+- [x] **[Issue #50]** Implement spec file handling in run command - `issues/50-implement-spec-file-handling-in-run-command.md`
 - [x] **[Issue #49]** Add input type detection to run command - `issues/49-add-input-type-detection-to-run-command.md`
 - [x] **[Issue #48]** Implement plan from git-auto-push-configuration - `issues/48-implement-plan-from-git-auto-push-configuration.md`
 - [x] **[Issue #47]** Implement plan from git-commit-no-verify-configuration - `issues/47-implement-plan-from-git-commit-no-verify-configuration.md`

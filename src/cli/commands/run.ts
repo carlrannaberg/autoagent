@@ -246,10 +246,46 @@ export function registerRunCommand(program: Command): void {
               await fs.access(targetPath);
               
               if (await isPlanFile(targetPath)) {
-                // This is a spec/plan file - prepare for bootstrap (issue 50)
+                // This is a spec/plan file - handle with bootstrap
                 Logger.info(`🔍 Detected spec/plan file: ${target}`);
-                Logger.warning('Spec file execution will be implemented in the next update');
-                process.exit(0);
+                Logger.info('🏗️  Bootstrapping project from spec file...');
+                
+                try {
+                  // Call bootstrap with the spec file path
+                  const issueNumber = await agent.bootstrap(targetPath);
+                  Logger.success(`✅ Bootstrap complete! Created decomposition issue #${issueNumber}`);
+                  
+                  // Auto-execute the decomposition issue
+                  Logger.info(`🚀 Executing decomposition issue #${issueNumber}...`);
+                  const decompositionResult = await agent.executeIssue(issueNumber);
+                  
+                  if (decompositionResult.success) {
+                    Logger.success(`✅ Decomposition complete! ${decompositionResult.issueTitle ? decompositionResult.issueTitle : ''}`);
+                    
+                    // If --all flag is set, continue with all created issues
+                    if (options.all === true) {
+                      Logger.info('📋 Continuing with all created issues...');
+                      
+                      const results = await agent.executeAll();
+                      const successful = results.filter(r => r.success).length;
+                      const failed = results.filter(r => !r.success).length;
+                      
+                      if (failed === 0) {
+                        Logger.success(`🎉 All ${successful} issues completed successfully!`);
+                      } else {
+                        Logger.warning(`⚠️  Completed ${successful} issues, ${failed} failed`);
+                        process.exit(1);
+                      }
+                    }
+                  } else {
+                    Logger.error(`❌ Decomposition failed: ${decompositionResult.error ?? 'Unknown error'}`);
+                    process.exit(1);
+                  }
+                } catch (error) {
+                  Logger.error(`❌ Bootstrap failed: ${error instanceof Error ? error.message : String(error)}`);
+                  process.exit(1);
+                }
+                
                 return;
               } else {
                 // It's an issue file with issue marker
