@@ -7,9 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- Fix status command to show total issues from issues directory and completed/pending from TODO.md
-
 ## [0.5.2] - 2025-07-05
 
 ### Added
@@ -26,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix Gemini text output appearing as bold white formatting
 - Fix TODO.md not being updated after decomposition creates new issues
 - Fix addIssueToTodo overwriting existing pending issues instead of appending
+- Fix status command to show total issues from issues directory and completed/pending from TODO.md
+- Fix failing unit tests in run command (missing mocks, reflection validation, memory leaks)
+- Fix failing E2E test by adding missing plan files and proper project initialization
+- Fix E2E tests to work with new TODO.md-based status tracking
 - Rate limit detection now happens immediately instead of after long delays
 - Gemini provider gracefully handles quota exceeded errors
 - Better error messages with time estimates for rate limit recovery
