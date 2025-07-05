@@ -10,6 +10,8 @@ export interface ChatOptions {
   temperature?: number;
   /** System prompt to use */
   systemPrompt?: string;
+  /** Abort signal for cancellation */
+  signal?: AbortSignal;
 }
 
 /**
@@ -27,11 +29,18 @@ export interface ProviderInterface {
   
   /**
    * Execute a task with the provider.
-   * @param prompt The task prompt
-   * @param options Additional options for execution
+   * @param issueFile Path to the issue file to execute
+   * @param planFile Path to the plan file to execute
+   * @param contextFiles Optional array of context file paths
+   * @param signal Optional abort signal for cancellation
    * @returns Promise resolving to the execution result
    */
-  execute(prompt: string, options?: Record<string, unknown>): Promise<ExecutionResult>;
+  execute(
+    issueFile: string,
+    planFile: string,
+    contextFiles?: string[],
+    signal?: AbortSignal
+  ): Promise<ExecutionResult>;
   
   /**
    * Send a chat message to the provider and get a response.
