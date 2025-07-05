@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2025-07-05
+
 ### Fixed
 - Fix Gemini rate limit fallback not working due to early provider rejection
 - Fix Gemini Pro → Flash model fallback when Flash is selected from start
