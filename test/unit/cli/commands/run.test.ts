@@ -230,6 +230,88 @@ describe('Run Command', () => {
     });
   });
 
+  describe('Reflection options', () => {
+    it('should disable reflection with --no-reflection flag', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      await command!.parseAsync(['39', '--no-reflection'], { from: 'user' });
+      
+      expect(AutonomousAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          reflection: { enabled: false }
+        })
+      );
+    });
+    
+    it('should set reflection iterations with --reflection-iterations flag', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      await command!.parseAsync(['39', '--reflection-iterations', '5'], { from: 'user' });
+      
+      expect(AutonomousAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          reflection: { maxIterations: 5 }
+        })
+      );
+    });
+    
+    it('should combine reflection options', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      await command!.parseAsync(['39', '--reflection-iterations', '7'], { from: 'user' });
+      
+      expect(AutonomousAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          reflection: { maxIterations: 7 }
+        })
+      );
+    });
+    
+    it('should validate reflection iterations range', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      // Test value too low
+      await expect(command!.parseAsync(['39', '--reflection-iterations', '0'], { from: 'user' }))
+        .rejects.toThrow('process.exit called');
+      
+      expect(Logger.error).toHaveBeenCalledWith('--reflection-iterations must be between 1 and 10');
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+      
+      // Clear mocks for next test
+      vi.clearAllMocks();
+      
+      // Test value too high
+      await expect(command!.parseAsync(['39', '--reflection-iterations', '11'], { from: 'user' }))
+        .rejects.toThrow('process.exit called');
+      
+      expect(Logger.error).toHaveBeenCalledWith('--reflection-iterations must be between 1 and 10');
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+    });
+    
+    it('should handle invalid reflection iterations input', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      // NaN will be returned by parseInt for non-numeric input
+      await command!.parseAsync(['39', '--reflection-iterations', 'abc'], { from: 'user' });
+      
+      // Since parseInt returns NaN, the validation will fail
+      expect(Logger.error).toHaveBeenCalledWith('--reflection-iterations must be between 1 and 10');
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+    });
+    
+    it('should not pass reflection config when no reflection options are set', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      await command!.parseAsync(['39'], { from: 'user' });
+      
+      expect(AutonomousAgent).toHaveBeenCalledWith(
+        expect.not.objectContaining({
+          reflection: expect.anything()
+        })
+      );
+    });
+  });
+
   describe('Input Type Detection', () => {
     describe('isPlanFile() detection', () => {
       it('should detect spec/plan files when .md file has no issue marker', async () => {

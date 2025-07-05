@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Reflection is automatically triggered when enabled in configuration
   - Progress tracking for reflection iterations during bootstrap
   - Graceful error handling maintains backward compatibility
+- Add CLI options for reflection control
+  - Add `--reflection-iterations <n>` flag to set maximum iterations (1-10)
+  - Add `--no-reflection` flag to disable reflection for the current run
+  - CLI options override configuration file settings
+  - Input validation ensures iteration count is within acceptable range
 
 ### Fixed
 - Fix TypeScript type mismatch between ProviderInterface and Provider base class implementations

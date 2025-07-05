@@ -1,7 +1,8 @@
 import { Command } from 'commander';
 import { AutonomousAgent } from '../../core/autonomous-agent';
 import { Logger } from '../../utils/logger';
-import { ProviderName } from '../../types';
+import { ProviderName, ReflectionConfig } from '../../types';
+import { mergeReflectionConfig } from '../../core/reflection-defaults';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -13,6 +14,8 @@ interface RunOptions {
   commit?: boolean;
   coAuthor?: boolean;
   dryRun?: boolean;
+  reflectionIterations?: number;
+  reflection?: boolean;
 }
 
 interface StatusData {
@@ -60,7 +63,9 @@ export function registerRunCommand(program: Command): void {
       '  autoagent run specs/feature.md   # Run spec file (creates plan + issues)\n' +
       '  autoagent run 5                  # Run issue #5\n' +
       '  autoagent run 5-add-auth         # Run issue by name\n' +
-      '  autoagent run --all              # Run all pending issues')
+      '  autoagent run --all              # Run all pending issues\n' +
+      '  autoagent run --reflection-iterations 5  # Run with 5 reflection iterations\n' +
+      '  autoagent run --no-reflection    # Run without reflection improvements')
     .option('-p, --provider <provider>', 'Override AI provider for this run (claude or gemini)')
     .option('-w, --workspace <path>', 'Workspace directory', process.cwd())
     .option('--all', 'Run all pending issues')
@@ -70,6 +75,8 @@ export function registerRunCommand(program: Command): void {
     .option('--no-co-author', 'Disable co-authorship for this run')
     .option('--co-author', 'Enable co-authorship for this run')
     .option('--dry-run', 'Preview what would be done without making changes')
+    .option('--reflection-iterations <n>', 'Set maximum number of reflection iterations (1-10)', parseInt)
+    .option('--no-reflection', 'Disable reflection for this run')
     .action(async (target?: string, options: RunOptions = {}) => {
       try {
         const workspacePath = options.workspace ?? process.cwd();
@@ -84,6 +91,25 @@ export function registerRunCommand(program: Command): void {
           abortController.abort();
         });
         
+        // Validate reflection iterations if provided
+        if (options.reflectionIterations !== undefined) {
+          if (options.reflectionIterations < 1 || options.reflectionIterations > 10) {
+            Logger.error('--reflection-iterations must be between 1 and 10');
+            process.exit(1);
+          }
+        }
+        
+        // Build reflection config from CLI options
+        const cliReflectionConfig: Partial<ReflectionConfig> = {
+          ...(options.reflection === false ? { enabled: false } : {}),
+          ...(options.reflectionIterations !== undefined ? { maxIterations: options.reflectionIterations } : {})
+        };
+        
+        // Merge CLI options with defaults if any CLI options were provided
+        const reflectionConfig = Object.keys(cliReflectionConfig).length > 0 
+          ? mergeReflectionConfig(undefined, cliReflectionConfig)
+          : undefined;
+        
         const agent = new AutonomousAgent({
           provider: options.provider as ProviderName | undefined,
           workspace: options.workspace,
@@ -92,6 +118,7 @@ export function registerRunCommand(program: Command): void {
           includeCoAuthoredBy: options.coAuthor !== undefined ? options.coAuthor : undefined,
           dryRun: options.dryRun,
           signal: abortController.signal,
+          reflection: reflectionConfig,
           onProgress: (message: string, percentage?: number): void => {
             if (percentage !== undefined) {
               Logger.info(`[${percentage}%] ${message}`);
