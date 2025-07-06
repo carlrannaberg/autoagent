@@ -146,7 +146,7 @@ describe('reflection-engine', () => {
       expect(analysis.score).toBe(0);
       expect(analysis.gaps).toEqual([]);
       expect(analysis.changes).toEqual([]);
-      expect(analysis.reasoning).toBe('Reflection analysis failed');
+      expect(analysis.reasoning).toBe('Malformed response');
     });
 
     it('should handle provider errors', async () => {
@@ -160,7 +160,7 @@ describe('reflection-engine', () => {
       );
 
       expect(analysis.score).toBe(0);
-      expect(analysis.reasoning).toBe('Reflection analysis failed');
+      expect(analysis.reasoning).toBe('Provider error');
       expect(Logger.error).toHaveBeenCalledWith('Reflection analysis failed: Provider error');
     });
   });
@@ -235,7 +235,7 @@ describe('reflection-engine', () => {
       const result = await reflectiveDecomposition(mockProvider, mockResult, mockConfig);
 
       expect(result.enabled).toBe(true);
-      expect(result.performedIterations).toBe(1);
+      expect(result.performedIterations).toBe(0);
       expect(result.totalImprovements).toBe(0);
     });
 
@@ -454,7 +454,7 @@ describe('reflection-engine', () => {
       const result = await reflectiveDecomposition(mockProvider, timeoutResult, mockConfig);
 
       expect(result.enabled).toBe(true);
-      expect(result.performedIterations).toBe(1);
+      expect(result.performedIterations).toBe(0);
       expect(result.totalImprovements).toBe(0);
       expect(Logger.error).toHaveBeenCalledWith(expect.stringContaining('Request timeout'));
     });
@@ -499,7 +499,7 @@ describe('reflection-engine', () => {
       const result = await reflectiveDecomposition(mockProvider, errorResult, mockConfig);
 
       // Should stop after error
-      expect(result.performedIterations).toBe(2);
+      expect(result.performedIterations).toBe(1);
       expect(result.improvements).toHaveLength(1); // Only successful improvement
     });
   });

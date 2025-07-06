@@ -57,4 +57,13 @@ export class InMemoryConfigManager {
     const resetTime = this.rateLimits.get(provider);
     return { isLimited, resetTime };
   }
+
+  resolveAdditionalDirectories(
+    _configDirs: string[] = [],
+    _cliDirs: string[] = [],
+    _basePath?: string
+  ): Promise<string[]> {
+    // Simple mock implementation that returns empty array
+    return Promise.resolve([]);
+  }
 }

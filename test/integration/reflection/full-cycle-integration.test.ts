@@ -152,9 +152,16 @@ describe('Full Reflection Cycle Integration', () => {
       ], 7.5)
     ));
     
-    // Second improvement
+    // Second improvement - build on the first improvement
+    const contentAfterFirstImprovement = specContent + '\n\n## Additional Details\n\n' + [
+      'Added disaster recovery with RTO < 1 hour',
+      'Added 90-day data retention policy',
+      'Added load testing requirements',
+      'Added estimated monthly cost of $5000'
+    ].join('\n');
+    
     mockGenerate.mockResolvedValueOnce(createMockProviderResponse(
-      createMockImprovementResponse(specContent, [
+      createMockImprovementResponse(contentAfterFirstImprovement, [
         'Added integration test coverage requirement of 80%',
         'Added specific alerting thresholds for latency and error rates'
       ])

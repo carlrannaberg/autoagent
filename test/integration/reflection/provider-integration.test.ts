@@ -6,8 +6,7 @@ import {
   createTempDir,
   cleanupTempDir,
   createSpecFile,
-  createMockProviderResponse,
-  createMockProviderError,
+  createMockCompletionResponse,
   createMockReflectionResponse,
   createMockImprovementResponse,
   createSampleSpec
@@ -56,13 +55,13 @@ describe('Provider Integration with Reflection', () => {
     const mockGenerate = mockClaude.generateCompletion as ReturnType<typeof vi.fn>;
     
     mockGenerate
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         createMockReflectionResponse(['Add error handling'], 7)
       ))
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         'Improved content with error handling'
       ))
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         createMockReflectionResponse(['All good'], 9.2)
       ));
 
@@ -72,6 +71,9 @@ describe('Provider Integration with Reflection', () => {
       workingDir: tempDir
     });
 
+    if (!result.success) {
+      console.error('Test failed with error:', result.error);
+    }
     expect(result.success).toBe(true);
     expect(result.provider).toBe('claude');
     expect(mockGenerate).toHaveBeenCalled();
@@ -85,7 +87,7 @@ describe('Provider Integration with Reflection', () => {
     const mockGenerate = mockGemini.generateCompletion as ReturnType<typeof vi.fn>;
     
     mockGenerate
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         createMockReflectionResponse(['Add performance metrics'], 8.5)
       ));
 
@@ -113,17 +115,17 @@ describe('Provider Integration with Reflection', () => {
     const mockGeminiGenerate = mockGemini.generateCompletion as ReturnType<typeof vi.fn>;
     
     // Claude fails with rate limit
-    mockClaudeGenerate.mockResolvedValueOnce(createMockProviderError('Rate limit exceeded'));
+    mockClaudeGenerate.mockRejectedValueOnce(new Error('Rate limit exceeded'));
     
     // Gemini succeeds
     mockGeminiGenerate
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         createMockReflectionResponse(['Add security section'], 7.5)
       ))
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         'Content with security section'
       ))
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         createMockReflectionResponse(['Secure now'], 9.1)
       ));
 
@@ -147,7 +149,7 @@ describe('Provider Integration with Reflection', () => {
     
     // Simulate different response formats from provider
     mockGenerate
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         `Analysis:
         The specification needs improvements in several areas.
         
@@ -157,13 +159,13 @@ describe('Provider Integration with Reflection', () => {
         
         Score: 6.5/10`
       ))
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         createMockImprovementResponse(createSampleSpec('complex'), [
           'Added DR procedures with RTO/RPO',
           'Added monitoring with Prometheus'
         ])
       ))
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         `The specification is now comprehensive.
         
         Score: 9/10
@@ -191,7 +193,7 @@ describe('Provider Integration with Reflection', () => {
     const callTimes: number[] = [];
     mockGenerate.mockImplementation(() => {
       callTimes.push(Date.now());
-      return Promise.resolve(createMockProviderResponse(
+      return Promise.resolve(createMockCompletionResponse(
         createMockReflectionResponse(['Some improvement'], 8.5)
       ));
     });
@@ -219,7 +221,7 @@ describe('Provider Integration with Reflection', () => {
     mockClaudeGenerate.mockRejectedValueOnce(new Error('Request timeout'));
     
     // Gemini works
-    mockGeminiGenerate.mockResolvedValueOnce(createMockProviderResponse(
+    mockGeminiGenerate.mockResolvedValueOnce(createMockCompletionResponse(
       createMockReflectionResponse(['Good spec'], 9.3)
     ));
 
@@ -237,16 +239,17 @@ describe('Provider Integration with Reflection', () => {
     // Simulate provider becoming unavailable mid-process
     let claudeCallCount = 0;
     mockClaude.isAvailable = vi.fn().mockImplementation(() => {
-      return Promise.resolve(claudeCallCount++ < 2); // Available for first 2 calls only
+      const available = claudeCallCount++ < 2; // Available for first 2 calls only
+      return Promise.resolve(available);
     });
     
     vi.spyOn(ProviderFactory, 'getProvider')
-      .mockImplementation(async (preferred) => {
-        const isAvailable = await mockClaude.isAvailable();
-        if (preferred === 'claude' && isAvailable === true) {
-          return mockClaude;
+      .mockImplementation((preferred) => {
+        // Don't call isAvailable here, let the runner do it
+        if (preferred === 'claude') {
+          return Promise.resolve(mockClaude);
         }
-        return mockGemini;
+        return Promise.resolve(mockGemini);
       });
     
     const specPath = await createSpecFile(tempDir, createSampleSpec('simple'));
@@ -255,15 +258,15 @@ describe('Provider Integration with Reflection', () => {
     
     // Claude handles first reflection
     mockClaudeGenerate
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         createMockReflectionResponse(['Need improvements'], 6)
       ))
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         'Improved content'
       ));
     
     // Gemini handles second reflection
-    mockGeminiGenerate.mockResolvedValueOnce(createMockProviderResponse(
+    mockGeminiGenerate.mockResolvedValueOnce(createMockCompletionResponse(
       createMockReflectionResponse(['All good now'], 9.5)
     ));
 
@@ -296,7 +299,7 @@ describe('Provider Integration with Reflection', () => {
     const mockGenerate = mockLimitedProvider.generateCompletion as ReturnType<typeof vi.fn>;
     
     // Should still work despite low limits
-    mockGenerate.mockResolvedValueOnce(createMockProviderResponse(
+    mockGenerate.mockResolvedValueOnce(createMockCompletionResponse(
       createMockReflectionResponse(['Needs work'], 8.5)
     ));
 

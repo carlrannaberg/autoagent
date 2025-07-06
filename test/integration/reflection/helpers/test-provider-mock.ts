@@ -5,41 +5,42 @@ import type { ExecutionResult } from '../../../../src/types/index';
 export class TestProviderMock implements Provider {
   name: string;
   checkAvailability: () => Promise<boolean>;
-  execute: (prompt: string, contextFile?: string) => Promise<ExecutionResult>;
+  execute: (issueFile: string, planFile: string, contextFiles?: string[], signal?: AbortSignal, additionalDirectories?: string[]) => Promise<ExecutionResult>;
   chat: (prompt: string) => Promise<string>;
   
-  private customHandler?: (prompt: string) => Promise<string>;
+  private customHandler?: (prompt: string) => Promise<string> | string;
   private responseQueue: string[] = [];
   private responseIndex: number = 0;
   
   constructor(name: string = 'test-provider') {
     this.name = name;
     this.checkAvailability = vi.fn().mockResolvedValue(true);
-    this.execute = vi.fn().mockImplementation((prompt: string) => ({
+    this.execute = vi.fn().mockImplementation((issueFile: string, _planFile: string, _contextFiles?: string[], _signal?: AbortSignal, _additionalDirectories?: string[]) => ({
       success: true,
-      output: `Executed: ${prompt}`
+      output: `Executed: ${issueFile}`
     }));
-    this.chat = vi.fn().mockImplementation((prompt: string) => {
+    this.chat = vi.fn().mockImplementation(async (prompt: string) => {
       if (this.customHandler) {
-        return this.customHandler(prompt);
+        const result = this.customHandler(prompt);
+        return typeof result === 'string' ? result : await result;
       }
       if (this.responseQueue.length > 0 && this.responseIndex < this.responseQueue.length) {
         return this.responseQueue[this.responseIndex++];
       }
-      return Promise.resolve('Default response');
+      return 'Default response';
     });
   }
   
-  setCustomHandler(handler: (prompt: string) => Promise<string>): void {
+  setCustomHandler(handler: (prompt: string) => Promise<string> | string): void {
     this.customHandler = handler;
   }
   
   setCustomResponse(keyword: string, response: string): void {
-    vi.mocked(this.execute).mockImplementation((prompt: string) => {
-      if (prompt.includes(keyword)) {
+    vi.mocked(this.execute).mockImplementation((issueFile: string, _planFile: string, _contextFiles?: string[], _signal?: AbortSignal, _additionalDirectories?: string[]) => {
+      if (issueFile.includes(keyword)) {
         return { success: true, output: response };
       }
-      return { success: true, output: `Executed: ${prompt}` };
+      return { success: true, output: `Executed: ${issueFile}` };
     });
   }
   

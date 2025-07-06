@@ -339,8 +339,9 @@ describe('Reflection Engine Integration Tests', () => {
       
       // First two should have fallback values
       expect(reflectionResult.improvements![0].score).toBe(0);
-      expect(reflectionResult.improvements![0].reasoning).toBe('Reflection analysis failed');
+      expect(reflectionResult.improvements![0].reasoning).toBe('Malformed response');
       expect(reflectionResult.improvements![1].score).toBe(0);
+      expect(reflectionResult.improvements![1].reasoning).toBe('Malformed response');
       expect(reflectionResult.improvements![2].score).toBe(0.05);
     });
   });

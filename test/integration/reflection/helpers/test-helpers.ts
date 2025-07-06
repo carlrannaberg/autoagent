@@ -1,7 +1,7 @@
 import { mkdtemp, rm, writeFile, readFile, mkdir } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import type { ProviderResponse } from '../../../../src/types/providers.js';
+import type { ProviderResponse, CompletionResponse } from '../../../../src/types/providers.js';
 import type { ReflectionContext } from '../../../../src/core/reflection/types.js';
 
 export async function createTempDir(): Promise<string> {
@@ -17,6 +17,8 @@ export async function cleanupTempDir(dir: string): Promise<void> {
 }
 
 export async function createSpecFile(dir: string, content: string): Promise<string> {
+  // Ensure the directory exists first
+  await mkdir(dir, { recursive: true });
   const specPath = join(dir, 'test-spec.md');
   await writeFile(specPath, content);
   return specPath;
@@ -40,6 +42,17 @@ export async function readIssueFile(dir: string, issueNumber: number): Promise<s
 export function createMockProviderResponse(content: string): ProviderResponse {
   return {
     success: true,
+    content,
+    usage: {
+      inputTokens: 100,
+      outputTokens: 200,
+      totalTokens: 300
+    }
+  };
+}
+
+export function createMockCompletionResponse(content: string): CompletionResponse {
+  return {
     content,
     usage: {
       inputTokens: 100,

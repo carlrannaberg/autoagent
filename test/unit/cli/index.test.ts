@@ -63,7 +63,8 @@ describe('CLI Integration Tests', () => {
         logLevel: 'info',
         customInstructions: ''
       }),
-      getAvailableProviders: vi.fn().mockResolvedValue(['claude', 'gemini'])
+      getAvailableProviders: vi.fn().mockResolvedValue(['claude', 'gemini']),
+      resolveAdditionalDirectories: vi.fn().mockResolvedValue([])
     } as unknown as any;
 
     mockAgent = {

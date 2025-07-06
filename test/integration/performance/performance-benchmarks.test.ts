@@ -236,19 +236,19 @@ describe('Performance Integration Tests', () => {
               await fs.writeFile(filePath, `Content ${i}`);
             }
           } else if (op.type === 'batched' && op.batchSize !== undefined && op.batchSize > 0) {
+            // Create the directory once for all files
+            const dirPath = path.join(context.workspace.rootPath, 'test-files-batched');
+            await fs.mkdir(dirPath, { recursive: true });
+            
             const batches = Math.ceil(op.count / op.batchSize);
             for (let b = 0; b < batches; b++) {
               const batchPromises = [];
               for (let i = 0; i < op.batchSize && b * op.batchSize + i < op.count; i++) {
                 const fileIndex = b * op.batchSize + i;
-                const filePath = path.join(
-                  context.workspace.rootPath,
-                  'test-files-batched',
-                  `file-${fileIndex}.txt`
-                );
+                const filePath = path.join(dirPath, `file-${fileIndex}.txt`);
+                // Only write the file, directory already exists
                 batchPromises.push(
-                  fs.mkdir(path.dirname(filePath), { recursive: true })
-                    .then(() => fs.writeFile(filePath, `Content ${fileIndex}`))
+                  fs.writeFile(filePath, `Content ${fileIndex}`)
                 );
               }
               await Promise.all(batchPromises);

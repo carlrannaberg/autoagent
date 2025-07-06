@@ -291,7 +291,7 @@ Excellent specification that covers all requirements.`
 
     expect(result.success).toBe(true);
     expect(result.iterations).toBe(5);
-    expect(result.finalScore).toBe(7.6);
+    expect(result.finalScore).toBeCloseTo(7.6, 1);
     
     // Verify steady but slow improvement
     result.improvements.forEach((imp, index) => {

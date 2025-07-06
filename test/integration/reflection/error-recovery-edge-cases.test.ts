@@ -8,7 +8,7 @@ import {
   createTempDir,
   cleanupTempDir,
   createSpecFile,
-  createMockProviderResponse,
+  createMockCompletionResponse,
   createMockReflectionResponse,
   createSampleSpec
 } from './helpers/test-helpers.js';
@@ -45,10 +45,10 @@ describe('Error Recovery and Edge Cases', () => {
     
     // Return malformed responses
     mockGenerate
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         'This is not a valid reflection response without score'
       ))
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         createMockReflectionResponse(['Fixed now'], 8.5)
       ));
 
@@ -70,7 +70,7 @@ describe('Error Recovery and Edge Cases', () => {
     await chmod(tempDir, 0o555);
     
     const mockGenerate = mockProvider.generateCompletion as ReturnType<typeof vi.fn>;
-    mockGenerate.mockResolvedValueOnce(createMockProviderResponse(
+    mockGenerate.mockResolvedValueOnce(createMockCompletionResponse(
       createMockReflectionResponse(['Good'], 9)
     ));
 
@@ -113,7 +113,7 @@ describe('Error Recovery and Edge Cases', () => {
         // Delete file after first reflection
         await rm(specPath);
       }
-      return createMockProviderResponse(
+      return createMockCompletionResponse(
         createMockReflectionResponse(['Need work'], 6)
       );
     });
@@ -134,7 +134,7 @@ describe('Error Recovery and Edge Cases', () => {
     
     // First reflection works
     mockGenerate
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         createMockReflectionResponse(['Need improvements'], 6)
       ))
       .mockRejectedValueOnce(new Error('Process interrupted'));
@@ -156,10 +156,10 @@ describe('Error Recovery and Edge Cases', () => {
     const mockGenerate = mockProvider.generateCompletion as ReturnType<typeof vi.fn>;
     
     mockGenerate
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         createMockReflectionResponse(['Add improvements'], 6)
       ))
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         'Improved content'
       ))
       .mockRejectedValueOnce(new Error('Failed to re-analyze'));
@@ -180,7 +180,7 @@ describe('Error Recovery and Edge Cases', () => {
     const specPath = await createSpecFile(tempDir, '');
     const mockGenerate = mockProvider.generateCompletion as ReturnType<typeof vi.fn>;
     
-    mockGenerate.mockResolvedValueOnce(createMockProviderResponse(
+    mockGenerate.mockResolvedValueOnce(createMockCompletionResponse(
       createMockReflectionResponse(['Empty spec needs content'], 1)
     ));
 
@@ -200,7 +200,7 @@ describe('Error Recovery and Edge Cases', () => {
     const specPath = await createSpecFile(tempDir, largeContent);
     const mockGenerate = mockProvider.generateCompletion as ReturnType<typeof vi.fn>;
     
-    mockGenerate.mockResolvedValueOnce(createMockProviderResponse(
+    mockGenerate.mockResolvedValueOnce(createMockCompletionResponse(
       createMockReflectionResponse(['Too large, needs summary'], 8.5)
     ));
 
@@ -220,7 +220,7 @@ describe('Error Recovery and Edge Cases', () => {
     const specPath = join(specialDir, 'test-spec.md');
     
     const mockGenerate = mockProvider.generateCompletion as ReturnType<typeof vi.fn>;
-    mockGenerate.mockResolvedValueOnce(createMockProviderResponse(
+    mockGenerate.mockResolvedValueOnce(createMockCompletionResponse(
       createMockReflectionResponse(['Good'], 9)
     ));
 
@@ -238,13 +238,13 @@ describe('Error Recovery and Edge Cases', () => {
     const mockGenerate = mockProvider.generateCompletion as ReturnType<typeof vi.fn>;
     
     mockGenerate
-      .mockResolvedValueOnce(createMockProviderResponse(
+      .mockResolvedValueOnce(createMockCompletionResponse(
         createMockReflectionResponse(['Need work'], 6)
       ))
       .mockImplementation(async () => {
         // Simulate external modification
         await writeFile(specPath, 'Externally modified content');
-        return createMockProviderResponse('Improved content');
+        return createMockCompletionResponse('Improved content');
       });
 
     const result = await runReflection({
@@ -261,7 +261,7 @@ describe('Error Recovery and Edge Cases', () => {
     const specPath = await createSpecFile(tempDir, createSampleSpec('simple'));
     const mockGenerate = mockProvider.generateCompletion as ReturnType<typeof vi.fn>;
     
-    mockGenerate.mockResolvedValueOnce(createMockProviderResponse(
+    mockGenerate.mockResolvedValueOnce(createMockCompletionResponse(
       '{ invalid json: missing quotes }'
     ));
 
@@ -288,7 +288,7 @@ describe('Error Recovery and Edge Cases', () => {
     ];
     
     for (const response of responses) {
-      mockGenerate.mockResolvedValueOnce(createMockProviderResponse(response));
+      mockGenerate.mockResolvedValueOnce(createMockCompletionResponse(response));
     }
 
     const result = await runReflection({
@@ -306,18 +306,23 @@ describe('Error Recovery and Edge Cases', () => {
     const specPath = await createSpecFile(tempDir, createSampleSpec('simple'));
     const mockGenerate = mockProvider.generateCompletion as ReturnType<typeof vi.fn>;
     
+    // Track when generateCompletion is called
+    let callCount = 0;
     mockGenerate
-      .mockResolvedValueOnce(createMockProviderResponse(
-        createMockReflectionResponse(['Need improvements'], 6)
-      ))
-      .mockResolvedValueOnce(createMockProviderResponse(
-        'Improved content'
-      ));
-    
-    // Make file read-only after first read
-    setTimeout(() => {
-      void chmod(specPath, 0o444);
-    }, 50);
+      .mockImplementation(async () => {
+        callCount++;
+        if (callCount === 1) {
+          // First call: return reflection with low score
+          return createMockCompletionResponse(
+            createMockReflectionResponse(['Need improvements'], 6)
+          );
+        } else if (callCount === 2) {
+          // Second call: Make file read-only before returning improvement
+          await chmod(specPath, 0o444);
+          return createMockCompletionResponse('Improved content');
+        }
+        return createMockCompletionResponse('Should not reach here');
+      });
 
     const result = await runReflection({
       specFile: specPath,
@@ -326,6 +331,7 @@ describe('Error Recovery and Edge Cases', () => {
     });
 
     expect(result.success).toBe(false);
+    expect(result.error).toMatch(/permission/i);
     
     // Restore permissions
     await chmod(specPath, 0o644);
@@ -335,7 +341,7 @@ describe('Error Recovery and Edge Cases', () => {
     const specPath = await createSpecFile(tempDir, createSampleSpec('simple'));
     const mockGenerate = mockProvider.generateCompletion as ReturnType<typeof vi.fn>;
     
-    mockGenerate.mockResolvedValueOnce(createMockProviderResponse(
+    mockGenerate.mockResolvedValueOnce(createMockCompletionResponse(
       createMockReflectionResponse(['Completely inadequate'], 0)
     ));
 

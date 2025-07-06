@@ -17,6 +17,7 @@ export class ProviderSimulator implements AIProvider {
   private responseDelay: number;
   private customResponses: Map<string, string | Error>;
   private isRateLimited: boolean = false;
+  private randomSeed: number;
   
   public executionHistory: Array<{
     prompt: string;
@@ -31,6 +32,8 @@ export class ProviderSimulator implements AIProvider {
     this.errorRate = options.errorRate ?? 0;
     this.responseDelay = options.responseDelay ?? 100;
     this.customResponses = options.customResponses ?? new Map();
+    // Use a deterministic seed based on the provider name for reproducible results
+    this.randomSeed = this.hashCode(options.name);
   }
 
   async execute(prompt: string, _options: any = {}): Promise<string> {
@@ -53,7 +56,9 @@ export class ProviderSimulator implements AIProvider {
       await new Promise(resolve => setTimeout(resolve, this.responseDelay));
     }
 
-    if (Math.random() < this.errorRate) {
+    // Use deterministic error pattern instead of pure randomness
+    // This ensures the actual error rate matches the configured rate more precisely
+    if (this.errorRate > 0 && this.shouldSimulateError()) {
       const error = new Error(`${this.name}: Random failure occurred`);
       this.executionHistory.push({
         prompt,
@@ -84,6 +89,27 @@ export class ProviderSimulator implements AIProvider {
     });
 
     return response;
+  }
+
+  private hashCode(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
+  }
+
+  private seededRandom(): number {
+    // Simple seeded random number generator (Linear Congruential Generator)
+    this.randomSeed = (this.randomSeed * 9301 + 49297) % 233280;
+    return this.randomSeed / 233280;
+  }
+
+  private shouldSimulateError(): boolean {
+    // Use seeded random for deterministic but still "random" behavior
+    return this.seededRandom() < this.errorRate;
   }
 
   private generateDefaultResponse(prompt: string): string {
@@ -134,6 +160,8 @@ export class ProviderSimulator implements AIProvider {
     this.callCount = 0;
     this.isRateLimited = false;
     this.executionHistory = [];
+    // Reset the random seed to ensure consistent behavior across test runs
+    this.randomSeed = this.hashCode(this.name);
   }
 }
 

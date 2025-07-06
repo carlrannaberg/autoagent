@@ -41,7 +41,8 @@ export class TestProvider extends EventEmitter {
     issueFile: string,
     planFile: string,
     _contextFiles?: string[],
-    _signal?: AbortSignal
+    _signal?: AbortSignal,
+    _additionalDirectories?: string[]
   ): Promise<ExecutionResult> {
     // Increment execution count first
     this.executionCount++;
