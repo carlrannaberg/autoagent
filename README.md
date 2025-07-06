@@ -130,6 +130,65 @@ autoagent run --no-commit
 }
 ```
 
+### Git Hooks Configuration
+
+AutoAgent supports configuring git hook behavior during auto-commit. By default, git hooks are executed normally, but you can bypass them when needed:
+
+```bash
+# Disable git hooks globally (use --no-verify)
+autoagent config set-git-no-verify true
+
+# Enable git hooks globally (default)
+autoagent config set-git-no-verify false
+
+# Override per execution
+autoagent run 1 --commit --no-verify    # Skip hooks for this run
+autoagent run 1 --commit --verify       # Force hooks for this run
+```
+
+#### When to use `--no-verify`
+
+The `--no-verify` flag is useful in specific scenarios:
+
+- **CI/CD pipelines** where pre-commit hooks may fail in automated environments or require interactive input
+- **Testing environments** where hooks designed for human workflows are not appropriate
+- **Emergency situations** where broken or misconfigured hooks are blocking critical fixes
+- **Automated environments** where hooks interfere with autonomous operations
+- **Development workflows** with slow or broken git hooks that interrupt execution
+
+**⚠️ Security Warning**: Using `--no-verify` bypasses pre-commit hooks that may include:
+- Security checks and vulnerability scanning
+- Code quality validation and linting
+- Test execution and coverage requirements
+- Commit message formatting and validation
+- Other important safeguards specific to your project
+
+Only use `--no-verify` when you understand the implications and are certain the hooks can be safely bypassed.
+
+#### Examples
+
+```bash
+# Development workflow with slow hooks
+autoagent config set-git-no-verify true     # Set globally for dev
+autoagent run --all --commit                 # Runs without hooks
+autoagent run 5 --commit --verify            # Override for important changes
+
+# CI/CD pipeline configuration
+export AUTOAGENT_GIT_NO_VERIFY=true         # Environment variable
+autoagent run specs/feature.md --all --commit
+
+# Emergency fix workflow
+autoagent run critical-fix --commit --no-verify
+
+# Testing environment configuration
+# In .autoagent/config.json:
+{
+  "gitAutoCommit": true,
+  "gitCommitNoVerify": true,
+  "includeCoAuthoredBy": false
+}
+```
+
 ### Global Installation
 
 ```bash
@@ -293,6 +352,10 @@ autoagent run --provider gemini
 # Disable auto-commit
 autoagent run --no-commit
 
+# Control git hooks during commits
+autoagent run --commit --no-verify   # Skip git hooks
+autoagent run --commit --verify      # Force git hooks (default)
+
 # Use mock provider for testing
 AUTOAGENT_MOCK_PROVIDER=true autoagent run
 
@@ -362,6 +425,10 @@ autoagent config set-failover claude,gemini
 # Enable/disable auto-commit
 autoagent config set-auto-commit true
 
+# Enable/disable git hooks during commits
+autoagent config set-git-no-verify true   # Skip hooks (--no-verify)
+autoagent config set-git-no-verify false  # Run hooks (default)
+
 # Show current configuration
 autoagent config show
 
@@ -371,10 +438,12 @@ autoagent config clear-limits
 # Get specific config value
 autoagent config get provider
 autoagent config get provider --show-source
+autoagent config get gitCommitNoVerify
 
 # Set any config value
 autoagent config set logLevel debug
 autoagent config set retryAttempts 5
+autoagent config set gitCommitNoVerify true
 ```
 
 #### `autoagent list <type>`
@@ -553,6 +622,7 @@ AutoAgent uses a layered configuration system:
   "maxTokens": 100000,
   "rateLimitCooldown": 3600000,
   "gitAutoCommit": true,
+  "gitCommitNoVerify": false,
   "gitCommitInterval": 300000,
   "includeCoAuthoredBy": true,
   "logLevel": "info",
@@ -611,6 +681,7 @@ AutoAgent supports configuration through environment variables, which take prece
 ### Core Configuration
 
 - `AUTOAGENT_DEBUG` - Enable debug mode (true/false)
+- `AUTOAGENT_GIT_NO_VERIFY` - Skip git hooks during commits (true/false)
 
 ### Mock Provider (for testing)
 

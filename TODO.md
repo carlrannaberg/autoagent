@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #77]** Update documentation - `issues/77-update-documentation.md`
 - [ ] **[Issue #78]** Create git push utility functions and types - `issues/78-create-git-push-utility-functions.md`
 - [ ] **[Issue #79]** Update configuration interfaces for auto-push - `issues/79-update-configuration-interfaces-for-auto-push.md`
 - [ ] **[Issue #80]** Implement configuration manager auto-push methods - `issues/80-implement-configuration-manager-auto-push-methods.md`
@@ -14,6 +13,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #85]** Update documentation for auto-push feature - `issues/85-update-documentation-for-auto-push-feature.md`
 
 ## Completed Issues
+- [x] **[Issue #77]** Update documentation - `issues/77-update-documentation.md`
 - [x] **[Issue #76]** Write tests for git no-verify functionality - `issues/76-write-tests-for-git-no-verify-functionality.md`
 - [x] **[Issue #75]** Add configuration commands - `issues/75-add-configuration-commands.md`
 - [x] **[Issue #74]** Add CLI flags for run command - `issues/74-add-cli-flags-for-run-command.md`

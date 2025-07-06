@@ -94,6 +94,7 @@ autoagent config init
   "maxTokens": 100000,
   "rateLimitCooldown": 3600000,
   "gitAutoCommit": true,
+  "gitCommitNoVerify": false,
   "gitCommitInterval": 300000,
   "includeCoAuthoredBy": true,
   "enableRollback": true,
@@ -230,6 +231,11 @@ autoagent config clear-limits claude
   - Default: `true`
   - Example: `false`
 
+- **`gitCommitNoVerify`** (boolean): Skip git hooks when committing (--no-verify flag)
+  - Default: `false` (hooks are executed)
+  - Example: `true` (bypasses pre-commit and commit-msg hooks)
+  - **Warning**: Bypassing hooks may skip important security checks or code quality validation
+
 - **`gitCommitInterval`** (number): Minimum time between auto-commits (milliseconds)
   - Default: `300000` (5 minutes)
   - Example: `600000` (10 minutes)
@@ -283,6 +289,9 @@ export AUTOAGENT_DEBUG=true
 
 # Disable auto-commit
 export AUTOAGENT_NO_COMMIT=true
+
+# Skip git hooks
+export AUTOAGENT_GIT_NO_VERIFY=true
 ```
 
 ### Environment Variable Precedence
@@ -317,6 +326,10 @@ autoagent config set-failover gemini,claude
 # Enable/disable auto-commit
 autoagent config set-auto-commit false
 
+# Enable/disable git hooks
+autoagent config set-git-no-verify true   # Skip hooks
+autoagent config set-git-no-verify false  # Run hooks (default)
+
 # Set co-authorship
 autoagent config set-co-authored-by true
 ```
@@ -349,6 +362,7 @@ autoagent config reset defaultProvider
 {
   "defaultProvider": "claude",
   "gitAutoCommit": false,
+  "gitCommitNoVerify": true,
   "logLevel": "debug",
   "retryAttempts": 5,
   "customInstructions": "Use ES6 modules and async/await patterns"
