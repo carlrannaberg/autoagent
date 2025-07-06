@@ -18,6 +18,9 @@ const { createProvider, getFirstAvailableProvider } = vi.hoisted(() => {
   };
 });
 
+// Hoist execMock to avoid initialization errors
+const execMock = vi.hoisted(() => vi.fn());
+
 const mockFiles = new Map<string, string[]>();
 const mockFileContents = new Map<string, string>();
 
@@ -42,7 +45,6 @@ vi.mock('@/providers', () => ({
 }));
 
 // Mock exec from child_process
-const execMock = vi.fn();
 vi.mock('child_process', () => ({
   exec: execMock
 }));
@@ -51,20 +53,24 @@ vi.mock('child_process', () => ({
 vi.mock('util', async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...actual,
-    promisify: (fn: any) => {
+    ...(actual as any),
+    promisify: (fn: any): any => {
       if (fn === execMock) {
-        // Return a promisified version of execMock
-        return vi.fn().mockImplementation((cmd: string) => {
+        // Return a promisified version of execMock that calls the original mock
+        return (cmd: string) => {
           return new Promise((resolve, reject) => {
+            // Call the original execMock with a callback
             execMock(cmd, (err: any, stdout: string, stderr: string) => {
-              if (err) reject(err);
-              else resolve({ stdout, stderr });
+              if (err !== null && err !== undefined) {
+                reject(err);
+              } else {
+                resolve({ stdout, stderr });
+              }
             });
           });
-        });
+        };
       }
-      return actual.promisify(fn);
+      return (actual as any).promisify(fn);
     }
   };
 });
