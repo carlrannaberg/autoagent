@@ -1,4 +1,4 @@
-import { Config } from '../../src/types';
+import { Config } from '../../../src/types';
 
 export class InMemoryConfigManager {
   private config: Config;
