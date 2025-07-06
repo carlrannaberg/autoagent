@@ -145,20 +145,37 @@ export async function runAutoAgent(args: string[], cwd?: string): Promise<{
   });
 }
 
-export async function createTestIssue(workspace: TestWorkspace, issue: Partial<Issue>): Promise<string> {
-  const issueContent = `# ${issue.title ?? 'Test Issue'}
+export async function createTestIssue(workspace: TestWorkspace, issue: Partial<Issue>, issueNumber?: number): Promise<{ issuePath: string; issueNumber: number }> {
+  // Extract issue number from id if provided in format "N-title"
+  let actualIssueNumber = issueNumber;
+  if (actualIssueNumber === undefined && issue.id !== undefined) {
+    const match = issue.id.match(/^(\d+)-/);
+    if (match !== null && match[1] !== undefined) {
+      actualIssueNumber = parseInt(match[1], 10);
+    }
+  }
+  actualIssueNumber = actualIssueNumber ?? 1;
+
+  const issueContent = `# Issue ${actualIssueNumber}: ${issue.title ?? 'Test Issue'}
 
 ## Requirement
 ${issue.requirement ?? 'Test requirement'}
 
 ## Acceptance Criteria
 ${(issue.acceptanceCriteria ?? ['Test criteria']).map(c => `- [ ] ${c}`).join('\n')}
+
+## Technical Details
+${issue.technicalDetails ?? 'No additional technical details.'}
+
+## Resources
+- No resources specified.
 `;
 
-  const issuePath = path.join(workspace.rootPath, 'issues', `${issue.id ?? 'test-issue'}.md`);
+  const fileName = issue.id ?? `${actualIssueNumber}-test-issue`;
+  const issuePath = path.join(workspace.rootPath, 'issues', `${fileName}.md`);
   await fs.mkdir(path.dirname(issuePath), { recursive: true });
   await fs.writeFile(issuePath, issueContent);
-  return issuePath;
+  return { issuePath, issueNumber: actualIssueNumber };
 }
 
 export async function createTestConfig(workspace: TestWorkspace, config: Partial<Configuration>): Promise<void> {
