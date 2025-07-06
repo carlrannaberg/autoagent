@@ -108,8 +108,8 @@ export class AutonomousAgent extends EventEmitter {
       // Report initial progress
       this.reportProgress('Starting execution...', 0);
 
-      // Validate git repository for auto-commit
-      await this.validateGitForAutoCommit();
+      // Validate git repository for auto-commit and auto-push
+      await this.validateGitForAutoCommitAndPush();
 
       // Capture pre-execution state if rollback is enabled
       let rollbackData;
@@ -542,9 +542,9 @@ export class AutonomousAgent extends EventEmitter {
       await this.updateProviderInstructions(result);
     }
 
-    // Git auto-commit if configured
+    // Git auto-commit and auto-push if configured
     if (this.config.autoCommit === true) {
-      await this.performGitCommit(issue, result);
+      await this.performGitCommitAndPush(issue, result);
     }
 
     this.reportProgress('Execution completed successfully', 100);
@@ -714,75 +714,240 @@ ${issueEntry}
     }
   }
 
+  /**
+   * Validate git repository for auto-push operations.
+   * Checks remote configuration and accessibility.
+   * 
+   * @throws Error with clear remediation guidance if validation fails
+   */
+  private async validateGitForAutoPush(): Promise<void> {
+    // Get push configuration
+    const userConfig = this.configManager.getConfig();
+    const autoPush = this.config.autoPush ?? userConfig.gitAutoPush;
+    
+    // Skip validation if auto-push is disabled
+    if (!autoPush) {
+      return;
+    }
+
+    if (this.config.debug === true) {
+      this.reportProgress('🔐 Validating git environment for auto-push...', 0);
+      this.reportProgress(`📍 Auto-push: ${autoPush ? 'enabled' : 'disabled'}`, 0);
+    }
+
+    // Validate remote repository
+    const { validateRemoteForPush } = await import('../utils/git');
+    const remote = userConfig.gitPushRemote ?? 'origin';
+    const validationResult = await validateRemoteForPush(remote);
+
+    if (!validationResult.isValid) {
+      // Build comprehensive error message
+      const errorMessage = [
+        'Git validation failed for auto-push.',
+        '',
+        'Errors found:',
+        ...validationResult.errors.map((e, i) => `${i + 1}. ${e}`),
+        '',
+        'To fix these issues:',
+        ...validationResult.suggestions.map((s, i) => `${i + 1}. ${s}`),
+        '',
+        'Alternative: Disable auto-push by setting gitAutoPush to false in your config'
+      ].join('\n');
+
+      throw new Error(errorMessage);
+    }
+
+    // Log successful validation in debug mode
+    if (this.config.debug === true) {
+      this.reportProgress(`✅ Git validation passed for auto-push (remote: ${remote})`, 0);
+    }
+  }
 
   /**
-   * Perform git commit for completed issue
+   * Validate git environment for both auto-commit and auto-push.
+   * Consolidates validation to avoid duplicate checks.
+   * 
+   * @throws Error with clear remediation guidance if validation fails
    */
-  private async performGitCommit(issue: Issue, result: ExecutionResult): Promise<void> {
-    try {
-      // Validate git configuration for auto-commit
+  private async validateGitForAutoCommitAndPush(): Promise<void> {
+    // Get effective configuration
+    const userConfig = this.configManager.getConfig();
+    const autoCommit = this.config.autoCommit ?? false;
+    const autoPush = this.config.autoPush ?? userConfig.gitAutoPush;
+
+    // Skip validation if both are disabled
+    if (!autoCommit && !autoPush) {
+      return;
+    }
+
+    if (this.config.debug === true) {
+      this.reportProgress('🔐 Validating git environment...', 0);
+      this.reportProgress(`📍 Auto-commit: ${autoCommit ? 'enabled' : 'disabled'}`, 0);
+      this.reportProgress(`📍 Auto-push: ${autoPush ? 'enabled' : 'disabled'}`, 0);
+    }
+
+    // Validate for commit if enabled
+    if (autoCommit) {
       await this.validateGitForAutoCommit();
+    }
 
-      // Check if there are changes to commit
-      const hasChanges = await hasChangesToCommit();
-      if (!hasChanges) {
-        return; // No changes to commit
-      }
+    // Validate for push if enabled
+    if (autoPush) {
+      await this.validateGitForAutoPush();
+    }
+  }
 
-      // Stage all changes
-      await stageAllChanges();
 
-      // Create commit message
-      const issueName = `${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
-      const commitMessage = `feat: Complete issue from issues/${issueName}.md`;
-
-      // Determine no-verify setting with proper precedence
-      // 1. Runtime config (highest priority)
-      // 2. User configuration (fallback)
-      // 3. Default false (lowest priority)
-      let noVerify = false;
+  /**
+   * Perform git push operation
+   */
+  private async performGitPush(result?: ExecutionResult): Promise<void> {
+    try {
+      const userConfig = this.configManager.getConfig();
+      const autoPush = this.config.autoPush ?? userConfig.gitAutoPush;
       
-      if (this.config.noVerify !== undefined) {
-        // Runtime override from AgentConfig
-        noVerify = this.config.noVerify;
-        if (this.config.debug === true) {
-          this.reportProgress(`🔧 Using runtime noVerify setting: ${noVerify}`, 0);
-        }
-      } else {
-        // Fall back to user configuration
-        const userConfig = this.configManager.getConfig();
-        noVerify = userConfig.gitCommitNoVerify;
-        if (this.config.debug === true && noVerify) {
-          this.reportProgress(`🔧 Using configured gitCommitNoVerify: ${noVerify}`, 0);
-        }
+      // Skip if auto-push is disabled
+      if (!autoPush) {
+        return;
       }
 
-      // Create commit with optional co-authorship and no-verify option
-      const commitResult = await createCommit({
-        message: commitMessage,
-        coAuthor: (this.config.includeCoAuthoredBy === true && result.provider !== undefined) ? {
-          name: result.provider.charAt(0).toUpperCase() + result.provider.slice(1),
-          email: `${result.provider}@autoagent-cli`
-        } : undefined,
-        noVerify
+      this.reportProgress('Pushing to remote...', 96);
+
+      const { pushToRemote, hasUpstreamBranch, getCurrentBranch } = await import('../utils/git');
+      
+      // Get push configuration
+      const remote = userConfig.gitPushRemote ?? 'origin';
+      const branch = userConfig.gitPushBranch ?? await getCurrentBranch() ?? undefined;
+      
+      // Check if upstream tracking exists
+      const hasUpstream = await hasUpstreamBranch();
+      const setUpstream = !hasUpstream;
+      
+      if (setUpstream && this.config.debug === true) {
+        this.reportProgress(`Setting upstream to ${remote}/${branch}...`, 96);
+      }
+
+      // Execute push
+      const pushResult = await pushToRemote({
+        remote,
+        branch,
+        setUpstream
       });
 
-      if (commitResult.success) {
-        this.reportProgress('Changes committed to git', 95);
-
-        // Store commit hash in result for potential rollback
-        if (commitResult.commitHash !== undefined && commitResult.commitHash !== '' && result.rollbackData !== undefined) {
-          result.rollbackData.gitCommit = commitResult.commitHash;
+      if (pushResult.success) {
+        this.reportProgress(`Changes pushed to ${pushResult.remote}/${pushResult.branch}`, 98);
+        
+        // Store push info in result for potential rollback
+        if (result !== undefined && result.rollbackData !== undefined && pushResult.branch !== undefined) {
+          result.rollbackData.gitPush = {
+            remote: pushResult.remote ?? remote,
+            branch: pushResult.branch,
+            commit: result.rollbackData.gitCommit ?? ''
+          };
         }
-      } else if (this.config.debug === true) {
-        this.reportProgress(`Git commit failed: ${commitResult.error ?? 'Unknown error'}`, 0);
+      } else {
+        // Push failed - log but don't fail the execution
+        const errorMsg = pushResult.error ?? 'Unknown error';
+        if (this.config.debug === true) {
+          this.reportProgress(`Git push failed: ${errorMsg}`, 0);
+          if (pushResult.stderr !== undefined) {
+            this.reportProgress(`Push stderr: ${pushResult.stderr}`, 0);
+          }
+        }
+        
+        // Provide helpful error messages
+        if (errorMsg.includes('Authentication')) {
+          this.reportProgress('⚠️  Push failed due to authentication. Check your git credentials.', 0);
+        } else if (errorMsg.includes('remote rejected')) {
+          this.reportProgress('⚠️  Push was rejected by remote. You may need to pull first.', 0);
+        } else if (errorMsg.includes('Could not resolve host')) {
+          this.reportProgress('⚠️  Push failed due to network error. Check your internet connection.', 0);
+        } else {
+          this.reportProgress(`⚠️  Push failed: ${errorMsg}`, 0);
+        }
       }
     } catch (error) {
       // Log error but don't fail the execution
       if (this.config.debug === true) {
-        this.reportProgress(`Git commit error: ${error instanceof Error ? error.message : String(error)}`, 0);
+        this.reportProgress(`Git push error: ${error instanceof Error ? error.message : String(error)}`, 0);
       }
     }
+  }
+
+  /**
+   * Perform git commit and optionally push for completed issue
+   */
+  private async performGitCommitAndPush(issue: Issue, result: ExecutionResult): Promise<void> {
+    try {
+      // Check if there are changes to commit
+      const hasChanges = await hasChangesToCommit();
+      if (!hasChanges) {
+        return; // No changes to commit or push
+      }
+
+      // Perform commit if auto-commit is enabled
+      if (this.config.autoCommit === true) {
+        // Stage all changes
+        await stageAllChanges();
+
+        // Create commit message
+        const issueName = `${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+        const commitMessage = `feat: Complete issue from issues/${issueName}.md`;
+
+        // Determine no-verify setting with proper precedence
+        let noVerify = false;
+        
+        if (this.config.noVerify !== undefined) {
+          noVerify = this.config.noVerify;
+          if (this.config.debug === true) {
+            this.reportProgress(`🔧 Using runtime noVerify setting: ${noVerify}`, 0);
+          }
+        } else {
+          const userConfig = this.configManager.getConfig();
+          noVerify = userConfig.gitCommitNoVerify;
+          if (this.config.debug === true && noVerify) {
+            this.reportProgress(`🔧 Using configured gitCommitNoVerify: ${noVerify}`, 0);
+          }
+        }
+
+        // Create commit with optional co-authorship and no-verify option
+        const commitResult = await createCommit({
+          message: commitMessage,
+          coAuthor: (this.config.includeCoAuthoredBy === true && result.provider !== undefined) ? {
+            name: result.provider.charAt(0).toUpperCase() + result.provider.slice(1),
+            email: `${result.provider}@autoagent-cli`
+          } : undefined,
+          noVerify
+        });
+
+        if (commitResult.success) {
+          this.reportProgress('Changes committed to git', 95);
+
+          // Store commit hash in result for potential rollback
+          if (commitResult.commitHash !== undefined && commitResult.commitHash !== '' && result.rollbackData !== undefined) {
+            result.rollbackData.gitCommit = commitResult.commitHash;
+          }
+          
+          // Perform push if enabled and commit was successful
+          await this.performGitPush(result);
+        } else if (this.config.debug === true) {
+          this.reportProgress(`Git commit failed: ${commitResult.error ?? 'Unknown error'}`, 0);
+        }
+      }
+    } catch (error) {
+      // Log error but don't fail the execution
+      if (this.config.debug === true) {
+        this.reportProgress(`Git commit/push error: ${error instanceof Error ? error.message : String(error)}`, 0);
+      }
+    }
+  }
+
+  /**
+   * Perform git commit for completed issue
+   * @deprecated Use performGitCommitAndPush instead
+   */
+  private async performGitCommit(issue: Issue, result: ExecutionResult): Promise<void> {
+    return this.performGitCommitAndPush(issue, result);
   }
 
   /**
