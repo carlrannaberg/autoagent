@@ -6,6 +6,11 @@ import { mergeReflectionConfig } from '../../core/reflection-defaults';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
+// Helper function to collect repeatable CLI options
+function collect(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
+
 interface RunOptions {
   all?: boolean;
   provider?: string;
@@ -16,6 +21,7 @@ interface RunOptions {
   dryRun?: boolean;
   reflectionIterations?: number;
   reflection?: boolean;
+  addDir?: string[];
 }
 
 interface StatusData {
@@ -77,6 +83,7 @@ export function registerRunCommand(program: Command): void {
     .option('--dry-run', 'Preview what would be done without making changes')
     .option('--reflection-iterations <n>', 'Set maximum number of reflection iterations (1-10)', parseInt)
     .option('--no-reflection', 'Disable reflection for this run')
+    .option('--add-dir <path>', 'Add additional directory for AI access (repeatable)', collect, [])
     .action(async (target?: string, options: RunOptions = {}) => {
       const abortController = new AbortController();
       
@@ -125,6 +132,7 @@ export function registerRunCommand(program: Command): void {
           dryRun: options.dryRun,
           signal: abortController.signal,
           reflection: reflectionConfig,
+          additionalDirectories: options.addDir || [],
           onProgress: (message: string, percentage?: number): void => {
             if (percentage !== undefined) {
               Logger.info(`[${percentage}%] ${message}`);

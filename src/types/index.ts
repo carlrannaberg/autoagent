@@ -117,6 +117,8 @@ export interface AgentConfig {
   enableRollback?: boolean;
   /** Configuration for the reflection engine */
   reflection?: ReflectionConfig;
+  /** Additional directories to give AI providers access to */
+  additionalDirectories?: string[];
 }
 
 /**
@@ -143,6 +145,8 @@ export interface UserConfig {
   customInstructions: string;
   /** Include co-authored-by in commit messages */
   includeCoAuthoredBy?: boolean;
+  /** Additional directories to give AI providers access to */
+  additionalDirectories?: string[];
 }
 
 /**

@@ -216,10 +216,40 @@ export function detectDependencies(changes: ImprovementChange[]): ChangeDependen
       if (change1 && change2 && change1.type === ChangeType.ADD_DEPENDENCY) {
         const mentionsTarget = change1.content.includes(change2.target) || 
                               change1.description.includes(change2.target);
-        if (mentionsTarget) {
+        
+        // Also check for issue number references (e.g., "Issue 2" -> "2-issue.md")
+        const issueNumMatch = change2.target.match(/^(\d+)-/);
+        const mentionsIssueNum = issueNumMatch !== null && (
+          change1.content.includes(`Issue ${issueNumMatch[1]}`) ||
+          change1.description.includes(`Issue ${issueNumMatch[1]}`)
+        );
+        
+        if (mentionsTarget || mentionsIssueNum) {
           dependencies.push({
             from: change1,
             to: change2,
+            type: 'requires',
+            reason: 'Dependency change references target'
+          });
+        }
+      }
+      
+      // Check for explicit dependencies in reverse direction
+      if (change1 && change2 && change2.type === ChangeType.ADD_DEPENDENCY) {
+        const mentionsTarget = change2.content.includes(change1.target) || 
+                              change2.description.includes(change1.target);
+        
+        // Also check for issue number references (e.g., "Issue 1" -> "1-issue.md")
+        const issueNumMatch = change1.target.match(/^(\d+)-/);
+        const mentionsIssueNum = issueNumMatch !== null && (
+          change2.content.includes(`Issue ${issueNumMatch[1]}`) ||
+          change2.description.includes(`Issue ${issueNumMatch[1]}`)
+        );
+        
+        if (mentionsTarget || mentionsIssueNum) {
+          dependencies.push({
+            from: change2,
+            to: change1,
             type: 'requires',
             reason: 'Dependency change references target'
           });

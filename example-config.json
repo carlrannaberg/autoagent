@@ -1,0 +1,16 @@
+{
+  "providers": ["claude", "gemini"],
+  "failoverDelay": 5000,
+  "retryAttempts": 3,
+  "maxTokens": 100000,
+  "rateLimitCooldown": 3600000,
+  "gitAutoCommit": false,
+  "gitCommitInterval": 600000,
+  "logLevel": "info",
+  "customInstructions": "",
+  "additionalDirectories": [
+    "./webapp/src",
+    "./api/src", 
+    "../shared-components"
+  ]
+}

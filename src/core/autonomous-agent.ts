@@ -436,7 +436,16 @@ export class AutonomousAgent extends EventEmitter {
         this.abortController = new AbortController();
         const signal = this.config.signal || this.abortController.signal;
 
-        const result = await provider.execute(issueFile, planFile, contextFiles, signal);
+        // Resolve additional directories from config and CLI
+        const configDirs = userConfig.additionalDirectories || [];
+        const cliDirs = this.config.additionalDirectories || [];
+        const additionalDirectories = await this.configManager.resolveAdditionalDirectories(
+          configDirs,
+          cliDirs,
+          this.config.workspace
+        );
+
+        const result = await provider.execute(issueFile, planFile, contextFiles, signal, additionalDirectories);
 
         // Check for rate limiting or usage limits
         if (result.error !== undefined && isRateLimitOrUsageError(result.error)) {
@@ -873,8 +882,8 @@ Generate a comprehensive issue document with:
 
 Format as a proper issue document.`;
 
-        // Execute with provider
-        const result = await provider.execute(prompt, '');
+        // Execute with provider (no additional directories needed for bootstrap)
+        const result = await provider.execute(prompt, '', undefined, undefined, []);
         
         // Check if provider execution failed
         if (!result.success) {
@@ -1093,8 +1102,8 @@ Also create a TODO.md file that lists all issues in this format:
 Master Plan:
 ${masterPlanContent}`;
 
-    // Execute with provider
-    const result = await provider.execute(prompt, '');
+    // Execute with provider (no additional directories needed for decomposition)
+    const result = await provider.execute(prompt, '', undefined, undefined, []);
 
     // If reflection is enabled, perform reflective improvement
     if (this.config.reflection?.enabled === true) {

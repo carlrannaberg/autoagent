@@ -47,13 +47,15 @@ export class GeminiProvider extends Provider {
    * @param planFile - Path to the plan file to execute
    * @param contextFiles - Optional array of context file paths
    * @param signal - Optional abort signal for cancellation
+   * @param additionalDirectories - Optional array of additional directories to give AI access to
    * @returns Promise resolving to execution result
    */
   async execute(
     issueFile: string,
     planFile: string,
     contextFiles?: string[],
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    additionalDirectories?: string[]
   ): Promise<ExecutionResult> {
     const startTime = Date.now();
     const issueNumber = this.extractIssueNumber(issueFile);
@@ -93,6 +95,16 @@ When you make changes to files, please clearly indicate which files were modifie
             // Skip files that can't be read
           }
         }
+      }
+
+      // For additional directories, add a note since Gemini uses --all_files for directory access
+      if (additionalDirectories && additionalDirectories.length > 0) {
+        prompt += '\n\n## Additional Directory Access Required\n';
+        prompt += 'The following directories should be accessible for this task:\n';
+        for (const dir of additionalDirectories) {
+          prompt += `- ${dir}\n`;
+        }
+        prompt += '\nNote: Please ensure you have access to files in these directories as needed.\n';
       }
       
       // Build command arguments

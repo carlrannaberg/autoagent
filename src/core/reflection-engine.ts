@@ -168,11 +168,18 @@ export async function reflectOnIssuesAndPlans(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     Logger.error(`Reflection analysis failed: ${errorMessage}`);
     
+    // Distinguish between parsing errors and provider errors
+    const isParsingError = error instanceof Error && 
+      (error.message.includes('Invalid reflection response format') || 
+       error.message.includes('No JSON object found') ||
+       error.message.includes('JSON.parse'));
+    
+    // Return fallback analysis for all errors
     return {
       score: 0,
       gaps: [],
       changes: [],
-      reasoning: 'Reflection analysis failed',
+      reasoning: isParsingError ? 'Malformed response' : 'Provider error',
       iterationNumber,
       timestamp: new Date().toISOString()
     };
@@ -210,45 +217,54 @@ export async function reflectiveDecomposition(
   Logger.info(`🔄 Starting reflective improvement (max ${reflectionConfig.maxIterations} iterations)`);
 
   for (let iteration = 1; iteration <= reflectionConfig.maxIterations; iteration++) {
-    state.currentIteration = iteration;
     
     Logger.info(`🔍 Reflection iteration ${iteration}/${reflectionConfig.maxIterations}`);
     
-    try {
-      const currentContent = getCurrentIssuesAndPlansContent(state.currentIssues, state.currentPlans);
-      
-      const analysis = await reflectOnIssuesAndPlans(
-        provider,
-        initialResult.specContent,
-        currentContent,
-        iteration
-      );
-      
-      // Only add to improvements if it's a valid analysis (not a failure)
-      if (analysis.reasoning !== 'Reflection analysis failed') {
-        state.improvements.push(analysis);
-      }
-      state.currentScore = analysis.score;
-      
-      if (analysis.score <= reflectionConfig.improvementThreshold) {
-        Logger.info(`✅ Reflection complete - minimal improvements found (score: ${analysis.score.toFixed(2)})`);
-        state.isComplete = true;
-        break;
-      }
-      
-      if (analysis.changes.length > 0) {
-        Logger.info(`📈 ${analysis.changes.length} improvements identified`);
-        
-        for (const change of analysis.changes) {
-          Logger.info(`  - ${change.type}: ${change.description}`);
-        }
-      }
-      
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      Logger.error(`Reflection iteration ${iteration} failed: ${errorMessage}`);
+    const currentContent = getCurrentIssuesAndPlansContent(state.currentIssues, state.currentPlans);
+    
+    const analysis = await reflectOnIssuesAndPlans(
+      provider,
+      initialResult.specContent,
+      currentContent,
+      iteration
+    );
+    
+    // Only add successful analyses to improvements
+    if (analysis.reasoning !== 'Provider error' && analysis.reasoning !== 'Malformed response') {
+      state.improvements.push(analysis);
+    }
+    
+    state.currentScore = analysis.score;
+    
+    // Provider errors should stop reflection entirely
+    if (analysis.reasoning === 'Provider error') {
+      Logger.info('❌ Reflection stopped due to provider error');
       state.isComplete = true;
       break;
+    }
+    
+    // Malformed responses should continue but be added to improvements as fallback
+    if (analysis.reasoning === 'Malformed response') {
+      Logger.info('⚠️ Malformed response, continuing with fallback analysis');
+      state.improvements.push(analysis);
+    }
+    
+    // Count iterations (including malformed responses, but not provider errors)
+    state.currentIteration = iteration;
+    
+    // Check threshold only for successful analyses (not malformed responses)
+    if (analysis.reasoning !== 'Malformed response' && analysis.score <= reflectionConfig.improvementThreshold) {
+      Logger.info(`✅ Reflection complete - minimal improvements found (score: ${analysis.score.toFixed(2)})`);
+      state.isComplete = true;
+      break;
+    }
+    
+    if (analysis.changes.length > 0) {
+      Logger.info(`📈 ${analysis.changes.length} improvements identified`);
+      
+      for (const change of analysis.changes) {
+        Logger.info(`  - ${change.type}: ${change.description}`);
+      }
     }
   }
 

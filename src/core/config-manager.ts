@@ -14,7 +14,8 @@ export class ConfigManager {
     gitAutoCommit: false,
     gitCommitInterval: 600000, // 10 minutes
     logLevel: 'info',
-    customInstructions: ''
+    customInstructions: '',
+    additionalDirectories: []
   };
 
   private static readonly GLOBAL_CONFIG_DIR = path.join(os.homedir(), '.autoagent');
@@ -364,5 +365,74 @@ export class ConfigManager {
         throw error;
       }
     }
+  }
+
+  /**
+   * Resolve and validate additional directories from config and CLI args
+   * @param configDirs - Additional directories from config
+   * @param cliDirs - Additional directories from CLI args
+   * @param basePath - Base path to resolve relative paths against (defaults to working directory)
+   * @returns Promise resolving to array of validated absolute directory paths
+   */
+  async resolveAdditionalDirectories(
+    configDirs: string[] = [],
+    cliDirs: string[] = [],
+    basePath: string = this.workingDir
+  ): Promise<string[]> {
+    const allDirs = [...configDirs, ...cliDirs];
+    const resolvedDirs: string[] = [];
+
+    for (const dir of allDirs) {
+      try {
+        // Resolve relative paths against base path
+        const resolvedPath = path.isAbsolute(dir) ? dir : path.resolve(basePath, dir);
+        
+        // Validate directory exists
+        const stats = await fs.stat(resolvedPath);
+        if (!stats.isDirectory()) {
+          Logger.error(`Skipping ${dir}: not a directory`);
+          continue;
+        }
+
+        // Basic security check - prevent access to system directories
+        if (this.isSystemDirectory(resolvedPath)) {
+          Logger.error(`Skipping ${dir}: system directory access not allowed`);
+          continue;
+        }
+
+        resolvedDirs.push(resolvedPath);
+        Logger.debug(`Added additional directory: ${resolvedPath}`);
+      } catch (error) {
+        Logger.error(`Skipping ${dir}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    return resolvedDirs;
+  }
+
+  /**
+   * Check if a path is a system directory that should be protected
+   * @param dirPath - Directory path to check
+   * @returns True if the path is a system directory
+   */
+  private isSystemDirectory(dirPath: string): boolean {
+    const systemDirs = [
+      '/etc',
+      '/usr',
+      '/var',
+      '/bin',
+      '/sbin',
+      '/boot',
+      '/root',
+      '/sys',
+      '/proc',
+      '/dev'
+    ];
+
+    // Normalize the path
+    const normalizedPath = path.resolve(dirPath);
+    
+    // Check if it starts with any system directory
+    return systemDirs.some(sysDir => normalizedPath.startsWith(sysDir + path.sep) || normalizedPath === sysDir);
   }
 }

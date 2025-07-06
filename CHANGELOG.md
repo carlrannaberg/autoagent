@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix reflection runner to properly handle multi-iteration scenarios
+  - Ensure iteration tracking counts correctly
+  - Respect max iteration limits
+  - Accumulate improvements across iterations
+  - Handle zero improvements in an iteration
+  - Preserve improvements from each iteration
+  - Support early termination on rapid score improvement
+  - Handle plateauing scores correctly
+
 ### Added
 - Add comprehensive integration tests for reflection system
   - Bootstrap with reflection integration tests

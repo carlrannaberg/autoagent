@@ -38,13 +38,15 @@ export class ClaudeProvider extends Provider {
    * @param planFile - Path to the plan file to execute
    * @param contextFiles - Optional array of context file paths
    * @param signal - Optional abort signal for cancellation
+   * @param additionalDirectories - Optional array of additional directories to give AI access to
    * @returns Promise resolving to execution result
    */
   async execute(
     issueFile: string,
     planFile: string,
     contextFiles?: string[],
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    additionalDirectories?: string[]
   ): Promise<ExecutionResult> {
     const startTime = Date.now();
     const issueNumber = this.extractIssueNumber(issueFile);
@@ -89,9 +91,14 @@ ${planContent}`;
         '-p', instructions
       ];
       
-      // Add directory access for the current working directory
+      // Add directory access for the current working directory and additional directories
       const cwd = process.cwd();
-      args.unshift('--add-dir', cwd);
+      const allDirectories = [cwd, ...(additionalDirectories || [])];
+      
+      // Add each directory with --add-dir flag
+      for (const dir of allDirectories) {
+        args.unshift('--add-dir', dir);
+      }
       
       // Use streaming JSON output format for real-time feedback
       args.push('--output-format', 'stream-json');

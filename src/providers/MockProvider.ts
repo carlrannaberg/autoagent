@@ -20,12 +20,14 @@ export class MockProvider extends Provider {
     issueFile: string,
     planFile: string,
     contextFiles?: string[],
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    additionalDirectories?: string[]
   ): Promise<ExecutionResult> {
     // Suppress unused parameter warnings
     void signal;
     void contextFiles;
     void planFile;
+    void additionalDirectories;
     
     const startTime = Date.now();
     

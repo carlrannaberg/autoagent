@@ -25,13 +25,15 @@ export abstract class Provider implements ProviderInterface {
    * @param planFile - Path to the plan file to execute
    * @param contextFiles - Optional array of context file paths
    * @param signal - Optional abort signal for cancellation
+   * @param additionalDirectories - Optional array of additional directories to give AI access to
    * @returns Promise resolving to execution result
    */
   abstract execute(
     issueFile: string,
     planFile: string,
     contextFiles?: string[],
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    additionalDirectories?: string[]
   ): Promise<ExecutionResult>;
 
   /**
