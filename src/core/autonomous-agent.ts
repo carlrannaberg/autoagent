@@ -470,6 +470,24 @@ export class AutonomousAgent extends EventEmitter {
       } catch (error) {
         lastError = error as Error;
 
+        // Check if this is a rate limit or usage limit error that should trigger failover
+        if (isRateLimitOrUsageError(lastError.message)) {
+          await this.configManager.updateRateLimit(provider.name as ProviderName, true);
+
+          // Try failover if available
+          const alternativeProvider = await this.tryFailover(provider.name as ProviderName);
+          if (alternativeProvider) {
+            this.reportProgress(`Switching to ${alternativeProvider.name} due to ${lastError.message.toLowerCase().includes('usage limit') ? 'usage limit' : 'rate limit'}`, 15);
+            return this.executeWithProvider(
+              alternativeProvider,
+              issueFile,
+              planFile,
+              contextFiles,
+              issueNumber
+            );
+          }
+        }
+
         // Exponential backoff
         if (attempt < userConfig.retryAttempts) {
           const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
