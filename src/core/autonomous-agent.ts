@@ -666,20 +666,100 @@ ${issueEntry}
   }
 
   /**
+   * Validate git repository status for auto-commit operations.
+   * Checks git availability, repository status, and user configuration.
+   * 
+   * @throws Error with clear remediation guidance if validation fails
+   */
+  private async validateGitForAutoCommit(): Promise<void> {
+    // Skip validation if auto-commit is disabled
+    if (this.config.autoCommit !== true) {
+      return;
+    }
+
+    // Check if git is available
+    const gitAvailable = await checkGitAvailable();
+    if (!gitAvailable) {
+      throw new Error(
+        'Git is not available on your system.\n' +
+        '\n' +
+        'To fix this issue:\n' +
+        '1. Install git from https://git-scm.com/downloads\n' +
+        '2. Ensure git is in your PATH\n' +
+        '3. Verify installation with: git --version'
+      );
+    }
+
+    // Check if current directory is a git repository
+    const isRepo = await isGitRepository();
+    if (!isRepo) {
+      throw new Error(
+        'Current directory is not a git repository.\n' +
+        '\n' +
+        'To fix this issue:\n' +
+        '1. Initialize a new repository: git init\n' +
+        '2. Or clone an existing repository: git clone <repository-url>\n' +
+        '3. Ensure you are in the correct directory'
+      );
+    }
+
+    // Validate git user configuration
+    await this.validateGitUserConfig();
+
+    // Log successful validation in debug mode
+    if (this.config.debug === true) {
+      this.reportProgress('Git validation passed for auto-commit', 0);
+    }
+  }
+
+  /**
+   * Validate git user configuration (name and email).
+   * 
+   * @throws Error with remediation steps if user config is missing
+   */
+  private async validateGitUserConfig(): Promise<void> {
+    try {
+      // Check user.name
+      const { stdout: userName } = await execAsync('git config user.name');
+      if (!userName.trim()) {
+        throw new Error('Git user.name is not configured');
+      }
+
+      // Check user.email
+      const { stdout: userEmail } = await execAsync('git config user.email');
+      if (!userEmail.trim()) {
+        throw new Error('Git user.email is not configured');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Provide helpful error message with remediation steps
+      if (errorMessage.includes('user.name') || errorMessage.includes('user.email')) {
+        throw new Error(
+          'Git user configuration is incomplete.\n' +
+          '\n' +
+          'To fix this issue, run these commands:\n' +
+          '1. git config --global user.name "Your Name"\n' +
+          '2. git config --global user.email "your.email@example.com"\n' +
+          '\n' +
+          'Or set them locally for this repository only:\n' +
+          '1. git config user.name "Your Name"\n' +
+          '2. git config user.email "your.email@example.com"'
+        );
+      }
+      
+      // Re-throw other errors
+      throw error;
+    }
+  }
+
+  /**
    * Perform git commit for completed issue
    */
   private async performGitCommit(issue: Issue, result: ExecutionResult): Promise<void> {
     try {
-      // Check if git is available and we're in a repo
-      const gitAvailable = await checkGitAvailable();
-      const isRepo = await isGitRepository();
-
-      if (gitAvailable !== true || isRepo !== true) {
-        if (this.config.debug === true) {
-          this.reportProgress('Git not available or not in a repository', 0);
-        }
-        return;
-      }
+      // Validate git configuration for auto-commit
+      await this.validateGitForAutoCommit();
 
       // Check if there are changes to commit
       const hasChanges = await hasChangesToCommit();

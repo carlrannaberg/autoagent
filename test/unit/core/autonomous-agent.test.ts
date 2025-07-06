@@ -41,7 +41,33 @@ vi.mock('@/providers', () => ({
   getFirstAvailableProvider
 }));
 
-vi.mock('child_process');
+// Mock exec from child_process
+const execMock = vi.fn();
+vi.mock('child_process', () => ({
+  exec: execMock
+}));
+
+// Mock promisify to return a promisified version of our mock
+vi.mock('util', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    promisify: (fn: any) => {
+      if (fn === execMock) {
+        // Return a promisified version of execMock
+        return vi.fn().mockImplementation((cmd: string) => {
+          return new Promise((resolve, reject) => {
+            execMock(cmd, (err: any, stdout: string, stderr: string) => {
+              if (err) reject(err);
+              else resolve({ stdout, stderr });
+            });
+          });
+        });
+      }
+      return actual.promisify(fn);
+    }
+  };
+});
 
 describe('AutonomousAgent', () => {
   let agent: AutonomousAgent;
@@ -1086,6 +1112,297 @@ describe('AutonomousAgent', () => {
       
       // Wait for first to complete
       await promise1;
+    });
+  });
+
+  describe('git validation for auto-commit', () => {
+    beforeEach(async () => {
+      await agent.initialize();
+      // Clear exec mock before each test
+      execMock.mockClear();
+    });
+
+    it('should skip validation when auto-commit is disabled', async () => {
+      // Configure agent with auto-commit disabled (default)
+      const agentNoCommit = new AutonomousAgent({ 
+        workspace: '/test', 
+        signal: true,
+        autoCommit: false 
+      });
+      (agentNoCommit as any).configManager = configManager;
+      (agentNoCommit as any).fileManager = fileManager;
+      (agentNoCommit as any).providerLearning = providerLearning;
+
+      // Configure provider and git state
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('execute', { success: true, output: 'Completed' });
+      gitSimulator.setGitAvailable(false); // Git not available, but should not matter
+
+      // Execute issue should succeed without git validation
+      const result = await agentNoCommit.executeIssue(1);
+      expect(result.success).toBe(true);
+      
+      // Verify git check was never called
+      expect(gitUtils.checkGitAvailable).not.toHaveBeenCalled();
+    });
+
+    it('should validate git availability when auto-commit is enabled', async () => {
+      // Configure agent with auto-commit enabled
+      const agentWithCommit = new AutonomousAgent({ 
+        workspace: '/test', 
+        signal: true,
+        autoCommit: true 
+      });
+      (agentWithCommit as any).configManager = configManager;
+      (agentWithCommit as any).fileManager = fileManager;
+      (agentWithCommit as any).providerLearning = providerLearning;
+
+      // Configure git as not available
+      gitSimulator.setGitAvailable(false);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+
+      // Configure provider
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('execute', { success: true, output: 'Completed' });
+
+      // Execute should succeed but git commit should fail gracefully
+      const result = await agentWithCommit.executeIssue(1);
+      expect(result.success).toBe(true); // Issue execution succeeds
+      
+      // Verify git availability was checked
+      expect(gitUtils.checkGitAvailable).toHaveBeenCalled();
+    });
+
+    it('should validate git repository when auto-commit is enabled', async () => {
+      // Configure agent with auto-commit enabled
+      const agentWithCommit = new AutonomousAgent({ 
+        workspace: '/test', 
+        signal: true,
+        autoCommit: true 
+      });
+      (agentWithCommit as any).configManager = configManager;
+      (agentWithCommit as any).fileManager = fileManager;
+      (agentWithCommit as any).providerLearning = providerLearning;
+
+      // Configure git as available but not a repository
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(false);
+      gitSimulator.setHasChanges(true);
+
+      // Configure provider
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('execute', { success: true, output: 'Completed' });
+
+      // Execute should succeed but git commit should fail gracefully
+      const result = await agentWithCommit.executeIssue(1);
+      expect(result.success).toBe(true); // Issue execution succeeds
+      
+      // Verify repository check was called
+      expect(gitUtils.isGitRepository).toHaveBeenCalled();
+    });
+
+    it('should validate git user configuration when auto-commit is enabled', async () => {
+      // Configure agent with auto-commit enabled and debug mode
+      const agentWithCommit = new AutonomousAgent({ 
+        workspace: '/test', 
+        signal: true,
+        autoCommit: true,
+        debug: true 
+      });
+      (agentWithCommit as any).configManager = configManager;
+      (agentWithCommit as any).fileManager = fileManager;
+      (agentWithCommit as any).providerLearning = providerLearning;
+
+      // Configure git as fully available
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+
+      // Mock git config commands
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd === 'git config user.name') {
+          callback(null, 'Test User\n', '');
+        } else if (cmd === 'git config user.email') {
+          callback(null, 'test@example.com\n', '');
+        } else {
+          // Default for other commands
+          callback(null, '', '');
+        }
+      });
+
+      // Configure provider
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('execute', { success: true, output: 'Completed' });
+
+      // Capture debug messages
+      const debugMessages: string[] = [];
+      agentWithCommit.on('debug', (msg: string) => debugMessages.push(msg));
+
+      // Execute should succeed with valid git config
+      const result = await agentWithCommit.executeIssue(1);
+      expect(result.success).toBe(true);
+      
+      // Verify git config was checked
+      expect(execMock).toHaveBeenCalledWith('git config user.name', expect.any(Function));
+      expect(execMock).toHaveBeenCalledWith('git config user.email', expect.any(Function));
+      
+      // Verify debug message
+      expect(debugMessages).toContain('Git validation passed for auto-commit');
+    });
+
+    it('should fail gracefully when git user.name is not configured', async () => {
+      // Configure agent with auto-commit enabled
+      const agentWithCommit = new AutonomousAgent({ 
+        workspace: '/test', 
+        signal: true,
+        autoCommit: true,
+        debug: true 
+      });
+      (agentWithCommit as any).configManager = configManager;
+      (agentWithCommit as any).fileManager = fileManager;
+      (agentWithCommit as any).providerLearning = providerLearning;
+
+      // Configure git as available and repository
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+
+      // Mock git config to fail for user.name
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd === 'git config user.name') {
+          callback(null, '', ''); // Empty name
+        } else if (cmd === 'git config user.email') {
+          callback(null, 'test@example.com\n', '');
+        } else {
+          callback(null, '', '');
+        }
+      });
+
+      // Configure provider
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('execute', { success: true, output: 'Completed' });
+
+      // Capture debug messages
+      const debugMessages: string[] = [];
+      agentWithCommit.on('debug', (msg: string) => debugMessages.push(msg));
+
+      // Execute should succeed but commit should fail
+      const result = await agentWithCommit.executeIssue(1);
+      expect(result.success).toBe(true); // Issue execution still succeeds
+      
+      // Verify git config was checked
+      expect(execMock).toHaveBeenCalledWith('git config user.name', expect.any(Function));
+      
+      // Verify error was logged in debug mode
+      const errorMsg = debugMessages.find(msg => msg.includes('Git commit error'));
+      expect(errorMsg).toBeDefined();
+      expect(errorMsg).toContain('Git user configuration is incomplete');
+    });
+
+    it('should fail gracefully when git user.email is not configured', async () => {
+      // Configure agent with auto-commit enabled
+      const agentWithCommit = new AutonomousAgent({ 
+        workspace: '/test', 
+        signal: true,
+        autoCommit: true,
+        debug: true 
+      });
+      (agentWithCommit as any).configManager = configManager;
+      (agentWithCommit as any).fileManager = fileManager;
+      (agentWithCommit as any).providerLearning = providerLearning;
+
+      // Configure git as available and repository
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+
+      // Mock git config to fail for user.email
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd === 'git config user.name') {
+          callback(null, 'Test User\n', '');
+        } else if (cmd === 'git config user.email') {
+          callback(null, '', ''); // Empty email
+        } else {
+          callback(null, '', '');
+        }
+      });
+
+      // Configure provider
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('execute', { success: true, output: 'Completed' });
+
+      // Capture debug messages
+      const debugMessages: string[] = [];
+      agentWithCommit.on('debug', (msg: string) => debugMessages.push(msg));
+
+      // Execute should succeed but commit should fail
+      const result = await agentWithCommit.executeIssue(1);
+      expect(result.success).toBe(true); // Issue execution still succeeds
+      
+      // Verify git config was checked
+      expect(execMock).toHaveBeenCalledWith('git config user.email', expect.any(Function));
+      
+      // Verify error was logged in debug mode
+      const errorMsg = debugMessages.find(msg => msg.includes('Git commit error'));
+      expect(errorMsg).toBeDefined();
+      expect(errorMsg).toContain('Git user configuration is incomplete');
+    });
+
+    it('should provide helpful error messages for git configuration issues', async () => {
+      // Directly test the validation method for error messages
+      const agentWithCommit = new AutonomousAgent({ 
+        workspace: '/test', 
+        signal: true,
+        autoCommit: true 
+      });
+      (agentWithCommit as any).configManager = configManager;
+      (agentWithCommit as any).fileManager = fileManager;
+      (agentWithCommit as any).providerLearning = providerLearning;
+
+      // Test git not available error
+      gitSimulator.setGitAvailable(false);
+      try {
+        await (agentWithCommit as any).validateGitForAutoCommit();
+        fail('Should have thrown an error');
+      } catch (error: any) {
+        expect(error.message).toContain('Git is not available on your system');
+        expect(error.message).toContain('Install git from https://git-scm.com/downloads');
+        expect(error.message).toContain('git --version');
+      }
+
+      // Test not a repository error
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(false);
+      try {
+        await (agentWithCommit as any).validateGitForAutoCommit();
+        fail('Should have thrown an error');
+      } catch (error: any) {
+        expect(error.message).toContain('Current directory is not a git repository');
+        expect(error.message).toContain('git init');
+        expect(error.message).toContain('git clone');
+      }
+
+      // Test user config error
+      gitSimulator.setIsRepository(true);
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd.includes('git config user')) {
+          callback(null, '', '');
+        } else {
+          callback(null, '', '');
+        }
+      });
+      
+      try {
+        await (agentWithCommit as any).validateGitForAutoCommit();
+        fail('Should have thrown an error');
+      } catch (error: any) {
+        expect(error.message).toContain('Git user configuration is incomplete');
+        expect(error.message).toContain('git config --global user.name');
+        expect(error.message).toContain('git config --global user.email');
+        expect(error.message).toContain('git config user.name');
+        expect(error.message).toContain('git config user.email');
+      }
     });
   });
 });
