@@ -43,6 +43,21 @@ export interface GitValidationOptions {
   onDebug?: (message: string) => void;
 }
 
+export interface PushOptions {
+  remote?: string;
+  branch?: string;
+  force?: boolean;
+  setUpstream?: boolean;
+}
+
+export interface GitPushResult {
+  success: boolean;
+  remote?: string;
+  branch?: string;
+  error?: string;
+  stderr?: string;
+}
+
 /**
  * Check if git is available on the system
  */
@@ -386,5 +401,215 @@ export async function validateGitEnvironment(options: GitValidationOptions = {})
     errors,
     suggestions,
     gitVersion
+  };
+}
+
+/**
+ * Get the current branch name
+ */
+export async function getCurrentBranch(): Promise<string | null> {
+  try {
+    const { stdout } = await execAsync('git rev-parse --abbrev-ref HEAD');
+    const branch = stdout.trim();
+    
+    // Handle detached HEAD state
+    if (branch === 'HEAD') {
+      return null;
+    }
+    
+    return branch;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Check if the current branch has an upstream tracking branch
+ */
+export async function hasUpstreamBranch(): Promise<boolean> {
+  try {
+    await execAsync('git rev-parse --abbrev-ref --symbolic-full-name @{upstream}');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if a git remote exists and is accessible
+ */
+export async function checkGitRemote(remote: string = 'origin'): Promise<{ exists: boolean; accessible: boolean; error?: string }> {
+  try {
+    // Check if remote exists
+    const { stdout: remotes } = await execAsync('git remote');
+    const remotesList = remotes.trim().split('\n').filter(r => r);
+    
+    if (!remotesList.includes(remote)) {
+      return {
+        exists: false,
+        accessible: false,
+        error: `Remote '${remote}' does not exist`
+      };
+    }
+    
+    // Check if remote is accessible
+    try {
+      await execAsync(`git ls-remote --exit-code ${remote} HEAD`, { timeout: 30000 });
+      return {
+        exists: true,
+        accessible: true
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Check for common authentication errors
+      if (errorMessage.includes('Authentication failed') || 
+          errorMessage.includes('Permission denied') ||
+          errorMessage.includes('Could not read from remote repository')) {
+        return {
+          exists: true,
+          accessible: false,
+          error: 'Authentication failed. Please check your credentials'
+        };
+      }
+      
+      // Check for network errors
+      if (errorMessage.includes('Could not resolve host') ||
+          errorMessage.includes('unable to access') ||
+          errorMessage.includes('Network is unreachable')) {
+        return {
+          exists: true,
+          accessible: false,
+          error: 'Network error. Please check your internet connection'
+        };
+      }
+      
+      return {
+        exists: true,
+        accessible: false,
+        error: `Remote is not accessible: ${errorMessage}`
+      };
+    }
+  } catch (error) {
+    return {
+      exists: false,
+      accessible: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+/**
+ * Push changes to a remote repository
+ */
+export async function pushToRemote(options: PushOptions = {}): Promise<GitPushResult> {
+  try {
+    const { remote = 'origin', branch, force = false, setUpstream = false } = options;
+    
+    // Get current branch if not specified
+    const targetBranch = branch ?? await getCurrentBranch();
+    if (targetBranch === null) {
+      return {
+        success: false,
+        error: 'Cannot push from detached HEAD state. Please checkout a branch first'
+      };
+    }
+    
+    // Build push command
+    let command = 'git push';
+    
+    if (force) {
+      command += ' --force-with-lease';
+    }
+    
+    if (setUpstream) {
+      command += ' --set-upstream';
+    }
+    
+    command += ` ${remote} ${targetBranch}`;
+    
+    const { stderr } = await execAsync(command);
+    
+    return {
+      success: true,
+      remote,
+      branch: targetBranch,
+      stderr: stderr || undefined
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    let errorStderr: string | undefined;
+    
+    if (error !== null && typeof error === 'object' && 'stderr' in error && typeof error.stderr === 'string') {
+      errorStderr = error.stderr;
+    }
+    
+    return {
+      success: false,
+      error: errorMessage,
+      stderr: errorStderr
+    };
+  }
+}
+
+/**
+ * Validate remote repository for push operations
+ */
+export async function validateRemoteForPush(remote: string = 'origin'): Promise<GitValidationResult> {
+  const errors: string[] = [];
+  const suggestions: string[] = [];
+  
+  // Check if in git repository
+  const isRepo = await isGitRepository();
+  if (!isRepo) {
+    errors.push('Not in a git repository');
+    suggestions.push('Initialize a repository with: git init');
+    suggestions.push('Or clone an existing repository with: git clone <url>');
+    return { isValid: false, errors, suggestions };
+  }
+  
+  // Check current branch
+  const currentBranch = await getCurrentBranch();
+  if (currentBranch === null) {
+    errors.push('Currently in detached HEAD state');
+    suggestions.push('Checkout a branch with: git checkout -b <branch-name>');
+    suggestions.push('Or checkout an existing branch with: git checkout <branch-name>');
+    return { isValid: false, errors, suggestions };
+  }
+  
+  // Check remote
+  const remoteStatus = await checkGitRemote(remote);
+  
+  if (!remoteStatus.exists) {
+    errors.push(`Remote '${remote}' does not exist`);
+    suggestions.push(`Add a remote with: git remote add ${remote} <repository-url>`);
+    suggestions.push('List existing remotes with: git remote -v');
+  } else if (!remoteStatus.accessible) {
+    const errorMessage = remoteStatus.error ?? 'Unknown error';
+    errors.push(`Remote '${remote}' is not accessible: ${errorMessage}`);
+    
+    if (remoteStatus.error !== undefined && remoteStatus.error.includes('Authentication')) {
+      suggestions.push('Check your git credentials are configured correctly');
+      suggestions.push('For HTTPS: Update credentials in your credential manager');
+      suggestions.push('For SSH: Ensure your SSH key is added to the remote repository');
+    } else if (remoteStatus.error !== undefined && remoteStatus.error.includes('Network')) {
+      suggestions.push('Check your internet connection');
+      suggestions.push('Verify the remote URL is correct with: git remote -v');
+    } else {
+      suggestions.push('Verify the remote URL with: git remote -v');
+      suggestions.push(`Test remote connectivity with: git ls-remote ${remote}`);
+    }
+  }
+  
+  // Check upstream tracking
+  const hasUpstream = await hasUpstreamBranch();
+  if (!hasUpstream && remoteStatus.exists && remoteStatus.accessible) {
+    suggestions.push(`Set upstream tracking with: git push --set-upstream ${remote} ${currentBranch}`);
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors,
+    suggestions
   };
 }
