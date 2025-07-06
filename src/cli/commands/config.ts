@@ -367,6 +367,75 @@ export function registerConfigCommand(program: Command): void {
     });
 
   config
+    .command('set-auto-push <value>')
+    .description('Enable or disable automatic git push after commit (true/false)')
+    .option('-g, --global', 'Set globally')
+    .action(async (value: string, options: { global?: boolean }) => {
+      try {
+        const configManager = new ConfigManager();
+        try {
+          await configManager.loadConfig();
+        } catch (error) {
+          if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
+            Logger.error('Failed to parse configuration');
+            process.exit(1);
+          }
+          throw error;
+        }
+        
+        // Parse and validate boolean value (case-insensitive)
+        const normalizedValue = value.toLowerCase();
+        if (normalizedValue !== 'true' && normalizedValue !== 'false') {
+          Logger.error('Invalid value: must be "true" or "false"');
+          process.exit(1);
+        }
+        
+        const autoPush = normalizedValue === 'true';
+        await configManager.setGitAutoPush(autoPush, options.global);
+        
+        Logger.success(`✅ Auto-push ${autoPush ? 'enabled' : 'disabled'}`);
+        
+        if (autoPush) {
+          Logger.info('ℹ️  Git commits will automatically be pushed to the remote repository');
+          Logger.warning('Make sure you have a git remote configured with proper permissions');
+        } else {
+          Logger.info('ℹ️  Git commits will not be pushed automatically');
+        }
+      } catch (error) {
+        Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    });
+
+  config
+    .command('set-push-remote <remote>')
+    .description('Set the git remote for auto-push operations')
+    .option('-g, --global', 'Set globally')
+    .action(async (remote: string, options: { global?: boolean }) => {
+      try {
+        const configManager = new ConfigManager();
+        try {
+          await configManager.loadConfig();
+        } catch (error) {
+          if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
+            Logger.error('Failed to parse configuration');
+            process.exit(1);
+          }
+          throw error;
+        }
+        
+        await configManager.setGitPushRemote(remote, options.global);
+        
+        Logger.success(`✅ Push remote set to: ${remote}`);
+        Logger.info(`ℹ️  Commits will be pushed to the '${remote}' remote when auto-push is enabled`);
+        Logger.info('ℹ️  Make sure this remote exists in your git repository');
+      } catch (error) {
+        Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    });
+
+  config
     .command('show')
     .description('Show current configuration')
     .action(async () => {
@@ -438,6 +507,12 @@ function getConfigValue(key: string, config: UserConfig): unknown {
       return config.customInstructions;
     case 'rateLimitCooldown':
       return config.rateLimitCooldown;
+    case 'gitAutoPush':
+      return config.gitAutoPush;
+    case 'gitPushRemote':
+      return config.gitPushRemote;
+    case 'gitPushBranch':
+      return config.gitPushBranch;
     default:
       return undefined;
   }
@@ -484,6 +559,15 @@ function setConfigValue(key: string, value: unknown, updates: Partial<UserConfig
     case 'rateLimitCooldown':
       updates.rateLimitCooldown = value as number;
       break;
+    case 'gitAutoPush':
+      updates.gitAutoPush = value as boolean;
+      break;
+    case 'gitPushRemote':
+      updates.gitPushRemote = value as string;
+      break;
+    case 'gitPushBranch':
+      updates.gitPushBranch = value as string;
+      break;
     default:
       throw new Error(`Unknown configuration key: ${key}`);
   }
@@ -502,7 +586,10 @@ function getEnvValue(key: string): unknown {
     'gitCommitInterval': 'AUTOAGENT_GIT_COMMIT_INTERVAL',
     'includeCoAuthoredBy': 'AUTOAGENT_INCLUDE_CO_AUTHORED_BY',
     'customInstructions': 'AUTOAGENT_CUSTOM_INSTRUCTIONS',
-    'rateLimitCooldown': 'AUTOAGENT_RATE_LIMIT_COOLDOWN'
+    'rateLimitCooldown': 'AUTOAGENT_RATE_LIMIT_COOLDOWN',
+    'gitAutoPush': 'AUTOAGENT_GIT_AUTO_PUSH',
+    'gitPushRemote': 'AUTOAGENT_GIT_PUSH_REMOTE',
+    'gitPushBranch': 'AUTOAGENT_GIT_PUSH_BRANCH'
   };
 
   const envKey = envMap[key];
@@ -513,7 +600,7 @@ function getEnvValue(key: string): unknown {
   const envValue = process.env[envKey];
   
   // Parse boolean values
-  if (key === 'verbose' || key === 'autoMode' || key === 'gitAutoCommit' || key === 'includeCoAuthoredBy') {
+  if (key === 'verbose' || key === 'autoMode' || key === 'gitAutoCommit' || key === 'includeCoAuthoredBy' || key === 'gitAutoPush') {
     return envValue === 'true';
   }
   
@@ -538,6 +625,7 @@ function validateConfigValue(key: string, value: string): unknown {
     case 'autoMode':
     case 'gitAutoCommit':
     case 'includeCoAuthoredBy':
+    case 'gitAutoPush':
       if (!['true', 'false'].includes(value)) {
         throw new Error(`Invalid value for ${key}: ${value}. Value must be boolean (true/false)`);
       }
@@ -562,6 +650,8 @@ function validateConfigValue(key: string, value: string): unknown {
     }
     
     case 'customInstructions':
+    case 'gitPushRemote':
+    case 'gitPushBranch':
       return value;
     
     default:

@@ -28,6 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - getGitCommitNoVerify() method to retrieve current setting
   - Configuration persists to config file and loads correctly on restart
 - Add CLI flags for run command to control git hooks
+- Add configuration commands for git auto-push functionality
+  - New 'set-auto-push' command to enable/disable automatic git push after commits
+  - New 'set-push-remote' command to configure target remote repository
+  - Both commands support --global flag for global configuration
+  - Show command now displays auto-push settings
+  - Clear success messages and helpful warnings guide users
   - Add `--verify` flag to force enable git hooks during commits
   - Add `--no-verify` flag to skip git hooks during commits
   - Handle conflicting flags gracefully (warn user, use --no-verify)
