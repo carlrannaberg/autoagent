@@ -32,6 +32,11 @@ export interface GitValidationResult {
   isValid: boolean;
   errors: string[];
   suggestions: string[];
+  gitVersion?: string;
+}
+
+export interface GitValidationOptions {
+  onDebug?: (message: string) => void;
 }
 
 /**
@@ -43,6 +48,18 @@ export async function checkGitAvailable(): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Get git version if available
+ */
+export async function getGitVersion(): Promise<string | null> {
+  try {
+    const { stdout } = await execAsync('git --version');
+    return stdout.trim();
+  } catch {
+    return null;
   }
 }
 
@@ -257,36 +274,57 @@ export async function getChangedFiles(): Promise<string[]> {
 /**
  * Validate git environment with comprehensive checks
  */
-export async function validateGitEnvironment(): Promise<GitValidationResult> {
+export async function validateGitEnvironment(options: GitValidationOptions = {}): Promise<GitValidationResult> {
   const errors: string[] = [];
   const suggestions: string[] = [];
+  const debug = options.onDebug || ((): void => {});
+  let gitVersion: string | undefined;
+
+  debug('🔍 Starting git validation...');
 
   // Check git availability
+  debug('📋 Checking git availability...');
   const gitAvailable = await checkGitAvailable();
   if (!gitAvailable) {
+    debug('❌ Git is not available');
     errors.push('Git is not installed or not accessible in PATH');
     suggestions.push('Install Git from https://git-scm.com/downloads');
     suggestions.push('Ensure git is added to your system PATH');
+  } else {
+    // Get git version for debug info
+    const version = await getGitVersion();
+    gitVersion = version ?? undefined;
+    debug(`✅ Git is available: ${version ?? 'unknown version'}`);
   }
 
   // Check repository status
+  debug('📁 Checking repository status...');
   const isRepo = await isGitRepository();
   if (!isRepo) {
+    debug('❌ Not a git repository');
     errors.push('Current directory is not a Git repository');
     suggestions.push('Initialize a new repository with: git init');
     suggestions.push('Or clone an existing repository with: git clone <url>');
+  } else {
+    debug('✅ Valid git repository detected');
   }
 
   // Check user configuration if git is available and we're in a repo
   if (gitAvailable && isRepo) {
+    debug('👤 Checking user configuration...');
+    
     try {
       // Check user name
       const { stdout: userName } = await execAsync('git config user.name');
       if (!userName.trim()) {
+        debug('❌ Git user name is not configured');
         errors.push('Git user name is not configured');
         suggestions.push('Set your name with: git config --global user.name "Your Name"');
+      } else {
+        debug(`✅ Git user name: ${userName.trim()}`);
       }
     } catch {
+      debug('❌ Failed to check git user name');
       errors.push('Git user name is not configured');
       suggestions.push('Set your name with: git config --global user.name "Your Name"');
     }
@@ -295,31 +333,51 @@ export async function validateGitEnvironment(): Promise<GitValidationResult> {
       // Check user email
       const { stdout: userEmail } = await execAsync('git config user.email');
       if (!userEmail.trim()) {
+        debug('❌ Git user email is not configured');
         errors.push('Git user email is not configured');
         suggestions.push('Set your email with: git config --global user.email "your.email@example.com"');
+      } else {
+        debug(`✅ Git user email: ${userEmail.trim()}`);
       }
     } catch {
+      debug('❌ Failed to check git user email');
       errors.push('Git user email is not configured');
       suggestions.push('Set your email with: git config --global user.email "your.email@example.com"');
     }
 
     // Check for remote repository
+    debug('🌐 Checking remote repository...');
     try {
       const { stdout: remotes } = await execAsync('git remote -v');
       if (!remotes.trim()) {
+        debug('⚠️  No remote repository configured (warning)');
         errors.push('No remote repository configured');
         suggestions.push('Add a remote with: git remote add origin <repository-url>');
         suggestions.push('View existing remotes with: git remote -v');
+      } else {
+        debug(`✅ Remote repository configured:\n${remotes.trim()}`);
       }
     } catch {
+      debug('❌ Unable to check remote repositories');
       errors.push('Unable to check remote repositories');
       suggestions.push('Check git configuration with: git remote -v');
     }
   }
 
+  const isValid = errors.length === 0;
+  if (isValid) {
+    debug('✅ Git validation completed successfully');
+  } else {
+    debug(`❌ Git validation failed with ${errors.length} error(s)`);
+    errors.forEach((error, index) => {
+      debug(`   ${index + 1}. ${error}`);
+    });
+  }
+
   return {
-    isValid: errors.length === 0,
+    isValid,
     errors,
-    suggestions
+    suggestions,
+    gitVersion
   };
 }

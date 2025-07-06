@@ -16,14 +16,13 @@ import { Provider, createProvider, getFirstAvailableProvider } from '../provider
 import { ProviderLearning } from './provider-learning';
 import { reflectiveDecomposition } from './reflection-engine';
 import {
-  checkGitAvailable,
-  isGitRepository,
   stageAllChanges,
   createCommit,
   getCurrentCommitHash,
   getUncommittedChanges,
   hasChangesToCommit,
-  revertToCommit
+  revertToCommit,
+  validateGitEnvironment
 } from '../utils/git';
 import { isRateLimitOrUsageError } from '../utils/retry';
 
@@ -680,99 +679,41 @@ ${issueEntry}
       return;
     }
 
-    // Check if git is available
-    const gitAvailable = await checkGitAvailable();
-    if (!gitAvailable) {
-      throw new Error(
-        [
-          'Git is not available on your system.',
-          '',
-          'To fix this issue:',
-          '1. Install git from https://git-scm.com/downloads',
-          '2. Ensure git is in your PATH',
-          '3. Verify installation with: git --version',
-          '',
-          'Alternative: Disable auto-commit by setting autoCommit to false in your config'
-        ].join('\n')
-      );
+    // Add debug logging at the start
+    if (this.config.debug === true) {
+      this.reportProgress('🔐 Validating git environment for auto-commit...', 0);
+      this.reportProgress(`📍 Auto-commit: ${this.config.autoCommit === true ? 'enabled' : 'disabled'}`, 0);
     }
 
-    // Check if current directory is a git repository
-    const isRepo = await isGitRepository();
-    if (!isRepo) {
-      throw new Error(
-        [
-          'Current directory is not a git repository.',
-          '',
-          'To fix this issue:',
-          '1. Initialize a new repository: git init',
-          '2. Or clone an existing repository: git clone <repository-url>',
-          '3. Ensure you are in the correct directory',
-          '',
-          'Alternative: Disable auto-commit by setting autoCommit to false in your config'
-        ].join('\n')
-      );
-    }
+    // Use the comprehensive validation function with debug logging
+    const validationResult = await validateGitEnvironment({
+      onDebug: this.config.debug === true ? (message: string): void => this.reportProgress(message, 0) : undefined
+    });
 
-    // Validate git user configuration
-    await this.validateGitUserConfig();
+    if (!validationResult.isValid) {
+      // Build comprehensive error message
+      const errorMessage = [
+        'Git validation failed for auto-commit.',
+        '',
+        'Errors found:',
+        ...validationResult.errors.map((e, i) => `${i + 1}. ${e}`),
+        '',
+        'To fix these issues:',
+        ...validationResult.suggestions.map((s, i) => `${i + 1}. ${s}`),
+        '',
+        'Alternative: Disable auto-commit by setting autoCommit to false in your config'
+      ].join('\n');
+
+      throw new Error(errorMessage);
+    }
 
     // Log successful validation in debug mode
     if (this.config.debug === true) {
-      // Get git version for debug info
-      try {
-        const { stdout: gitVersion } = await execAsync('git --version');
-        this.reportProgress(`Git validation passed for auto-commit (${gitVersion.trim()})`, 0);
-      } catch {
-        this.reportProgress('Git validation passed for auto-commit', 0);
-      }
+      const version = validationResult.gitVersion ?? 'unknown version';
+      this.reportProgress(`✅ Git validation passed for auto-commit (${version})`, 0);
     }
   }
 
-  /**
-   * Validate git user configuration (name and email).
-   * 
-   * @throws Error with remediation steps if user config is missing
-   */
-  private async validateGitUserConfig(): Promise<void> {
-    try {
-      // Check user.name
-      const { stdout: userName } = await execAsync('git config user.name');
-      if (!userName.trim()) {
-        throw new Error('Git user.name is not configured');
-      }
-
-      // Check user.email
-      const { stdout: userEmail } = await execAsync('git config user.email');
-      if (!userEmail.trim()) {
-        throw new Error('Git user.email is not configured');
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
-      // Provide helpful error message with remediation steps
-      if (errorMessage.includes('user.name') || errorMessage.includes('user.email')) {
-        throw new Error(
-          [
-            'Git user configuration is incomplete.',
-            '',
-            'To fix this issue, run these commands:',
-            '1. git config --global user.name "Your Name"',
-            '2. git config --global user.email "your.email@example.com"',
-            '',
-            'Or set them locally for this repository only:',
-            '1. git config user.name "Your Name"',
-            '2. git config user.email "your.email@example.com"',
-            '',
-            'Alternative: Disable auto-commit by setting autoCommit to false in your config'
-          ].join('\n')
-        );
-      }
-      
-      // Re-throw other errors
-      throw error;
-    }
-  }
 
   /**
    * Perform git commit for completed issue
