@@ -23,7 +23,8 @@ import {
   getUncommittedChanges,
   hasChangesToCommit,
   revertToCommit,
-  getChangedFiles
+  getChangedFiles,
+  validateGitEnvironment
 } from '@/utils/git';
 
 describe('Git Utilities', () => {
@@ -290,6 +291,113 @@ describe('Git Utilities', () => {
       const files = await getChangedFiles();
 
       expect(files).toEqual([]);
+    });
+  });
+
+  describe('validateGitEnvironment', () => {
+    it('should return valid when all checks pass', async () => {
+      // Git is available
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository
+      mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
+      // User name configured
+      mockExec.mockResolvedValueOnce({ stdout: 'John Doe', stderr: '' });
+      // User email configured
+      mockExec.mockResolvedValueOnce({ stdout: 'john@example.com', stderr: '' });
+      // Remote configured
+      mockExec.mockResolvedValueOnce({ stdout: 'origin  https://github.com/user/repo.git (fetch)', stderr: '' });
+
+      const result = await validateGitEnvironment();
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toEqual([]);
+      expect(result.suggestions).toEqual([]);
+    });
+
+    it('should detect when git is not installed', async () => {
+      // Git is not available
+      mockExec.mockRejectedValueOnce(new Error('Command not found'));
+
+      const result = await validateGitEnvironment();
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Git is not installed or not accessible in PATH');
+      expect(result.suggestions).toContain('Install Git from https://git-scm.com/downloads');
+      expect(result.suggestions).toContain('Ensure git is added to your system PATH');
+    });
+
+    it('should detect when not in a git repository', async () => {
+      // Git is available
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Not a git repository
+      mockExec.mockRejectedValueOnce(new Error('Not a git repository'));
+
+      const result = await validateGitEnvironment();
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Current directory is not a Git repository');
+      expect(result.suggestions).toContain('Initialize a new repository with: git init');
+      expect(result.suggestions).toContain('Or clone an existing repository with: git clone <url>');
+    });
+
+    it('should detect missing user configuration', async () => {
+      // Git is available
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository
+      mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
+      // User name not configured
+      mockExec.mockResolvedValueOnce({ stdout: '', stderr: '' });
+      // User email not configured
+      mockExec.mockRejectedValueOnce(new Error('No email configured'));
+      // Remote configured
+      mockExec.mockResolvedValueOnce({ stdout: 'origin  https://github.com/user/repo.git (fetch)', stderr: '' });
+
+      const result = await validateGitEnvironment();
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Git user name is not configured');
+      expect(result.errors).toContain('Git user email is not configured');
+      expect(result.suggestions).toContain('Set your name with: git config --global user.name "Your Name"');
+      expect(result.suggestions).toContain('Set your email with: git config --global user.email "your.email@example.com"');
+    });
+
+    it('should detect missing remote repository', async () => {
+      // Git is available
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository
+      mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
+      // User name configured
+      mockExec.mockResolvedValueOnce({ stdout: 'John Doe', stderr: '' });
+      // User email configured
+      mockExec.mockResolvedValueOnce({ stdout: 'john@example.com', stderr: '' });
+      // No remote configured
+      mockExec.mockResolvedValueOnce({ stdout: '', stderr: '' });
+
+      const result = await validateGitEnvironment();
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('No remote repository configured');
+      expect(result.suggestions).toContain('Add a remote with: git remote add origin <repository-url>');
+      expect(result.suggestions).toContain('View existing remotes with: git remote -v');
+    });
+
+    it('should handle errors when checking remotes', async () => {
+      // Git is available
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository
+      mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
+      // User name configured
+      mockExec.mockResolvedValueOnce({ stdout: 'John Doe', stderr: '' });
+      // User email configured
+      mockExec.mockResolvedValueOnce({ stdout: 'john@example.com', stderr: '' });
+      // Error checking remotes
+      mockExec.mockRejectedValueOnce(new Error('Remote check failed'));
+
+      const result = await validateGitEnvironment();
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Unable to check remote repositories');
+      expect(result.suggestions).toContain('Check git configuration with: git remote -v');
     });
   });
 });

@@ -28,6 +28,12 @@ export interface GitCommitResult {
   error?: string;
 }
 
+export interface GitValidationResult {
+  isValid: boolean;
+  errors: string[];
+  suggestions: string[];
+}
+
 /**
  * Check if git is available on the system
  */
@@ -242,8 +248,78 @@ export async function getChangedFiles(): Promise<string[]> {
     }
 
     // Remove duplicates
-    return [...new Set(files)];
+    return Array.from(new Set(files));
   } catch {
     return [];
   }
+}
+
+/**
+ * Validate git environment with comprehensive checks
+ */
+export async function validateGitEnvironment(): Promise<GitValidationResult> {
+  const errors: string[] = [];
+  const suggestions: string[] = [];
+
+  // Check git availability
+  const gitAvailable = await checkGitAvailable();
+  if (!gitAvailable) {
+    errors.push('Git is not installed or not accessible in PATH');
+    suggestions.push('Install Git from https://git-scm.com/downloads');
+    suggestions.push('Ensure git is added to your system PATH');
+  }
+
+  // Check repository status
+  const isRepo = await isGitRepository();
+  if (!isRepo) {
+    errors.push('Current directory is not a Git repository');
+    suggestions.push('Initialize a new repository with: git init');
+    suggestions.push('Or clone an existing repository with: git clone <url>');
+  }
+
+  // Check user configuration if git is available and we're in a repo
+  if (gitAvailable && isRepo) {
+    try {
+      // Check user name
+      const { stdout: userName } = await execAsync('git config user.name');
+      if (!userName.trim()) {
+        errors.push('Git user name is not configured');
+        suggestions.push('Set your name with: git config --global user.name "Your Name"');
+      }
+    } catch {
+      errors.push('Git user name is not configured');
+      suggestions.push('Set your name with: git config --global user.name "Your Name"');
+    }
+
+    try {
+      // Check user email
+      const { stdout: userEmail } = await execAsync('git config user.email');
+      if (!userEmail.trim()) {
+        errors.push('Git user email is not configured');
+        suggestions.push('Set your email with: git config --global user.email "your.email@example.com"');
+      }
+    } catch {
+      errors.push('Git user email is not configured');
+      suggestions.push('Set your email with: git config --global user.email "your.email@example.com"');
+    }
+
+    // Check for remote repository
+    try {
+      const { stdout: remotes } = await execAsync('git remote -v');
+      if (!remotes.trim()) {
+        errors.push('No remote repository configured');
+        suggestions.push('Add a remote with: git remote add origin <repository-url>');
+        suggestions.push('View existing remotes with: git remote -v');
+      }
+    } catch {
+      errors.push('Unable to check remote repositories');
+      suggestions.push('Check git configuration with: git remote -v');
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    suggestions
+  };
 }
