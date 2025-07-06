@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/full-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "file_paths": ["src/**/*.ts", "src/**/*.tsx"],
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/run-related-tests.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
