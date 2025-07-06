@@ -47,6 +47,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - AgentConfig.autoPush optional field for runtime override of UserConfig.gitAutoPush
   - RollbackData.gitPush field for tracking push operations in rollback data
   - Maintain backward compatibility with existing configurations
+- Add ConfigManager methods for auto-push configuration
+  - setGitAutoPush() method to enable/disable auto-push functionality
+  - getGitAutoPush() method to retrieve auto-push setting (default: false)
+  - setGitPushRemote() method with validation for remote names
+  - getGitPushRemote() method to retrieve remote setting (default: 'origin')
+  - setGitPushBranch() and getGitPushBranch() methods for branch configuration
+  - Comprehensive validation for remote and branch names with clear error messages
 
 ### Changed
 - Add early git validation in executeIssue method for auto-commit operations

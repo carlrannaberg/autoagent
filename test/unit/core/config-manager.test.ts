@@ -480,4 +480,296 @@ describe('ConfigManager', () => {
       });
     });
   });
+
+  describe('gitAutoPush configuration', () => {
+    describe('setGitAutoPush', () => {
+      it('should update local config by default', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitAutoPush(true);
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/test/project/.autoagent/config.json',
+          JSON.stringify({ gitAutoPush: true }, null, 2)
+        );
+      });
+
+      it('should update global config when specified', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitAutoPush(true, true);
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/home/user/.autoagent/config.json',
+          JSON.stringify({ gitAutoPush: true }, null, 2)
+        );
+      });
+    });
+
+    describe('getGitAutoPush', () => {
+      it('should return false by default', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        await configManager.loadConfig();
+
+        const result = configManager.getGitAutoPush();
+
+        expect(result).toBe(false);
+      });
+
+      it('should return true when configured', async () => {
+        mockFs.readFile.mockResolvedValue('{"gitAutoPush": true}');
+        await configManager.loadConfig();
+
+        const result = configManager.getGitAutoPush();
+
+        expect(result).toBe(true);
+      });
+    });
+  });
+
+  describe('gitPushRemote configuration', () => {
+    describe('setGitPushRemote', () => {
+      it('should update local config by default', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitPushRemote('upstream');
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/test/project/.autoagent/config.json',
+          JSON.stringify({ gitPushRemote: 'upstream' }, null, 2)
+        );
+      });
+
+      it('should update global config when specified', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitPushRemote('upstream', true);
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/home/user/.autoagent/config.json',
+          JSON.stringify({ gitPushRemote: 'upstream' }, null, 2)
+        );
+      });
+
+      it('should trim whitespace from remote name', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitPushRemote('  origin  ');
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/test/project/.autoagent/config.json',
+          JSON.stringify({ gitPushRemote: 'origin' }, null, 2)
+        );
+      });
+
+      it('should reject empty remote name', async () => {
+        await expect(configManager.setGitPushRemote(''))
+          .rejects.toThrow('Remote name cannot be empty');
+      });
+
+      it('should reject whitespace-only remote name', async () => {
+        await expect(configManager.setGitPushRemote('   '))
+          .rejects.toThrow('Remote name cannot be empty');
+      });
+
+      it('should reject invalid characters in remote name', async () => {
+        await expect(configManager.setGitPushRemote('origin!'))
+          .rejects.toThrow('Invalid remote name');
+        
+        await expect(configManager.setGitPushRemote('origin@'))
+          .rejects.toThrow('Invalid remote name');
+        
+        await expect(configManager.setGitPushRemote('origin space'))
+          .rejects.toThrow('Invalid remote name');
+      });
+
+      it('should accept valid remote names', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        const validNames = ['origin', 'upstream', 'my-remote', 'remote_1', 'remote.backup'];
+        
+        for (const name of validNames) {
+          await expect(configManager.setGitPushRemote(name)).resolves.not.toThrow();
+        }
+      });
+    });
+
+    describe('getGitPushRemote', () => {
+      it('should return "origin" by default', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        await configManager.loadConfig();
+
+        const result = configManager.getGitPushRemote();
+
+        expect(result).toBe('origin');
+      });
+
+      it('should return configured remote', async () => {
+        mockFs.readFile.mockResolvedValue('{"gitPushRemote": "upstream"}');
+        await configManager.loadConfig();
+
+        const result = configManager.getGitPushRemote();
+
+        expect(result).toBe('upstream');
+      });
+    });
+  });
+
+  describe('gitPushBranch configuration', () => {
+    describe('setGitPushBranch', () => {
+      it('should update local config by default', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitPushBranch('main');
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/test/project/.autoagent/config.json',
+          JSON.stringify({ gitPushBranch: 'main' }, null, 2)
+        );
+      });
+
+      it('should update global config when specified', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitPushBranch('main', true);
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/home/user/.autoagent/config.json',
+          JSON.stringify({ gitPushBranch: 'main' }, null, 2)
+        );
+      });
+
+      it('should trim whitespace from branch name', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitPushBranch('  develop  ');
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/test/project/.autoagent/config.json',
+          JSON.stringify({ gitPushBranch: 'develop' }, null, 2)
+        );
+      });
+
+      it('should remove branch setting when undefined', async () => {
+        mockFs.readFile.mockResolvedValue('{"gitPushBranch": "main"}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitPushBranch(undefined);
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/test/project/.autoagent/config.json',
+          JSON.stringify({}, null, 2)
+        );
+      });
+
+      it('should reject empty branch name', async () => {
+        await expect(configManager.setGitPushBranch(''))
+          .rejects.toThrow('Branch name cannot be empty');
+      });
+
+      it('should reject whitespace-only branch name', async () => {
+        await expect(configManager.setGitPushBranch('   '))
+          .rejects.toThrow('Branch name cannot be empty');
+      });
+
+      it('should reject invalid characters in branch name', async () => {
+        await expect(configManager.setGitPushBranch('branch!'))
+          .rejects.toThrow('Invalid branch name');
+        
+        await expect(configManager.setGitPushBranch('branch@'))
+          .rejects.toThrow('Invalid branch name');
+        
+        await expect(configManager.setGitPushBranch('branch space'))
+          .rejects.toThrow('Invalid branch name');
+      });
+
+      it('should reject invalid branch patterns', async () => {
+        await expect(configManager.setGitPushBranch('/branch'))
+          .rejects.toThrow('Branch names cannot start or end with slashes');
+        
+        await expect(configManager.setGitPushBranch('branch/'))
+          .rejects.toThrow('Branch names cannot start or end with slashes');
+        
+        await expect(configManager.setGitPushBranch('branch//name'))
+          .rejects.toThrow('cannot start or end with slashes, or contain consecutive slashes');
+      });
+
+      it('should accept valid branch names', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        const validNames = ['main', 'develop', 'feature/auth', 'feature-123', 'release-1.0.0', 'hotfix/bug-fix'];
+        
+        for (const name of validNames) {
+          await expect(configManager.setGitPushBranch(name)).resolves.not.toThrow();
+        }
+      });
+    });
+
+    describe('getGitPushBranch', () => {
+      it('should return undefined by default', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        await configManager.loadConfig();
+
+        const result = configManager.getGitPushBranch();
+
+        expect(result).toBeUndefined();
+      });
+
+      it('should return configured branch', async () => {
+        mockFs.readFile.mockResolvedValue('{"gitPushBranch": "develop"}');
+        await configManager.loadConfig();
+
+        const result = configManager.getGitPushBranch();
+
+        expect(result).toBe('develop');
+      });
+    });
+  });
+
+  describe('configuration precedence with auto-push settings', () => {
+    it('should merge auto-push settings with proper precedence', async () => {
+      const globalConfig: Partial<UserConfig> = {
+        gitAutoPush: true,
+        gitPushRemote: 'upstream',
+        gitPushBranch: 'main'
+      };
+
+      const localConfig: Partial<UserConfig> = {
+        gitAutoPush: false,
+        gitPushRemote: 'origin'
+        // gitPushBranch not set - should inherit from global
+      };
+
+      mockFs.readFile
+        .mockResolvedValueOnce(JSON.stringify(globalConfig))
+        .mockResolvedValueOnce(JSON.stringify(localConfig));
+
+      await configManager.loadConfig();
+      
+      expect(configManager.getGitAutoPush()).toBe(false); // Local overrides
+      expect(configManager.getGitPushRemote()).toBe('origin'); // Local overrides
+      expect(configManager.getGitPushBranch()).toBe('main'); // Inherited from global
+    });
+
+    it('should include all auto-push fields in getConfig()', async () => {
+      mockFs.readFile.mockResolvedValue('{"gitAutoPush": true, "gitPushRemote": "upstream", "gitPushBranch": "develop"}');
+      await configManager.loadConfig();
+
+      const config = configManager.getConfig();
+
+      expect(config.gitAutoPush).toBe(true);
+      expect(config.gitPushRemote).toBe('upstream');
+      expect(config.gitPushBranch).toBe('develop');
+    });
+  });
 });
