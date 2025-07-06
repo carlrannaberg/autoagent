@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #64]** Integrate git validation into executeIssue method - `issues/64-integrate-git-validation-into-executeissue-method.md`
 - [ ] **[Issue #65]** Enhance git utilities with comprehensive validation - `issues/65-enhance-git-utilities-with-comprehensive-validation.md`
 - [ ] **[Issue #66]** Add user-friendly error messages for git validation - `issues/66-add-user-friendly-error-messages-for-git-validation.md`
 - [ ] **[Issue #67]** Write tests for git validation functionality - `issues/67-write-tests-for-git-validation-functionality.md`
@@ -27,6 +26,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #85]** Update documentation for auto-push feature - `issues/85-update-documentation-for-auto-push-feature.md`
 
 ## Completed Issues
+- [x] **[Issue #64]** Integrate git validation into executeIssue method - `issues/64-integrate-git-validation-into-executeissue-method.md`
 - [x] **[Issue #63]** Add git validation method to AutonomousAgent - `issues/63-add-git-validation-method-to-autonomousagent.md`
 - [x] **[Issue #62]** Add integration tests for reflection system - `issues/62-add-integration-tests-for-reflection-system.md`
 - [x] **[Issue #61]** Add unit tests for reflection engine - `issues/61-add-unit-tests-for-reflection-engine.md`

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Add early git validation in executeIssue method for auto-commit operations
+  - Git validation now occurs before AI provider operations to save resources
+  - Validation errors fail fast with clear remediation guidance
+  - No impact on users with auto-commit disabled
+
 ## [0.5.4] - 2025-07-06
 
 ### Added

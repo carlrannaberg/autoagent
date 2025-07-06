@@ -109,6 +109,9 @@ export class AutonomousAgent extends EventEmitter {
       // Report initial progress
       this.reportProgress('Starting execution...', 0);
 
+      // Validate git repository for auto-commit
+      await this.validateGitForAutoCommit();
+
       // Capture pre-execution state if rollback is enabled
       let rollbackData;
       if (this.config.enableRollback === true) {
