@@ -330,6 +330,43 @@ export function registerConfigCommand(program: Command): void {
     });
 
   config
+    .command('set-git-no-verify <value>')
+    .description('Skip git pre-commit and commit-msg hooks when committing (true/false)')
+    .option('-g, --global', 'Set globally')
+    .action(async (value: string, options: { global?: boolean }) => {
+      try {
+        const configManager = new ConfigManager();
+        try {
+          await configManager.loadConfig();
+        } catch (error) {
+          if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
+            Logger.error('Failed to parse configuration');
+            process.exit(1);
+          }
+          throw error;
+        }
+        
+        // Parse and validate boolean value (case-insensitive)
+        const normalizedValue = value.toLowerCase();
+        if (normalizedValue !== 'true' && normalizedValue !== 'false') {
+          Logger.error('Invalid value: must be "true" or "false"');
+          process.exit(1);
+        }
+        
+        const noVerify = normalizedValue === 'true';
+        await configManager.setGitCommitNoVerify(noVerify, options.global);
+        
+        Logger.success(`Git hooks ${noVerify ? 'disabled (--no-verify)' : 'enabled'} for commits`);
+        Logger.info(noVerify 
+          ? 'ℹ️  Pre-commit and commit-msg hooks will be skipped when AutoAgent commits'
+          : 'ℹ️  Pre-commit and commit-msg hooks will run when AutoAgent commits');
+      } catch (error) {
+        Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    });
+
+  config
     .command('show')
     .description('Show current configuration')
     .action(async () => {

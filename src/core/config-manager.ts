@@ -369,6 +369,13 @@ export class ConfigManager {
         Logger.info(`${provider}: Not rate limited`);
       }
     }
+    
+    // Show git hooks status
+    Logger.info('\n🔧 Git Hooks Status:');
+    const gitHooksStatus = this.config.gitCommitNoVerify 
+      ? 'disabled (--no-verify)' 
+      : 'enabled';
+    Logger.info(`Git pre-commit and commit-msg hooks: ${gitHooksStatus}`);
   }
 
   /**
