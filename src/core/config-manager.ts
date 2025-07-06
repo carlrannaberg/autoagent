@@ -16,7 +16,9 @@ export class ConfigManager {
     logLevel: 'info',
     customInstructions: '',
     additionalDirectories: [],
-    gitCommitNoVerify: false
+    gitCommitNoVerify: false,
+    gitAutoPush: false,
+    gitPushRemote: 'origin'
   };
 
   private static readonly GLOBAL_CONFIG_DIR = path.join(os.homedir(), '.autoagent');

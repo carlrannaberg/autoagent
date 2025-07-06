@@ -78,6 +78,15 @@ export interface RollbackData {
   gitCommit?: string;
   /** Map of file paths to their original contents */
   fileBackups?: Map<string, string>;
+  /** Information about git push operations performed */
+  gitPush?: {
+    /** Remote that was pushed to */
+    remote: string;
+    /** Branch that was pushed */
+    branch: string;
+    /** Commit hash that was pushed */
+    commit: string;
+  };
 }
 
 /**
@@ -121,6 +130,8 @@ export interface AgentConfig {
   additionalDirectories?: string[];
   /** Skip git pre-commit and commit-msg hooks when committing */
   noVerify?: boolean;
+  /** Whether to automatically push changes after committing (runtime override of UserConfig.gitAutoPush) */
+  autoPush?: boolean;
 }
 
 /**
@@ -151,6 +162,12 @@ export interface UserConfig {
   additionalDirectories?: string[];
   /** Skip git pre-commit and commit-msg hooks when committing */
   gitCommitNoVerify: boolean;
+  /** Whether to automatically push changes after committing (default: false) */
+  gitAutoPush: boolean;
+  /** Git remote to push to (default: 'origin') */
+  gitPushRemote: string;
+  /** Optional target branch to push to (default: current branch) */
+  gitPushBranch?: string;
 }
 
 /**

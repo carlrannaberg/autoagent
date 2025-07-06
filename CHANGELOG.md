@@ -40,6 +40,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - checkGitRemote() function to verify remote accessibility
   - pushToRemote() function for executing push operations
   - validateRemoteForPush() function for comprehensive push validation
+- Add configuration interfaces for auto-push feature
+  - UserConfig.gitAutoPush boolean field to enable/disable auto-push (default: false)
+  - UserConfig.gitPushRemote string field for target remote (default: 'origin')
+  - UserConfig.gitPushBranch optional field for specific branch targeting
+  - AgentConfig.autoPush optional field for runtime override of UserConfig.gitAutoPush
+  - RollbackData.gitPush field for tracking push operations in rollback data
+  - Maintain backward compatibility with existing configurations
 
 ### Changed
 - Add early git validation in executeIssue method for auto-commit operations
