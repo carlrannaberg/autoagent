@@ -48,6 +48,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - RollbackData.gitPush field for tracking push operations in rollback data
   - Maintain backward compatibility with existing configurations
 - Add ConfigManager methods for auto-push configuration
+- Add CLI flags for push control in run command
+  - Add `--push` flag to enable auto-push for current run (implies --commit)
+  - Add `--no-push` flag to disable auto-push for current run  
+  - Handle conflicting flags gracefully (warn user, use --no-push)
+  - CLI flags override configuration file settings for flexibility
+  - Maintain proper configuration precedence: CLI flags > AgentConfig > UserConfig > defaults
   - setGitAutoPush() method to enable/disable auto-push functionality
   - getGitAutoPush() method to retrieve auto-push setting (default: false)
   - setGitPushRemote() method with validation for remote names
