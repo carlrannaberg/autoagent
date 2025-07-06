@@ -736,13 +736,35 @@ ${issueEntry}
       const issueName = `${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
       const commitMessage = `feat: Complete issue from issues/${issueName}.md`;
 
-      // Create commit with optional co-authorship
+      // Determine no-verify setting with proper precedence
+      // 1. Runtime config (highest priority)
+      // 2. User configuration (fallback)
+      // 3. Default false (lowest priority)
+      let noVerify = false;
+      
+      if (this.config.noVerify !== undefined) {
+        // Runtime override from AgentConfig
+        noVerify = this.config.noVerify;
+        if (this.config.debug === true) {
+          this.reportProgress(`🔧 Using runtime noVerify setting: ${noVerify}`, 0);
+        }
+      } else {
+        // Fall back to user configuration
+        const userConfig = this.configManager.getConfig();
+        noVerify = userConfig.gitCommitNoVerify;
+        if (this.config.debug === true && noVerify) {
+          this.reportProgress(`🔧 Using configured gitCommitNoVerify: ${noVerify}`, 0);
+        }
+      }
+
+      // Create commit with optional co-authorship and no-verify option
       const commitResult = await createCommit({
         message: commitMessage,
         coAuthor: (this.config.includeCoAuthoredBy === true && result.provider !== undefined) ? {
           name: result.provider.charAt(0).toUpperCase() + result.provider.slice(1),
           email: `${result.provider}@autoagent-cli`
-        } : undefined
+        } : undefined,
+        noVerify
       });
 
       if (commitResult.success) {

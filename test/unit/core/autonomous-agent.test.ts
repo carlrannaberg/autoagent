@@ -1434,4 +1434,203 @@ describe('AutonomousAgent', () => {
       }
     });
   });
+
+  describe('git commit no-verify functionality', () => {
+    it('should use runtime noVerify config when provided', async () => {
+      // Create agent with runtime noVerify=true
+      const agentWithNoVerify = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        noVerify: true, // Runtime override
+        debug: true
+      });
+      (agentWithNoVerify as any).configManager = configManager;
+      (agentWithNoVerify as any).fileManager = fileManager;
+      (agentWithNoVerify as any).providerLearning = providerLearning;
+      
+      // Setup git environment
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
+      
+      // Configure user config to have gitCommitNoVerify false (to test runtime override)
+      configManager.updateConfig({
+        gitCommitNoVerify: false
+      });
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Execute issue
+      const result = await agentWithNoVerify.executeIssue(1);
+      
+      // Verify git commit was called with noVerify=true
+      const commitCalls = gitSimulator.getCommitCalls();
+      expect(commitCalls).toHaveLength(1);
+      expect(commitCalls[0].options.noVerify).toBe(true);
+      
+      expect(result.success).toBe(true);
+      
+      agentWithNoVerify.removeAllListeners();
+    });
+
+    it('should use user config gitCommitNoVerify when no runtime override', async () => {
+      // Configure user config to have gitCommitNoVerify true
+      configManager.updateConfig({
+        gitCommitNoVerify: true
+      });
+      
+      // Create agent without runtime noVerify
+      const agentWithConfig = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        debug: true
+        // No noVerify specified - should use config
+      });
+      (agentWithConfig as any).configManager = configManager;
+      (agentWithConfig as any).fileManager = fileManager;
+      (agentWithConfig as any).providerLearning = providerLearning;
+      
+      // Setup git environment
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Execute issue
+      const result = await agentWithConfig.executeIssue(1);
+      
+      // Verify git commit was called with noVerify=true from config
+      const commitCalls = gitSimulator.getCommitCalls();
+      expect(commitCalls).toHaveLength(1);
+      expect(commitCalls[0].options.noVerify).toBe(true);
+      
+      expect(result.success).toBe(true);
+      
+      agentWithConfig.removeAllListeners();
+    });
+
+    it('should default to noVerify=false when not configured', async () => {
+      // Configure user config to have gitCommitNoVerify false
+      configManager.updateConfig({
+        gitCommitNoVerify: false
+      });
+      
+      // Create agent without any noVerify settings
+      const agentDefault = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true
+      });
+      (agentDefault as any).configManager = configManager;
+      (agentDefault as any).fileManager = fileManager;
+      (agentDefault as any).providerLearning = providerLearning;
+      
+      // Setup git environment
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Execute issue
+      const result = await agentDefault.executeIssue(1);
+      
+      // Verify git commit was called with noVerify=false (default)
+      const commitCalls = gitSimulator.getCommitCalls();
+      expect(commitCalls).toHaveLength(1);
+      expect(commitCalls[0].options.noVerify).toBe(false);
+      
+      expect(result.success).toBe(true);
+      
+      agentDefault.removeAllListeners();
+    });
+
+    it('should respect runtime noVerify=false override even when config is true', async () => {
+      // Configure user config to have gitCommitNoVerify true
+      configManager.updateConfig({
+        gitCommitNoVerify: true
+      });
+      
+      // Create agent with explicit noVerify=false
+      const agentOverride = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        noVerify: false // Explicit false should override config
+      });
+      (agentOverride as any).configManager = configManager;
+      (agentOverride as any).fileManager = fileManager;
+      (agentOverride as any).providerLearning = providerLearning;
+      
+      // Setup git environment
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Execute issue
+      const result = await agentOverride.executeIssue(1);
+      
+      // Verify git commit was called with noVerify=false (runtime override)
+      const commitCalls = gitSimulator.getCommitCalls();
+      expect(commitCalls).toHaveLength(1);
+      expect(commitCalls[0].options.noVerify).toBe(false);
+      
+      expect(result.success).toBe(true);
+      
+      agentOverride.removeAllListeners();
+    });
+  });
 });

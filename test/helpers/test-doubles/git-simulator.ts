@@ -6,6 +6,11 @@ export class GitSimulator {
   private currentCommitHash: string = 'initial-commit';
   private commits: Map<string, { message: string; files: string[] }> = new Map();
   private stagedFiles: string[] = [];
+  private userName: string = '';
+  private userEmail: string = '';
+  private remoteUrl: string = '';
+  private remoteName: string = '';
+  private commitCalls: Array<{ options: any }> = [];
 
   setGitAvailable(available: boolean): void {
     this.isAvailable = available;
@@ -22,6 +27,16 @@ export class GitSimulator {
   setUncommittedChanges(changes: string): void {
     this.uncommittedChanges = changes;
     this.hasChanges = changes.length > 0;
+  }
+
+  setUserConfig(name: string, email: string): void {
+    this.userName = name;
+    this.userEmail = email;
+  }
+
+  setRemoteConfig(name: string, url: string): void {
+    this.remoteName = name;
+    this.remoteUrl = url;
   }
 
   checkGitAvailable(): boolean {
@@ -42,14 +57,17 @@ export class GitSimulator {
     }
   }
 
-  createCommit(message: string): { success: boolean; commitHash?: string; error?: string } {
+  createCommit(options: any): { success: boolean; commitHash?: string; error?: string } {
+    // Store the commit call for testing
+    this.commitCalls.push({ options });
+    
     if (!this.hasChanges) {
       return { success: false, error: 'No changes to commit' };
     }
 
     const commitHash = `commit-${Date.now()}`;
     this.commits.set(commitHash, {
-      message,
+      message: typeof options.message === 'string' ? options.message : '',
       files: [...this.stagedFiles]
     });
     
@@ -63,6 +81,10 @@ export class GitSimulator {
 
   getCurrentCommitHash(): string {
     return this.currentCommitHash;
+  }
+
+  getCommitCalls(): Array<{ options: any }> {
+    return [...this.commitCalls];
   }
 
   getUncommittedChanges(): string {
