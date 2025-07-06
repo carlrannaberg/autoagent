@@ -15,7 +15,8 @@ export class ConfigManager {
     gitCommitInterval: 600000, // 10 minutes
     logLevel: 'info',
     customInstructions: '',
-    additionalDirectories: []
+    additionalDirectories: [],
+    gitCommitNoVerify: false
   };
 
   private static readonly GLOBAL_CONFIG_DIR = path.join(os.homedir(), '.autoagent');

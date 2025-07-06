@@ -20,6 +20,10 @@ export interface CommitOptions {
     email: string;
   };
   signoff?: boolean;
+  /**
+   * Skip pre-commit and commit-msg hooks
+   */
+  noVerify?: boolean;
 }
 
 export interface GitCommitResult {

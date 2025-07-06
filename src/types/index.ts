@@ -119,6 +119,8 @@ export interface AgentConfig {
   reflection?: ReflectionConfig;
   /** Additional directories to give AI providers access to */
   additionalDirectories?: string[];
+  /** Skip git pre-commit and commit-msg hooks when committing */
+  noVerify?: boolean;
 }
 
 /**
@@ -147,6 +149,8 @@ export interface UserConfig {
   includeCoAuthoredBy?: boolean;
   /** Additional directories to give AI providers access to */
   additionalDirectories?: string[];
+  /** Skip git pre-commit and commit-msg hooks when committing */
+  gitCommitNoVerify: boolean;
 }
 
 /**
