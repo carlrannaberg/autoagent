@@ -128,6 +128,36 @@ The main branch for this project is called "master"
 - The GitHub release workflow will create the appropriate tag
 - Only use `git tag` for listing/viewing tags, not for creating them
 
+### Git Validation for Auto-Commit
+
+AutoAgent includes automatic git commit functionality that validates the git environment before execution. Understanding this validation helps AI agents handle git-related issues properly.
+
+**Validation Checks:**
+1. **Git Availability**: Ensures git is installed and accessible in PATH
+2. **Repository Status**: Verifies current directory is a git repository
+3. **User Configuration**: Checks that user.name and user.email are configured
+4. **Remote Repository**: Validates remote configuration (warning only, not required)
+
+**Error Handling:**
+When git validation fails, the system provides clear error messages with remediation steps:
+- Each error includes specific commands to fix the issue
+- Alternative option to disable auto-commit is always provided
+- Debug mode (`AUTOAGENT_DEBUG=true`) shows detailed validation information
+
+**Key Functions in `src/utils/git.ts`:**
+- `validateGitEnvironment()`: Comprehensive validation with error/suggestion arrays
+- `checkGitAvailable()`: Checks if git command is available
+- `isGitRepository()`: Verifies current directory is a git repo
+- `hasChangesToCommit()`: Checks for staged/unstaged/untracked changes
+- `createCommit()`: Creates commits with co-authorship support
+
+**Auto-Commit Behavior:**
+- Only runs if `config.autoCommit` is true
+- Validates git environment before each commit attempt
+- Stages all changes automatically
+- Includes co-authorship attribution for AI-generated changes
+- Skips commit if no changes are detected
+
 ### Updating CHANGELOG.md
 
 **Before making any commits**, ensure that CHANGELOG.md is updated to reflect your changes:

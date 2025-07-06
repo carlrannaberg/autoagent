@@ -55,6 +55,80 @@ AutoAgent is a powerful npm package that enables running autonomous AI agents us
 - Node.js >= 22.0.0
 - npm or yarn
 - Claude CLI (`claude`) or Gemini CLI (`gemini`) installed and authenticated
+- Git (required for auto-commit feature, optional otherwise)
+
+### Git Requirements
+
+AutoAgent's auto-commit feature requires a properly configured git environment. While git is optional, it's recommended for tracking changes automatically.
+
+#### Required Git Setup
+
+1. **Install Git**
+   ```bash
+   # macOS (with Homebrew)
+   brew install git
+   
+   # Ubuntu/Debian
+   sudo apt-get update
+   sudo apt-get install git
+   
+   # Windows
+   # Download from https://git-scm.com/download/windows
+   
+   # Verify installation
+   git --version
+   ```
+
+2. **Initialize Repository**
+   ```bash
+   # In your project directory
+   git init
+   
+   # Or clone existing repository
+   git clone <repository-url>
+   cd <repository-name>
+   ```
+
+3. **Configure Git User**
+   ```bash
+   # Set globally (for all repositories)
+   git config --global user.name "Your Name"
+   git config --global user.email "your.email@example.com"
+   
+   # Or set locally (for current repository only)
+   git config user.name "Your Name"
+   git config user.email "your.email@example.com"
+   
+   # Verify configuration
+   git config user.name
+   git config user.email
+   ```
+
+4. **Add Remote (Optional)**
+   ```bash
+   # Add remote repository for pushing changes
+   git remote add origin <repository-url>
+   
+   # Verify remote
+   git remote -v
+   ```
+
+#### Disabling Auto-Commit
+
+If you don't want to use git or prefer manual commits:
+
+```bash
+# Via CLI
+autoagent config set-auto-commit false
+
+# Via command flag
+autoagent run --no-commit
+
+# Via configuration file
+{
+  "gitAutoCommit": false
+}
+```
 
 ### Global Installation
 
@@ -939,15 +1013,75 @@ autoagent config clear-limits
 ```
 
 **Git auto-commit not working**
+
+AutoAgent validates your git environment before performing auto-commits. Here are common issues and their solutions:
+
+1. **Git not installed**
 ```bash
-# Ensure git is initialized
+# Error: "Git is not available on your system"
+
+# Solution - Install git:
+# macOS
+brew install git
+
+# Ubuntu/Debian
+sudo apt-get install git
+
+# Windows
+# Download from https://git-scm.com/download/windows
+
+# Verify installation
+git --version
+```
+
+2. **Not a git repository**
+```bash
+# Error: "Current directory is not a git repository"
+
+# Solution - Initialize repository:
 git init
 
-# Check git configuration
-autoagent config show
+# Or clone existing repository:
+git clone <repository-url>
+
+# Verify repository status
+git status
+```
+
+3. **Git user not configured**
+```bash
+# Error: "Git user configuration is incomplete"
+
+# Solution - Configure git user:
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+# Verify configuration
+git config --list | grep user
+```
+
+4. **No remote repository**
+```bash
+# Warning: "No remote repository configured"
+
+# Solution - Add remote (optional for local-only repos):
+git remote add origin <repository-url>
+git remote -v
+```
+
+5. **Quick fixes**
+```bash
+# Check current auto-commit setting
+autoagent config get gitAutoCommit
 
 # Enable auto-commit
 autoagent config set-auto-commit true
+
+# Disable auto-commit temporarily
+autoagent run --no-commit
+
+# Debug git validation
+AUTOAGENT_DEBUG=true autoagent run
 ```
 
 **TypeScript compilation errors**

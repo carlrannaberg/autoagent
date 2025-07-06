@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - validateGitEnvironment() function for thorough git environment checks
   - Validation includes git availability, repository status, and user configuration
   - Provides detailed error messages and actionable suggestions for remediation
+- Add comprehensive git documentation
+  - Git Requirements section in README with setup instructions
+  - Enhanced troubleshooting section with specific git error solutions
+  - Platform-specific installation commands for all major operating systems
+  - Debug mode instructions for git validation issues
 
 ### Changed
 - Add early git validation in executeIssue method for auto-commit operations
