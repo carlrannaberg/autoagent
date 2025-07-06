@@ -608,6 +608,83 @@ describe('Run Command', () => {
     });
   });
 
+  describe('Git hook flags', () => {
+    it('should pass noVerify as true when --no-verify flag is used', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      await command!.parseAsync(['39', '--no-verify'], { from: 'user' });
+      
+      expect(AutonomousAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          noVerify: true
+        })
+      );
+    });
+    
+    it('should pass noVerify as false when --verify flag is used', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      await command!.parseAsync(['39', '--verify'], { from: 'user' });
+      
+      expect(AutonomousAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          noVerify: false
+        })
+      );
+    });
+    
+    it('should not pass noVerify when neither flag is used', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      await command!.parseAsync(['39'], { from: 'user' });
+      
+      expect(AutonomousAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          noVerify: undefined
+        })
+      );
+    });
+    
+    it('should handle conflicting --verify and --no-verify flags', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      await command!.parseAsync(['39', '--verify', '--no-verify'], { from: 'user' });
+      
+      expect(Logger.warning).toHaveBeenCalledWith('Both --verify and --no-verify flags provided. Using --no-verify.');
+      expect(AutonomousAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          noVerify: true
+        })
+      );
+    });
+    
+    it('should work with other flags like --all and --no-verify', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      await command!.parseAsync(['--all', '--no-verify'], { from: 'user' });
+      
+      expect(AutonomousAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          noVerify: true
+        })
+      );
+      expect(mockAgent.executeAll).toHaveBeenCalled();
+    });
+    
+    it('should work with other flags like --provider and --verify', async () => {
+      const command = program.commands.find(cmd => cmd.name() === 'run');
+      
+      await command!.parseAsync(['39', '--provider', 'gemini', '--verify'], { from: 'user' });
+      
+      expect(AutonomousAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          provider: 'gemini',
+          noVerify: false
+        })
+      );
+    });
+  });
+
   describe('Error Handling', () => {
     it('should handle permission errors when accessing spec files', async () => {
       const error = new Error('EACCES: permission denied');

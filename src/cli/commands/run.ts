@@ -22,6 +22,8 @@ interface RunOptions {
   reflectionIterations?: number;
   reflection?: boolean;
   addDir?: string[];
+  verify?: boolean;
+  noVerify?: boolean;
 }
 
 interface StatusData {
@@ -84,6 +86,8 @@ export function registerRunCommand(program: Command): void {
     .option('--reflection-iterations <n>', 'Set maximum number of reflection iterations (1-10)', parseInt)
     .option('--no-reflection', 'Disable reflection for this run')
     .option('--add-dir <path>', 'Add additional directory for AI access (repeatable)', collect, [])
+    .option('--verify', 'Enable git hooks during commits')
+    .option('--no-verify', 'Skip git hooks during commits')
     .action(async (target?: string, options: RunOptions = {}) => {
       const abortController = new AbortController();
       
@@ -123,6 +127,19 @@ export function registerRunCommand(program: Command): void {
           ? mergeReflectionConfig(undefined, cliReflectionConfig)
           : undefined;
         
+        // Handle --verify and --no-verify flag conflict resolution
+        let resolvedNoVerify: boolean | undefined;
+        if (options.verify === true && options.noVerify === true) {
+          // Both flags provided - warn and use --no-verify
+          Logger.warning('Both --verify and --no-verify flags provided. Using --no-verify.');
+          resolvedNoVerify = true;
+        } else if (options.noVerify === true) {
+          resolvedNoVerify = true;
+        } else if (options.verify === true) {
+          resolvedNoVerify = false;
+        }
+        // If neither flag is set, resolvedNoVerify remains undefined
+        
         const agent = new AutonomousAgent({
           provider: options.provider as ProviderName | undefined,
           workspace: options.workspace,
@@ -133,6 +150,7 @@ export function registerRunCommand(program: Command): void {
           signal: abortController.signal,
           reflection: reflectionConfig,
           additionalDirectories: options.addDir || [],
+          noVerify: resolvedNoVerify,
           onProgress: (message: string, percentage?: number): void => {
             if (percentage !== undefined) {
               Logger.info(`[${percentage}%] ${message}`);

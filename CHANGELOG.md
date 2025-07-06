@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - setGitCommitNoVerify() method to update configuration
   - getGitCommitNoVerify() method to retrieve current setting
   - Configuration persists to config file and loads correctly on restart
+- Add CLI flags for run command to control git hooks
+  - Add `--verify` flag to force enable git hooks during commits
+  - Add `--no-verify` flag to skip git hooks during commits
+  - Handle conflicting flags gracefully (warn user, use --no-verify)
+  - Pass resolved noVerify setting to AutonomousAgent
+  - Maintain backward compatibility (no flags = use configuration default)
 
 ### Changed
 - Add early git validation in executeIssue method for auto-commit operations
