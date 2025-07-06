@@ -1058,7 +1058,7 @@ describe('AutonomousAgent', () => {
         if (typeof path === 'string' && path.includes('templates')) {
           throw new Error('ENOENT: no such file or directory');
         }
-        return originalReaddir ? originalReaddir(path as any) : [];
+        return originalReaddir ? await originalReaddir(path as any, {} as any) : [];
       });
       
       // Clear issues

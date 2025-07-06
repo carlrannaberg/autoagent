@@ -399,5 +399,90 @@ describe('Git Utilities', () => {
       expect(result.errors).toContain('Unable to check remote repositories');
       expect(result.suggestions).toContain('Check git configuration with: git remote -v');
     });
+
+    it('should handle multiple validation errors', async () => {
+      // Git is available
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository
+      mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
+      // User name not configured (empty)
+      mockExec.mockResolvedValueOnce({ stdout: '', stderr: '' });
+      // User email not configured (empty)
+      mockExec.mockResolvedValueOnce({ stdout: '', stderr: '' });
+      // No remote configured
+      mockExec.mockResolvedValueOnce({ stdout: '', stderr: '' });
+
+      const result = await validateGitEnvironment();
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toHaveLength(3);
+      expect(result.errors).toContain('Git user name is not configured');
+      expect(result.errors).toContain('Git user email is not configured');
+      expect(result.errors).toContain('No remote repository configured');
+      expect(result.suggestions).toHaveLength(4);
+    });
+
+    it('should handle git config command failures', async () => {
+      // Git is available
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository
+      mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
+      // User name check fails
+      mockExec.mockRejectedValueOnce(new Error('git config failed'));
+      // User email configured
+      mockExec.mockResolvedValueOnce({ stdout: 'john@example.com', stderr: '' });
+      // Remote configured
+      mockExec.mockResolvedValueOnce({ stdout: 'origin  https://github.com/user/repo.git (fetch)', stderr: '' });
+
+      const result = await validateGitEnvironment();
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Git user name is not configured');
+      expect(result.suggestions).toContain('Set your name with: git config --global user.name "Your Name"');
+    });
+
+    it('should only check user config when git is available and in repo', async () => {
+      // Git is not available
+      mockExec.mockRejectedValueOnce(new Error('Command not found'));
+
+      const result = await validateGitEnvironment();
+
+      // Should not attempt to check user config
+      expect(mockExec).toHaveBeenCalledTimes(1);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toContain('Git is not installed');
+    });
+
+    it('should skip user config checks when not in repository', async () => {
+      // Git is available
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Not a git repository
+      mockExec.mockRejectedValueOnce(new Error('Not a git repository'));
+
+      const result = await validateGitEnvironment();
+
+      // Should only have made 2 calls (git --version and git rev-parse)
+      expect(mockExec).toHaveBeenCalledTimes(2);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0]).toContain('not a Git repository');
+    });
+
+    it('should trim whitespace from git config values', async () => {
+      // Git is available
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository
+      mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
+      // User name with whitespace
+      mockExec.mockResolvedValueOnce({ stdout: '  John Doe  \n', stderr: '' });
+      // User email with whitespace
+      mockExec.mockResolvedValueOnce({ stdout: '  john@example.com  \n', stderr: '' });
+      // Remote with whitespace
+      mockExec.mockResolvedValueOnce({ stdout: '  origin  https://github.com/user/repo.git (fetch)  \n', stderr: '' });
+
+      const result = await validateGitEnvironment();
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toEqual([]);
+    });
   });
 });
