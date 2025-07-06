@@ -1,36 +1,43 @@
 #!/bin/bash
 # Detailed lint feedback with error reporting
 
-echo "🔍 Checking lint errors for changed files..."
+# Read JSON input from stdin
+JSON_INPUT=$(cat)
 
-TOTAL_ERRORS=0
-ERROR_OUTPUT=""
+# Extract file path from JSON using jq (or fallback to grep/sed if jq not available)
+if command -v jq &> /dev/null; then
+  FILE_PATH=$(echo "$JSON_INPUT" | jq -r '.tool_input.file_path // empty')
+else
+  # Fallback: extract file_path using sed
+  FILE_PATH=$(echo "$JSON_INPUT" | sed -n 's/.*"file_path":"\([^"]*\)".*/\1/p' | head -1)
+fi
 
-for file in $CLAUDE_FILE_PATHS; do
-  if [[ $file =~ \.(ts|tsx|js|jsx)$ ]]; then
-    # Run ESLint and capture both stdout and stderr
-    LINT_OUTPUT=$(npx eslint "$file" 2>&1)
-    LINT_EXIT_CODE=$?
+# Exit if no file path found
+if [ -z "$FILE_PATH" ]; then
+  exit 0
+fi
 
-    if [ $LINT_EXIT_CODE -ne 0 ]; then
-      TOTAL_ERRORS=$((TOTAL_ERRORS + 1))
-      ERROR_OUTPUT="${ERROR_OUTPUT}
+# Only check JavaScript/TypeScript files
+if [[ ! $FILE_PATH =~ \.(ts|tsx|js|jsx)$ ]]; then
+  exit 0
+fi
 
-❌ ESLint errors in ${file}:
-${LINT_OUTPUT}"
-    fi
-  fi
-done
+echo "🔍 Checking lint errors for: $FILE_PATH..." >&2
 
-if [ $TOTAL_ERRORS -gt 0 ]; then
+# Run ESLint and capture both stdout and stderr
+LINT_OUTPUT=$(npx eslint "$FILE_PATH" 2>&1)
+LINT_EXIT_CODE=$?
+
+if [ $LINT_EXIT_CODE -ne 0 ]; then
   # Write to stderr so Claude sees it (exit code 2)
-  echo "Found ESLint errors in $TOTAL_ERRORS file(s):" >&2
-  echo "$ERROR_OUTPUT" >&2
+  echo "" >&2
+  echo "❌ ESLint errors in ${FILE_PATH}:" >&2
+  echo "$LINT_OUTPUT" >&2
   echo "" >&2
   echo "Please fix the above ESLint errors." >&2
   exit 2  # This ensures Claude sees the errors
 else
   # Success message goes to stdout (user sees in transcript)
-  echo "✅ All files passed ESLint checks!"
+  echo "✅ File passed ESLint checks!" >&2
   exit 0
 fi

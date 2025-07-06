@@ -1,23 +1,35 @@
 #!/bin/bash
 # Comprehensive TypeScript and ESLint checking
 
+# Read JSON input from stdin
+JSON_INPUT=$(cat)
+
+# Extract file path from JSON using jq (or fallback to grep/sed if jq not available)
+if command -v jq &> /dev/null; then
+  FILE_PATH=$(echo "$JSON_INPUT" | jq -r '.tool_input.file_path // empty')
+else
+  # Fallback: extract file_path using sed
+  FILE_PATH=$(echo "$JSON_INPUT" | sed -n 's/.*"file_path":"\([^"]*\)".*/\1/p' | head -1)
+fi
+
+# Exit if no file path found
+if [ -z "$FILE_PATH" ]; then
+  exit 0
+fi
+
+# Exit if file doesn't exist (might be a new file)
+if [ ! -f "$FILE_PATH" ]; then
+  exit 0
+fi
+
 ERRORS_FOUND=false
 ERROR_REPORT=""
 
-# Check if any TypeScript files are being modified
-TS_FILES_FOUND=false
-for file in $CLAUDE_FILE_PATHS; do
-  if [[ $file =~ \.(ts|tsx)$ ]]; then
-    TS_FILES_FOUND=true
-    break
-  fi
-done
-
-# Run TypeScript check once for the entire project if TS files are modified
-if [ "$TS_FILES_FOUND" = true ]; then
-  echo "📘 Checking TypeScript compilation..."
+# Check if it's a TypeScript file
+if [[ $FILE_PATH =~ \.(ts|tsx)$ ]]; then
+  echo "📘 Checking TypeScript compilation for $FILE_PATH..." >&2
   
-  TS_OUTPUT=$(npx tsc --noEmit --skipLibCheck 2>&1)
+  TS_OUTPUT=$(npx tsc --noEmit --skipLibCheck "$FILE_PATH" 2>&1)
   if [ $? -ne 0 ]; then
     ERRORS_FOUND=true
     ERROR_REPORT="${ERROR_REPORT}
@@ -27,21 +39,19 @@ ${TS_OUTPUT}"
   fi
 fi
 
-# Check ESLint for all JS/TS files
-for file in $CLAUDE_FILE_PATHS; do
-  if [[ $file =~ \.(ts|tsx|js|jsx)$ ]]; then
-    echo "🔍 Checking ESLint: $file"
+# Check ESLint for JS/TS files
+if [[ $FILE_PATH =~ \.(ts|tsx|js|jsx)$ ]]; then
+  echo "🔍 Checking ESLint: $FILE_PATH" >&2
 
-    LINT_OUTPUT=$(npx eslint "$file" 2>&1)
-    if [ $? -ne 0 ]; then
-      ERRORS_FOUND=true
-      ERROR_REPORT="${ERROR_REPORT}
+  LINT_OUTPUT=$(npx eslint "$FILE_PATH" 2>&1)
+  if [ $? -ne 0 ]; then
+    ERRORS_FOUND=true
+    ERROR_REPORT="${ERROR_REPORT}
 
-ESLint errors in ${file}:
+ESLint errors in ${FILE_PATH}:
 ${LINT_OUTPUT}"
-    fi
   fi
-done
+fi
 
 if [ "$ERRORS_FOUND" = true ]; then
   echo "❌ Errors found in your changes:" >&2
@@ -49,4 +59,4 @@ if [ "$ERRORS_FOUND" = true ]; then
   exit 2
 fi
 
-echo "✅ All checks passed!"
+echo "✅ All checks passed!" >&2
