@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #72]** Add configuration manager support - `issues/72-add-configuration-manager-support.md`
 - [ ] **[Issue #73]** Update autonomous agent git commit logic - `issues/73-update-autonomous-agent-git-commit-logic.md`
 - [ ] **[Issue #74]** Add CLI flags for run command - `issues/74-add-cli-flags-for-run-command.md`
 - [ ] **[Issue #75]** Add configuration commands - `issues/75-add-configuration-commands.md`
@@ -19,6 +18,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #85]** Update documentation for auto-push feature - `issues/85-update-documentation-for-auto-push-feature.md`
 
 ## Completed Issues
+- [x] **[Issue #72]** Add configuration manager support - `issues/72-add-configuration-manager-support.md`
 - [x] **[Issue #71]** Implement git utility function updates - `issues/71-implement-git-utility-function-updates.md`
 - [x] **[Issue #70]** Update git commit interfaces and types - `issues/70-update-git-commit-interfaces-and-types.md`
 - [x] **[Issue #69]** Add debug logging for git validation - `issues/69-add-debug-logging-for-git-validation.md`

@@ -363,4 +363,121 @@ describe('ConfigManager', () => {
         .rejects.toThrow('Permission denied');
     });
   });
+
+  describe('gitCommitNoVerify configuration', () => {
+    describe('setGitCommitNoVerify', () => {
+      it('should update local config by default', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitCommitNoVerify(true);
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/test/project/.autoagent/config.json',
+          JSON.stringify({ gitCommitNoVerify: true }, null, 2)
+        );
+      });
+
+      it('should update global config when specified', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitCommitNoVerify(true, true);
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/home/user/.autoagent/config.json',
+          JSON.stringify({ gitCommitNoVerify: true }, null, 2)
+        );
+      });
+
+      it('should persist false value correctly', async () => {
+        mockFs.readFile.mockResolvedValue('{"gitCommitNoVerify": true}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+
+        await configManager.setGitCommitNoVerify(false);
+
+        expect(mockFs.writeFile).toHaveBeenCalledWith(
+          '/test/project/.autoagent/config.json',
+          JSON.stringify({ gitCommitNoVerify: false }, null, 2)
+        );
+      });
+    });
+
+    describe('getGitCommitNoVerify', () => {
+      it('should return false by default', async () => {
+        mockFs.readFile.mockResolvedValue('{}');
+        await configManager.loadConfig();
+
+        const result = configManager.getGitCommitNoVerify();
+
+        expect(result).toBe(false);
+      });
+
+      it('should return true when configured', async () => {
+        mockFs.readFile.mockResolvedValue('{"gitCommitNoVerify": true}');
+        await configManager.loadConfig();
+
+        const result = configManager.getGitCommitNoVerify();
+
+        expect(result).toBe(true);
+      });
+
+      it('should return false when explicitly set to false', async () => {
+        mockFs.readFile.mockResolvedValue('{"gitCommitNoVerify": false}');
+        await configManager.loadConfig();
+
+        const result = configManager.getGitCommitNoVerify();
+
+        expect(result).toBe(false);
+      });
+
+      it('should handle missing field gracefully', async () => {
+        // Create a config without gitCommitNoVerify field
+        configManager = new ConfigManager(testWorkingDir);
+        mockFs.readFile.mockResolvedValue('{"providers": ["claude"]}');
+        await configManager.loadConfig();
+
+        const result = configManager.getGitCommitNoVerify();
+
+        expect(result).toBe(false);
+      });
+    });
+
+    describe('configuration persistence and loading', () => {
+      it('should load gitCommitNoVerify value correctly on restart', async () => {
+        // First, save the configuration
+        mockFs.readFile.mockResolvedValue('{}');
+        mockFs.mkdir.mockResolvedValue(undefined);
+        await configManager.setGitCommitNoVerify(true);
+
+        // Create a new ConfigManager instance (simulating restart)
+        const newConfigManager = new ConfigManager(testWorkingDir);
+        mockFs.readFile.mockResolvedValue('{"gitCommitNoVerify": true}');
+        await newConfigManager.loadConfig();
+
+        const result = newConfigManager.getGitCommitNoVerify();
+        expect(result).toBe(true);
+      });
+
+      it('should merge gitCommitNoVerify with proper precedence', async () => {
+        const globalConfig: Partial<UserConfig> = {
+          gitCommitNoVerify: true
+        };
+
+        const localConfig: Partial<UserConfig> = {
+          gitCommitNoVerify: false
+        };
+
+        mockFs.readFile
+          .mockResolvedValueOnce(JSON.stringify(globalConfig))
+          .mockResolvedValueOnce(JSON.stringify(localConfig));
+
+        await configManager.loadConfig();
+        const result = configManager.getGitCommitNoVerify();
+
+        // Local config should override global config
+        expect(result).toBe(false);
+      });
+    });
+  });
 });

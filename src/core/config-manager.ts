@@ -294,6 +294,23 @@ export class ConfigManager {
   }
 
   /**
+   * Set the git commit no-verify configuration
+   * @param noVerify - Whether to skip git hooks when committing
+   * @param global - Whether to update global config (true) or local config (false)
+   */
+  async setGitCommitNoVerify(noVerify: boolean, global = false): Promise<void> {
+    await this.updateConfig({ gitCommitNoVerify: noVerify }, global ? 'global' : 'local');
+  }
+
+  /**
+   * Get the git commit no-verify configuration
+   * @returns Whether git hooks should be skipped when committing
+   */
+  getGitCommitNoVerify(): boolean {
+    return this.config.gitCommitNoVerify ?? false;
+  }
+
+  /**
    * Save configuration
    */
   async saveConfig(config: UserConfig, global = false): Promise<void> {

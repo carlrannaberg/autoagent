@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New optional noVerify parameter in CommitOptions interface
   - Skip pre-commit and commit-msg hooks when noVerify is true
   - Useful for bypassing git hooks during automated commits
+- Add git commit no-verify configuration support
+  - New gitCommitNoVerify configuration field with default value of false
+  - setGitCommitNoVerify() method to update configuration
+  - getGitCommitNoVerify() method to retrieve current setting
+  - Configuration persists to config file and loads correctly on restart
 
 ### Changed
 - Add early git validation in executeIssue method for auto-commit operations
