@@ -309,6 +309,15 @@ ${planContent}`;
             }
           }
           
+          // Also check stdout for usage limit messages that might not be in JSON format
+          if (!errorFromStdout && stdout.toLowerCase().includes('usage limit')) {
+            // Extract the usage limit message from stdout
+            const usageLimitMatch = stdout.match(/usage limit[^|]*\|?\d*/i);
+            if (usageLimitMatch) {
+              errorFromStdout = usageLimitMatch[0];
+            }
+          }
+          
           resolve({
             success: false,
             stdout,
