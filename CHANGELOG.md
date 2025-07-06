@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced troubleshooting section with specific git error solutions
   - Platform-specific installation commands for all major operating systems
   - Debug mode instructions for git validation issues
+- Add noVerify option to git commit functionality
+  - New optional noVerify parameter in CommitOptions interface
+  - Skip pre-commit and commit-msg hooks when noVerify is true
+  - Useful for bypassing git hooks during automated commits
 
 ### Changed
 - Add early git validation in executeIssue method for auto-commit operations

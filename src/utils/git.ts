@@ -149,7 +149,7 @@ export async function stageAllChanges(): Promise<void> {
  */
 export async function createCommit(options: CommitOptions): Promise<GitCommitResult> {
   try {
-    const { message, coAuthor, signoff } = options;
+    const { message, coAuthor, signoff, noVerify } = options;
     
     // Build commit message with co-author if provided
     let fullMessage = message;
@@ -161,6 +161,9 @@ export async function createCommit(options: CommitOptions): Promise<GitCommitRes
     let command = `git commit -m "${fullMessage.replace(/"/g, '\\"')}"`;
     if (signoff === true) {
       command += ' --signoff';
+    }
+    if (noVerify === true) {
+      command += ' --no-verify';
     }
 
     const { stdout } = await execAsync(command);

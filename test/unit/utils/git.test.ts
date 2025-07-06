@@ -25,7 +25,7 @@ import {
   revertToCommit,
   getChangedFiles,
   validateGitEnvironment
-} from '@/utils/git';
+} from '../../../src/utils/git';
 
 describe('Git Utilities', () => {
   beforeEach(() => {
@@ -151,6 +151,79 @@ describe('Git Utilities', () => {
       );
     });
 
+    it('should create a commit with noVerify option', async () => {
+      mockExec.mockResolvedValueOnce({ 
+        stdout: '[main 1234567] Test commit\n 1 file changed, 1 insertion(+)', 
+        stderr: '' 
+      });
+
+      const result = await createCommit({
+        message: 'Test commit',
+        noVerify: true
+      });
+
+      expect(result).toEqual({
+        success: true,
+        commitHash: '1234567'
+      });
+      expect(mockExec).toHaveBeenCalledWith('git commit -m "Test commit" --no-verify');
+    });
+
+    it('should create a commit with both co-author and noVerify', async () => {
+      mockExec.mockResolvedValueOnce({ 
+        stdout: '[main abc1234] Test commit', 
+        stderr: '' 
+      });
+
+      const result = await createCommit({
+        message: 'Test commit',
+        coAuthor: { name: 'Claude', email: 'claude@autoagent' },
+        noVerify: true
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockExec).toHaveBeenCalledWith(
+        'git commit -m "Test commit\n\nCo-authored-by: Claude <claude@autoagent>" --no-verify'
+      );
+    });
+
+    it('should create a commit with signoff option', async () => {
+      mockExec.mockResolvedValueOnce({ 
+        stdout: '[main 7654321] Test commit\n 1 file changed, 1 insertion(+)', 
+        stderr: '' 
+      });
+
+      const result = await createCommit({
+        message: 'Test commit',
+        signoff: true
+      });
+
+      expect(result).toEqual({
+        success: true,
+        commitHash: '7654321'
+      });
+      expect(mockExec).toHaveBeenCalledWith('git commit -m "Test commit" --signoff');
+    });
+
+    it('should create a commit with all options enabled', async () => {
+      mockExec.mockResolvedValueOnce({ 
+        stdout: '[main all5678] Test commit', 
+        stderr: '' 
+      });
+
+      const result = await createCommit({
+        message: 'Test commit',
+        coAuthor: { name: 'Claude', email: 'claude@autoagent' },
+        signoff: true,
+        noVerify: true
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockExec).toHaveBeenCalledWith(
+        'git commit -m "Test commit\n\nCo-authored-by: Claude <claude@autoagent>" --signoff --no-verify'
+      );
+    });
+
     it('should handle commit failure', async () => {
       mockExec.mockRejectedValueOnce(new Error('Nothing to commit'));
 
@@ -160,6 +233,37 @@ describe('Git Utilities', () => {
         success: false,
         error: 'Nothing to commit'
       });
+    });
+
+    it('should not include --no-verify flag when noVerify is false', async () => {
+      mockExec.mockResolvedValueOnce({ 
+        stdout: '[main abc1234] Test commit', 
+        stderr: '' 
+      });
+
+      const result = await createCommit({
+        message: 'Test commit',
+        noVerify: false
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockExec).toHaveBeenCalledWith('git commit -m "Test commit"');
+      expect(mockExec).not.toHaveBeenCalledWith(expect.stringContaining('--no-verify'));
+    });
+
+    it('should handle commits with messages containing quotes', async () => {
+      mockExec.mockResolvedValueOnce({ 
+        stdout: '[main abc1234] Test commit with "quotes"', 
+        stderr: '' 
+      });
+
+      const result = await createCommit({
+        message: 'Test commit with "quotes"',
+        noVerify: true
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockExec).toHaveBeenCalledWith('git commit -m "Test commit with \\"quotes\\"" --no-verify');
     });
   });
 
