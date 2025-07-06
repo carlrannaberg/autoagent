@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2025-07-06
+
 ### Fixed
 - Fix reflection runner to properly handle multi-iteration scenarios
   - Ensure iteration tracking counts correctly
