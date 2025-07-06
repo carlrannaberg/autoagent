@@ -1369,21 +1369,11 @@ describe('AutonomousAgent', () => {
       const testProvider = testProviders.get('claude')!;
       testProvider.setResponse('test task', 'Completed');
 
-      // Capture debug messages
-      const debugMessages: string[] = [];
-      agentWithCommit.on('debug', (msg: string) => debugMessages.push(msg));
-
-      // Execute should succeed but commit should fail
-      const result = await agentWithCommit.executeIssue(1);
-      expect(result.success).toBe(true); // Issue execution still succeeds
+      // Execute should fail with clear error message (early validation)
+      await expect(agentWithCommit.executeIssue(1)).rejects.toThrow('Git user configuration is incomplete');
       
       // Verify git config was checked
       expect(execMock).toHaveBeenCalledWith('git config user.email', expect.any(Function));
-      
-      // Verify error was logged in debug mode
-      const errorMsg = debugMessages.find(msg => msg.includes('Git commit error'));
-      expect(errorMsg).toBeDefined();
-      expect(errorMsg).toContain('Git user configuration is incomplete');
       
       agentWithCommit.removeAllListeners();
     });

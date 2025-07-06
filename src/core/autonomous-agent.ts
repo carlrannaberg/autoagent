@@ -684,12 +684,16 @@ ${issueEntry}
     const gitAvailable = await checkGitAvailable();
     if (!gitAvailable) {
       throw new Error(
-        'Git is not available on your system.\n' +
-        '\n' +
-        'To fix this issue:\n' +
-        '1. Install git from https://git-scm.com/downloads\n' +
-        '2. Ensure git is in your PATH\n' +
-        '3. Verify installation with: git --version'
+        [
+          'Git is not available on your system.',
+          '',
+          'To fix this issue:',
+          '1. Install git from https://git-scm.com/downloads',
+          '2. Ensure git is in your PATH',
+          '3. Verify installation with: git --version',
+          '',
+          'Alternative: Disable auto-commit by setting autoCommit to false in your config'
+        ].join('\n')
       );
     }
 
@@ -697,12 +701,16 @@ ${issueEntry}
     const isRepo = await isGitRepository();
     if (!isRepo) {
       throw new Error(
-        'Current directory is not a git repository.\n' +
-        '\n' +
-        'To fix this issue:\n' +
-        '1. Initialize a new repository: git init\n' +
-        '2. Or clone an existing repository: git clone <repository-url>\n' +
-        '3. Ensure you are in the correct directory'
+        [
+          'Current directory is not a git repository.',
+          '',
+          'To fix this issue:',
+          '1. Initialize a new repository: git init',
+          '2. Or clone an existing repository: git clone <repository-url>',
+          '3. Ensure you are in the correct directory',
+          '',
+          'Alternative: Disable auto-commit by setting autoCommit to false in your config'
+        ].join('\n')
       );
     }
 
@@ -711,7 +719,13 @@ ${issueEntry}
 
     // Log successful validation in debug mode
     if (this.config.debug === true) {
-      this.reportProgress('Git validation passed for auto-commit', 0);
+      // Get git version for debug info
+      try {
+        const { stdout: gitVersion } = await execAsync('git --version');
+        this.reportProgress(`Git validation passed for auto-commit (${gitVersion.trim()})`, 0);
+      } catch {
+        this.reportProgress('Git validation passed for auto-commit', 0);
+      }
     }
   }
 
@@ -739,15 +753,19 @@ ${issueEntry}
       // Provide helpful error message with remediation steps
       if (errorMessage.includes('user.name') || errorMessage.includes('user.email')) {
         throw new Error(
-          'Git user configuration is incomplete.\n' +
-          '\n' +
-          'To fix this issue, run these commands:\n' +
-          '1. git config --global user.name "Your Name"\n' +
-          '2. git config --global user.email "your.email@example.com"\n' +
-          '\n' +
-          'Or set them locally for this repository only:\n' +
-          '1. git config user.name "Your Name"\n' +
-          '2. git config user.email "your.email@example.com"'
+          [
+            'Git user configuration is incomplete.',
+            '',
+            'To fix this issue, run these commands:',
+            '1. git config --global user.name "Your Name"',
+            '2. git config --global user.email "your.email@example.com"',
+            '',
+            'Or set them locally for this repository only:',
+            '1. git config user.name "Your Name"',
+            '2. git config user.email "your.email@example.com"',
+            '',
+            'Alternative: Disable auto-commit by setting autoCommit to false in your config'
+          ].join('\n')
         );
       }
       
