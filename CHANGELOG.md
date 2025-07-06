@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2025-07-06
+
+### Added
+- Add standardized error types for AI provider operations
+  - ProviderError interfaces for structured error handling
+  - Factory functions for creating usage limit, rate limit, execution, and availability errors
+  - Type guards for error classification and handling
+  - Utility functions for error formatting and time remaining calculations
+- Add pattern matching utilities for performance optimization
+  - Compiled regex patterns for usage limit and rate limit detection
+  - PatternMatcher class with methods for extracting timestamps and retry-after values
+  - Error classification patterns for network, auth, and not found errors
+  - Utility methods for determining retryable errors and version commands
+- Add comprehensive test infrastructure for provider mocking
+  - MockProcessConfig interface for configuring test scenarios
+  - Helper functions for creating mock processes with configurable behavior
+  - Specialized mocks for usage limit errors and version checks
+  - Provider scenario definitions for common testing patterns
+
+### Fixed
+- Fix Claude provider usage limit detection and failover
+  - Extract usage limit messages from stdout when exit code is 1
+  - Properly handle usage limit messages that might not be in JSON format
+  - Ensure automatic failover to alternative providers when Claude hits usage limits
+- Fix autonomous agent failover logic for rate and usage limit errors
+  - Check for rate limit or usage limit errors before retry attempts
+  - Trigger provider failover when usage limits are detected
+  - Update rate limit status and switch to alternative providers automatically
+
+### Changed
+- Enhanced integration test helpers to support issue number extraction
+  - createTestIssue now returns both issue path and issue number
+  - Improved test issue content format with proper numbering
+  - Better support for testing scenarios with specific issue numbers
+
 ## [0.5.3] - 2025-07-06
 
 ### Fixed
