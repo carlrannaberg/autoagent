@@ -48,6 +48,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Add alternative option to disable auto-commit in all error messages
   - Include git version info in successful validation debug messages
   - No impact on users with auto-commit disabled
+- Update AGENT.md with improved test mocking guidance
+  - Add advanced test mocking patterns section with promisified exec examples
+  - Document common test pitfalls and solutions
+  - Include NPM registry checking for release version detection
+- Improve release scripts to check NPM registry
+  - prepare-release.sh now checks NPM for published version as source of truth
+  - Warns when git tags don't match NPM published versions
+  - Uses NPM version as reference for determining changes since last release
+
+### Fixed
+- Fix all test failures (64 failures resolved, 100% pass rate achieved)
+  - Fix git utility test mocking to handle promisified exec properly
+  - Update test mocks to use vi.hoisted() for proper initialization order
+  - Fix CLI command flag handling for --no-verify and --no-push options
+  - Fix type imports and missing properties in test helpers
+- Fix Claude Code hooks to work correctly
+  - Update hooks to parse JSON from stdin instead of using environment variables
+  - Add ESLint auto-fix capability to validation hooks
+  - Update run-related-tests hook to use Vitest instead of Jest
+  - Fix hook paths in settings.json to use ${CLAUDE_WORKSPACE} variable
 
 ## [0.5.4] - 2025-07-06
 

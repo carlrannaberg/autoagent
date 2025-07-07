@@ -42,14 +42,40 @@ Always run tests before committing changes to ensure code quality.
 
 **CRITICAL: NEVER modify tags for published releases!**
 
-Before making ANY tag changes, always check if the version is already published:
+### Checking Current Published Version
+
+**Always check NPM registry for the actual published version, not just git tags:**
 ```bash
-# Check if version exists on npm
+# Check the latest published version on NPM (this is the source of truth)
+npm view autoagent-cli version
+
+# Check if a specific version exists on npm
 npm view autoagent-cli@x.x.x
 
 # If published, DO NOT move the tag - create a new version instead
 # Only rollback tags for unpublished releases
 ```
+
+### Finding Changes Since Last Release
+
+To see what's been done since the last release:
+```bash
+# 1. First, get the actual published version from NPM
+LAST_VERSION=$(npm view autoagent-cli version)
+echo "Last published version: $LAST_VERSION"
+
+# 2. Check if git tag exists for that version
+git tag -l "v$LAST_VERSION"
+
+# 3. If tag exists, show commits since then
+git log "v$LAST_VERSION"..HEAD --oneline
+
+# 4. If tag doesn't exist, find the commit for that version
+# Look in CHANGELOG.md or package.json history
+git log --grep="$LAST_VERSION" --oneline
+```
+
+**Note**: Git tags may be out of sync with NPM releases. Always trust NPM as the source of truth for published versions.
 
 **Release Process Rules:**
 1. **Check npm first**: Always verify if a version is published before touching tags

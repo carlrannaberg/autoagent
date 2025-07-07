@@ -50,15 +50,37 @@ git fetch --tags
 
 # Get current version
 CURRENT_VERSION=$(node -p "require('./package.json').version")
-echo "Current version: $CURRENT_VERSION"
+echo "Current version in package.json: $CURRENT_VERSION"
 
-# Get the last tag
+# Get the published version from NPM (this is the source of truth)
+PUBLISHED_VERSION=$(npm view autoagent-cli version 2>/dev/null || echo "")
+if [ -n "$PUBLISHED_VERSION" ]; then
+    echo "Latest published version on NPM: $PUBLISHED_VERSION"
+    LAST_VERSION_TAG="v$PUBLISHED_VERSION"
+else
+    echo "No version found on NPM registry"
+    LAST_VERSION_TAG=""
+fi
+
+# Get the last git tag
 LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 if [ -z "$LAST_TAG" ]; then
-    echo "No previous tags found. This will be the first tagged release."
-    LAST_TAG="HEAD"
+    echo "No previous tags found in git."
+    if [ -n "$LAST_VERSION_TAG" ]; then
+        echo "Using NPM version $PUBLISHED_VERSION as reference"
+        LAST_TAG=$LAST_VERSION_TAG
+    else
+        echo "This will be the first release."
+        LAST_TAG="HEAD"
+    fi
 else
-    echo "Last release tag: $LAST_TAG"
+    echo "Last git tag: $LAST_TAG"
+    # Warn if git tag doesn't match NPM version
+    if [ -n "$PUBLISHED_VERSION" ] && [ "$LAST_TAG" != "v$PUBLISHED_VERSION" ]; then
+        echo "⚠️  WARNING: Git tag ($LAST_TAG) doesn't match NPM version (v$PUBLISHED_VERSION)"
+        echo "Using NPM version as the reference for changes"
+        LAST_TAG="v$PUBLISHED_VERSION"
+    fi
 fi
 
 # Show recent commits
@@ -93,10 +115,13 @@ fi
 
 $TIMEOUT_CMD $AI_CLI $AI_MODEL $AI_FLAGS -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 
-Current version: $CURRENT_VERSION
+Current version in package.json: $CURRENT_VERSION
+Latest published version on NPM: ${PUBLISHED_VERSION:-"Not published yet"}
+Reference version for changes: ${LAST_TAG#v}
 
 Please do the following:
-1. Find the last release tag using: git describe --tags --abbrev=0
+1. Check the published version using: npm view autoagent-cli version
+2. Find the last release tag using: git describe --tags --abbrev=0
 2. Get the actual changes since that tag using: git diff <last-tag>..HEAD --stat and git diff <last-tag>..HEAD
 3. Analyze the ACTUAL CODE CHANGES (not just commit messages) and write accurate changelog entries:
    - Fixed: bug fixes (what was actually fixed in the code)
