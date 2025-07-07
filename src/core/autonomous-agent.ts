@@ -942,13 +942,6 @@ ${issueEntry}
     }
   }
 
-  /**
-   * Perform git commit for completed issue
-   * @deprecated Use performGitCommitAndPush instead
-   */
-  private async performGitCommit(issue: Issue, result: ExecutionResult): Promise<void> {
-    return this.performGitCommitAndPush(issue, result);
-  }
 
   /**
    * Prepare context files for provider execution

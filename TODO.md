@@ -3,10 +3,10 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #84]** Write tests for git push functionality - `issues/84-write-tests-for-git-push-functionality.md`
 - [ ] **[Issue #85]** Update documentation for auto-push feature - `issues/85-update-documentation-for-auto-push-feature.md`
 
 ## Completed Issues
+- [x] **[Issue #84]** Write tests for git push functionality - `issues/84-write-tests-for-git-push-functionality.md`
 - [x] **[Issue #83]** Implement configuration commands for auto-push - `issues/83-implement-configuration-commands-for-auto-push.md`
 - [x] **[Issue #82]** Add CLI flags for push control - `issues/82-add-cli-flags-for-push-control.md`
 - [x] **[Issue #81]** Update autonomous agent for auto-push functionality - `issues/81-update-autonomousagent-for-auto-push.md`

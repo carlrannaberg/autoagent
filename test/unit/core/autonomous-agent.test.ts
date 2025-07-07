@@ -1633,4 +1633,618 @@ describe('AutonomousAgent', () => {
       agentOverride.removeAllListeners();
     });
   });
+
+  describe('git push functionality', () => {
+    it('should push to remote when auto-push is enabled', async () => {
+      // Create agent with auto-push enabled
+      const agentWithPush = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        autoPush: true,
+        debug: true
+      });
+      (agentWithPush as any).configManager = configManager;
+      (agentWithPush as any).fileManager = fileManager;
+      (agentWithPush as any).providerLearning = providerLearning;
+      
+      // Setup git environment with push support
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
+      
+      // Configure push behavior in exec mock
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd === 'git rev-parse --abbrev-ref HEAD') {
+          callback(null, 'main\n', '');
+        } else if (cmd.includes('git push')) {
+          // Simulate successful push
+          callback(null, '', 'Everything up-to-date');
+        } else if (cmd === 'git remote') {
+          callback(null, 'origin\n', '');
+        } else if (cmd.includes('git ls-remote')) {
+          callback(null, 'refs/heads/main', '');
+        } else if (cmd.includes('@{upstream}')) {
+          callback(null, 'origin/main', '');
+        } else if (cmd === 'git config user.name') {
+          callback(null, 'Test User\n', '');
+        } else if (cmd === 'git config user.email') {
+          callback(null, 'test@example.com\n', '');
+        } else {
+          callback(null, '', '');
+        }
+      });
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Capture debug messages
+      const debugMessages: string[] = [];
+      agentWithPush.on('debug', (msg: string) => debugMessages.push(msg));
+      
+      // Execute issue
+      const result = await agentWithPush.executeIssue(1);
+      
+      // Verify git commit and push were called
+      const commitCalls = gitSimulator.getCommitCalls();
+      expect(commitCalls).toHaveLength(1);
+      
+      // Verify push was attempted
+      const pushCommands = Array.from(execMock.mock.calls)
+        .filter(call => call[0].includes('git push'));
+      expect(pushCommands).toHaveLength(1);
+      expect(pushCommands[0][0]).toContain('git push origin main');
+      
+      // Verify debug messages about push
+      expect(debugMessages.some(msg => msg.includes('Git push validation passed'))).toBe(true);
+      expect(debugMessages.some(msg => msg.includes('Successfully pushed to remote'))).toBe(true);
+      
+      expect(result.success).toBe(true);
+      
+      agentWithPush.removeAllListeners();
+    });
+
+    it('should skip push when auto-push is disabled', async () => {
+      // Create agent with auto-push disabled
+      const agentNoPush = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        autoPush: false,
+        debug: true
+      });
+      (agentNoPush as any).configManager = configManager;
+      (agentNoPush as any).fileManager = fileManager;
+      (agentNoPush as any).providerLearning = providerLearning;
+      
+      // Setup git environment
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Execute issue
+      const result = await agentNoPush.executeIssue(1);
+      
+      // Verify git commit was called but not push
+      const commitCalls = gitSimulator.getCommitCalls();
+      expect(commitCalls).toHaveLength(1);
+      
+      // Verify push was NOT attempted
+      const pushCommands = Array.from(execMock.mock.calls)
+        .filter(call => call[0].includes('git push'));
+      expect(pushCommands).toHaveLength(0);
+      
+      expect(result.success).toBe(true);
+      
+      agentNoPush.removeAllListeners();
+    });
+
+    it('should use custom remote from configuration', async () => {
+      // Configure custom remote
+      configManager.updateConfig({
+        gitPushRemote: 'upstream'
+      });
+      
+      // Create agent with auto-push enabled
+      const agentCustomRemote = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        autoPush: true,
+        debug: true
+      });
+      (agentCustomRemote as any).configManager = configManager;
+      (agentCustomRemote as any).fileManager = fileManager;
+      (agentCustomRemote as any).providerLearning = providerLearning;
+      
+      // Setup git environment
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('upstream', 'https://github.com/upstream/repo.git');
+      
+      // Configure push behavior in exec mock
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd === 'git rev-parse --abbrev-ref HEAD') {
+          callback(null, 'main\n', '');
+        } else if (cmd.includes('git push')) {
+          callback(null, '', 'Everything up-to-date');
+        } else if (cmd === 'git remote') {
+          callback(null, 'origin\nupstream\n', '');
+        } else if (cmd.includes('git ls-remote') && cmd.includes('upstream')) {
+          callback(null, 'refs/heads/main', '');
+        } else if (cmd.includes('@{upstream}')) {
+          callback(null, 'upstream/main', '');
+        } else if (cmd === 'git config user.name') {
+          callback(null, 'Test User\n', '');
+        } else if (cmd === 'git config user.email') {
+          callback(null, 'test@example.com\n', '');
+        } else {
+          callback(null, '', '');
+        }
+      });
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Execute issue
+      const result = await agentCustomRemote.executeIssue(1);
+      
+      // Verify push was attempted with custom remote
+      const pushCommands = Array.from(execMock.mock.calls)
+        .filter(call => call[0].includes('git push'));
+      expect(pushCommands).toHaveLength(1);
+      expect(pushCommands[0][0]).toContain('git push upstream main');
+      
+      expect(result.success).toBe(true);
+      
+      agentCustomRemote.removeAllListeners();
+    });
+
+    it('should use custom branch from configuration', async () => {
+      // Configure custom branch
+      configManager.updateConfig({
+        gitPushBranch: 'develop'
+      });
+      
+      // Create agent with auto-push enabled
+      const agentCustomBranch = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        autoPush: true,
+        debug: true
+      });
+      (agentCustomBranch as any).configManager = configManager;
+      (agentCustomBranch as any).fileManager = fileManager;
+      (agentCustomBranch as any).providerLearning = providerLearning;
+      
+      // Setup git environment
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
+      
+      // Configure push behavior in exec mock
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd === 'git rev-parse --abbrev-ref HEAD') {
+          callback(null, 'feature-branch\n', '');
+        } else if (cmd.includes('git push')) {
+          callback(null, '', 'Everything up-to-date');
+        } else if (cmd === 'git remote') {
+          callback(null, 'origin\n', '');
+        } else if (cmd.includes('git ls-remote')) {
+          callback(null, 'refs/heads/develop', '');
+        } else if (cmd.includes('@{upstream}')) {
+          callback(null, 'origin/develop', '');
+        } else if (cmd === 'git config user.name') {
+          callback(null, 'Test User\n', '');
+        } else if (cmd === 'git config user.email') {
+          callback(null, 'test@example.com\n', '');
+        } else {
+          callback(null, '', '');
+        }
+      });
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Execute issue
+      const result = await agentCustomBranch.executeIssue(1);
+      
+      // Verify push was attempted with custom branch
+      const pushCommands = Array.from(execMock.mock.calls)
+        .filter(call => call[0].includes('git push'));
+      expect(pushCommands).toHaveLength(1);
+      expect(pushCommands[0][0]).toContain('git push origin feature-branch:develop');
+      
+      expect(result.success).toBe(true);
+      
+      agentCustomBranch.removeAllListeners();
+    });
+
+    it('should set upstream when branch has no upstream', async () => {
+      // Create agent with auto-push enabled
+      const agentNoUpstream = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        autoPush: true,
+        debug: true
+      });
+      (agentNoUpstream as any).configManager = configManager;
+      (agentNoUpstream as any).fileManager = fileManager;
+      (agentNoUpstream as any).providerLearning = providerLearning;
+      
+      // Setup git environment
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
+      
+      // Configure push behavior in exec mock - no upstream
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd === 'git rev-parse --abbrev-ref HEAD') {
+          callback(null, 'feature-new\n', '');
+        } else if (cmd.includes('git push')) {
+          // Simulate successful push with upstream set
+          callback(null, '', 'Branch feature-new set up to track remote branch feature-new from origin');
+        } else if (cmd === 'git remote') {
+          callback(null, 'origin\n', '');
+        } else if (cmd.includes('git ls-remote')) {
+          callback(null, 'refs/heads/main', '');
+        } else if (cmd.includes('@{upstream}')) {
+          // No upstream configured
+          callback(new Error('fatal: no upstream configured'), '', '');
+        } else if (cmd === 'git config user.name') {
+          callback(null, 'Test User\n', '');
+        } else if (cmd === 'git config user.email') {
+          callback(null, 'test@example.com\n', '');
+        } else {
+          callback(null, '', '');
+        }
+      });
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Capture debug messages
+      const debugMessages: string[] = [];
+      agentNoUpstream.on('debug', (msg: string) => debugMessages.push(msg));
+      
+      // Execute issue
+      const result = await agentNoUpstream.executeIssue(1);
+      
+      // Verify push was attempted with --set-upstream
+      const pushCommands = Array.from(execMock.mock.calls)
+        .filter(call => call[0].includes('git push'));
+      expect(pushCommands).toHaveLength(1);
+      expect(pushCommands[0][0]).toContain('--set-upstream');
+      
+      expect(result.success).toBe(true);
+      
+      agentNoUpstream.removeAllListeners();
+    });
+
+    it('should handle push authentication errors gracefully', async () => {
+      // Create agent with auto-push enabled
+      const agentAuthError = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        autoPush: true,
+        debug: true
+      });
+      (agentAuthError as any).configManager = configManager;
+      (agentAuthError as any).fileManager = fileManager;
+      (agentAuthError as any).providerLearning = providerLearning;
+      
+      // Setup git environment
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
+      
+      // Configure push behavior in exec mock - authentication error
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd === 'git rev-parse --abbrev-ref HEAD') {
+          callback(null, 'main\n', '');
+        } else if (cmd.includes('git push')) {
+          // Simulate authentication error
+          const error: any = new Error('fatal: Authentication failed');
+          error.stderr = 'fatal: Authentication failed for https://github.com/test/repo.git';
+          callback(error, '', error.stderr);
+        } else if (cmd === 'git remote') {
+          callback(null, 'origin\n', '');
+        } else if (cmd.includes('git ls-remote')) {
+          callback(null, 'refs/heads/main', '');
+        } else if (cmd.includes('@{upstream}')) {
+          callback(null, 'origin/main', '');
+        } else if (cmd === 'git config user.name') {
+          callback(null, 'Test User\n', '');
+        } else if (cmd === 'git config user.email') {
+          callback(null, 'test@example.com\n', '');
+        } else {
+          callback(null, '', '');
+        }
+      });
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Capture debug messages
+      const debugMessages: string[] = [];
+      const errorMessages: string[] = [];
+      agentAuthError.on('debug', (msg: string) => debugMessages.push(msg));
+      agentAuthError.on('error', (msg: string) => errorMessages.push(msg));
+      
+      // Execute issue - should succeed despite push failure
+      const result = await agentAuthError.executeIssue(1);
+      
+      // Verify commit succeeded but push failed
+      const commitCalls = gitSimulator.getCommitCalls();
+      expect(commitCalls).toHaveLength(1);
+      
+      // Verify error was reported but execution continued
+      expect(errorMessages.some(msg => msg.includes('Git push failed: fatal: Authentication failed'))).toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.error).toBe(undefined);
+      
+      agentAuthError.removeAllListeners();
+    });
+
+    it('should handle network errors during push gracefully', async () => {
+      // Create agent with auto-push enabled
+      const agentNetworkError = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        autoPush: true,
+        debug: true
+      });
+      (agentNetworkError as any).configManager = configManager;
+      (agentNetworkError as any).fileManager = fileManager;
+      (agentNetworkError as any).providerLearning = providerLearning;
+      
+      // Setup git environment
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
+      
+      // Configure push behavior in exec mock - network error
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd === 'git rev-parse --abbrev-ref HEAD') {
+          callback(null, 'main\n', '');
+        } else if (cmd.includes('git push')) {
+          // Simulate network error
+          const error: any = new Error('fatal: unable to access');
+          error.stderr = 'fatal: unable to access repository: Could not resolve host';
+          callback(error, '', error.stderr);
+        } else if (cmd === 'git remote') {
+          callback(null, 'origin\n', '');
+        } else if (cmd.includes('git ls-remote')) {
+          callback(null, 'refs/heads/main', '');
+        } else if (cmd.includes('@{upstream}')) {
+          callback(null, 'origin/main', '');
+        } else if (cmd === 'git config user.name') {
+          callback(null, 'Test User\n', '');
+        } else if (cmd === 'git config user.email') {
+          callback(null, 'test@example.com\n', '');
+        } else {
+          callback(null, '', '');
+        }
+      });
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Capture error messages
+      const errorMessages: string[] = [];
+      agentNetworkError.on('error', (msg: string) => errorMessages.push(msg));
+      
+      // Execute issue - should succeed despite push failure
+      const result = await agentNetworkError.executeIssue(1);
+      
+      // Verify error was reported but execution continued
+      expect(errorMessages.some(msg => msg.includes('Git push failed: fatal: unable to access'))).toBe(true);
+      expect(result.success).toBe(true);
+      
+      agentNetworkError.removeAllListeners();
+    });
+
+    it('should validate git environment before push', async () => {
+      // Create agent with auto-push enabled
+      const agentValidation = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        autoPush: true,
+        debug: true
+      });
+      (agentValidation as any).configManager = configManager;
+      (agentValidation as any).fileManager = fileManager;
+      (agentValidation as any).providerLearning = providerLearning;
+      
+      // Setup git environment - missing remote
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      // No remote configured
+      
+      // Configure exec mock - no remotes
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd === 'git rev-parse --abbrev-ref HEAD') {
+          callback(null, 'main\n', '');
+        } else if (cmd === 'git remote') {
+          callback(null, '', ''); // No remotes
+        } else if (cmd === 'git config user.name') {
+          callback(null, 'Test User\n', '');
+        } else if (cmd === 'git config user.email') {
+          callback(null, 'test@example.com\n', '');
+        } else {
+          callback(null, '', '');
+        }
+      });
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Execute should fail due to validation
+      await expect(agentValidation.executeIssue(1)).rejects.toThrow("Remote 'origin' does not exist");
+      
+      agentValidation.removeAllListeners();
+    });
+
+    it('should store push information in rollback data', async () => {
+      // Create agent with auto-push enabled
+      const agentRollback = new AutonomousAgent({
+        workspace: '/test',
+        signal: true,
+        autoCommit: true,
+        autoPush: true,
+        debug: true
+      });
+      (agentRollback as any).configManager = configManager;
+      (agentRollback as any).fileManager = fileManager;
+      (agentRollback as any).providerLearning = providerLearning;
+      
+      // Setup git environment
+      gitSimulator.setGitAvailable(true);
+      gitSimulator.setIsRepository(true);
+      gitSimulator.setHasChanges(true);
+      gitSimulator.setUserConfig('Test User', 'test@example.com');
+      gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
+      
+      // Mock git commands including push
+      execMock.mockImplementation((cmd: string, callback: any) => {
+        if (cmd === 'git rev-parse --abbrev-ref HEAD') {
+          callback(null, 'main\n', '');
+        } else if (cmd.includes('git push')) {
+          callback(null, '', 'Everything up-to-date');
+        } else if (cmd === 'git remote') {
+          callback(null, 'origin\n', '');
+        } else if (cmd.includes('git ls-remote')) {
+          callback(null, 'refs/heads/main', '');
+        } else if (cmd.includes('@{upstream}')) {
+          callback(null, 'origin/main', '');
+        } else if (cmd === 'git config user.name') {
+          callback(null, 'Test User\n', '');
+        } else if (cmd === 'git config user.email') {
+          callback(null, 'test@example.com\n', '');
+        } else {
+          callback(null, '', '');
+        }
+      });
+      
+      // Setup issue and plan
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createPlan(1, {
+        issueNumber: 1,
+        file: 'plans/1-test-issue.md',
+        phases: [{ name: 'Phase 1', tasks: ['Task 1'] }]
+      }, 'Test Issue');
+      
+      // Configure provider to succeed
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test issue', 'Completed successfully');
+      
+      // Execute issue
+      const result = await agentRollback.executeIssue(1);
+      
+      // Verify push was successful
+      const pushCommands = Array.from(execMock.mock.calls)
+        .filter(call => call[0].includes('git push'));
+      expect(pushCommands).toHaveLength(1);
+      
+      expect(result.success).toBe(true);
+      
+      agentRollback.removeAllListeners();
+    });
+  });
 });
