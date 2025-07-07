@@ -43,12 +43,16 @@ fi
 if [[ $FILE_PATH =~ \.(ts|tsx|js|jsx)$ ]]; then
   echo "🔍 Checking ESLint: $FILE_PATH" >&2
 
+  # Try auto-fix first
+  npx eslint "$FILE_PATH" --fix 2>&1
+  
+  # Check if any errors remain
   LINT_OUTPUT=$(npx eslint "$FILE_PATH" 2>&1)
   if [ $? -ne 0 ]; then
     ERRORS_FOUND=true
     ERROR_REPORT="${ERROR_REPORT}
 
-ESLint errors in ${FILE_PATH}:
+ESLint errors that couldn't be auto-fixed in ${FILE_PATH}:
 ${LINT_OUTPUT}"
   fi
 fi

@@ -36,7 +36,19 @@ export class E2EWorkspace {
     await execFileAsync('git', ['init'], { cwd: this.workspace });
     await execFileAsync('git', ['config', 'user.email', 'test@example.com'], { cwd: this.workspace });
     await execFileAsync('git', ['config', 'user.name', 'Test User'], { cwd: this.workspace });
+    // Create initial commit to avoid detached HEAD
+    await fs.writeFile(path.join(this.workspace, '.gitkeep'), '');
+    await execFileAsync('git', ['add', '.gitkeep'], { cwd: this.workspace });
+    await execFileAsync('git', ['commit', '-m', 'Initial commit'], { cwd: this.workspace });
     this.gitInitialized = true;
+  }
+
+  async addGitRemote(name: string, url: string): Promise<void> {
+    if (this.workspace === null || !this.gitInitialized) {
+      throw new Error('Git not initialized');
+    }
+    
+    await execFileAsync('git', ['remote', 'add', name, url], { cwd: this.workspace });
   }
 
   async createFile(relativePath: string, content: string): Promise<void> {

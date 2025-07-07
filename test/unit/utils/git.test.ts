@@ -400,9 +400,11 @@ describe('Git Utilities', () => {
 
   describe('validateGitEnvironment', () => {
     it('should return valid when all checks pass', async () => {
-      // Git is available
+      // Git is available - checkGitAvailable
       mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
-      // Is git repository
+      // Get git version - getGitVersion
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository - isGitRepository
       mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
       // User name configured
       mockExec.mockResolvedValueOnce({ stdout: 'John Doe', stderr: '' });
@@ -431,9 +433,11 @@ describe('Git Utilities', () => {
     });
 
     it('should detect when not in a git repository', async () => {
-      // Git is available
+      // Git is available - checkGitAvailable
       mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
-      // Not a git repository
+      // Get git version - getGitVersion
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Not a git repository - isGitRepository
       mockExec.mockRejectedValueOnce(new Error('Not a git repository'));
 
       const result = await validateGitEnvironment();
@@ -445,9 +449,11 @@ describe('Git Utilities', () => {
     });
 
     it('should detect missing user configuration', async () => {
-      // Git is available
+      // Git is available - checkGitAvailable
       mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
-      // Is git repository
+      // Get git version - getGitVersion
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository - isGitRepository
       mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
       // User name not configured
       mockExec.mockResolvedValueOnce({ stdout: '', stderr: '' });
@@ -466,9 +472,11 @@ describe('Git Utilities', () => {
     });
 
     it('should detect missing remote repository', async () => {
-      // Git is available
+      // Git is available - checkGitAvailable
       mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
-      // Is git repository
+      // Get git version - getGitVersion
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository - isGitRepository
       mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
       // User name configured
       mockExec.mockResolvedValueOnce({ stdout: 'John Doe', stderr: '' });
@@ -486,9 +494,11 @@ describe('Git Utilities', () => {
     });
 
     it('should handle errors when checking remotes', async () => {
-      // Git is available
+      // Git is available - checkGitAvailable
       mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
-      // Is git repository
+      // Get git version - getGitVersion
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository - isGitRepository
       mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
       // User name configured
       mockExec.mockResolvedValueOnce({ stdout: 'John Doe', stderr: '' });
@@ -505,9 +515,11 @@ describe('Git Utilities', () => {
     });
 
     it('should handle multiple validation errors', async () => {
-      // Git is available
+      // Git is available - checkGitAvailable
       mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
-      // Is git repository
+      // Get git version - getGitVersion
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository - isGitRepository
       mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
       // User name not configured (empty)
       mockExec.mockResolvedValueOnce({ stdout: '', stderr: '' });
@@ -527,9 +539,11 @@ describe('Git Utilities', () => {
     });
 
     it('should handle git config command failures', async () => {
-      // Git is available
+      // Git is available - checkGitAvailable
       mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
-      // Is git repository
+      // Get git version - getGitVersion
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository - isGitRepository
       mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
       // User name check fails
       mockExec.mockRejectedValueOnce(new Error('git config failed'));
@@ -546,35 +560,43 @@ describe('Git Utilities', () => {
     });
 
     it('should only check user config when git is available and in repo', async () => {
-      // Git is not available
+      // Git is not available - checkGitAvailable
       mockExec.mockRejectedValueOnce(new Error('Command not found'));
-
-      const result = await validateGitEnvironment();
-
-      // Should not attempt to check user config
-      expect(mockExec).toHaveBeenCalledTimes(1);
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0]).toContain('Git is not installed');
-    });
-
-    it('should skip user config checks when not in repository', async () => {
-      // Git is available
-      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
-      // Not a git repository
+      // isGitRepository will also be called
       mockExec.mockRejectedValueOnce(new Error('Not a git repository'));
 
       const result = await validateGitEnvironment();
 
-      // Should only have made 2 calls (git --version and git rev-parse)
+      // Should not attempt to check user config or git version when git is not available
       expect(mockExec).toHaveBeenCalledTimes(2);
+      // Both errors are added: git not installed AND not a git repository
+      expect(result.errors).toHaveLength(2);
+      expect(result.errors[0]).toContain('Git is not installed');
+      expect(result.errors[1]).toContain('Current directory is not a Git repository');
+    });
+
+    it('should skip user config checks when not in repository', async () => {
+      // Git is available - checkGitAvailable
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Get git version - getGitVersion
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Not a git repository - isGitRepository
+      mockExec.mockRejectedValueOnce(new Error('Not a git repository'));
+
+      const result = await validateGitEnvironment();
+
+      // Should only have made 3 calls (checkGitAvailable, getGitVersion, isGitRepository)
+      expect(mockExec).toHaveBeenCalledTimes(3);
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0]).toContain('not a Git repository');
     });
 
     it('should trim whitespace from git config values', async () => {
-      // Git is available
+      // Git is available - checkGitAvailable
       mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
-      // Is git repository
+      // Get git version - getGitVersion
+      mockExec.mockResolvedValueOnce({ stdout: 'git version 2.30.0', stderr: '' });
+      // Is git repository - isGitRepository
       mockExec.mockResolvedValueOnce({ stdout: '.git', stderr: '' });
       // User name with whitespace
       mockExec.mockResolvedValueOnce({ stdout: '  John Doe  \n', stderr: '' });

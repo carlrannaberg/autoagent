@@ -1,6 +1,6 @@
-import chalk from 'chalk';
+import * as chalk from 'chalk';
 
-export type LogLevel = 'info' | 'success' | 'warning' | 'error' | 'debug';
+export type LogLevel = 'info' | 'success' | 'warning' | 'error' | 'debug'
 
 export interface LoggerOptions {
   prefix?: string;

@@ -336,6 +336,70 @@ This project uses **Vitest** as its testing framework. When writing tests, follo
   - **Mock Functions**: Create with `vi.fn()`. Define behavior with `mockImplementation()`, `mockResolvedValue()`, or `mockRejectedValue()`.
 - **Spying**: Use `vi.spyOn(object, 'methodName')`. Restore spies with `mockRestore()` in `afterEach`.
 
+### Advanced Test Mocking Patterns
+
+#### Promisified exec Mocking
+When mocking `child_process.exec` that's used with `promisify`, you must handle Node.js's special promisify behavior:
+
+```typescript
+vi.mock('child_process', () => {
+  const mockExec = vi.fn();
+  
+  // Add custom promisify support for exec's special behavior
+  (mockExec as any)[Symbol.for('nodejs.util.promisify.custom')] = 
+    (command: string, options?: any): Promise<{ stdout: string; stderr: string }> => {
+      return new Promise((resolve, reject) => {
+        const callback = (error: any, stdout: string, stderr: string): void => {
+          if (error) {
+            error.stdout = stdout;
+            error.stderr = stderr;
+            reject(error);
+          } else {
+            resolve({ stdout, stderr });
+          }
+        };
+        
+        if (options && typeof options !== 'function') {
+          mockExec(command, options, callback);
+        } else {
+          mockExec(command, callback || options);
+        }
+      });
+    };
+  
+  return { exec: mockExec };
+});
+```
+
+#### Dynamic Import Mocking
+When code uses dynamic imports, mock at the module level:
+
+```typescript
+vi.mock('../../../src/utils/git', () => ({
+  getCurrentBranch: vi.fn().mockResolvedValue('main'),
+  pushToRemote: vi.fn().mockResolvedValue({ 
+    success: true, 
+    remote: 'origin', 
+    branch: 'main' 
+  }),
+  // Mock all exported functions
+}));
+```
+
+#### Required Git Commands to Mock
+Always mock these git commands for tests involving git operations:
+
+```typescript
+execMock.mockImplementation((cmd: string, callback: any) => {
+  if (cmd === 'git --version') callback(null, 'git version 2.39.0\n', '');
+  else if (cmd === 'git rev-parse --git-dir') callback(null, '.git\n', '');
+  else if (cmd === 'git status') callback(null, 'On branch master\n', '');
+  else if (cmd === 'git config user.name') callback(null, 'Test User\n', '');
+  else if (cmd === 'git config user.email') callback(null, 'test@example.com\n', '');
+  else callback(null, '', '');
+});
+```
+
 ### Commonly Mocked Modules
 
 - **Node.js built-ins**: `fs`, `fs/promises`, `path`, `child_process` (`spawn`, `exec`)
@@ -349,12 +413,42 @@ This project uses **Vitest** as its testing framework. When writing tests, follo
 
 ### Testing Guidelines
 
+**CRITICAL: ALL TESTS MUST PASS BEFORE RELEASE**
+
+Every test failure is considered critical and must be resolved before any release. There are no acceptable test failures - we must either:
+1. Fix the implementation to make the test pass, or
+2. Update the test expectations based on thorough analysis of requirements
+
+**Test Quality Standards:**
 - Write unit tests for all new components
 - Aim for >80% code coverage
 - Test both success and error scenarios
 - Mock all external dependencies (file system, child processes, network)
 - Keep tests focused and independent
 - Use descriptive test names that explain what is being tested
+- **Zero tolerance for failing tests** - all tests must pass consistently
+
+### Common Test Pitfalls to Avoid
+
+1. **Incorrect Promisify Mocking**
+   - ❌ Don't assume callback-style mocks work for promisified functions
+   - ✅ Use the custom promisify pattern shown above for `exec`
+
+2. **Missing Git Command Mocks**
+   - ❌ Don't forget to mock git commands used during initialization
+   - ✅ Always mock: `git --version`, `git rev-parse --git-dir`, `git status`, `git config`
+
+3. **Type Import Errors**
+   - ❌ `import { Config } from '../types'` (old interface name)
+   - ✅ `import { UserConfig } from '../types'` (correct interface)
+
+4. **Iterator Spread Issues**
+   - ❌ `const items = [...fileManager.getAllIssues()]` (may fail)
+   - ✅ `const items = Array.from(fileManager.getAllIssues())`
+
+5. **CLI Flag Conflicts**
+   - ❌ Don't rely solely on parsed option values for conflicting flags
+   - ✅ Track actual flag presence in argv during parsing
 
 ## Security Considerations
 - No credentials stored in code

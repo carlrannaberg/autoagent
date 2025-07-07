@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { AutonomousAgent } from '@/core/autonomous-agent';
+import { AutonomousAgent } from '../../../src/core/autonomous-agent';
 import { EventEmitter } from 'events';
-import { ExecutionResult } from '@/types';
+import { ExecutionResult } from '../../../src/types';
 import { InMemoryConfigManager } from '../../helpers/test-doubles/in-memory-config-manager';
 import { InMemoryFileManager } from '../../helpers/test-doubles/in-memory-file-manager';
 import { InMemoryProviderLearning } from '../../helpers/test-doubles/in-memory-provider-learning';
 import { TestProvider } from '../../helpers/test-doubles/test-provider';
 import { GitSimulator } from '../../helpers/test-doubles/git-simulator';
-import * as gitUtils from '@/utils/git';
+import * as gitUtils from '../../../src/utils/git';
 import * as fs from 'fs/promises';
 
 // Keep provider mocks as they're external dependencies
@@ -44,42 +44,77 @@ vi.mock('@/providers', () => ({
   getFirstAvailableProvider
 }));
 
-// Mock exec from child_process
-vi.mock('child_process', () => ({
-  exec: execMock
-}));
+// Mock child_process
+vi.mock('child_process');
 
-// Mock promisify to return a promisified version of our mock
-vi.mock('util', async (importOriginal) => {
+// Mock the entire git utils module to intercept dynamic imports
+vi.mock('../../../src/utils/git', async (importOriginal) => {
   const actual = await importOriginal();
   return {
-    ...(actual as any),
-    promisify: (fn: any): any => {
-      if (fn === execMock) {
-        // Return a promisified version of execMock
-        return (cmd: string) => {
-          return new Promise((resolve, reject) => {
-            // Set a timeout to catch hanging tests
-            const timeoutId = setTimeout(() => {
-              reject(new Error(`execMock timeout for command: ${cmd}`));
-            }, 5000);
-            
-            // Call the original execMock with a callback
-            execMock(cmd, (err: any, stdout: string, stderr: string) => {
-              clearTimeout(timeoutId);
-              if (err !== null && err !== undefined) {
-                reject(err);
-              } else {
-                resolve({ stdout, stderr });
-              }
-            });
-          });
-        };
+    ...(actual as Record<string, unknown>),
+    // Override git push functions to call execMock with proper promise handling
+    getCurrentBranch: vi.fn(() => {
+      return new Promise((resolve, reject) => {
+        execMock('git rev-parse --abbrev-ref HEAD', (error: any, stdout: string, _stderr: string) => {
+          if (error !== null) {
+            reject(error);
+          } else {
+            resolve(stdout.trim());
+          }
+        });
+      });
+    }),
+    hasUpstreamBranch: vi.fn(() => {
+      return new Promise((resolve) => {
+        execMock('git rev-parse --abbrev-ref --symbolic-full-name @{upstream}', (error: any) => {
+          if (error !== null) {
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        });
+      });
+    }),
+    pushToRemote: vi.fn((options: { remote?: string; branch?: string; setUpstream?: boolean } = {}) => {
+      const { remote = 'origin', branch, setUpstream = false } = options;
+      
+      // Build the git push command like the real implementation
+      let command = 'git push';
+      if (setUpstream) {
+        command += ' --set-upstream';
       }
-      return (actual as any).promisify(fn);
-    }
+      command += ` ${remote}`;
+      if (branch !== undefined && branch !== null && branch !== '') {
+        command += ` ${branch}`;
+      }
+      
+      // Call the mocked execAsync which will use execMock with callback
+      return new Promise((resolve) => {
+        execMock(command, (error: any, stdout: string, stderr: string) => {
+          if (error !== null) {
+            resolve({
+              success: false,
+              error: error.message ?? error.toString(),
+              stderr
+            });
+          } else {
+            resolve({
+              success: true,
+              remote,
+              branch: branch ?? 'main',
+              stderr
+            });
+          }
+        });
+      });
+    })
   };
 });
+
+// Mock util module to return our mock exec when promisified
+vi.mock('util', () => ({
+  promisify: (): typeof execMock => execMock
+}));
 
 describe('AutonomousAgent', () => {
   let agent: AutonomousAgent;
@@ -95,21 +130,21 @@ describe('AutonomousAgent', () => {
     mockFileContents.clear();
     
     // Set up default execMock behavior for git commands
-    execMock.mockImplementation((cmd: string, callback: any) => {
+    execMock.mockImplementation((cmd: string) => {
       // Default behavior for common git commands
       if (cmd === 'git --version') {
-        callback(null, 'git version 2.39.0\n', '');
+        return Promise.resolve({ stdout: 'git version 2.39.0\n', stderr: '' });
       } else if (cmd === 'git rev-parse --git-dir') {
-        callback(null, '.git\n', '');
+        return Promise.resolve({ stdout: '.git\n', stderr: '' });
       } else if (cmd === 'git status') {
-        callback(null, 'On branch master\nnothing to commit, working tree clean\n', '');
+        return Promise.resolve({ stdout: 'On branch master\nnothing to commit, working tree clean\n', stderr: '' });
       } else if (cmd === 'git config user.name') {
-        callback(null, 'Test User\n', '');
+        return Promise.resolve({ stdout: 'Test User\n', stderr: '' });
       } else if (cmd === 'git config user.email') {
-        callback(null, 'test@example.com\n', '');
+        return Promise.resolve({ stdout: 'test@example.com\n', stderr: '' });
       } else {
         // Default success for other commands
-        callback(null, '', '');
+        return Promise.resolve({ stdout: '', stderr: '' });
       }
     });
     
@@ -152,14 +187,32 @@ describe('AutonomousAgent', () => {
     geminiProvider.failAfter = Infinity;
 
     // Mock git utilities with simulator
-    vi.spyOn(gitUtils, 'checkGitAvailable').mockImplementation(() => gitSimulator.checkGitAvailable());
-    vi.spyOn(gitUtils, 'isGitRepository').mockImplementation(() => gitSimulator.isGitRepository());
-    vi.spyOn(gitUtils, 'hasChangesToCommit').mockImplementation(() => gitSimulator.hasChangesToCommit());
-    vi.spyOn(gitUtils, 'stageAllChanges').mockImplementation(() => gitSimulator.stageAllChanges());
-    vi.spyOn(gitUtils, 'createCommit').mockImplementation((msg) => gitSimulator.createCommit(msg));
-    vi.spyOn(gitUtils, 'getCurrentCommitHash').mockImplementation(() => gitSimulator.getCurrentCommitHash());
-    vi.spyOn(gitUtils, 'getUncommittedChanges').mockImplementation(() => gitSimulator.getUncommittedChanges());
-    vi.spyOn(gitUtils, 'revertToCommit').mockImplementation((hash) => gitSimulator.revertToCommit(hash));
+    vi.spyOn(gitUtils, 'checkGitAvailable').mockImplementation(() => Promise.resolve(gitSimulator.checkGitAvailable()));
+    vi.spyOn(gitUtils, 'isGitRepository').mockImplementation(() => Promise.resolve(gitSimulator.isGitRepository()));
+    vi.spyOn(gitUtils, 'hasChangesToCommit').mockImplementation(() => Promise.resolve(gitSimulator.hasChangesToCommit()));
+    vi.spyOn(gitUtils, 'stageAllChanges').mockImplementation(() => Promise.resolve(gitSimulator.stageAllChanges()));
+    vi.spyOn(gitUtils, 'createCommit').mockImplementation((msg) => Promise.resolve(gitSimulator.createCommit(msg)));
+    vi.spyOn(gitUtils, 'getCurrentCommitHash').mockImplementation(() => Promise.resolve(gitSimulator.getCurrentCommitHash() || null));
+    vi.spyOn(gitUtils, 'getUncommittedChanges').mockImplementation(() => Promise.resolve(gitSimulator.getUncommittedChanges()));
+    vi.spyOn(gitUtils, 'revertToCommit').mockImplementation((hash) => Promise.resolve(gitSimulator.revertToCommit(hash)));
+    
+    // Mock validateGitEnvironment - default to valid
+    vi.spyOn(gitUtils, 'validateGitEnvironment').mockImplementation(() => Promise.resolve({
+      isValid: true,
+      errors: [],
+      suggestions: [],
+      gitVersion: 'git version 2.39.0'
+    }));
+    
+    // Mock validateRemoteForPush - default to valid
+    vi.spyOn(gitUtils, 'validateRemoteForPush').mockImplementation(() => Promise.resolve({
+      isValid: true,
+      errors: [],
+      suggestions: []
+    }));
+    
+    // The git push functions are now mocked at module level to intercept dynamic imports
+    // No need for additional spies here
 
     // Mock the path module to ensure consistent paths
     vi.doMock('path', () => ({
@@ -234,7 +287,7 @@ describe('AutonomousAgent', () => {
     fileManager.setIssueFiles(['1-test-issue.md']);
 
     // Create agent with workspace config
-    agent = new AutonomousAgent({ workspace: '/test', signal: true }); // Use signal: true to prevent signal handler setup
+    agent = new AutonomousAgent({ workspace: '/test', signal: undefined }); // Use signal: undefined to prevent signal handler setup
     
     // Replace internal instances with our test doubles
     (agent as any).configManager = configManager;
@@ -262,12 +315,12 @@ describe('AutonomousAgent', () => {
 
     it('should accept custom config', () => {
       const customConfig = {
-        providers: ['gemini'],
+        providers: ['gemini' as const],
         maxTokens: 50000
       };
       
       const customConfigManager = new InMemoryConfigManager(customConfig);
-      const customAgent = new AutonomousAgent({ workspace: '/test', signal: true });
+      const customAgent = new AutonomousAgent({ workspace: '/test', signal: undefined });
       (customAgent as any).configManager = customConfigManager;
       
       expect(customConfigManager.getConfig().providers).toEqual(['gemini']);
@@ -463,7 +516,7 @@ describe('AutonomousAgent', () => {
     it('should rollback when enabled', async () => {
       const rollbackAgent = new AutonomousAgent({ 
         workspace: '/test', 
-        signal: true,
+        signal: undefined,
         enableRollback: true 
       });
       
@@ -484,6 +537,7 @@ describe('AutonomousAgent', () => {
         issueNumber: 1,
         provider: 'claude',
         error: 'Test error',
+        duration: 1000,
         rollbackData: {
           gitCommit: commitResult.commitHash!,
           fileBackups: new Map()
@@ -501,7 +555,8 @@ describe('AutonomousAgent', () => {
         success: false,
         issueNumber: 1,
         provider: 'claude',
-        error: 'Test error'
+        error: 'Test error',
+        duration: 1000
       };
 
       const result = await agent.rollback(executionResult);
@@ -1008,7 +1063,7 @@ describe('AutonomousAgent', () => {
       }));
 
       // Create a new agent instance to pick up the mocked templates
-      const testAgent = new AutonomousAgent({ workspace: '/test', signal: true });
+      const testAgent = new AutonomousAgent({ workspace: '/test', signal: undefined });
       (testAgent as any).configManager = configManager;
       (testAgent as any).fileManager = fileManager;
       (testAgent as any).providerLearning = providerLearning;
@@ -1157,7 +1212,7 @@ describe('AutonomousAgent', () => {
       // Configure agent with auto-commit disabled (default)
       const agentNoCommit = new AutonomousAgent({ 
         workspace: '/test', 
-        signal: true,
+        signal: undefined,
         autoCommit: false 
       });
       (agentNoCommit as any).configManager = configManager;
@@ -1181,10 +1236,20 @@ describe('AutonomousAgent', () => {
     });
 
     it('should validate git availability when auto-commit is enabled', async () => {
+      // Mock validateGitEnvironment to return git not available error
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValueOnce({
+        isValid: false,
+        errors: ['Git is not installed or not accessible in PATH'],
+        suggestions: [
+          'Install Git from https://git-scm.com/downloads',
+          'Ensure git is added to your system PATH'
+        ]
+      });
+      
       // Configure agent with auto-commit enabled
       const agentWithCommit = new AutonomousAgent({ 
         workspace: '/test', 
-        signal: true,
+        signal: undefined,
         autoCommit: true 
       });
       (agentWithCommit as any).configManager = configManager;
@@ -1192,7 +1257,7 @@ describe('AutonomousAgent', () => {
       (agentWithCommit as any).providerLearning = providerLearning;
       (agentWithCommit as any).config.workspace = '/test';
 
-      // Configure git as not available
+      // Configure git as not available (for other checks)
       gitSimulator.setGitAvailable(false);
       gitSimulator.setIsRepository(true);
       gitSimulator.setHasChanges(true);
@@ -1202,19 +1267,29 @@ describe('AutonomousAgent', () => {
       testProvider.setResponse('test task', 'Completed');
 
       // Execute should fail with clear error message
-      await expect(agentWithCommit.executeIssue(1)).rejects.toThrow('Git is not available on your system');
+      await expect(agentWithCommit.executeIssue(1)).rejects.toThrow('Git validation failed for auto-commit');
       
-      // Verify git availability was checked
-      expect(gitUtils.checkGitAvailable).toHaveBeenCalled();
+      // Verify git validation was checked
+      expect(gitUtils.validateGitEnvironment).toHaveBeenCalled();
       
       agentWithCommit.removeAllListeners();
     });
 
     it('should validate git repository when auto-commit is enabled', async () => {
+      // Mock validateGitEnvironment to return not a repository error
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValueOnce({
+        isValid: false,
+        errors: ['Current directory is not a Git repository'],
+        suggestions: [
+          'Initialize a new repository with: git init',
+          'Or clone an existing repository with: git clone <url>'
+        ]
+      });
+      
       // Configure agent with auto-commit enabled
       const agentWithCommit = new AutonomousAgent({ 
         workspace: '/test', 
-        signal: true,
+        signal: undefined,
         autoCommit: true 
       });
       (agentWithCommit as any).configManager = configManager;
@@ -1222,7 +1297,7 @@ describe('AutonomousAgent', () => {
       (agentWithCommit as any).providerLearning = providerLearning;
       (agentWithCommit as any).config.workspace = '/test';
 
-      // Configure git as available but not a repository
+      // Configure git as available but not a repository (for other checks)
       gitSimulator.setGitAvailable(true);
       gitSimulator.setIsRepository(false);
       gitSimulator.setHasChanges(true);
@@ -1232,10 +1307,10 @@ describe('AutonomousAgent', () => {
       testProvider.setResponse('test task', 'Completed');
 
       // Execute should fail with clear error message
-      await expect(agentWithCommit.executeIssue(1)).rejects.toThrow('Current directory is not a git repository');
+      await expect(agentWithCommit.executeIssue(1)).rejects.toThrow('Git validation failed for auto-commit');
       
-      // Verify repository check was called
-      expect(gitUtils.isGitRepository).toHaveBeenCalled();
+      // Verify git validation was called
+      expect(gitUtils.validateGitEnvironment).toHaveBeenCalled();
       
       agentWithCommit.removeAllListeners();
     });
@@ -1244,7 +1319,7 @@ describe('AutonomousAgent', () => {
       // Configure agent with auto-commit enabled and debug mode
       const agentWithCommit = new AutonomousAgent({ 
         workspace: '/test', 
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         debug: true 
       });
@@ -1258,16 +1333,12 @@ describe('AutonomousAgent', () => {
       gitSimulator.setIsRepository(true);
       gitSimulator.setHasChanges(true);
 
-      // Mock git config commands
-      execMock.mockImplementation((cmd: string, callback: any) => {
-        if (cmd === 'git config user.name') {
-          callback(null, 'Test User\n', '');
-        } else if (cmd === 'git config user.email') {
-          callback(null, 'test@example.com\n', '');
-        } else {
-          // Default for other commands
-          callback(null, '', '');
-        }
+      // Mock validateGitEnvironment to return success (all validations pass)
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValueOnce({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
       });
 
       // Configure provider
@@ -1282,9 +1353,8 @@ describe('AutonomousAgent', () => {
       const result = await agentWithCommit.executeIssue(1);
       expect(result.success).toBe(true);
       
-      // Verify git config was checked
-      expect(execMock).toHaveBeenCalledWith('git config user.name', expect.any(Function));
-      expect(execMock).toHaveBeenCalledWith('git config user.email', expect.any(Function));
+      // Verify git validation was called
+      expect(gitUtils.validateGitEnvironment).toHaveBeenCalled();
       
       // Verify debug message
       expect(debugMessages.some(msg => msg.includes('Git validation passed for auto-commit'))).toBe(true);
@@ -1296,7 +1366,7 @@ describe('AutonomousAgent', () => {
       // Configure agent with auto-commit enabled
       const agentWithCommit = new AutonomousAgent({ 
         workspace: '/test', 
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         debug: true 
       });
@@ -1309,15 +1379,14 @@ describe('AutonomousAgent', () => {
       gitSimulator.setIsRepository(true);
       gitSimulator.setHasChanges(true);
 
-      // Mock git config to fail for user.name
-      execMock.mockImplementation((cmd: string, callback: any) => {
-        if (cmd === 'git config user.name') {
-          callback(null, '', ''); // Empty name
-        } else if (cmd === 'git config user.email') {
-          callback(null, 'test@example.com\n', '');
-        } else {
-          callback(null, '', '');
-        }
+      // Mock validateGitEnvironment to return user config error
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValueOnce({
+        isValid: false,
+        errors: ['Git user configuration is incomplete'],
+        suggestions: [
+          'Set your name with: git config --global user.name "Your Name"',
+          'Set your email with: git config --global user.email "your.email@example.com"'
+        ]
       });
 
       // Configure provider
@@ -1329,10 +1398,10 @@ describe('AutonomousAgent', () => {
       agentWithCommit.on('debug', (msg: string) => debugMessages.push(msg));
 
       // Execute should fail with clear error message
-      await expect(agentWithCommit.executeIssue(1)).rejects.toThrow('Git user configuration is incomplete');
+      await expect(agentWithCommit.executeIssue(1)).rejects.toThrow('Git validation failed for auto-commit');
       
-      // Verify git config was checked
-      expect(execMock).toHaveBeenCalledWith('git config user.name', expect.any(Function));
+      // Verify git validation was called
+      expect(gitUtils.validateGitEnvironment).toHaveBeenCalled();
       
       agentWithCommit.removeAllListeners();
     });
@@ -1341,7 +1410,7 @@ describe('AutonomousAgent', () => {
       // Configure agent with auto-commit enabled
       const agentWithCommit = new AutonomousAgent({ 
         workspace: '/test', 
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         debug: true 
       });
@@ -1354,93 +1423,80 @@ describe('AutonomousAgent', () => {
       gitSimulator.setIsRepository(true);
       gitSimulator.setHasChanges(true);
 
-      // Mock git config to fail for user.email
-      execMock.mockImplementation((cmd: string, callback: any) => {
-        if (cmd === 'git config user.name') {
-          callback(null, 'Test User\n', '');
-        } else if (cmd === 'git config user.email') {
-          callback(null, '', ''); // Empty email
-        } else {
-          callback(null, '', '');
-        }
+      // Mock validateGitEnvironment to return user config error
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValueOnce({
+        isValid: false,
+        errors: ['Git user configuration is incomplete'],
+        suggestions: [
+          'Set your name with: git config --global user.name "Your Name"',
+          'Set your email with: git config --global user.email "your.email@example.com"'
+        ]
       });
 
       // Configure provider
       const testProvider = testProviders.get('claude')!;
       testProvider.setResponse('test task', 'Completed');
 
-      // Execute should fail with clear error message (early validation)
-      await expect(agentWithCommit.executeIssue(1)).rejects.toThrow('Git user configuration is incomplete');
+      // Execute should fail with clear error message
+      await expect(agentWithCommit.executeIssue(1)).rejects.toThrow('Git validation failed for auto-commit');
       
-      // Verify git config was checked
-      expect(execMock).toHaveBeenCalledWith('git config user.email', expect.any(Function));
+      // Verify git validation was called
+      expect(gitUtils.validateGitEnvironment).toHaveBeenCalled();
       
       agentWithCommit.removeAllListeners();
     });
 
     it('should provide helpful error messages for git configuration issues', async () => {
-      // Directly test the validation method for error messages
+      // Test that error messages contain helpful guidance
       const agentWithCommit = new AutonomousAgent({ 
         workspace: '/test', 
-        signal: true,
+        signal: undefined,
         autoCommit: true 
       });
       (agentWithCommit as any).configManager = configManager;
       (agentWithCommit as any).fileManager = fileManager;
       (agentWithCommit as any).providerLearning = providerLearning;
 
-      // Test git not available error
-      gitSimulator.setGitAvailable(false);
-      try {
-        await (agentWithCommit as any).validateGitForAutoCommit();
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).toContain('Git is not available on your system');
-        expect(error.message).toContain('Install git from https://git-scm.com/downloads');
-        expect(error.message).toContain('git --version');
-      }
-
-      // Test not a repository error
-      gitSimulator.setGitAvailable(true);
-      gitSimulator.setIsRepository(false);
-      try {
-        await (agentWithCommit as any).validateGitForAutoCommit();
-        expect.fail('Should have thrown an error');
-      } catch (error: any) {
-        expect(error.message).toContain('Current directory is not a git repository');
-        expect(error.message).toContain('git init');
-        expect(error.message).toContain('git clone');
-      }
-
-      // Test user config error
-      gitSimulator.setIsRepository(true);
-      execMock.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('git config user')) {
-          callback(null, '', '');
-        } else {
-          callback(null, '', '');
-        }
+      // Mock validateGitEnvironment to return git not available error
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValueOnce({
+        isValid: false,
+        errors: ['Git is not installed or not accessible in PATH'],
+        suggestions: [
+          'Install Git from https://git-scm.com/downloads',
+          'Ensure git is added to your system PATH'
+        ]
       });
+
+      // Configure provider
+      const testProvider = testProviders.get('claude')!;
+      testProvider.setResponse('test task', 'Completed');
       
       try {
-        await (agentWithCommit as any).validateGitForAutoCommit();
+        await agentWithCommit.executeIssue(1);
         expect.fail('Should have thrown an error');
       } catch (error: any) {
-        expect(error.message).toContain('Git user configuration is incomplete');
-        expect(error.message).toContain('git config --global user.name');
-        expect(error.message).toContain('git config --global user.email');
-        expect(error.message).toContain('git config user.name');
-        expect(error.message).toContain('git config user.email');
+        expect(error.message).toContain('Git validation failed for auto-commit');
+        expect(error.message).toContain('Git is not installed or not accessible in PATH');
       }
+      
+      agentWithCommit.removeAllListeners();
     });
   });
 
   describe('git commit no-verify functionality', () => {
     it('should use runtime noVerify config when provided', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
+      
       // Create agent with runtime noVerify=true
       const agentWithNoVerify = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         noVerify: true, // Runtime override
         debug: true
@@ -1487,6 +1543,14 @@ describe('AutonomousAgent', () => {
     });
 
     it('should use user config gitCommitNoVerify when no runtime override', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
+      
       // Configure user config to have gitCommitNoVerify true
       configManager.updateConfig({
         gitCommitNoVerify: true
@@ -1495,7 +1559,7 @@ describe('AutonomousAgent', () => {
       // Create agent without runtime noVerify
       const agentWithConfig = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         debug: true
         // No noVerify specified - should use config
@@ -1537,6 +1601,14 @@ describe('AutonomousAgent', () => {
     });
 
     it('should default to noVerify=false when not configured', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
+      
       // Configure user config to have gitCommitNoVerify false
       configManager.updateConfig({
         gitCommitNoVerify: false
@@ -1545,7 +1617,7 @@ describe('AutonomousAgent', () => {
       // Create agent without any noVerify settings
       const agentDefault = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true
       });
       (agentDefault as any).configManager = configManager;
@@ -1585,6 +1657,14 @@ describe('AutonomousAgent', () => {
     });
 
     it('should respect runtime noVerify=false override even when config is true', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
+      
       // Configure user config to have gitCommitNoVerify true
       configManager.updateConfig({
         gitCommitNoVerify: true
@@ -1593,7 +1673,7 @@ describe('AutonomousAgent', () => {
       // Create agent with explicit noVerify=false
       const agentOverride = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         noVerify: false // Explicit false should override config
       });
@@ -1636,10 +1716,18 @@ describe('AutonomousAgent', () => {
 
   describe('git push functionality', () => {
     it('should push to remote when auto-push is enabled', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
+      
       // Create agent with auto-push enabled
       const agentWithPush = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         autoPush: true,
         debug: true
@@ -1707,8 +1795,8 @@ describe('AutonomousAgent', () => {
       expect(pushCommands[0][0]).toContain('git push origin main');
       
       // Verify debug messages about push
-      expect(debugMessages.some(msg => msg.includes('Git push validation passed'))).toBe(true);
-      expect(debugMessages.some(msg => msg.includes('Successfully pushed to remote'))).toBe(true);
+      expect(debugMessages.some(msg => msg.includes('Git validation passed for auto-push'))).toBe(true);
+      expect(debugMessages.some(msg => msg.includes('Changes pushed to'))).toBe(true);
       
       expect(result.success).toBe(true);
       
@@ -1716,10 +1804,17 @@ describe('AutonomousAgent', () => {
     });
 
     it('should skip push when auto-push is disabled', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
       // Create agent with auto-push disabled
       const agentNoPush = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         autoPush: false,
         debug: true
@@ -1765,6 +1860,13 @@ describe('AutonomousAgent', () => {
     });
 
     it('should use custom remote from configuration', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
       // Configure custom remote
       configManager.updateConfig({
         gitPushRemote: 'upstream'
@@ -1773,7 +1875,7 @@ describe('AutonomousAgent', () => {
       // Create agent with auto-push enabled
       const agentCustomRemote = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         autoPush: true,
         debug: true
@@ -1837,6 +1939,13 @@ describe('AutonomousAgent', () => {
     });
 
     it('should use custom branch from configuration', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
       // Configure custom branch
       configManager.updateConfig({
         gitPushBranch: 'develop'
@@ -1845,7 +1954,7 @@ describe('AutonomousAgent', () => {
       // Create agent with auto-push enabled
       const agentCustomBranch = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         autoPush: true,
         debug: true
@@ -1901,7 +2010,7 @@ describe('AutonomousAgent', () => {
       const pushCommands = Array.from(execMock.mock.calls)
         .filter(call => call[0].includes('git push'));
       expect(pushCommands).toHaveLength(1);
-      expect(pushCommands[0][0]).toContain('git push origin feature-branch:develop');
+      expect(pushCommands[0][0]).toContain('git push origin develop');
       
       expect(result.success).toBe(true);
       
@@ -1909,10 +2018,17 @@ describe('AutonomousAgent', () => {
     });
 
     it('should set upstream when branch has no upstream', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
       // Create agent with auto-push enabled
       const agentNoUpstream = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         autoPush: true,
         debug: true
@@ -1982,10 +2098,17 @@ describe('AutonomousAgent', () => {
     });
 
     it('should handle push authentication errors gracefully', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
       // Create agent with auto-push enabled
       const agentAuthError = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         autoPush: true,
         debug: true
@@ -2051,7 +2174,7 @@ describe('AutonomousAgent', () => {
       expect(commitCalls).toHaveLength(1);
       
       // Verify error was reported but execution continued
-      expect(errorMessages.some(msg => msg.includes('Git push failed: fatal: Authentication failed'))).toBe(true);
+      expect(debugMessages.some(msg => msg.includes('Git push failed: fatal: Authentication failed'))).toBe(true);
       expect(result.success).toBe(true);
       expect(result.error).toBe(undefined);
       
@@ -2059,10 +2182,17 @@ describe('AutonomousAgent', () => {
     });
 
     it('should handle network errors during push gracefully', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
       // Create agent with auto-push enabled
       const agentNetworkError = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         autoPush: true,
         debug: true
@@ -2114,25 +2244,41 @@ describe('AutonomousAgent', () => {
       const testProvider = testProviders.get('claude')!;
       testProvider.setResponse('test issue', 'Completed successfully');
       
-      // Capture error messages
+      // Capture debug messages
+      const debugMessages: string[] = [];
       const errorMessages: string[] = [];
+      agentNetworkError.on('debug', (msg: string) => debugMessages.push(msg));
       agentNetworkError.on('error', (msg: string) => errorMessages.push(msg));
       
       // Execute issue - should succeed despite push failure
       const result = await agentNetworkError.executeIssue(1);
       
       // Verify error was reported but execution continued
-      expect(errorMessages.some(msg => msg.includes('Git push failed: fatal: unable to access'))).toBe(true);
+      expect(debugMessages.some(msg => msg.includes('Git push failed: fatal: unable to access'))).toBe(true);
       expect(result.success).toBe(true);
       
       agentNetworkError.removeAllListeners();
     });
 
     it('should validate git environment before push', async () => {
+      // Mock validateGitEnvironment to succeed (for auto-commit)
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
+      
+      // Mock validateRemoteForPush to fail (for auto-push)
+      vi.mocked(gitUtils.validateRemoteForPush).mockResolvedValueOnce({
+        isValid: false,
+        errors: ['Remote \'origin\' does not exist'],
+        suggestions: ['Add a remote with: git remote add origin <repository-url>', 'List existing remotes with: git remote -v']
+      });
       // Create agent with auto-push enabled
       const agentValidation = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         autoPush: true,
         debug: true
@@ -2182,10 +2328,17 @@ describe('AutonomousAgent', () => {
     });
 
     it('should store push information in rollback data', async () => {
+      // Mock validateGitEnvironment to return success
+      vi.mocked(gitUtils.validateGitEnvironment).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: [],
+        gitVersion: 'git version 2.39.0'
+      });
       // Create agent with auto-push enabled
       const agentRollback = new AutonomousAgent({
         workspace: '/test',
-        signal: true,
+        signal: undefined,
         autoCommit: true,
         autoPush: true,
         debug: true

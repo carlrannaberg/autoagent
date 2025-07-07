@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { ExecutionResult } from '../../src/types';
+import { ExecutionResult, ProviderName } from '../../../src/types';
 
 export interface TestProviderConfig {
   name: string;
@@ -52,11 +52,9 @@ export class TestProvider extends EventEmitter {
       return {
         success: false,
         error: this.failureMessage,
-        result: '',
         output: '',
-        provider: this.name,
+        provider: this.name as ProviderName,
         issueNumber: 0,
-        tokensUsed: 0,
         duration: 0,
         filesModified: []
       };
@@ -68,7 +66,7 @@ export class TestProvider extends EventEmitter {
       let response = this.defaultResponse;
       
       // Look for matching response based on prompt content
-      for (const [key, value] of this.responses) {
+      for (const [key, value] of Array.from(this.responses.entries())) {
         if (issueFile.includes(key)) {
           response = value;
           break;
@@ -91,7 +89,7 @@ export class TestProvider extends EventEmitter {
 
     // Find a matching response or use default
     let response = this.defaultResponse;
-    for (const [key, value] of this.responses) {
+    for (const [key, value] of Array.from(this.responses.entries())) {
       if (issueFile.includes(key) || planFile.includes(key)) {
         response = value;
         break;
@@ -100,11 +98,9 @@ export class TestProvider extends EventEmitter {
 
     return {
       success: true,
-      result: response,
       output: response,
-      provider: this.name,
+      provider: this.name as ProviderName,
       issueNumber: parseInt(issueFile.match(/(\d+)/)?.[1] ?? '1'),
-      tokensUsed: response.length,
       duration: this.responseDelay,
       filesModified: []
     };

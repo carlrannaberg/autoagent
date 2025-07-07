@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import type { ParseOptionsResult } from 'commander';
 import { AutonomousAgent } from '../../core/autonomous-agent';
 import { Logger } from '../../utils/logger';
 import { ProviderName, ReflectionConfig } from '../../types';
@@ -65,7 +66,7 @@ async function isPlanFile(filePath: string): Promise<boolean> {
 // }
 
 export function registerRunCommand(program: Command): void {
-  program
+  const runCommand = program
     .command('run [target]')
     .description('Run issues or specs intelligently - detects file type and executes accordingly\n\n' +
       'Examples:\n' +
@@ -93,8 +94,27 @@ export function registerRunCommand(program: Command): void {
     .option('--verify', 'Enable git hooks during commits')
     .option('--no-verify', 'Skip git hooks during commits')
     .option('--push', 'Enable auto-push for this run (implies --commit)')
-    .option('--no-push', 'Disable auto-push for this run')
-    .action(async (target?: string, options: RunOptions = {}) => {
+    .option('--no-push', 'Disable auto-push for this run');
+
+  // Track which conflicting flags were provided
+  let verifyFlagProvided = false;
+  let noVerifyFlagProvided = false;
+  let pushFlagProvided = false;
+  let noPushFlagProvided = false;
+
+  // Override option parsing to track which flags were actually provided
+  const originalParseOptions = runCommand.parseOptions.bind(runCommand);
+  runCommand.parseOptions = function(argv: string[]): ParseOptionsResult {
+    // Check which flags are present in the argv
+    verifyFlagProvided = argv.includes('--verify');
+    noVerifyFlagProvided = argv.includes('--no-verify');
+    pushFlagProvided = argv.includes('--push');
+    noPushFlagProvided = argv.includes('--no-push');
+    
+    return originalParseOptions(argv);
+  };
+
+  runCommand.action(async (target?: string, options: RunOptions = {}) => {
       const abortController = new AbortController();
       
       const sigintHandler = (): void => {
@@ -135,14 +155,15 @@ export function registerRunCommand(program: Command): void {
         
         // Handle --verify and --no-verify flag conflict resolution
         let resolvedNoVerify: boolean | undefined;
-        if (options.verify === true && options.noVerify === true) {
+        
+        if (verifyFlagProvided && noVerifyFlagProvided) {
           // Both flags provided - warn and use --no-verify
           Logger.warning('Both --verify and --no-verify flags provided. Using --no-verify.');
           resolvedNoVerify = true;
-        } else if (options.noVerify === true) {
-          resolvedNoVerify = true;
-        } else if (options.verify === true) {
-          resolvedNoVerify = false;
+        } else if (options.noVerify !== undefined) {
+          resolvedNoVerify = options.noVerify;
+        } else if (options.verify !== undefined) {
+          resolvedNoVerify = !options.verify;
         }
         // If neither flag is set, resolvedNoVerify remains undefined
         
@@ -150,16 +171,19 @@ export function registerRunCommand(program: Command): void {
         let resolvedAutoPush: boolean | undefined;
         let resolvedAutoCommit = options.commit !== undefined ? options.commit : undefined;
         
-        if (options.push === true && options.noPush === true) {
+        if (pushFlagProvided && noPushFlagProvided) {
           // Both flags provided - warn and use --no-push
           Logger.warning('Both --push and --no-push flags provided. Using --no-push.');
           resolvedAutoPush = false;
-        } else if (options.noPush === true) {
-          resolvedAutoPush = false;
-        } else if (options.push === true) {
-          resolvedAutoPush = true;
+        } else if (options.noPush !== undefined) {
+          resolvedAutoPush = !options.noPush;
+        } else if (options.push !== undefined) {
+          resolvedAutoPush = options.push;
           // --push implies --commit
-          if (resolvedAutoCommit === undefined || resolvedAutoCommit === false) {
+          if (options.push === true && (resolvedAutoCommit === undefined || resolvedAutoCommit === false)) {
+            if (resolvedAutoCommit === false) {
+              Logger.info('Note: --push implies --commit. Auto-commit has been enabled.');
+            }
             resolvedAutoCommit = true;
           }
         }

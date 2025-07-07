@@ -6,17 +6,21 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/full-check.sh"
+            "command": "bash ${CLAUDE_WORKSPACE}/.claude/hooks/full-check.sh"
+          },
+          {
+            "type": "command", 
+            "command": "bash ${CLAUDE_WORKSPACE}/.claude/hooks/lint-feedback.sh"
           }
         ]
       },
       {
-        "matcher": "Write|Edit|MultiEdit",
-        "file_paths": ["src/**/*.ts", "src/**/*.tsx"],
+        "matcher": "Write",
+        "file_paths": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/run-related-tests.sh"
+            "command": "bash ${CLAUDE_WORKSPACE}/.claude/hooks/run-related-tests.sh"
           }
         ]
       }

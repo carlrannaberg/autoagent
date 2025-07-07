@@ -1,5 +1,11 @@
-import { Issue, Plan, Todo } from '../../../src/types';
+import { Issue, Plan } from '../../../src/types';
 // Removed unused import: import * as path from 'path';
+
+interface Todo {
+  issueNumber: number;
+  title: string;
+  completed: boolean;
+}
 
 export class InMemoryFileManager {
   private files: Map<string, string> = new Map();
@@ -94,7 +100,7 @@ export class InMemoryFileManager {
   getNextIssueNumber(): number {
     // This should match the real FileManager behavior which reads from the filesystem
     // In our tests, we're directly adding files to mockFiles, so we need to check those too
-    const issueNumbers: number[] = [...this.issues.keys()];
+    const issueNumbers: number[] = Array.from(this.issues.keys());
     
     // Also check todos
     this.todos.forEach(todo => {

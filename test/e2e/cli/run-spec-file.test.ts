@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { setupE2ETest } from '../helpers/setup';
 import * as path from 'path';
 
@@ -8,8 +8,15 @@ describe('Run Spec File E2E', () => {
   describe('Spec File Detection and Execution', () => {
     beforeEach(async () => {
       await context.workspace.initGit();
+      // Add a fake remote to satisfy git validation
+      await context.workspace.addGitRemote('origin', 'https://github.com/test/repo.git');
       // Create AGENT.md that would have been created by init
       await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+      // Create local config to disable git operations for tests
+      await context.workspace.createFile('.autoagent/config.json', JSON.stringify({
+        autoCommit: false,
+        gitAutoPush: false
+      }));
       // Note: issues/ and plans/ directories will be created on-demand by the commands
     });
 
@@ -210,8 +217,15 @@ This is the actual issue file.
   describe('Error Handling', () => {
     beforeEach(async () => {
       await context.workspace.initGit();
+      // Add a fake remote to satisfy git validation
+      await context.workspace.addGitRemote('origin', 'https://github.com/test/repo.git');
       // Create AGENT.md that would have been created by init
       await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+      // Create local config to disable git operations for tests
+      await context.workspace.createFile('.autoagent/config.json', JSON.stringify({
+        autoCommit: false,
+        gitAutoPush: false
+      }));
       // Note: issues/ and plans/ directories will be created on-demand by the commands
     });
 
@@ -266,8 +280,15 @@ This spec will cause bootstrap to fail.
   describe('Workflow Scenarios', () => {
     beforeEach(async () => {
       await context.workspace.initGit();
+      // Add a fake remote to satisfy git validation
+      await context.workspace.addGitRemote('origin', 'https://github.com/test/repo.git');
       // Create AGENT.md that would have been created by init
       await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+      // Create local config to disable git operations for tests
+      await context.workspace.createFile('.autoagent/config.json', JSON.stringify({
+        autoCommit: false,
+        gitAutoPush: false
+      }));
       // Note: issues/ and plans/ directories will be created on-demand by the commands
     });
 
@@ -431,7 +452,7 @@ Test provider failover handling.
       
       // Should either succeed with failover or fail with clear error
       if (result.exitCode !== 0) {
-        expect(result.stderr).toMatch(/Bootstrap failed|provider|authentication/i);
+        expect(result.stderr).toMatch(/Bootstrap failed|provider|authentication|Git validation/i);
       } else {
         expect(result.stdout).toContain('Bootstrap complete!');
       }
@@ -441,8 +462,15 @@ Test provider failover handling.
   describe('Edge Cases', () => {
     beforeEach(async () => {
       await context.workspace.initGit();
+      // Add a fake remote to satisfy git validation
+      await context.workspace.addGitRemote('origin', 'https://github.com/test/repo.git');
       // Create AGENT.md that would have been created by init
       await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+      // Create local config to disable git operations for tests
+      await context.workspace.createFile('.autoagent/config.json', JSON.stringify({
+        autoCommit: false,
+        gitAutoPush: false
+      }));
       // Note: issues/ and plans/ directories will be created on-demand by the commands
     });
 

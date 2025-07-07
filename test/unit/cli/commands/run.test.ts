@@ -794,14 +794,14 @@ describe('Run Command', () => {
     it('should work with specific issue number and --no-push', async () => {
       const command = program.commands.find(cmd => cmd.name() === 'run');
       
-      await command!.parseAsync(['42', '--no-push'], { from: 'user' });
+      await command!.parseAsync(['39', '--no-push'], { from: 'user' });
       
       expect(AutonomousAgent).toHaveBeenCalledWith(
         expect.objectContaining({
           autoPush: false
         })
       );
-      expect(mockAgent.executeIssue).toHaveBeenCalledWith(42);
+      expect(mockAgent.executeIssue).toHaveBeenCalledWith(39);
     });
     
     it('should handle bootstrap with --push flag', async () => {

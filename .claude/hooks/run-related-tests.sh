@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run Jest tests related to changed files
+# Run Vitest tests related to changed files
 
 # Read JSON input from stdin
 JSON_INPUT=$(cat)
@@ -30,6 +30,26 @@ fi
 
 echo "🧪 Running tests related to: $FILE_PATH..." >&2
 
-# Use npm test (not test:watch) with findRelatedTests
-# Remove --bail and add --passWithNoTests to handle cases with no related tests
-npm test -- --findRelatedTests "$FILE_PATH" --passWithNoTests
+# Convert file path to test pattern
+# Example: src/core/services/report.service.ts -> src/core/services/report.service.test.ts
+TEST_FILE="${FILE_PATH%.*}.test.${FILE_PATH##*.}"
+SPEC_FILE="${FILE_PATH%.*}.spec.${FILE_PATH##*.}"
+
+# Also check for tests in __tests__ directory
+DIR=$(dirname "$FILE_PATH")
+BASENAME=$(basename "$FILE_PATH")
+TESTS_DIR_FILE="$DIR/__tests__/$BASENAME"
+TESTS_DIR_TEST_FILE="${TESTS_DIR_FILE%.*}.test.${TESTS_DIR_FILE##*.}"
+TESTS_DIR_SPEC_FILE="${TESTS_DIR_FILE%.*}.spec.${TESTS_DIR_FILE##*.}"
+
+# Check if any test files exist and run them
+if [ -f "$TEST_FILE" ] || [ -f "$SPEC_FILE" ] || [ -f "$TESTS_DIR_TEST_FILE" ] || [ -f "$TESTS_DIR_SPEC_FILE" ]; then
+  # Build a pattern that includes all possible test files
+  PATTERN="${FILE_PATH%.*}"
+  echo "Looking for tests matching pattern: $PATTERN" >&2
+  # Use vitest with --run for non-watch mode
+  npm test -- "$PATTERN" --run --passWithNoTests
+else
+  echo "No test files found for $FILE_PATH" >&2
+  exit 0
+fi

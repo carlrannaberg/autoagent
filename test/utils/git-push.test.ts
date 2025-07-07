@@ -7,13 +7,44 @@ import {
   validateRemoteForPush,
 } from '../../src/utils/git.js';
 import { exec } from 'child_process';
+import type { ExecOptions } from 'child_process';
+
+// Type for the exec callback
+type ExecCallback = (error: Error | null, stdout: string, stderr: string) => void;
 
 // Mock the child_process module
-vi.mock('child_process', () => ({
-  exec: vi.fn(),
-}));
+vi.mock('child_process', () => {
+  const mockExec = vi.fn();
+  
+  // Add custom promisify support to handle exec's special behavior
+  // Node.js's promisify.custom for exec returns {stdout, stderr} on success
+  (mockExec as any)[Symbol.for('nodejs.util.promisify.custom')] = 
+    (command: string, options?: ExecOptions): Promise<{ stdout: string; stderr: string }> => {
+      return new Promise((resolve, reject) => {
+        const callback = (error: any, stdout: string, stderr: string): void => {
+          if (error !== null && error !== undefined) {
+            // On error, attach stdout and stderr to the error object
+            error.stdout = stdout;
+            error.stderr = stderr;
+            reject(error);
+          } else {
+            // On success, return object with stdout and stderr
+            resolve({ stdout, stderr });
+          }
+        };
+        
+        if (options) {
+          mockExec(command, options, callback);
+        } else {
+          mockExec(command, callback);
+        }
+      });
+    };
+  
+  return { exec: mockExec };
+});
 
-const mockExec = vi.mocked(exec);
+const mockExec = exec as unknown as ReturnType<typeof vi.fn>;
 
 describe('Git Push Utilities', () => {
   beforeEach(() => {
@@ -26,12 +57,17 @@ describe('Git Push Utilities', () => {
 
   describe('checkGitRemote', () => {
     it('should return exists and accessible when remote exists and is reachable', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd === 'git remote') {
-          callback(null, 'origin\nupstream\n', '');
-        } else if (cmd.includes('git ls-remote')) {
-          callback(null, 'refs/heads/main', '');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd === 'git remote') {
+            callback(null, 'origin\nupstream\n', '');
+          } else if (cmd.includes('git ls-remote')) {
+            callback(null, 'refs/heads/main', '');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -43,10 +79,15 @@ describe('Git Push Utilities', () => {
     });
 
     it('should return not exists when remote does not exist', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd === 'git remote') {
-          callback(null, 'origin\n', '');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd === 'git remote') {
+            callback(null, 'origin\n', '');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -59,13 +100,18 @@ describe('Git Push Utilities', () => {
     });
 
     it('should return exists but not accessible on authentication error', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd === 'git remote') {
-          callback(null, 'origin\n', '');
-        } else if (cmd.includes('git ls-remote')) {
-          const error = new Error('Authentication failed');
-          callback(error, '', 'Authentication failed');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd === 'git remote') {
+            callback(null, 'origin\n', '');
+          } else if (cmd.includes('git ls-remote')) {
+            const error = new Error('Authentication failed');
+            callback(error, '', 'Authentication failed');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -78,13 +124,18 @@ describe('Git Push Utilities', () => {
     });
 
     it('should return exists but not accessible on network error', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd === 'git remote') {
-          callback(null, 'origin\n', '');
-        } else if (cmd.includes('git ls-remote')) {
-          const error = new Error('Could not resolve host');
-          callback(error, '', 'Could not resolve host');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd === 'git remote') {
+            callback(null, 'origin\n', '');
+          } else if (cmd.includes('git ls-remote')) {
+            const error = new Error('Could not resolve host');
+            callback(error, '', 'Could not resolve host');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -97,13 +148,18 @@ describe('Git Push Utilities', () => {
     });
 
     it('should handle general remote access errors', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd === 'git remote') {
-          callback(null, 'origin\n', '');
-        } else if (cmd.includes('git ls-remote')) {
-          const error = new Error('Some other error');
-          callback(error, '', 'Some other error');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd === 'git remote') {
+            callback(null, 'origin\n', '');
+          } else if (cmd.includes('git ls-remote')) {
+            const error = new Error('Some other error');
+            callback(error, '', 'Some other error');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -118,8 +174,13 @@ describe('Git Push Utilities', () => {
 
   describe('getCurrentBranch', () => {
     it('should return the current branch name', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        callback(null, 'feature-branch\n', '');
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          callback(null, 'feature-branch\n', '');
+        });
+        
         return {} as any;
       });
 
@@ -128,8 +189,13 @@ describe('Git Push Utilities', () => {
     });
 
     it('should return null for detached head state', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        callback(null, 'HEAD\n', '');
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          callback(null, 'HEAD\n', '');
+        });
+        
         return {} as any;
       });
 
@@ -138,8 +204,13 @@ describe('Git Push Utilities', () => {
     });
 
     it('should return null when git command fails', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        callback(new Error('fatal: not a git repository'), '', '');
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          callback(new Error('fatal: not a git repository'), '', '');
+        });
+        
         return {} as any;
       });
 
@@ -148,8 +219,13 @@ describe('Git Push Utilities', () => {
     });
 
     it('should handle empty output', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        callback(null, '', '');
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          callback(null, '', '');
+        });
+        
         return {} as any;
       });
 
@@ -160,8 +236,13 @@ describe('Git Push Utilities', () => {
 
   describe('hasUpstreamBranch', () => {
     it('should return true when upstream branch exists', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        callback(null, 'origin/main\n', '');
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          callback(null, 'origin/main\n', '');
+        });
+        
         return {} as any;
       });
 
@@ -170,8 +251,13 @@ describe('Git Push Utilities', () => {
     });
 
     it('should return false when upstream branch does not exist', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        callback(new Error('fatal: no upstream configured'), '', '');
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          callback(new Error('fatal: no upstream configured'), '', '');
+        });
+        
         return {} as any;
       });
 
@@ -180,8 +266,13 @@ describe('Git Push Utilities', () => {
     });
 
     it('should return false for any git command error', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        callback(new Error('Some other error'), '', '');
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          callback(new Error('Some other error'), '', '');
+        });
+        
         return {} as any;
       });
 
@@ -193,12 +284,17 @@ describe('Git Push Utilities', () => {
   describe('pushToRemote', () => {
     beforeEach(() => {
       // Default mock for getCurrentBranch
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
-          callback(null, 'main\n', '');
-        } else if (cmd.includes('git push')) {
-          callback(null, '', 'Everything up-to-date');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
+            callback(null, 'main\n', '');
+          } else if (cmd.includes('git push')) {
+            callback(null, '', 'Everything up-to-date');
+          }
+        });
+        
         return {} as any;
       });
     });
@@ -225,13 +321,18 @@ describe('Git Push Utilities', () => {
 
     it('should push with set-upstream option when specified', async () => {
       let capturedCommand = '';
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
-          callback(null, 'main\n', '');
-        } else if (cmd.includes('git push')) {
-          capturedCommand = cmd;
-          callback(null, '', 'Branch main set up to track remote branch main from origin');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
+            callback(null, 'main\n', '');
+          } else if (cmd.includes('git push')) {
+            capturedCommand = cmd;
+            callback(null, '', 'Branch main set up to track remote branch main from origin');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -242,13 +343,18 @@ describe('Git Push Utilities', () => {
 
     it('should push with force option when specified', async () => {
       let capturedCommand = '';
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
-          callback(null, 'main\n', '');
-        } else if (cmd.includes('git push')) {
-          capturedCommand = cmd;
-          callback(null, '', 'Everything up-to-date');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
+            callback(null, 'main\n', '');
+          } else if (cmd.includes('git push')) {
+            capturedCommand = cmd;
+            callback(null, '', 'Everything up-to-date');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -258,10 +364,15 @@ describe('Git Push Utilities', () => {
     });
 
     it('should handle detached HEAD state', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
-          callback(null, 'HEAD\n', '');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
+            callback(null, 'HEAD\n', '');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -273,14 +384,19 @@ describe('Git Push Utilities', () => {
     });
 
     it('should handle push errors', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
-          callback(null, 'main\n', '');
-        } else if (cmd.includes('git push')) {
-          const error: any = new Error('fatal: unable to access');
-          error.stderr = 'fatal: unable to access repository';
-          callback(error, '', error.stderr);
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd.includes('rev-parse --abbrev-ref HEAD')) {
+            callback(null, 'main\n', '');
+          } else if (cmd.includes('git push')) {
+            const error: any = new Error('fatal: unable to access');
+            error.stderr = 'fatal: unable to access repository';
+            callback(error, '', error.stderr);
+          }
+        });
+        
         return {} as any;
       });
 
@@ -295,18 +411,23 @@ describe('Git Push Utilities', () => {
 
   describe('validateRemoteForPush', () => {
     it('should validate successfully when all conditions are met', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('git rev-parse --git-dir')) {
-          callback(null, '.git', '');
-        } else if (cmd.includes('git rev-parse --abbrev-ref HEAD')) {
-          callback(null, 'main\n', '');
-        } else if (cmd === 'git remote') {
-          callback(null, 'origin\n', '');
-        } else if (cmd.includes('git ls-remote')) {
-          callback(null, 'refs/heads/main', '');
-        } else if (cmd.includes('@{upstream}')) {
-          callback(null, 'origin/main', '');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd.includes('git rev-parse --git-dir')) {
+            callback(null, '.git', '');
+          } else if (cmd.includes('git rev-parse --abbrev-ref HEAD')) {
+            callback(null, 'main\n', '');
+          } else if (cmd === 'git remote') {
+            callback(null, 'origin\n', '');
+          } else if (cmd.includes('git ls-remote')) {
+            callback(null, 'refs/heads/main', '');
+          } else if (cmd.includes('@{upstream}')) {
+            callback(null, 'origin/main', '');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -319,10 +440,15 @@ describe('Git Push Utilities', () => {
     });
 
     it('should return error when not in git repository', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('git rev-parse --git-dir')) {
-          callback(new Error('not a git repository'), '', '');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd.includes('git rev-parse --git-dir')) {
+            callback(new Error('not a git repository'), '', '');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -338,12 +464,17 @@ describe('Git Push Utilities', () => {
     });
 
     it('should return error when in detached HEAD state', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('git rev-parse --git-dir')) {
-          callback(null, '.git', '');
-        } else if (cmd.includes('git rev-parse --abbrev-ref HEAD')) {
-          callback(null, 'HEAD\n', '');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd.includes('git rev-parse --git-dir')) {
+            callback(null, '.git', '');
+          } else if (cmd.includes('git rev-parse --abbrev-ref HEAD')) {
+            callback(null, 'HEAD\n', '');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -359,14 +490,23 @@ describe('Git Push Utilities', () => {
     });
 
     it('should return error when remote does not exist', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('git rev-parse --git-dir')) {
-          callback(null, '.git', '');
-        } else if (cmd.includes('git rev-parse --abbrev-ref HEAD')) {
-          callback(null, 'main\n', '');
-        } else if (cmd === 'git remote') {
-          callback(null, 'origin\n', '');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd.includes('git rev-parse --git-dir')) {
+            callback(null, '.git', '');
+          } else if (cmd.includes('git rev-parse --abbrev-ref HEAD')) {
+            callback(null, 'main\n', '');
+          } else if (cmd === 'git remote') {
+            // Return only 'origin', not 'upstream'
+            callback(null, 'origin\n', '');
+          } else if (cmd.includes('@{upstream}')) {
+            // Handle hasUpstreamBranch check
+            callback(new Error('no upstream configured'), '', '');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -382,17 +522,25 @@ describe('Git Push Utilities', () => {
     });
 
     it('should return error when remote is not accessible', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('git rev-parse --git-dir')) {
-          callback(null, '.git', '');
-        } else if (cmd.includes('git rev-parse --abbrev-ref HEAD')) {
-          callback(null, 'main\n', '');
-        } else if (cmd === 'git remote') {
-          callback(null, 'origin\n', '');
-        } else if (cmd.includes('git ls-remote')) {
-          const error = new Error('Authentication failed');
-          callback(error, '', 'Authentication failed');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd.includes('git rev-parse --git-dir')) {
+            callback(null, '.git', '');
+          } else if (cmd.includes('git rev-parse --abbrev-ref HEAD')) {
+            callback(null, 'main\n', '');
+          } else if (cmd === 'git remote') {
+            callback(null, 'origin\n', '');
+          } else if (cmd.includes('git ls-remote')) {
+            const error = new Error('Authentication failed');
+            callback(error, '', 'Authentication failed');
+          } else if (cmd.includes('@{upstream}')) {
+            // Handle upstream check
+            callback(new Error('no upstream configured'), '', '');
+          }
+        });
+        
         return {} as any;
       });
 
@@ -403,18 +551,23 @@ describe('Git Push Utilities', () => {
     });
 
     it('should suggest setting upstream when no upstream exists', async () => {
-      mockExec.mockImplementation((cmd: string, callback: any) => {
-        if (cmd.includes('git rev-parse --git-dir')) {
-          callback(null, '.git', '');
-        } else if (cmd.includes('git rev-parse --abbrev-ref HEAD')) {
-          callback(null, 'feature-branch\n', '');
-        } else if (cmd === 'git remote') {
-          callback(null, 'origin\n', '');
-        } else if (cmd.includes('git ls-remote')) {
-          callback(null, 'refs/heads/main', '');
-        } else if (cmd.includes('@{upstream}')) {
-          callback(new Error('no upstream configured'), '', '');
-        }
+      mockExec.mockImplementation((cmd: string, optionsOrCallback: ExecOptions | ExecCallback, maybeCallback?: ExecCallback) => {
+        const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback!;
+        
+        setImmediate(() => {
+          if (cmd.includes('git rev-parse --git-dir')) {
+            callback(null, '.git', '');
+          } else if (cmd.includes('git rev-parse --abbrev-ref HEAD')) {
+            callback(null, 'feature-branch\n', '');
+          } else if (cmd === 'git remote') {
+            callback(null, 'origin\n', '');
+          } else if (cmd.includes('git ls-remote')) {
+            callback(null, 'refs/heads/main', '');
+          } else if (cmd.includes('@{upstream}')) {
+            callback(new Error('no upstream configured'), '', '');
+          }
+        });
+        
         return {} as any;
       });
 

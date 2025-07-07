@@ -1,10 +1,10 @@
-import { Config } from '../../../src/types';
+import { UserConfig } from '../../../src/types';
 
 export class InMemoryConfigManager {
-  private config: Config;
+  private config: UserConfig;
   private rateLimits: Map<string, number> = new Map();
 
-  constructor(initialConfig?: Partial<Config>) {
+  constructor(initialConfig?: Partial<UserConfig>) {
     this.config = {
       providers: ['claude', 'gemini'],
       failoverDelay: 5000,
@@ -15,19 +15,24 @@ export class InMemoryConfigManager {
       gitCommitInterval: 600000,
       logLevel: 'info',
       customInstructions: '',
+      includeCoAuthoredBy: true,
+      additionalDirectories: [],
+      gitCommitNoVerify: false,
+      gitAutoPush: false,
+      gitPushRemote: 'origin',
       ...initialConfig
     };
   }
 
-  loadConfig(): Config {
+  loadConfig(): UserConfig {
     return this.config;
   }
 
-  getConfig(): Config {
+  getConfig(): UserConfig {
     return this.config;
   }
 
-  updateConfig(updates: Partial<Config>): void {
+  updateConfig(updates: Partial<UserConfig>): void {
     this.config = { ...this.config, ...updates };
   }
 
