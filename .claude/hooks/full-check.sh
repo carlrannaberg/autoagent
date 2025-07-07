@@ -29,7 +29,7 @@ ERROR_REPORT=""
 if [[ $FILE_PATH =~ \.(ts|tsx)$ ]]; then
   echo "📘 Checking TypeScript compilation for $FILE_PATH..." >&2
   
-  TS_OUTPUT=$(npx tsc --noEmit --skipLibCheck "$FILE_PATH" 2>&1)
+  TS_OUTPUT=$(npx tsc --noEmit 2>&1)
   if [ $? -ne 0 ]; then
     ERRORS_FOUND=true
     ERROR_REPORT="${ERROR_REPORT}
