@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   checkGitRemote,
   getCurrentBranch,
@@ -7,14 +7,13 @@ import {
   validateRemoteForPush,
 } from '../../src/utils/git.js';
 import { exec } from 'child_process';
-import type { ExecException } from 'child_process';
 
 // Mock the child_process module
 vi.mock('child_process', () => ({
   exec: vi.fn(),
 }));
 
-const mockExec = exec as Mock<typeof exec>;
+const mockExec = vi.mocked(exec);
 
 describe('Git Push Utilities', () => {
   beforeEach(() => {

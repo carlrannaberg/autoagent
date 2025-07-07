@@ -189,6 +189,202 @@ autoagent run critical-fix --commit --no-verify
 }
 ```
 
+### Auto-Push Configuration
+
+AutoAgent supports automatic git push after commits, allowing for fully automated workflows. This feature is **disabled by default** for security reasons and must be explicitly enabled.
+
+#### Prerequisites for Auto-Push
+
+1. **Git remote repository configured**
+   ```bash
+   # Check if remote is configured
+   git remote -v
+   
+   # Add remote if needed
+   git remote add origin <repository-url>
+   ```
+
+2. **Push permissions to remote repository**
+   - SSH keys configured (recommended)
+   - HTTPS credentials cached
+   - Or other authentication method
+
+3. **Valid upstream branch**
+   ```bash
+   # Set upstream branch
+   git push -u origin main
+   
+   # Or for current branch
+   git push -u origin HEAD
+   ```
+
+#### Enabling Auto-Push
+
+```bash
+# Enable auto-push globally
+autoagent config set-auto-push true
+
+# Set specific remote (default: origin)
+autoagent config set-push-remote upstream
+
+# Set specific branch (default: current branch)
+autoagent config set-push-branch main
+
+# Enable for single execution
+autoagent run --push
+
+# Disable for single execution (when globally enabled)
+autoagent run --no-push
+```
+
+#### Security Considerations
+
+**⚠️ IMPORTANT**: Auto-push is disabled by default for security reasons. Before enabling:
+
+1. **Understand the risks**: Auto-push will automatically push all changes to your remote repository
+2. **Review your authentication**: Ensure your git credentials are properly secured
+3. **Consider your environment**: Auto-push may not be suitable for:
+   - Shared repositories with strict review processes
+   - Production branches with protected status
+   - Repositories requiring signed commits
+   - Environments with compliance requirements
+
+4. **Use branch protection**: Configure branch protection rules on your remote repository
+5. **Test locally first**: Always test auto-push with a test repository before using in production
+
+#### Configuration Options
+
+```json
+{
+  "gitAutoCommit": true,
+  "gitAutoPush": false,
+  "gitPushRemote": "origin",
+  "gitPushBranch": null,
+  "gitCommitNoVerify": false
+}
+```
+
+- `gitAutoPush`: Enable/disable automatic push (default: false)
+- `gitPushRemote`: Remote name to push to (default: "origin")
+- `gitPushBranch`: Branch to push to (default: current branch)
+
+#### Command-Line Flags
+
+```bash
+# Force push (with auto-push enabled)
+autoagent run --push
+
+# Skip push (with auto-push enabled)
+autoagent run --no-push
+
+# Combine with other flags
+autoagent run --all --commit --push
+autoagent run specs/feature.md --push --no-verify
+```
+
+#### Auto-Push Workflow Examples
+
+**1. CI/CD Pipeline Integration**
+```bash
+# GitHub Actions workflow
+name: Automated Updates
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily
+
+jobs:
+  auto-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Run autoagent with push
+        run: |
+          npm install -g autoagent-cli
+          autoagent config set-auto-push true
+          autoagent config set-push-branch main
+          autoagent run --all --commit --push
+```
+
+**2. Development Feature Branch Workflow**
+```bash
+# Setup feature branch with auto-push
+git checkout -b feature/new-functionality
+autoagent config set-auto-push true
+autoagent config set-push-branch feature/new-functionality
+
+# Work on issues with automatic backup
+autoagent run specs/feature.md --all
+
+# Each completed issue is automatically pushed to remote
+# Team members can track progress in real-time
+```
+
+**3. Team Collaboration Setup**
+```bash
+# Configure for team repository
+autoagent config init
+autoagent config set-auto-push true
+autoagent config set-push-remote origin
+autoagent config set-push-branch develop
+
+# Add team-specific configuration
+cat > .autoagent/config.json << EOF
+{
+  "gitAutoCommit": true,
+  "gitAutoPush": true,
+  "gitPushRemote": "origin",
+  "gitPushBranch": "develop",
+  "includeCoAuthoredBy": true
+}
+EOF
+
+# Team members can now run with auto-sync
+autoagent run --all
+```
+
+**4. Testing Environment with Conditional Push**
+```bash
+#!/bin/bash
+# Script for test environments
+
+# Only push if tests pass
+autoagent run 1-implement-feature
+if npm test; then
+  git push origin HEAD
+else
+  echo "Tests failed, not pushing changes"
+  exit 1
+fi
+
+# Or use auto-push with pre-push hooks
+autoagent config set-auto-push true
+# Configure .git/hooks/pre-push to run tests
+```
+
+**5. Multi-Repository Workflow**
+```bash
+# Working with multiple related repositories
+REPOS=("frontend" "backend" "shared")
+
+for repo in "${REPOS[@]}"; do
+  cd "$repo"
+  autoagent config set-auto-push true
+  autoagent config set-push-branch integration
+  autoagent run --all
+  cd ..
+done
+
+# All repositories stay synchronized
+```
+
 ### Global Installation
 
 ```bash
@@ -356,6 +552,10 @@ autoagent run --no-commit
 autoagent run --commit --no-verify   # Skip git hooks
 autoagent run --commit --verify      # Force git hooks (default)
 
+# Control auto-push
+autoagent run --push                 # Force push after commit
+autoagent run --no-push              # Skip push even if enabled
+
 # Use mock provider for testing
 AUTOAGENT_MOCK_PROVIDER=true autoagent run
 
@@ -428,6 +628,12 @@ autoagent config set-auto-commit true
 # Enable/disable git hooks during commits
 autoagent config set-git-no-verify true   # Skip hooks (--no-verify)
 autoagent config set-git-no-verify false  # Run hooks (default)
+
+# Configure auto-push
+autoagent config set-auto-push true       # Enable auto-push
+autoagent config set-auto-push false      # Disable auto-push (default)
+autoagent config set-push-remote upstream # Set remote (default: origin)
+autoagent config set-push-branch main     # Set branch (default: current)
 
 # Show current configuration
 autoagent config show
@@ -622,6 +828,9 @@ AutoAgent uses a layered configuration system:
   "maxTokens": 100000,
   "rateLimitCooldown": 3600000,
   "gitAutoCommit": true,
+  "gitAutoPush": false,
+  "gitPushRemote": "origin",
+  "gitPushBranch": null,
   "gitCommitNoVerify": false,
   "gitCommitInterval": 300000,
   "includeCoAuthoredBy": true,
@@ -1184,6 +1393,82 @@ autoagent list issues --json | jq '.[] | {name, dependencies}'
 # Ensure environment variable is set
 export AUTOAGENT_MOCK_PROVIDER=true
 autoagent list providers  # Should show mock as available
+```
+
+**Auto-push not working**
+
+1. **Remote not accessible**
+```bash
+# Error: "Failed to push: remote 'origin' not found"
+
+# Solution - Check remote configuration:
+git remote -v
+
+# Add remote if missing:
+git remote add origin <repository-url>
+
+# Or use different remote:
+autoagent config set-push-remote upstream
+```
+
+2. **Authentication failed**
+```bash
+# Error: "Failed to push: authentication required"
+
+# Solution - Setup SSH keys (recommended):
+ssh-keygen -t ed25519 -C "your_email@example.com"
+# Add public key to GitHub/GitLab/etc.
+
+# Or cache HTTPS credentials:
+git config --global credential.helper cache
+git push  # Enter credentials once
+
+# Test authentication:
+ssh -T git@github.com  # For GitHub
+```
+
+3. **Permission denied**
+```bash
+# Error: "Failed to push: permission denied"
+
+# Solution - Check repository permissions:
+# Ensure you have write access to the repository
+
+# Check branch protection rules:
+# Protected branches may block direct pushes
+
+# Use different branch:
+autoagent config set-push-branch feature-branch
+git checkout -b feature-branch
+```
+
+4. **Push rejected (non-fast-forward)**
+```bash
+# Error: "Failed to push: non-fast-forward updates were rejected"
+
+# Solution - Pull latest changes first:
+git pull --rebase origin main
+
+# Or disable auto-push until resolved:
+autoagent config set-auto-push false
+autoagent run --no-push
+```
+
+5. **Quick push debugging**
+```bash
+# Test push manually first:
+git push -u origin HEAD
+
+# Check push configuration:
+autoagent config get gitAutoPush
+autoagent config get gitPushRemote
+autoagent config get gitPushBranch
+
+# Enable debug logging:
+AUTOAGENT_DEBUG=true autoagent run --push
+
+# Disable auto-push temporarily:
+autoagent run --no-push
 ```
 
 For more troubleshooting help, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
