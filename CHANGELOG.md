@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2025-07-08
+
+### Fixed
+- Fix TODO.md marking bug that marked multiple issues as complete
+  - When marking issue #1 as complete, it would incorrectly mark #10, #11, #21, etc. as complete
+  - Fixed by using exact regex pattern `\\[Issue #${issueNumber}\\]` instead of simple string matching
+  - Ensures only the specific issue number is marked as complete
+
+### Changed
+- Enhance Claude Code hooks with improved validation and error handling
+  - Update full-check.sh hook to be more comprehensive with better error messages
+  - Check for forbidden "any" types and block commits with clear remediation instructions
+  - Improve TypeScript checking with support for `--changedFiles` flag in TS >= 5.4
+  - Add mandatory fix instructions for TypeScript and lint errors
+  - Update run-related-tests.sh hook with better test failure handling
+  - Add comprehensive test patterns for finding related test files
+  - Update settings.json hook paths to use relative paths instead of environment variables
+
+### Removed
+- Remove temporary documentation files (ISSUE_66_SUMMARY.md, RELEASE_NOTES_v0.6.0.md, test-fix-summary.md)
+  - These were development artifacts that should not be in the final release
+  - Cleanup keeps the repository focused on essential files
+
 ## [0.6.0] - 2025-07-07
 
 ### Added
