@@ -44,6 +44,14 @@ fi
 
 echo "Preparing $RELEASE_TYPE release..."
 
+# Run tests first to ensure we don't release with failing tests
+echo "Running tests to ensure code quality..."
+if ! npm test; then
+    echo "Error: Tests are failing. Please fix the failing tests before preparing a release."
+    exit 1
+fi
+echo "All tests passed. Continuing with release preparation..."
+
 # Fetch latest tags from remote to ensure we have complete information
 echo "Fetching latest tags from remote..."
 git fetch --tags
