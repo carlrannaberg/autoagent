@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2025-07-08
+
+### Added
+- Add support for issue number ranges in run command
+  - Run multiple sequential issues with range syntax (e.g., `autoagent run 5-8`)
+  - Automatic validation that all issues in range exist before execution
+  - Sequential execution with individual success/failure tracking
+  - Comprehensive error handling for invalid ranges and missing issues
+  - Complete test coverage for range parsing, validation, and execution
+
 ## [0.6.1] - 2025-07-08
 
 ### Fixed
