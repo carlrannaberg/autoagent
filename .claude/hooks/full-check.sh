@@ -109,10 +109,12 @@ fi
 ################################################################################
 # 5.  ESLint (single file, safe cache path)                                    #
 ################################################################################
-echo "🔍 Running ESLint…" >&2
-ESLINT_LOG=$(mktemp)
-if ! npx eslint --max-warnings 0 --cache --cache-location "$ESLINTCACHE" "$FILE_PATH" 2>"$ESLINT_LOG"; then
-  cat >&2 <<EOF
+# Check if ESLint is installed/configured
+if [[ -f "$ROOT_DIR/eslint.config.js" || -f "$ROOT_DIR/.eslintrc.js" || -f "$ROOT_DIR/.eslintrc.json" ]]; then
+  echo "🔍 Running ESLint…" >&2
+  ESLINT_LOG=$(mktemp)
+  if ! npx eslint --max-warnings 0 --cache --cache-location "$ESLINTCACHE" "$FILE_PATH" 2>"$ESLINT_LOG"; then
+    cat >&2 <<EOF
 BLOCKED: ESLint check failed.
 
 MANDATORY INSTRUCTIONS:
@@ -133,7 +135,10 @@ $(cat "$ESLINT_LOG")
 
 After fixing, run npm run lint again to ensure ALL issues are resolved.
 EOF
-  exit 2
+    exit 2
+  fi
+else
+  echo "⚠️  ESLint not configured, skipping lint check" >&2
 fi
 
 echo "✅ All checks passed!" >&2

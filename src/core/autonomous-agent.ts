@@ -530,7 +530,9 @@ export class AutonomousAgent extends EventEmitter {
     // Update todo list
     const todos = await this.fileManager.readTodoList();
     const updatedTodos = todos.map(todo => {
-      if (todo.includes(`Issue #${issue.number}`)) {
+      // Use exact match for issue number to avoid marking #10, #11 when marking #1
+      const issueRegex = new RegExp(`\\[Issue #${issue.number}\\]`);
+      if (issueRegex.test(todo)) {
         return todo.replace('[ ]', '[x]');
       }
       return todo;

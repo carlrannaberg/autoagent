@@ -6,11 +6,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_WORKSPACE}/.claude/hooks/full-check.sh"
+            "command": "bash .claude/hooks/full-check.sh"
           },
           {
-            "type": "command", 
-            "command": "bash ${CLAUDE_WORKSPACE}/.claude/hooks/lint-feedback.sh"
+            "type": "command",
+            "command": "bash .claude/hooks/lint-feedback.sh"
           }
         ]
       },
@@ -20,7 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_WORKSPACE}/.claude/hooks/run-related-tests.sh"
+            "command": "bash .claude/hooks/run-related-tests.sh"
           }
         ]
       }
