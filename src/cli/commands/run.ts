@@ -56,14 +56,38 @@ async function isPlanFile(filePath: string): Promise<boolean> {
   }
 }
 
-// These functions will be used in future updates for more sophisticated routing
-// function isIssueNumber(target: string): boolean {
-//   return /^\d+$/.test(target);
-// }
+function isIssueNumber(target: string): boolean {
+  return /^\d+$/.test(target);
+}
 
-// function isIssueFile(target: string): boolean {
-//   return /^\d+-[\w-]+\.md$/.test(target);
-// }
+function isIssueRange(target: string): boolean {
+  return /^\d+-\d+$/.test(target);
+}
+
+function parseIssueRange(target: string): number[] {
+  const match = target.match(/^(\d+)-(\d+)$/);
+  if (!match || match[1] === undefined || match[2] === undefined) {
+    throw new Error(`Invalid range format: ${target}`);
+  }
+  
+  const start = parseInt(match[1], 10);
+  const end = parseInt(match[2], 10);
+  
+  if (start > end) {
+    throw new Error(`Invalid range: start (${start}) cannot be greater than end (${end})`);
+  }
+  
+  const issues: number[] = [];
+  for (let i = start; i <= end; i++) {
+    issues.push(i);
+  }
+  
+  return issues;
+}
+
+function isIssueFile(target: string): boolean {
+  return /^\d+-[\w-]+\.md$/.test(target);
+}
 
 export function registerRunCommand(program: Command): void {
   const runCommand = program
@@ -73,6 +97,7 @@ export function registerRunCommand(program: Command): void {
       '  autoagent run                    # Run next pending issue\n' +
       '  autoagent run specs/feature.md   # Run spec file (creates plan + issues)\n' +
       '  autoagent run 5                  # Run issue #5\n' +
+      '  autoagent run 5-8                # Run issues #5 through #8\n' +
       '  autoagent run 5-add-auth         # Run issue by name\n' +
       '  autoagent run --all              # Run all pending issues\n' +
       '  autoagent run --reflection-iterations 5  # Run with 5 reflection iterations\n' +
@@ -246,7 +271,77 @@ export function registerRunCommand(program: Command): void {
 
         if (target !== null && target !== undefined && target.length > 0) {
           // Detect target type and route accordingly
-          if (target.endsWith('.md')) {
+          if (isIssueRange(target)) {
+            // Handle issue range (e.g., "5-8")
+            Logger.info(`🔢 Detected issue range: ${target}`);
+            
+            let issueNumbers: number[];
+            try {
+              issueNumbers = parseIssueRange(target);
+            } catch (error) {
+              Logger.error(error instanceof Error ? error.message : String(error));
+              process.exit(1);
+              return;
+            }
+            
+            Logger.info(`🚀 Executing issues #${issueNumbers[0]}-${issueNumbers[issueNumbers.length - 1]} (${issueNumbers.length} issues)`);
+            
+            // Validate that all issues exist
+            const issuesDir = path.join(workspacePath, 'issues');
+            const missingIssues: number[] = [];
+            
+            for (const issueNum of issueNumbers) {
+              try {
+                const files = await fs.readdir(issuesDir);
+                const matchingFile = files.find(f => f.startsWith(`${issueNum}-`) && f.endsWith('.md'));
+                if (matchingFile === undefined) {
+                  missingIssues.push(issueNum);
+                }
+              } catch (error) {
+                Logger.error(`Failed to check issues directory: ${error instanceof Error ? error.message : String(error)}`);
+                process.exit(1);
+                return;
+              }
+            }
+            
+            if (missingIssues.length > 0) {
+              Logger.error(`Issues not found: ${missingIssues.map(n => `#${n}`).join(', ')}`);
+              process.exit(1);
+              return;
+            }
+            
+            // Execute issues in order
+            const results = [];
+            for (const issueNum of issueNumbers) {
+              try {
+                Logger.info(`🔄 Executing issue #${issueNum}...`);
+                const result = await agent.executeIssue(issueNum);
+                results.push(result);
+                
+                if (result.success) {
+                  Logger.success(`✅ Completed issue #${issueNum}${result.issueTitle !== undefined && result.issueTitle !== '' ? `: ${result.issueTitle}` : ''}`);
+                } else {
+                  Logger.error(`❌ Failed issue #${issueNum}: ${result.error !== undefined && result.error !== '' ? result.error : 'Unknown error'}`);
+                }
+              } catch (error) {
+                Logger.error(`❌ Failed to execute issue #${issueNum}: ${error instanceof Error ? error.message : String(error)}`);
+                results.push({ success: false, issueNumber: issueNum, error: error instanceof Error ? error.message : String(error) });
+              }
+            }
+            
+            // Summary
+            const successful = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success).length;
+            
+            if (failed === 0) {
+              Logger.success(`🎉 All ${successful} issues completed successfully!`);
+            } else {
+              Logger.warning(`⚠️  Completed ${successful} issues, ${failed} failed`);
+              process.exit(1);
+            }
+            
+            return;
+          } else if (target.endsWith('.md')) {
             // It's a markdown file - check if it's a plan/spec file
             const targetPath = path.isAbsolute(target) ? target : path.join(workspacePath, target);
             
@@ -299,7 +394,7 @@ export function registerRunCommand(program: Command): void {
                 
                 return;
               } else {
-                // It's an issue file with issue marker
+                // It's an issue file with issue marker - extract filename without .md
                 target = path.basename(target, '.md');
               }
             } catch (error) {
@@ -307,6 +402,11 @@ export function registerRunCommand(program: Command): void {
               process.exit(1);
               return;
             }
+          } else if (isIssueNumber(target)) {
+            // Single issue number - proceed as before
+          } else if (isIssueFile(target)) {
+            // Remove .md extension if present
+            target = target.replace(/\.md$/, '');
           }
           
           // Handle issue references (number or name)
