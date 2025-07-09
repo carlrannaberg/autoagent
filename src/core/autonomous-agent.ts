@@ -1080,8 +1080,8 @@ ${issueEntry}
       if (!customContent.startsWith('#')) {
         issueContent = `# Issue ${nextNumber}: ${title}\n\n${customContent}`;
       } else {
-        // Replace placeholder issue number with the actual assigned number
-        issueContent = customContent.replace(/^#\s*Issue\s*\d*:\s*/m, `# Issue ${nextNumber}: `);
+        // Replace placeholder issue number with the actual assigned number (supports both "Issue 14:" and "Issue #14:" formats)
+        issueContent = customContent.replace(/^#\s*Issue\s*#?\d*:\s*/m, `# Issue ${nextNumber}: `);
       }
     }
     // If we have explicit content, use it directly
@@ -1186,8 +1186,8 @@ ${result.output ?? 'Success'}`;
             const issuePath = path.join(issuesDir, file);
             const issueContent = await fs.readFile(issuePath, 'utf-8');
             
-            // Extract title from the issue content
-            const titleMatch = issueContent.match(/^#\s*Issue\s*\d*:\s*(.+)$/m);
+            // Extract title from the issue content (supports both "Issue 14:" and "Issue #14:" formats)
+            const titleMatch = issueContent.match(/^#\s*Issue\s*#?\d*:\s*(.+)$/m);
             const title = (titleMatch !== null && titleMatch[1] !== undefined && titleMatch[1] !== '') ? titleMatch[1].trim() : file.replace('.md', '');
             
             missingIssues.push({

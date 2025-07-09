@@ -95,8 +95,8 @@ ${(issue.resources !== undefined && issue.resources.length > 0) ? issue.resource
       
       const lines = content.split('\n');
       
-      // Parse issue number and title from header
-      const headerMatch = lines[0]?.match(/^#\s+Issue\s+(\d+):\s+(.+)$/);
+      // Parse issue number and title from header (supports both "Issue 14:" and "Issue #14:" formats)
+      const headerMatch = lines[0]?.match(/^#\s+Issue\s+#?(\d+):\s+(.+)$/);
       if (!headerMatch) {
         throw new Error('Invalid issue format: Missing or malformed header');
       }
@@ -193,8 +193,8 @@ ${(plan.challenges !== undefined && plan.challenges.length > 0) ? plan.challenge
       const content = await fs.readFile(filepath, 'utf-8');
       const lines = content.split('\n');
       
-      // Parse issue number
-      const headerMatch = lines[0]?.match(/^#\s+Plan\s+for\s+Issue\s+(\d+):\s+(.+)$/);
+      // Parse issue number (supports both "Issue 14:" and "Issue #14:" formats)
+      const headerMatch = lines[0]?.match(/^#\s+Plan\s+for\s+Issue\s+#?(\d+):\s+(.+)$/);
       if (!headerMatch) {
         return null;
       }

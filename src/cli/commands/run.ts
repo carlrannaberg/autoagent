@@ -49,7 +49,7 @@ interface ExecutionData {
 async function isPlanFile(filePath: string): Promise<boolean> {
   try {
     const content = await fs.readFile(filePath, 'utf-8');
-    const issueMarkerPattern = /^#\s+Issue\s+\d+:/m;
+    const issueMarkerPattern = /^#\s+Issue\s+#?\d+:/m;
     return !issueMarkerPattern.test(content);
   } catch {
     return false;

@@ -14,7 +14,8 @@ describe('Run Command Input Detection Functions', () => {
       try {
         // The actual isPlanFile function checks for the issue marker pattern
         // at the beginning of the file (using multiline flag)
-        const issueMarkerPattern = /^#\s+Issue\s+\d+:/m;
+        // Supports both "Issue 14:" and "Issue #14:" formats
+        const issueMarkerPattern = /^#\s+Issue\s+#?\d+:/m;
         return !issueMarkerPattern.test(content);
       } catch {
         return false;
@@ -24,15 +25,20 @@ describe('Run Command Input Detection Functions', () => {
     it('should correctly identify various issue marker formats', () => {
       const issueMarkers = [
         { content: '# Issue 1: Title', expected: false, description: 'Standard issue format' },
+        { content: '# Issue #1: Title', expected: false, description: 'Issue format with # prefix' },
+        { content: '# Issue #14: Basic Security Implementation', expected: false, description: 'Issue format with # prefix and longer title' },
         { content: '#Issue 1: Title', expected: true, description: 'No space after hash (regex requires space)' },
         { content: '# Issue  1: Title', expected: false, description: 'Extra spaces' },
         { content: '# Issue 1 : Title', expected: true, description: 'Space before colon - regex does not match' },
         { content: '# Issue 123: Long number', expected: false, description: 'Multi-digit issue' },
+        { content: '# Issue #123: Long number with # prefix', expected: false, description: 'Multi-digit issue with # prefix' },
         { content: '# ISSUE 1: Title', expected: true, description: 'Uppercase ISSUE (case sensitive)' },
         { content: '# issue 1: Title', expected: true, description: 'Lowercase issue (case sensitive)' },
         { content: '# Issue 01: Title', expected: false, description: 'Zero-padded number' },
+        { content: '# Issue #01: Title', expected: false, description: 'Zero-padded number with # prefix' },
         { content: '  # Issue 1: Title', expected: true, description: 'Leading whitespace means not at line start' },
         { content: 'Some text\n# Issue 1: Title', expected: false, description: 'Issue marker on second line (multiline flag)' },
+        { content: 'Some text\n# Issue #14: Title', expected: false, description: 'Issue marker with # prefix on second line (multiline flag)' },
       ];
 
       for (const test of issueMarkers) {
@@ -229,8 +235,8 @@ describe('Run Command Input Detection Functions', () => {
       ];
 
       for (const errorInfo of errors) {
-        const error = new Error(errorInfo.message);
-        (error as any).code = errorInfo.code;
+        const error = new Error(errorInfo.message) as NodeJS.ErrnoException;
+        error.code = errorInfo.code;
         
         vi.mocked(fs.readFile).mockRejectedValue(error);
         
@@ -241,18 +247,19 @@ describe('Run Command Input Detection Functions', () => {
     });
 
     it('should handle corrupted file content', () => {
-      const corruptedContents = [
+      const corruptedContents: unknown[] = [
         Buffer.from([0xFF, 0xFE, 0x00, 0x00]), // Invalid UTF-8
-        null as any,
-        undefined as any,
-        123 as any, // Number instead of string
-        {} as any, // Object instead of string
+        null,
+        undefined,
+        123, // Number instead of string
+        {}, // Object instead of string
       ];
 
       for (const content of corruptedContents) {
         try {
           vi.mocked(fs.readFile).mockResolvedValue(content);
-          testIsPlanFileDetection(content);
+          // Type assertion needed here since we're testing with invalid types
+          testIsPlanFileDetection(content as string);
         } catch {
           // Expected to throw or return false
           expect(true).toBe(true);

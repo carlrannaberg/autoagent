@@ -247,7 +247,7 @@ export class DefaultImprovementApplier implements ImprovementApplier {
   }
   
   private extractTitleFromContent(content: string): string {
-    const titleMatch = content.match(/^#\s+Issue\s+\d+:\s+(.+)$/m);
+    const titleMatch = content.match(/^#\s+Issue\s+#?\d+:\s+(.+)$/m);
     if (titleMatch?.[1] !== undefined && titleMatch[1] !== null && titleMatch[1] !== '') {
       return titleMatch[1];
     }
