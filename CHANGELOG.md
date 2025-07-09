@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.2] - 2025-07-08
+## [0.6.2] - 2025-07-09
 
 ### Added
 - Add support for issue number ranges in run command
