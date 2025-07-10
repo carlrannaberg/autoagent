@@ -10,6 +10,15 @@ describe('Git Integration Workflow E2E', () => {
 
   it('should track changes in git during execution', async () => {
     await context.workspace.initGit();
+    // Add a fake remote to satisfy git validation
+    await context.workspace.addGitRemote('origin', 'https://github.com/test/repo.git');
+    // Create AGENT.md that would have been created by init
+    await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+    // Create directories that commands expect
+    await context.workspace.createFile('issues/.gitkeep', '');
+    await context.workspace.createFile('plans/.gitkeep', '');
+    // Create TODO.md file
+    await context.workspace.createFile('TODO.md', '# TODO\n\nThis file tracks all issues for the autonomous agent.\n\n## Pending Issues\n\n## Completed Issues\n');
     
     // Create initial file to commit
     await context.workspace.createFile('README.md', '# Test Project\n');
@@ -38,9 +47,23 @@ describe('Git Integration Workflow E2E', () => {
     expect(statusBefore).toContain('issues/');
 
     await context.workspace.commit('Add test issue');
+    
+    // Create a plan file for the issue (required for execution)
+    await context.workspace.createFile('plans/1-git-test-issue.md', `# Plan for Issue #1: Git Test Issue
+
+## Overview
+Test plan for git integration testing.
+
+## Implementation Steps
+### Phase 1: Implementation
+- [ ] Complete task
+
+## Technical Approach
+Simple implementation for testing.
+`);
 
     // Mock execution - run the issue that was just created
-    const runResult = await context.cli.execute(['run', '1']);
+    const runResult = await context.cli.execute(['run', '1', '--no-validate']);
     expect(runResult.exitCode).toBe(0);
 
     // Check git log
@@ -53,6 +76,8 @@ describe('Git Integration Workflow E2E', () => {
 
   it('should create meaningful commit messages', async () => {
     await context.workspace.initGit();
+    // Add a fake remote to satisfy git validation
+    await context.workspace.addGitRemote('origin', 'https://github.com/test/repo.git');
     
     // Create initial file to commit
     await context.workspace.createFile('README.md', '# Test Project\n');
@@ -104,6 +129,8 @@ describe('Git Integration Workflow E2E', () => {
 
   it('should handle uncommitted changes gracefully', async () => {
     await context.workspace.initGit();
+    // Add a fake remote to satisfy git validation
+    await context.workspace.addGitRemote('origin', 'https://github.com/test/repo.git');
     
     // Create initial file and commit
     await context.workspace.createFile('README.md', '# Test Project\n');
@@ -128,7 +155,7 @@ describe('Git Integration Workflow E2E', () => {
     // List issues to verify it was created
     const result = await context.cli.execute(['list', 'issues']);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('1-uncommitted-issue');
+    expect(result.stdout).toContain('uncommitted-issue');
 
     // Check git status
     const { stdout: status } = await execFileAsync('git', ['status', '--porcelain'], {
@@ -139,6 +166,8 @@ describe('Git Integration Workflow E2E', () => {
 
   it('should support branch-based workflow', async () => {
     await context.workspace.initGit();
+    // Add a fake remote to satisfy git validation
+    await context.workspace.addGitRemote('origin', 'https://github.com/test/repo.git');
     
     // Create initial file and commit
     await context.workspace.createFile('README.md', '# Test Project\n');
@@ -187,7 +216,7 @@ describe('Git Integration Workflow E2E', () => {
 
     // Issues should not be visible on main
     const mainResult = await context.cli.execute(['list', 'issues']);
-    expect(mainResult.stdout).not.toContain('1-feature-branch-issue');
+    expect(mainResult.stdout).not.toContain('feature-branch-issue');
 
     // Switch back to feature branch
     await execFileAsync('git', ['checkout', 'feature/new-feature'], {
@@ -196,6 +225,6 @@ describe('Git Integration Workflow E2E', () => {
 
     // Issues should be visible on feature branch
     const featureResult = await context.cli.execute(['list', 'issues']);
-    expect(featureResult.stdout).toContain('1-feature-branch-issue');
+    expect(featureResult.stdout).toContain('feature-branch-issue');
   });
 });

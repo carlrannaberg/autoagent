@@ -32,10 +32,10 @@ export class FileManager {
     try {
       const files = await fs.readdir(this.issuesDir);
       const issueNumbers = files
-        .filter(f => f.match(/^\d+-.*\.md$/))
+        .filter(f => f.match(/^\d+-/))
         .map(f => {
-          const num = f.split('-')[0];
-          return num !== undefined ? parseInt(num, 10) : NaN;
+          const match = f.match(/^(\d+)-/);
+          return match !== null && match[1] !== undefined ? parseInt(match[1], 10) : NaN;
         })
         .filter(n => !isNaN(n));
       
@@ -50,12 +50,12 @@ export class FileManager {
 
   async createIssue(issue: Issue): Promise<string>;
   async createIssue(issueNumber: number, title: string, content: string): Promise<string>;
-  async createIssue(issueOrNumber: Issue | number, title?: string, content?: string): Promise<string> {
+  async createIssue(issueOrNumber: Issue | number, _title?: string, content?: string): Promise<string> {
     await this.ensureDirectories();
     
     if (typeof issueOrNumber === 'number') {
       // New signature for CLI usage
-      const filename = `${issueOrNumber}-${this.generateFileSlug(title ?? '')}.md`;
+      const filename = `${issueOrNumber}-${this.generateFileSlug(_title ?? '')}.md`;
       const filepath = path.join(this.issuesDir, filename);
       await fs.writeFile(filepath, content ?? '', 'utf-8');
       return filepath;
@@ -67,17 +67,14 @@ export class FileManager {
       
       const issueContent = `# Issue ${issue.number}: ${issue.title}
 
-## Requirements
+## Description
 ${issue.requirements}
 
-## Acceptance Criteria
-${issue.acceptanceCriteria.map(ac => `- [ ] ${ac}`).join('\n')}
-
-## Technical Details
+## Requirements
 ${issue.technicalDetails ?? 'No additional technical details.'}
 
-## Resources
-${(issue.resources !== undefined && issue.resources.length > 0) ? issue.resources.map(r => `- ${r}`).join('\n') : 'No resources specified.'}`;
+## Success Criteria
+${issue.acceptanceCriteria.map(ac => `- [ ] ${ac}`).join('\n')}`;
       
       await fs.writeFile(filepath, issueContent, 'utf-8');
       return filepath;
@@ -156,7 +153,7 @@ ${(issue.resources !== undefined && issue.resources.length > 0) ? issue.resource
   async createPlan(issueNumber: number, plan: Plan, issueTitle?: string): Promise<string> {
     await this.ensureDirectories();
     
-    const filename = (issueTitle !== undefined && issueTitle !== '') 
+    const filename = (issueTitle !== undefined && issueTitle !== '')
       ? `${issueNumber}-${this.generateFileSlug(issueTitle)}.md`
       : `${issueNumber}-plan.md`;
     const filepath = path.join(this.plansDir, filename);
@@ -166,20 +163,20 @@ ${(issue.resources !== undefined && issue.resources.length > 0) ? issue.resource
 ${phase.tasks.map(task => `- [ ] ${task}`).join('\n')}`).join('\n');
     
     const content = (issueTitle !== undefined && issueTitle !== '') 
-      ? `# Plan for Issue ${issueNumber}: ${issueTitle}
+      ? `# Plan for Issue #${issueNumber}: ${issueTitle}
 
 This document outlines the step-by-step plan to complete \`issues/${issueNumber}-${this.generateFileSlug(issueTitle)}.md\`.`
-      : `# Plan for Issue ${issueNumber}
+      : `# Plan for Issue #${issueNumber}
 
 This document outlines the step-by-step plan to complete the issue.`;
 
     const fullContent = `${content}
 
-## Implementation Plan
-${phasesContent}
-
-## Technical Approach
+## Overview
 ${plan.technicalApproach ?? 'Technical approach to be determined.'}
+
+## Implementation Steps
+${phasesContent}
 
 ## Potential Challenges
 ${(plan.challenges !== undefined && plan.challenges.length > 0) ? plan.challenges.map(c => `- ${c}`).join('\n') : '- No specific challenges identified.'}`;

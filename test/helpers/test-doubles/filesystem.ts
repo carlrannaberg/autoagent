@@ -40,7 +40,18 @@ export function createMockFileSystem(options: MockFileSystemOptions = {}): {
   };
 }
 
-export function mockFsModule(mockFs: IFs): { fs: IFs; promises: any } {
+interface FsPromisesApi {
+  readFile: ReturnType<typeof vi.fn>;
+  writeFile: ReturnType<typeof vi.fn>;
+  mkdir: ReturnType<typeof vi.fn>;
+  readdir: ReturnType<typeof vi.fn>;
+  stat: ReturnType<typeof vi.fn>;
+  access: ReturnType<typeof vi.fn>;
+  rm: ReturnType<typeof vi.fn>;
+  unlink: ReturnType<typeof vi.fn>;
+}
+
+export function mockFsModule(mockFs: IFs): { fs: IFs; promises: FsPromisesApi } {
   vi.doMock('node:fs', () => mockFs);
   vi.doMock('fs', () => mockFs);
   
@@ -51,10 +62,10 @@ export function mockFsModule(mockFs: IFs): { fs: IFs; promises: any } {
     writeFile: vi.fn((path: string, data: string | Buffer, encoding?: BufferEncoding) => {
       mockFs.writeFileSync(path, data, encoding || 'utf-8');
     }),
-    mkdir: vi.fn((path: string, options?: any) => {
+    mkdir: vi.fn((path: string, options?: { recursive?: boolean; mode?: number }) => {
       mockFs.mkdirSync(path, options);
     }),
-    readdir: vi.fn((path: string, options?: any) => {
+    readdir: vi.fn((path: string, options?: { withFileTypes?: boolean; encoding?: BufferEncoding }) => {
       return mockFs.readdirSync(path, options);
     }),
     stat: vi.fn((path: string) => {
@@ -63,7 +74,7 @@ export function mockFsModule(mockFs: IFs): { fs: IFs; promises: any } {
     access: vi.fn((path: string, mode?: number) => {
       mockFs.accessSync(path, mode);
     }),
-    rm: vi.fn((path: string, options?: any) => {
+    rm: vi.fn((path: string, options?: { recursive?: boolean; force?: boolean }) => {
       if (options?.recursive === true) {
         mockFs.rmSync(path, options);
       } else {
@@ -84,7 +95,7 @@ export function mockFsModule(mockFs: IFs): { fs: IFs; promises: any } {
 export function createTestFiles(): Record<string, Record<string, string>> {
   return {
     simpleIssue: {
-      'issues/1-test-issue.md': `# Issue 1: Test Issue
+      'issues/issue-1.md': `# Issue 1: Test Issue
 
 ## Requirement
 This is a test requirement.
@@ -104,14 +115,14 @@ Test technical details.`
         version: '1.0.0',
         type: 'module'
       }, null, 2),
-      'issues/1-first-issue.md': `# Issue 1: First Issue
+      'issues/issue-1.md': `# Issue 1: First Issue
 
 ## Requirement
 First requirement.
 
 ## Acceptance Criteria
 - [ ] First criterion`,
-      'issues/2-second-issue.md': `# Issue 2: Second Issue
+      'issues/issue-2.md': `# Issue 2: Second Issue
 
 ## Requirement
 Second requirement.

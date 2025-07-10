@@ -26,9 +26,9 @@ IMPORTANT: For each issue you create:
 
 The following issues were created from the master plan:
 
-- **Issue #22**: Fix Bootstrap Hardcoded Issue Number - Core implementation fix
-- **Issue #23**: Add Bootstrap Issue Numbering Tests - Unit test coverage
-- **Issue #24**: Add Bootstrap Integration Tests - Integration test coverage  
-- **Issue #25**: Update Bootstrap Documentation - Documentation updates
+- **#22**: Fix Bootstrap Hardcoded Issue Number - Core implementation fix
+- **#23**: Add Bootstrap Issue Numbering Tests - Unit test coverage
+- **#24**: Add Bootstrap Integration Tests - Integration test coverage  
+- **#25**: Update Bootstrap Documentation - Documentation updates
 
 All issues have corresponding plan files in the plans/ directory.

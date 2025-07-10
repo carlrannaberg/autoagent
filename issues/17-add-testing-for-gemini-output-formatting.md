@@ -113,7 +113,7 @@ describe('Performance Tests', () => {
 - Use consistent test data across unit and integration tests
 
 ## Dependencies
-- Issue #16: Implement Gemini Output Formatting
+- #16: Implement Gemini Output Formatting
 
 ## Resources
 - Master Plan: `specs/gemini-output-formatting.md`

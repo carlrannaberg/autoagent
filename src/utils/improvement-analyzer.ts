@@ -74,7 +74,7 @@ export function validateChange(
   if (change.type === ChangeType.MODIFY_ISSUE || change.type === ChangeType.MODIFY_PLAN) {
     const isIssue = change.type === ChangeType.MODIFY_ISSUE;
     const dir = isIssue ? issuesDir : plansDir;
-    const expectedPattern = isIssue ? /^\d+-.*\.md$/ : /^plan-for-issue-\d+\.md$/;
+    const expectedPattern = isIssue ? /^\d+-.*\.md$/ : /^\d+-.*\.md$/;
     
     if (!expectedPattern.test(change.target)) {
       errors.push(`Invalid ${isIssue ? 'issue' : 'plan'} filename format: ${change.target}`);

@@ -39,31 +39,42 @@ export async function initializeProject(workspace: E2EWorkspace, _cli: CliExecut
 
 export async function createSampleIssue(workspace: E2EWorkspace, name: string, issueNumber?: number): Promise<void> {
   const number = issueNumber ?? 1;
-  const issueContent = `# Issue ${number}: ${name}
+  const issueContent = `# Issue #${number}: ${name}
 
 ## Description
 This is a sample issue for testing purposes.
 
-## Acceptance Criteria
+## Requirements
+Sample requirements for ${name}.
+
+## Success Criteria
 - [ ] Task 1
 - [ ] Task 2
-
-## Technical Details
-Sample technical details for ${name}.
 `;
   
-  // Create issue with proper naming format: {number}-{name}.md
-  const fileName = `${number}-${name}`;
+  // Create issue with proper naming format: N-slug.md
+  const slug = generateFileSlug(name);
+  const fileName = `${number}-${slug}`;
   await workspace.createIssue(fileName, issueContent);
   
   // Create or update TODO.md to include this issue
   await createOrUpdateTodoMd(workspace, number, name);
 }
 
+function generateFileSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9.-]/g, '')
+    .replace(/\.+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 async function createOrUpdateTodoMd(workspace: E2EWorkspace, issueNumber: number, issueTitle: string): Promise<void> {
-  const slug = issueTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const slug = generateFileSlug(issueTitle);
   const issueFilename = `${issueNumber}-${slug}.md`;
-  const issueEntry = `- [ ] **[Issue #${issueNumber}]** ${issueTitle} - \`issues/${issueFilename}\``;
+  const issueEntry = `- [ ] **#${issueNumber}** ${issueTitle} - \`issues/${issueFilename}\``;
   
   try {
     // Try to read existing TODO.md
@@ -109,7 +120,7 @@ async function createOrUpdateTodoMd(workspace: E2EWorkspace, issueNumber: number
       await workspace.createFile('TODO.md', updatedContent);
     } else {
       // TODO doesn't exist or is empty, create new structure
-      const todoContent = `# To-Do
+      const todoContent = `# TODO
 
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
@@ -123,7 +134,7 @@ ${issueEntry}
     }
   } catch (error) {
     // If TODO doesn't exist, create new one
-    const todoContent = `# To-Do
+    const todoContent = `# TODO
 
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 

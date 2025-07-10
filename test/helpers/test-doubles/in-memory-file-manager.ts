@@ -53,7 +53,7 @@ export class InMemoryFileManager {
   }
 
   readTodoList(): string[] {
-    return this.todos.map((todo: any) => 
+    return this.todos.map((todo: Todo) => 
       `- [${todo.completed === true ? 'x' : ' '}] Issue #${todo.issueNumber}: ${todo.title}`
     );
   }
@@ -88,12 +88,12 @@ export class InMemoryFileManager {
   }
 
   getNextIssue(): { number: number; title: string } | null {
-    const pending = this.todos.find((t: any) => t.completed === null || t.completed === undefined || t.completed === false);
+    const pending = this.todos.find((t: Todo) => t.completed === null || t.completed === undefined || t.completed === false);
     return pending !== null && pending !== undefined ? { number: pending.issueNumber, title: pending.title } : null;
   }
   
   getNextPendingIssue(): number | null {
-    const pending = this.todos.find((t: any) => t.completed === null || t.completed === undefined || t.completed === false);
+    const pending = this.todos.find((t: Todo) => t.completed === null || t.completed === undefined || t.completed === false);
     return pending !== null && pending !== undefined ? pending.issueNumber : null;
   }
 
@@ -142,7 +142,7 @@ export class InMemoryFileManager {
       return '';
     }
     
-    const pendingTodos = this.todos.filter((t: any) => t.completed === null || t.completed === undefined || t.completed === false);
+    const pendingTodos = this.todos.filter((t: Todo) => t.completed === null || t.completed === undefined || t.completed === false);
     const completedTodos = this.todos.filter(t => t.completed);
     
     // Return full TODO format including header
@@ -190,7 +190,7 @@ export class InMemoryFileManager {
     return filePath;
   }
 
-  createPlan(issueNumber: number, plan: any, issueTitle?: string): string {
+  createPlan(issueNumber: number, plan: Plan, issueTitle?: string): string {
     const slug = (issueTitle !== undefined && issueTitle !== '') ? issueTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : 'plan';
     const filePath = `plans/${issueNumber}-${slug}.md`;
     
@@ -349,6 +349,6 @@ export class InMemoryFileManager {
   
   // Check if TODO exists
   hasTodo(): boolean {
-    return this.todos.length > 0;
+    return this.todos.length > 0 || (this.rawTodoContent !== undefined && this.rawTodoContent.trim() !== '');
   }
 }

@@ -204,7 +204,7 @@ Technical details
       expect(filepath).toBe(path.join(mockWorkspace, 'plans', '1-test-issue.md'));
       expect(fs.writeFile).toHaveBeenCalledWith(
         filepath,
-        expect.stringContaining('# Plan for Issue 1: Test Issue'),
+        expect.stringContaining('# Plan for Issue #1: Test Issue'),
         'utf-8'
       );
     });
@@ -229,12 +229,12 @@ Technical details
       expect(filepath).toBe(path.join(mockWorkspace, 'plans', '2-plan.md'));
       expect(fs.writeFile).toHaveBeenCalledWith(
         filepath,
-        expect.stringContaining('# Plan for Issue 2'),
+        expect.stringContaining('# Plan for Issue #2'),
         'utf-8'
       );
       expect(fs.writeFile).toHaveBeenCalledWith(
         filepath,
-        expect.not.stringContaining('# Plan for Issue 2:'),
+        expect.not.stringContaining('# Plan for Issue #2:'),
         'utf-8'
       );
     });
@@ -262,7 +262,7 @@ Technical details
       expect(filepath).toBe(path.join(mockWorkspace, 'plans', '1-implement-user-authentication.md'));
       expect(fs.writeFile).toHaveBeenCalledWith(
         filepath,
-        expect.stringContaining('# Plan for Issue 1: Implement User Authentication'),
+        expect.stringContaining('# Plan for Issue #1: Implement User Authentication'),
         'utf-8'
       );
       expect(fs.writeFile).toHaveBeenCalledWith(

@@ -84,9 +84,9 @@ describe('Bootstrap TODO Preservation', () => {
     vi.mocked(fs.readdir).mockImplementation((dir: string) => {
       const files = mockFiles.get(dir);
       if (!files) {
-        return Promise.resolve([] as any);
+        return Promise.resolve([]);
       }
-      return Promise.resolve(files as any);
+      return Promise.resolve(files);
     });
     
     // Setup test doubles

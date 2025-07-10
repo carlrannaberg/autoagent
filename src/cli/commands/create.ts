@@ -14,7 +14,7 @@ export function registerCreateCommand(program: Command): void {
     }, [] as string[])
     .option('--details <details>', 'Technical details')
     .option('-p, --provider <provider>', 'Override AI provider for this operation (claude or gemini)')
-    .option('-w, --workspace <path>', 'Workspace directory', process.cwd())
+    .option('-w, --workspace <path>', 'Workspace directory')
     .action(async (options: { 
       title?: string; 
       description?: string; 

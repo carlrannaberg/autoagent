@@ -11,12 +11,12 @@ interface CustomMatchers<R = unknown> {
 }
 
 declare module 'vitest' {
-  interface Assertion<T = any> extends CustomMatchers<T> {}
+  interface Assertion<T = unknown> extends CustomMatchers<T> {}
   interface AsymmetricMatchersContaining extends CustomMatchers {}
 }
 
 expect.extend({
-  toBeValidIssue(received: any): { pass: boolean; message: () => string } {
+  toBeValidIssue(received: unknown): { pass: boolean; message: () => string } {
     const issue = received as Issue;
     const errors: string[] = [];
 
@@ -42,8 +42,8 @@ expect.extend({
     }
 
     // Check file path format
-    if (issue.file && !issue.file.match(/^issues\/\d+-.+\.md$/)) {
-      errors.push('Issue file must follow pattern: issues/{number}-{title}.md');
+    if (issue.file && !issue.file.match(/^issues\/issue-\d+\.md$/)) {
+      errors.push('Issue file must follow pattern: issues/issue-{number}.md');
     }
 
     const pass = errors.length === 0;
@@ -56,7 +56,7 @@ expect.extend({
     };
   },
 
-  toHaveExecutedSuccessfully(received: any): { pass: boolean; message: () => string } {
+  toHaveExecutedSuccessfully(received: unknown): { pass: boolean; message: () => string } {
     const result = received as ExecutionResult;
     const checks: string[] = [];
     const failures: string[] = [];
@@ -106,7 +106,7 @@ expect.extend({
     };
   },
 
-  toMatchStatisticalBaseline(received: any, baseline: Partial<StatisticalSummary>, tolerance = 0.1): { pass: boolean; message: () => string } {
+  toMatchStatisticalBaseline(received: unknown, baseline: Partial<StatisticalSummary>, tolerance = 0.1): { pass: boolean; message: () => string } {
     const stats = received as StatisticalSummary;
     const deviations: string[] = [];
 
@@ -143,7 +143,7 @@ expect.extend({
     };
   },
 
-  toBeWithinPerformanceThreshold(received: any, maxTime: number): { pass: boolean; message: () => string } {
+  toBeWithinPerformanceThreshold(received: unknown, maxTime: number): { pass: boolean; message: () => string } {
     const duration = typeof received === 'number' ? received : received.duration;
 
     if (typeof duration !== 'number') {
@@ -164,7 +164,7 @@ expect.extend({
     };
   },
 
-  toHaveValidConfiguration(received: any): { pass: boolean; message: () => string } {
+  toHaveValidConfiguration(received: unknown): { pass: boolean; message: () => string } {
     const config = received;
     const errors: string[] = [];
 

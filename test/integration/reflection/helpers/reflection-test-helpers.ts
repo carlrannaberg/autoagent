@@ -28,7 +28,7 @@ export async function createTestDecomposition(
 ): Promise<void> {
   // Create issues
   for (const issue of issues) {
-    const filename = `${issue.number}-${issue.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+    const filename = `issue-${issue.number}.md`;
     await fs.writeFile(
       path.join(workspace, 'issues', filename),
       issue.content
@@ -39,7 +39,7 @@ export async function createTestDecomposition(
   for (const plan of plans) {
     const issueFile = issues.find(i => i.number === plan.number);
     if (issueFile) {
-      const filename = `${plan.number}-${issueFile.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+      const filename = `plan-${plan.number}.md`;
       await fs.writeFile(
         path.join(workspace, 'plans', filename),
         plan.content

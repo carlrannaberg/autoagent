@@ -136,9 +136,9 @@ describe('Test Setup Utilities', () => {
 
       await workspace.createIssue(1, issue);
       
-      expect(await workspace.fileExists('issues/1-test-issue.md')).toBe(true);
+      expect(await workspace.fileExists('issues/issue-1.md')).toBe(true);
       
-      const content = await workspace.readFile('issues/1-test-issue.md');
+      const content = await workspace.readFile('issues/issue-1.md');
       expect(content).toContain('# Issue 1: Test Issue');
       expect(content).toContain('Test requirement');
 

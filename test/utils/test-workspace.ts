@@ -53,7 +53,7 @@ export class TestWorkspace {
     const issuesDir = path.join(this._path, 'issues');
     await fs.mkdir(issuesDir, { recursive: true });
     
-    const fileName = `${issueNumber}-${issue.title.toLowerCase().replace(/\s+/g, '-')}.md`;
+    const fileName = `issue-${issueNumber}.md`;
     const filePath = path.join(issuesDir, fileName);
     
     const content = [
@@ -82,7 +82,7 @@ export class TestWorkspace {
     const plansDir = path.join(this._path, 'plans');
     await fs.mkdir(plansDir, { recursive: true });
     
-    const filePath = path.join(plansDir, `issue-${issueNumber}-plan.md`);
+    const filePath = path.join(plansDir, `plan-${issueNumber}.md`);
     await fs.writeFile(filePath, planContent);
     return filePath;
   }

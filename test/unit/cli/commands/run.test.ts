@@ -5,18 +5,35 @@ import { AutonomousAgent } from '@/core/autonomous-agent';
 import { Logger } from '@/utils/logger';
 import { FileManager } from '@/utils/file-manager';
 import * as fs from 'fs/promises';
+import { validateProjectFiles } from '@/core/validators/index.js';
 
 // Mock modules
 vi.mock('@/core/autonomous-agent');
 vi.mock('@/utils/logger');
 vi.mock('@/utils/file-manager');
 vi.mock('fs/promises');
+vi.mock('@/core/validators/index.js', () => ({
+  validateProjectFiles: vi.fn()
+}));
+vi.mock('@/core/validators/autofix-service.js');
 
 describe('Run Command', () => {
   let program: Command;
-  let mockAgent: any;
-  let mockFileManager: any;
-  let processExitSpy: any;
+  let mockAgent: {
+    initialize: ReturnType<typeof vi.fn>;
+    executeIssue: ReturnType<typeof vi.fn>;
+    executeAll: ReturnType<typeof vi.fn>;
+    executeNext: ReturnType<typeof vi.fn>;
+    getStatus: ReturnType<typeof vi.fn>;
+    bootstrap: ReturnType<typeof vi.fn>;
+    syncTodoWithIssues: ReturnType<typeof vi.fn>;
+    on: ReturnType<typeof vi.fn>;
+    emit: ReturnType<typeof vi.fn>;
+  };
+  let mockFileManager: {
+    readIssue: ReturnType<typeof vi.fn>;
+  };
+  let processExitSpy: ReturnType<typeof vi.spyOn>;
   
   beforeEach(() => {
     vi.clearAllMocks();
@@ -27,7 +44,7 @@ describe('Run Command', () => {
     // Mock process.exit
     processExitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
       throw new Error('process.exit called');
-    }) as any);
+    }) as never);
     
     // Mock Logger
     vi.spyOn(Logger, 'info').mockImplementation(() => {});
@@ -74,11 +91,17 @@ describe('Run Command', () => {
     };
     vi.mocked(AutonomousAgent).mockImplementation(() => mockAgent);
     
-    // Mock fs.readdir
+    // Mock fs.readdir to return files with new naming convention
     vi.mocked(fs.readdir).mockResolvedValue([
-      '39-implement-plan-from-embed-bootstrap-templates.md',
+      '39-implement-plan-with-embed-bootstrap.md',
       '40-another-issue.md'
-    ] as any);
+    ] as unknown as fs.Dirent[]);
+    
+    // Mock validation functions to return successful validation by default
+    vi.mocked(validateProjectFiles).mockResolvedValue({
+      valid: true,
+      issues: []
+    });
     
     registerRunCommand(program);
   });
@@ -144,7 +167,7 @@ describe('Run Command', () => {
     });
     
     it('should handle non-existent issue', async () => {
-      vi.mocked(fs.readdir).mockResolvedValueOnce([] as any);
+      vi.mocked(fs.readdir).mockResolvedValueOnce([] as unknown as fs.Dirent[]);
       
       const command = program.commands.find(cmd => cmd.name() === 'run');
       
@@ -334,7 +357,7 @@ describe('Run Command', () => {
       it('should handle issue files when .md file has issue marker', async () => {
         vi.mocked(fs.access).mockResolvedValue(undefined);
         vi.mocked(fs.readFile).mockResolvedValue('# Issue 42: Test Issue\n\nThis is an issue file.');
-        vi.mocked(fs.readdir).mockResolvedValue(['42-test-issue.md'] as any);
+        vi.mocked(fs.readdir).mockResolvedValue(['42-test-issue.md'] as unknown as fs.Dirent[]);
         
         mockAgent.executeIssue.mockResolvedValue({ success: true });
         
@@ -361,7 +384,7 @@ describe('Run Command', () => {
           
           vi.mocked(fs.access).mockResolvedValue(undefined);
           vi.mocked(fs.readFile).mockResolvedValue(`${testCase.marker}\n\nContent`);
-          vi.mocked(fs.readdir).mockResolvedValue(['1-test.md'] as any);
+          vi.mocked(fs.readdir).mockResolvedValue(['1-test.md'] as unknown as fs.Dirent[]);
           
           const command = program.commands.find(cmd => cmd.name() === 'run');
           await command!.parseAsync(['test.md'], { from: 'user' });
@@ -393,7 +416,7 @@ describe('Run Command', () => {
         vi.mocked(fs.readFile).mockRejectedValue(new Error('Permission denied'));
         
         // When readFile fails, isPlanFile returns false, so it tries to process as issue
-        vi.mocked(fs.readdir).mockResolvedValue(['test.md'] as any);
+        vi.mocked(fs.readdir).mockResolvedValue(['test.md'] as unknown as fs.Dirent[]);
         
         await expect(program.parseAsync(['node', 'test', 'run', 'test.md'])).rejects.toThrow('process.exit called');
         
@@ -414,7 +437,7 @@ describe('Run Command', () => {
 
     describe('Routing logic', () => {
       it('should handle numeric issue references', async () => {
-        vi.mocked(fs.readdir).mockResolvedValue(['42-test-issue.md'] as any);
+        vi.mocked(fs.readdir).mockResolvedValue(['42-test-issue.md'] as unknown as fs.Dirent[]);
         mockAgent.executeIssue.mockResolvedValue({ success: true });
         
         await program.parseAsync(['node', 'test', 'run', '42']);
@@ -423,7 +446,7 @@ describe('Run Command', () => {
       });
 
       it('should handle issue file names without .md extension', async () => {
-        vi.mocked(fs.readdir).mockResolvedValue(['42-test-issue.md'] as any);
+        vi.mocked(fs.readdir).mockResolvedValue(['42-test-issue.md'] as unknown as fs.Dirent[]);
         mockAgent.executeIssue.mockResolvedValue({ success: true });
         
         await program.parseAsync(['node', 'test', 'run', '42-test-issue']);
@@ -824,8 +847,8 @@ describe('Run Command', () => {
 
   describe('Error Handling', () => {
     it('should handle permission errors when accessing spec files', async () => {
-      const error = new Error('EACCES: permission denied');
-      (error as any).code = 'EACCES';
+      const error = new Error('EACCES: permission denied') as NodeJS.ErrnoException;
+      error.code = 'EACCES';
       vi.mocked(fs.access).mockRejectedValue(error);
       
       await expect(program.parseAsync(['node', 'test', 'run', 'protected.md'])).rejects.toThrow('process.exit called');
@@ -838,7 +861,7 @@ describe('Run Command', () => {
       vi.mocked(fs.readFile).mockResolvedValue('# Spec\n\nContent');
       
       const abortError = new Error('Operation aborted');
-      (abortError as any).name = 'AbortError';
+      abortError.name = 'AbortError';
       mockAgent.bootstrap.mockRejectedValue(abortError);
       
       await expect(program.parseAsync(['node', 'test', 'run', 'spec.md'])).rejects.toThrow('process.exit called');
@@ -853,7 +876,7 @@ describe('Run Command', () => {
       mockAgent.bootstrap.mockResolvedValue(90);
       
       const abortError = new Error('Operation aborted');
-      (abortError as any).name = 'AbortError';
+      abortError.name = 'AbortError';
       mockAgent.executeIssue.mockRejectedValue(abortError);
       
       await expect(program.parseAsync(['node', 'test', 'run', 'spec.md'])).rejects.toThrow();
@@ -863,8 +886,8 @@ describe('Run Command', () => {
       vi.mocked(fs.access).mockResolvedValue(undefined);
       vi.mocked(fs.readFile).mockResolvedValue('# Spec\n\nContent');
       
-      const networkError = new Error('Network request failed');
-      (networkError as any).code = 'ENOTFOUND';
+      const networkError = new Error('Network request failed') as NodeJS.ErrnoException;
+      networkError.code = 'ENOTFOUND';
       mockAgent.bootstrap.mockRejectedValue(networkError);
       
       await expect(program.parseAsync(['node', 'test', 'run', 'spec.md'])).rejects.toThrow('process.exit called');

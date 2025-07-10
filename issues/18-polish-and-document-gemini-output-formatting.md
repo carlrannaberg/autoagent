@@ -108,6 +108,7 @@ AutoAgent automatically formats Gemini provider output for improved readability:
 
 **Example:**
 ```
+
 # Before
 This is a long response from Gemini. It contains multiple sentences. The formatting makes it easier to read.
 
@@ -171,8 +172,8 @@ export AUTOAGENT_DEBUG_FORMATTING=true
 5. Verify backward compatibility with existing functionality
 
 ## Dependencies
-- Issue #16: Implement Gemini Output Formatting
-- Issue #17: Add Testing for Gemini Output Formatting
+- #16: Implement Gemini Output Formatting
+- #17: Add Testing for Gemini Output Formatting
 
 ## Resources
 - Master Plan: `specs/gemini-output-formatting.md`

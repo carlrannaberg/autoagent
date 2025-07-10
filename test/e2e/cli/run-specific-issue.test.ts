@@ -7,30 +7,30 @@ describe('Run Specific Issue E2E', () => {
   describe('Running issues by number', () => {
     beforeEach(async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
       
       // Create test issues
       await context.workspace.createFile('issues/39-implement-plan-from-embed-bootstrap-templates.md', `# Issue 39: Implement plan from embed-bootstrap-templates
 
-## Requirement
+## Description
 Decompose the plan into individual actionable issues and create corresponding plan files for each issue.
 
-## Acceptance Criteria
+## Requirements
+This issue decomposes the plan into individual actionable tasks for implementation.
+
+## Success Criteria
 - [ ] All issues are created and numbered in the issues/ directory
 - [ ] Each issue has a corresponding plan file in the plans/ directory
 
 ## Technical Details
-This issue decomposes the plan into individual actionable tasks for implementation.
-
-## Resources
-- Master Plan: \`specs/embed-bootstrap-templates.md\`
+Master Plan: \`specs/embed-bootstrap-templates.md\`
 `);
 
       await context.workspace.createFile('plans/39-implement-plan-from-embed-bootstrap-templates.md', `# Plan for Issue 39: Implement plan from embed-bootstrap-templates
 
-## Implementation Plan
+## Overview
+This plan decomposes the embed-bootstrap-templates specification into individual actionable tasks.
 
-### Analysis and Decomposition
+## Implementation Steps
 - [ ] Analyze master plan
 - [ ] Create issues
 
@@ -39,12 +39,12 @@ AI-assisted decomposition of master plan
 `);
 
       // Add to TODO.md
-      await context.workspace.createFile('TODO.md', `# To-Do
+      await context.workspace.createFile('TODO.md', `# TODO
 
 This file tracks all issues for the autonomous agent.
 
 ## Pending Issues
-- [ ] **[Issue #39]** Implement plan from embed-bootstrap-templates - \`issues/39-implement-plan-from-embed-bootstrap-templates.md\`
+- [ ] **#39** Implement plan from embed-bootstrap-templates - \`issues/39-implement-plan-from-embed-bootstrap-templates.md\`
 
 ## Completed Issues
 `);
@@ -127,12 +127,16 @@ Create embedded template constants.
   describe('Edge cases', () => {
     it('should handle multiple matching files gracefully', async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
       
       // Create multiple issues with similar names
-      await context.workspace.createFile('issues/10-test-issue.md', '# Issue 10: Test Issue\n\n## Requirements\nTest');
-      await context.workspace.createFile('issues/100-test-issue.md', '# Issue 100: Test Issue\n\n## Requirements\nTest');
-      await context.workspace.createFile('issues/1000-test-issue.md', '# Issue 1000: Test Issue\n\n## Requirements\nTest');
+      await context.workspace.createFile('issues/10-test-issue.md', '# Issue 10: Test Issue\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Success Criteria\n- [ ] Test completion');
+      await context.workspace.createFile('issues/100-test-issue.md', '# Issue 100: Test Issue\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Success Criteria\n- [ ] Test completion');
+      await context.workspace.createFile('issues/1000-test-issue.md', '# Issue 1000: Test Issue\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Success Criteria\n- [ ] Test completion');
+      
+      // Create corresponding plan files
+      await context.workspace.createFile('plans/10-test-issue.md', '# Plan for Issue 10: Test Issue\n\n## Overview\nTest plan\n\n## Implementation Steps\n- [ ] Test step');
+      await context.workspace.createFile('plans/100-test-issue.md', '# Plan for Issue 100: Test Issue\n\n## Overview\nTest plan\n\n## Implementation Steps\n- [ ] Test step');
+      await context.workspace.createFile('plans/1000-test-issue.md', '# Plan for Issue 1000: Test Issue\n\n## Overview\nTest plan\n\n## Implementation Steps\n- [ ] Test step');
       
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       
@@ -145,11 +149,14 @@ Create embedded template constants.
 
     it('should prioritize exact matches over partial matches', async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
       
       // Create issues with overlapping names
-      await context.workspace.createFile('issues/5-implement.md', '# Issue 5: Implement\n\n## Requirements\nTest');
-      await context.workspace.createFile('issues/50-implement-feature.md', '# Issue 50: Implement Feature\n\n## Requirements\nTest');
+      await context.workspace.createFile('issues/5-implement.md', '# Issue 5: Implement\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Success Criteria\n- [ ] Test completion');
+      await context.workspace.createFile('issues/50-implement-feature.md', '# Issue 50: Implement Feature\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Success Criteria\n- [ ] Test completion');
+      
+      // Create corresponding plan files
+      await context.workspace.createFile('plans/5-implement.md', '# Plan for Issue 5: Implement\n\n## Overview\nTest plan\n\n## Implementation Steps\n- [ ] Test step');
+      await context.workspace.createFile('plans/50-implement-feature.md', '# Plan for Issue 50: Implement Feature\n\n## Overview\nTest plan\n\n## Implementation Steps\n- [ ] Test step');
       
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       

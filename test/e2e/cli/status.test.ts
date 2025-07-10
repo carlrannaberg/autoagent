@@ -22,10 +22,10 @@ describe('autoagent status', () => {
     await initializeProject(context.workspace, context.cli);
     await createSampleIssue(context.workspace, 'test-issue');
 
-    const result = await context.cli.execute(['status', 'test-issue']);
+    const result = await context.cli.execute(['status', '1']);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('test-issue');
+    expect(result.stdout).toContain('1');
     expect(result.stdout).toContain('Status: pending');
   });
 

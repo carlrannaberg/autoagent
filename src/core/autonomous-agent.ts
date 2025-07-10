@@ -531,7 +531,7 @@ export class AutonomousAgent extends EventEmitter {
     const todos = await this.fileManager.readTodoList();
     const updatedTodos = todos.map(todo => {
       // Use exact match for issue number to avoid marking #10, #11 when marking #1
-      const issueRegex = new RegExp(`\\[Issue #${issue.number}\\]`);
+      const issueRegex = new RegExp(`\\*\\*\\[Issue #${issue.number}\\]\\*\\*`);
       if (issueRegex.test(todo)) {
         return todo.replace('[ ]', '[x]');
       }
@@ -588,13 +588,16 @@ export class AutonomousAgent extends EventEmitter {
    * @throws Will create a new TODO.md if file operations fail
    */
   private async addIssueToTodo(issueNumber: number, title: string): Promise<void> {
-    // Generate consistent filename slug
-    const slug = title
+    // Create filename slug using the same logic as FileManager
+    const titleSlug = title
       .toLowerCase()
       .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '');
+      .replace(/[^a-z0-9.-]/g, '')
+      .replace(/\.+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
     
-    const issueFilename = `${issueNumber}-${slug}.md`;
+    const issueFilename = `${issueNumber}-${titleSlug}.md`;
     const issueEntry = `- [ ] **[Issue #${issueNumber}]** ${title} - \`issues/${issueFilename}\``;
 
     try {
@@ -1091,11 +1094,11 @@ ${issueEntry}
 ## Description
 ${description ?? 'To be defined'}
 
-## Acceptance Criteria
-${acceptanceCriteria !== undefined && acceptanceCriteria.length > 0 ? acceptanceCriteria.map(ac => `- [ ] ${ac}`).join('\n') : '- [ ] To be defined'}
+## Requirements
+${details ?? 'To be defined'}
 
-## Technical Details
-${details ?? 'To be defined'}`;
+## Success Criteria
+${acceptanceCriteria !== undefined && acceptanceCriteria.length > 0 ? acceptanceCriteria.map(ac => `- [ ] ${ac}`).join('\n') : '- [ ] To be defined'}`;
     } else {
       // Otherwise try to use a provider to generate content
       const provider = await this.getProviderForOperation();
@@ -1106,11 +1109,11 @@ ${details ?? 'To be defined'}`;
 ## Description
 To be defined
 
-## Acceptance Criteria
-- [ ] To be defined
+## Requirements
+To be defined
 
-## Technical Details
-To be defined`;
+## Success Criteria
+- [ ] To be defined`;
       } else {
         // Create prompt for provider
         const prompt = `Create a detailed software development issue for the following task:
@@ -1118,7 +1121,7 @@ Title: ${title}
 
 Generate a comprehensive issue document with:
 1. Clear requirements
-2. Specific acceptance criteria
+2. Specific success criteria
 3. Technical details and considerations
 4. Resources needed
 
@@ -1373,8 +1376,16 @@ ${masterPlanContent}`;
     // Create the issue content with placeholder issue number
     const issueContent = `# Issue: ${issueTitle}
 
-## Requirement
+## Description
 Decompose the plan into individual actionable issues and create corresponding plan files for each issue.
+
+## Requirements
+This issue decomposes the plan into individual actionable tasks for implementation.
+
+IMPORTANT: For each issue you create:
+1. Create an issue file in issues/ directory named: {number}-{title-slug}.md
+2. Create a corresponding plan file in plans/ directory named: {number}-{title-slug}.md
+3. The plan file should contain implementation phases and tasks
 
 ## Acceptance Criteria
 - [ ] All issues are created and numbered in the issues/ directory
@@ -1385,15 +1396,7 @@ Decompose the plan into individual actionable issues and create corresponding pl
 - [ ] Issues are properly linked in the todo list
 
 ## Technical Details
-This issue decomposes the plan into individual actionable tasks for implementation.
-
-IMPORTANT: For each issue you create:
-1. Create an issue file in issues/ directory named: {number}-{title-slug}.md
-2. Create a corresponding plan file in plans/ directory with the SAME name: {number}-{title-slug}.md
-3. The plan file should contain implementation phases and tasks
-
-## Resources
-- Master Plan: \`${masterPlanPath}\`
+Implementation strategy and approach details will be provided in the corresponding plan file.
 
 ## Generated Issues
 

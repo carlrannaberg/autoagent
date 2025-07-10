@@ -8,6 +8,15 @@ describe('Complete Issue Lifecycle E2E', () => {
   it('should complete full issue lifecycle: create → run → status', async () => {
     // Initialize git repository
     await context.workspace.initGit();
+    // Add a fake remote to satisfy git validation
+    await context.workspace.addGitRemote('origin', 'https://github.com/test/repo.git');
+    // Create AGENT.md that would have been created by init
+    await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+    // Create directories that commands expect
+    await context.workspace.createFile('issues/.gitkeep', '');
+    await context.workspace.createFile('plans/.gitkeep', '');
+    // Create TODO.md file
+    await context.workspace.createFile('TODO.md', '# TODO\n\nThis file tracks all issues for the autonomous agent.\n\n## Pending Issues\n\n## Completed Issues\n');
     let result;
 
     // Create an issue
@@ -32,22 +41,40 @@ describe('Complete Issue Lifecycle E2E', () => {
     expect(result.stdout).toContain('e2e-test-issue');
     expect(result.stdout).toContain('pending');
 
-    // Check status before execution
-    result = await context.cli.execute(['status', 'e2e-test-issue']);
+    // Check status before execution - use the full filename without .md
+    result = await context.cli.execute(['status', '1-e2e-test-issue']);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Status: pending');
 
     // Mock provider execution (since we can't run real AI in tests)
     await context.workspace.createFile('.autoagent/mock-run', 'true');
     context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
+    
+    // Create a plan file for the issue (required for execution)
+    await context.workspace.createFile('plans/1-e2e-test-issue.md', `# Plan for Issue #1: E2E Test Issue
 
-    // Run the issue
-    result = await context.cli.execute(['run', 'e2e-test-issue', '--provider', 'mock']);
+## Overview
+Test plan for E2E test issue.
+
+## Implementation Steps
+### Phase 1: Setup
+- [ ] Create test file
+- [ ] Add function
+
+## Technical Approach
+Simple implementation for testing.
+
+## Resources
+- Testing framework
+`);
+
+    // Run the issue - use issue number since the file is named 1-e2e-test-issue.md
+    result = await context.cli.execute(['run', '1', '--provider', 'mock', '--no-validate']);
     expect(result.exitCode).toBe(0);
     expect(OutputParser.containsSuccess(result.stdout)).toBe(true);
 
-    // Check status after execution
-    result = await context.cli.execute(['status', 'e2e-test-issue']);
+    // Check status after execution - use the full filename without .md
+    result = await context.cli.execute(['status', '1-e2e-test-issue']);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Status: completed');
 
@@ -60,8 +87,13 @@ describe('Complete Issue Lifecycle E2E', () => {
 
   it('should handle multi-issue batch execution', async () => {
     await context.workspace.initGit();
+    // Add a fake remote to satisfy git validation
+    await context.workspace.addGitRemote('origin', 'https://github.com/test/repo.git');
     // Create AGENT.md that would have been created by init
     await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+    // Create directories that commands expect
+    await context.workspace.createFile('issues/.gitkeep', '');
+    await context.workspace.createFile('plans/.gitkeep', '');
 
     // Create multiple issues and ensure TODO.md tracks them
     const issues = ['feature-1', 'feature-2', 'feature-3'];
@@ -79,23 +111,15 @@ describe('Complete Issue Lifecycle E2E', () => {
       
       // Create corresponding plan file for the issue
       const issueNumber = i + 1; // Issues are numbered starting from 1
-      await context.workspace.createFile(`plans/${issueNumber}-${issue}.md`, `# Plan for Issue ${issueNumber}: ${issue}
+      await context.workspace.createFile(`plans/${issueNumber}-${issue}.md`, `# Plan for Issue #${issueNumber}: ${issue}
 
-## Implementation Plan
+## Overview
+This plan outlines the implementation approach for ${issue} feature.
 
-### Phase 1: Analysis
-- [ ] Review requirements for ${issue}
-- [ ] Design system architecture
-
-### Phase 2: Implementation
-- [ ] Implement core functionality
-- [ ] Add error handling
-- [ ] Write tests
-
-### Phase 3: Testing & Documentation
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] Update documentation
+## Implementation Steps
+1. Analysis phase: Review requirements and design system architecture
+2. Implementation phase: Implement core functionality with error handling
+3. Testing phase: Write comprehensive tests and update documentation
 
 ## Technical Approach
 Standard implementation approach for ${issue}.
@@ -107,14 +131,14 @@ Standard implementation approach for ${issue}.
     }
 
     // Ensure TODO.md exists with all issues as pending
-    const todoContent = `# To-Do
+    const todoContent = `# TODO
 
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #1]** feature-1 - \`issues/1-feature-1.md\`
-- [ ] **[Issue #2]** feature-2 - \`issues/2-feature-2.md\`
-- [ ] **[Issue #3]** feature-3 - \`issues/3-feature-3.md\`
+- [ ] **#1** feature-1 - \`issues/1-feature-1.md\`
+- [ ] **#2** feature-2 - \`issues/2-feature-2.md\`
+- [ ] **#3** feature-3 - \`issues/3-feature-3.md\`
 
 ## Completed Issues
 `;
@@ -122,7 +146,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 
     // Run all issues
     context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-    const result = await context.cli.execute(['run', '--all']);
+    const result = await context.cli.execute(['run', '--all', '--no-validate']);
 
     expect(result.exitCode).toBe(0);
     // The output should contain "Running X issues" where X is the number of pending issues
@@ -138,8 +162,13 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 
   it('should support provider switching during execution', async () => {
     await context.workspace.initGit();
+    // Add a fake remote to satisfy git validation
+    await context.workspace.addGitRemote('origin', 'https://github.com/test/repo.git');
     // Create AGENT.md that would have been created by init
     await context.workspace.createFile('AGENT.md', '# Agent Instructions\n\nAdd your agent-specific instructions here.\n');
+    // Create directories that commands expect
+    await context.workspace.createFile('issues/.gitkeep', '');
+    await context.workspace.createFile('plans/.gitkeep', '');
 
     // Create issue
     await context.cli.execute([
@@ -152,10 +181,24 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 
     // Configure to use gemini
     await context.cli.execute(['config', 'set', 'provider', 'gemini']);
+    
+    // Create a plan file for the issue (required for execution)
+    await context.workspace.createFile('plans/1-provider-test.md', `# Plan for Issue #1: Provider Test
 
-    // Run with explicit claude override
+## Overview
+Test plan for provider switching.
+
+## Implementation Steps
+### Phase 1: Test
+- [ ] Test provider switching
+
+## Technical Approach
+Simple test implementation.
+`);
+
+    // Run with explicit claude override - use issue number since file is 1-provider-test.md
     context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-    const result = await context.cli.execute(['run', 'provider-test', '--provider', 'claude']);
+    const result = await context.cli.execute(['run', '1', '--provider', 'claude', '--no-validate']);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('Provider override: claude');

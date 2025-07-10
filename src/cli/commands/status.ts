@@ -52,10 +52,32 @@ export function registerStatusCommand(program: Command): void {
           // Check if issue exists by looking for issue files
           const issuesDir = path.join(workspace, 'issues');
           let issueExists = false;
+          let resolvedIssueKey = issueArg;
           
           try {
             const files = await fs.readdir(issuesDir);
-            issueExists = files.some(f => f.includes(issueArg) && f.endsWith('.md'));
+            // First try to find by number (e.g., "1" -> "1-title.md")
+            if (/^\d+$/.test(issueArg)) {
+              issueExists = files.some(f => f.match(new RegExp(`^${issueArg}-.*\\.md$`)));
+            } else {
+              // Try to find by slug in status.json
+              const statusFile = path.join(workspace, '.autoagent', 'status.json');
+              try {
+                const statusContent = await fs.readFile(statusFile, 'utf-8');
+                const statusData = JSON.parse(statusContent) as Record<string, { issueNumber?: number; [key: string]: unknown }>;
+                const issueData = statusData[issueArg];
+                if (issueData?.issueNumber !== undefined && issueData.issueNumber !== null) {
+                  issueExists = files.some(f => f.match(new RegExp(`^${issueData.issueNumber}-.*\\.md$`)));
+                  resolvedIssueKey = issueArg; // Keep the original key for status lookup
+                } else {
+                  // Fallback: try to find by filename containing the argument
+                  issueExists = files.some(f => f.includes(issueArg) && f.endsWith('.md'));
+                }
+              } catch {
+                // Fallback: try to find by filename containing the argument
+                issueExists = files.some(f => f.includes(issueArg) && f.endsWith('.md'));
+              }
+            }
           } catch {
             // Issues directory doesn't exist
           }
@@ -72,7 +94,7 @@ export function registerStatusCommand(program: Command): void {
           try {
             const statusContent = await fs.readFile(statusFile, 'utf-8');
             const statusData = JSON.parse(statusContent) as Record<string, { status?: string; startedAt?: string; [key: string]: unknown }>;
-            const issueData = statusData[issueArg];
+            const issueData = statusData[resolvedIssueKey];
             issueStatus = issueData?.status ?? 'pending';
             startedAt = issueData?.startedAt;
           } catch {

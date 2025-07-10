@@ -4,7 +4,7 @@ export class IssueBuilder {
   private issue: Partial<Issue> = {
     number: 1,
     title: 'Default Test Issue',
-    file: 'issues/1-default-test-issue.md',
+    file: 'issues/issue-1.md',
     requirements: 'Default requirements',
     acceptanceCriteria: ['Default acceptance criteria']
   };
@@ -60,7 +60,7 @@ export class IssueBuilder {
     return new IssueBuilder()
       .withNumber(1)
       .withTitle('Simple Issue')
-      .withFile('issues/1-simple-issue.md')
+      .withFile('issues/issue-1.md')
       .withRequirements('Fix the bug')
       .withAcceptanceCriteria(['Bug is fixed'])
       .build();
@@ -70,7 +70,7 @@ export class IssueBuilder {
     return new IssueBuilder()
       .withNumber(42)
       .withTitle('Complex Feature Implementation')
-      .withFile('issues/42-complex-feature.md')
+      .withFile('issues/issue-42.md')
       .withRequirements(`
         Implement a new authentication system with the following features:
         - OAuth2 support

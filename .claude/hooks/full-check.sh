@@ -113,7 +113,7 @@ fi
 if [[ -f "$ROOT_DIR/eslint.config.js" || -f "$ROOT_DIR/.eslintrc.js" || -f "$ROOT_DIR/.eslintrc.json" ]]; then
   echo "🔍 Running ESLint…" >&2
   ESLINT_LOG=$(mktemp)
-  if ! npx eslint --max-warnings 0 --cache --cache-location "$ESLINTCACHE" "$FILE_PATH" 2>"$ESLINT_LOG"; then
+  if ! npx eslint --max-warnings 0 --cache --cache-location "$ESLINTCACHE" "$FILE_PATH" >"$ESLINT_LOG" 2>&1; then
     cat >&2 <<EOF
 BLOCKED: ESLint check failed.
 

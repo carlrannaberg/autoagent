@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { spawn } from 'child_process';
-import type { ChildProcess } from 'child_process';
+import type { ChildProcess, Readable, Writable } from 'child_process';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { ConfigManager } from '@/core/config-manager';
@@ -16,6 +16,46 @@ vi.mock('child_process', async (importOriginal) => {
     spawn: vi.fn()
   };
 });
+
+// Helper function to create test issue files
+async function createTestIssueFiles(context: IntegrationTestContext): Promise<void> {
+  const issuesDir = path.join(context.workspace.rootPath, 'issues');
+  const plansDir = path.join(context.workspace.rootPath, 'plans');
+  
+  // Create directories
+  await fs.mkdir(issuesDir, { recursive: true });
+  await fs.mkdir(plansDir, { recursive: true });
+  
+  // Create issue files for tests 1-10 (to cover all potential test cases)
+  for (let i = 1; i <= 10; i++) {
+    const issueContent = `# Issue #${i}: Test Issue ${i}
+
+## Description
+This is a test issue for integration testing.
+
+## Requirements
+Test requirements for issue ${i}.
+
+## Success Criteria
+- [ ] Test completion for issue ${i}
+`;
+    
+    const planContent = `# Plan for Issue ${i}: Test Issue ${i}
+
+## Overview
+This is a test plan for issue ${i}.
+
+## Implementation Steps
+- [ ] Execute test step for issue ${i}
+
+## Technical Approach
+Mock execution approach for testing.
+`;
+    
+    await fs.writeFile(path.join(issuesDir, `${i}-test-issue-${i}.md`), issueContent);
+    await fs.writeFile(path.join(plansDir, `${i}-test-issue-${i}.md`), planContent);
+  }
+}
 
 describe('Claude Usage Limit Failover Integration Tests', () => {
   let context: IntegrationTestContext;
@@ -39,6 +79,9 @@ describe('Claude Usage Limit Failover Integration Tests', () => {
     });
     await agent.initialize();
     
+    // Create test issue files for the integration tests
+    await createTestIssueFiles(context);
+    
     mockSpawn = vi.mocked(spawn);
   });
 
@@ -51,7 +94,7 @@ describe('Claude Usage Limit Failover Integration Tests', () => {
       // Create issue file with proper format
       const issuesDir = path.join(context.workspace.rootPath, 'issues');
       await fs.mkdir(issuesDir, { recursive: true });
-      const issueFile = path.join(issuesDir, '1-test-issue.md');
+      const issueFile = path.join(issuesDir, 'issue-1.md');
       await fs.writeFile(issueFile, `# Issue 1: Test Issue for Usage Limit
 
 ## Requirement
@@ -69,7 +112,7 @@ None`);
       // Create plan file
       const plansDir = path.join(context.workspace.rootPath, 'plans');
       await fs.mkdir(plansDir, { recursive: true });
-      const planFile = path.join(plansDir, '1-test-issue.md');
+      const planFile = path.join(plansDir, 'plan-1.md');
       await fs.writeFile(planFile, `# Plan for Issue 1: Test Issue for Usage Limit
 
 ## Implementation Plan
@@ -86,9 +129,9 @@ Test usage limit failover scenario
       // Mock responses based on command and args
       mockSpawn.mockImplementation((command: string, args: string[]) => {
         const mockProcess: Partial<ChildProcess> = {
-          stdout: { on: vi.fn() } as any,
-          stderr: { on: vi.fn() } as any,
-          stdin: { write: vi.fn(), end: vi.fn() } as any,
+          stdout: { on: vi.fn() } as unknown as Readable,
+          stderr: { on: vi.fn() } as unknown as Readable,
+          stdin: { write: vi.fn(), end: vi.fn() } as unknown as Writable,
           on: vi.fn(),
           kill: vi.fn()
         };
@@ -204,7 +247,7 @@ Test usage limit failover scenario
       // Create issue file with proper format
       const issuesDir = path.join(context.workspace.rootPath, 'issues');
       await fs.mkdir(issuesDir, { recursive: true });
-      const issueFile = path.join(issuesDir, '2-test-timestamp.md');
+      const issueFile = path.join(issuesDir, 'issue-2.md');
       await fs.writeFile(issueFile, `# Issue 2: Test Timestamp Extraction
 
 ## Requirement
@@ -222,7 +265,7 @@ None`);
       // Create plan file
       const plansDir = path.join(context.workspace.rootPath, 'plans');
       await fs.mkdir(plansDir, { recursive: true });
-      const planFile = path.join(plansDir, '2-test-timestamp.md');
+      const planFile = path.join(plansDir, 'plan-2.md');
       await fs.writeFile(planFile, `# Plan for Issue 2: Test Timestamp Extraction
 
 ## Implementation Plan
@@ -241,9 +284,9 @@ Test timestamp extraction from usage limit message
       // Mock spawn to return usage limit with timestamp
       mockSpawn.mockImplementation((command: string, args: string[]) => {
         const mockProcess: Partial<ChildProcess> = {
-          stdout: { on: vi.fn() } as any,
-          stderr: { on: vi.fn() } as any,
-          stdin: { write: vi.fn(), end: vi.fn() } as any,
+          stdout: { on: vi.fn() } as unknown as Readable,
+          stderr: { on: vi.fn() } as unknown as Readable,
+          stdin: { write: vi.fn(), end: vi.fn() } as unknown as Writable,
           on: vi.fn(),
           kill: vi.fn()
         };
@@ -331,7 +374,7 @@ Test timestamp extraction from usage limit message
       // Create issue file with proper format
       const issuesDir = path.join(context.workspace.rootPath, 'issues');
       await fs.mkdir(issuesDir, { recursive: true });
-      const issueFile = path.join(issuesDir, '3-test-json.md');
+      const issueFile = path.join(issuesDir, 'issue-3.md');
       await fs.writeFile(issueFile, `# Issue 3: Test JSON Format Error
 
 ## Requirement
@@ -349,7 +392,7 @@ None`);
       // Create plan file
       const plansDir = path.join(context.workspace.rootPath, 'plans');
       await fs.mkdir(plansDir, { recursive: true });
-      const planFile = path.join(plansDir, '3-test-json.md');
+      const planFile = path.join(plansDir, 'plan-3.md');
       await fs.writeFile(planFile, `# Plan for Issue 3: Test JSON Format Error
 
 ## Implementation Plan
@@ -366,9 +409,9 @@ Test JSON error format handling
       // Mock for JSON error format
       mockSpawn.mockImplementation((command: string, args: string[]) => {
         const mockProcess: Partial<ChildProcess> = {
-          stdout: { on: vi.fn() } as any,
-          stderr: { on: vi.fn() } as any,
-          stdin: { write: vi.fn(), end: vi.fn() } as any,
+          stdout: { on: vi.fn() } as unknown as Readable,
+          stderr: { on: vi.fn() } as unknown as Readable,
+          stdin: { write: vi.fn(), end: vi.fn() } as unknown as Writable,
           on: vi.fn(),
           kill: vi.fn()
         };
@@ -447,7 +490,7 @@ Test JSON error format handling
       // Create issue file with proper format
       const issuesDir = path.join(context.workspace.rootPath, 'issues');
       await fs.mkdir(issuesDir, { recursive: true });
-      const issueFile = path.join(issuesDir, '4-test-both.md');
+      const issueFile = path.join(issuesDir, 'issue-4.md');
       await fs.writeFile(issueFile, `# Issue 4: Test Both Providers Limited
 
 ## Requirement
@@ -465,7 +508,7 @@ None`);
       // Create plan file
       const plansDir = path.join(context.workspace.rootPath, 'plans');
       await fs.mkdir(plansDir, { recursive: true });
-      const planFile = path.join(plansDir, '4-test-both.md');
+      const planFile = path.join(plansDir, 'plan-4.md');
       await fs.writeFile(planFile, `# Plan for Issue 4: Test Both Providers Limited
 
 ## Implementation Plan
@@ -482,9 +525,9 @@ Test both providers hitting usage limits
       // Mock both providers to return usage limit errors
       mockSpawn.mockImplementation((command: string, args: string[]) => {
         const mockProcess: Partial<ChildProcess> = {
-          stdout: { on: vi.fn() } as any,
-          stderr: { on: vi.fn() } as any,
-          stdin: { write: vi.fn(), end: vi.fn() } as any,
+          stdout: { on: vi.fn() } as unknown as Readable,
+          stderr: { on: vi.fn() } as unknown as Readable,
+          stdin: { write: vi.fn(), end: vi.fn() } as unknown as Writable,
           on: vi.fn(),
           kill: vi.fn()
         };
@@ -552,7 +595,7 @@ Test both providers hitting usage limits
       // Create issue file with proper format
       const issuesDir = path.join(context.workspace.rootPath, 'issues');
       await fs.mkdir(issuesDir, { recursive: true });
-      const issueFile = path.join(issuesDir, '5-test-preference.md');
+      const issueFile = path.join(issuesDir, 'issue-5.md');
       await fs.writeFile(issueFile, `# Issue 5: Test Provider Preference
 
 ## Requirement
@@ -570,7 +613,7 @@ None`);
       // Create plan file
       const plansDir = path.join(context.workspace.rootPath, 'plans');
       await fs.mkdir(plansDir, { recursive: true });
-      const planFile = path.join(plansDir, '5-test-preference.md');
+      const planFile = path.join(plansDir, 'plan-5.md');
       await fs.writeFile(planFile, `# Plan for Issue 5: Test Provider Preference
 
 ## Implementation Plan
@@ -587,9 +630,9 @@ Test provider preference selection
       // Mock Gemini to succeed
       mockSpawn.mockImplementation((command: string, args: string[]) => {
         const mockProcess: Partial<ChildProcess> = {
-          stdout: { on: vi.fn() } as any,
-          stderr: { on: vi.fn() } as any,
-          stdin: { write: vi.fn(), end: vi.fn() } as any,
+          stdout: { on: vi.fn() } as unknown as Readable,
+          stderr: { on: vi.fn() } as unknown as Readable,
+          stdin: { write: vi.fn(), end: vi.fn() } as unknown as Writable,
           on: vi.fn(),
           kill: vi.fn()
         };
@@ -646,7 +689,7 @@ Test provider preference selection
       await configManager.updateRateLimit('claude', false);
       
       // Create another issue
-      const issueFile6 = path.join(issuesDir, '6-test-preference-2.md');
+      const issueFile6 = path.join(issuesDir, 'issue-6.md');
       await fs.writeFile(issueFile6, `# Issue 6: Test Provider Preference After Recovery
 
 ## Requirement
@@ -662,7 +705,7 @@ None
 None`);
       
       // Create plan file for issue 6
-      const planFile6 = path.join(plansDir, '6-test-preference-2.md');
+      const planFile6 = path.join(plansDir, 'plan-6.md');
       await fs.writeFile(planFile6, `# Plan for Issue 6: Test Provider Preference After Recovery
 
 ## Implementation Plan
@@ -680,9 +723,9 @@ Test provider recovery and preference restoration
       mockSpawn.mockClear();
       mockSpawn.mockImplementation((command: string, args: string[]) => {
         const mockProcess: Partial<ChildProcess> = {
-          stdout: { on: vi.fn() } as any,
-          stderr: { on: vi.fn() } as any,
-          stdin: { write: vi.fn(), end: vi.fn() } as any,
+          stdout: { on: vi.fn() } as unknown as Readable,
+          stderr: { on: vi.fn() } as unknown as Readable,
+          stdin: { write: vi.fn(), end: vi.fn() } as unknown as Writable,
           on: vi.fn(),
           kill: vi.fn()
         };
