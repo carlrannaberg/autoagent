@@ -84,6 +84,19 @@ git log --grep="$LAST_VERSION" --oneline
 4. **Rollback safely**: Only use `npm run release:rollback` for unpublished versions
 5. **No manual tag creation**: NEVER create git tags manually - tags are automatically created by GitHub workflows after successful release preparation
 
+**CRITICAL Pre-Release Validation (Automated in Release Script):**
+The `npm run release:*` commands automatically validate and fix in this order:
+1. **Git working directory**: No uncommitted changes
+2. **All quality gates**: Tests, lint, typecheck must pass  
+3. **NPM registry consistency**: Verifies published vs local versions
+4. **CHANGELOG.md updates**: AI analyzes actual code changes for accurate entries
+5. **✅ CRITICAL: README.md documentation completeness**:
+   - AI analyzes updated CHANGELOG.md vs README.md for missing documentation
+   - **Automatically updates README.md** when features are missing
+   - Adds new CLI flags, features, and usage examples
+   - Prompts for review after auto-updates
+   - **Blocks release if auto-fix fails**
+
 **Tip:** Run `npm run check` before pushing to catch type errors, linting issues, and test failures early. This runs all validations concurrently for faster feedback.
 
 ## Semantic Versioning Guidelines

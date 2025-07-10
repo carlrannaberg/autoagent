@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add validation system for issues, plans, and TODO.md before run execution
+  - Validates file format, required sections, and consistent issue references
+  - Automatically fixes formatting issues using AI providers (--no-validate to skip)
+  - Distinguishes between formatting issues (auto-fixable) and content issues
+  - Supports validation for TODO.md checkbox states and issue references
+  - Clear error reporting with file names, line numbers, and fix suggestions
+
+### Fixed
+- Fix issue creation generating "Acceptance Criteria" instead of "Success Criteria" section
+- Fix E2E tests using incorrect file naming convention (issue-N.md instead of N-title-slug.md)
+
 ## [0.6.2] - 2025-07-09
 
 ### Added

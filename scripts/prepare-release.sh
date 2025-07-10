@@ -52,6 +52,7 @@ if ! npm test; then
 fi
 echo "All tests passed. Continuing with release preparation..."
 
+
 # Fetch latest tags from remote to ensure we have complete information
 echo "Fetching latest tags from remote..."
 git fetch --tags
@@ -160,6 +161,99 @@ elif [ $AI_EXIT_CODE -ne 0 ]; then
 fi
 
 echo
+echo "✅ CHANGELOG.md and package.json updated successfully!"
+echo
+
+# Now validate README.md documentation against the updated CHANGELOG.md
+echo "🔍 Validating README.md documentation completeness..."
+
+# Use AI to validate README against CHANGELOG and capture response
+set +e  # Temporarily disable exit on error
+
+# Create temporary file for AI response
+README_VALIDATION_FILE=$(mktemp)
+
+# Run AI validation and capture output
+$AI_CLI $AI_MODEL $AI_FLAGS -p "You are validating that README.md is up to date with the newly updated CHANGELOG.md before a release.
+
+Please analyze both CHANGELOG.md and README.md files and determine if README.md properly documents all features listed in the CHANGELOG.md [Unreleased] section.
+
+Check specifically:
+1. Are all new features from CHANGELOG.md documented in README.md?
+2. Are new CLI flags/options shown in usage examples?
+3. Are major features included in the feature list?
+4. Do usage examples reflect new functionality?
+
+IMPORTANT: Start your response with exactly one of these status lines:
+- 'README_COMPLETE' if README.md fully documents all unreleased features
+- 'README_INCOMPLETE' if documentation is missing
+
+Then provide details. Be strict - any significant missing documentation should result in README_INCOMPLETE." > "$README_VALIDATION_FILE" 2>&1
+
+AI_VALIDATION_EXIT_CODE=$?
+set -e  # Re-enable exit on error
+
+if [ $AI_VALIDATION_EXIT_CODE -ne 0 ]; then
+    echo "Error: README validation AI command failed."
+    cat "$README_VALIDATION_FILE"
+    rm -f "$README_VALIDATION_FILE"
+    exit 1
+fi
+
+# Check the AI response
+README_STATUS=$(head -1 "$README_VALIDATION_FILE" | grep -o "README_[A-Z]*" || echo "UNKNOWN")
+
+echo "README validation result: $README_STATUS"
+echo
+cat "$README_VALIDATION_FILE"
+echo
+
+if [[ "$README_STATUS" == "README_INCOMPLETE" ]]; then
+    echo "❌ README.md is missing documentation for unreleased features."
+    echo "🤖 Automatically updating README.md with missing documentation..."
+    
+    # Use AI to automatically fix README.md based on the validation analysis
+    set +e
+    $AI_CLI $AI_MODEL $AI_FLAGS -p "You need to update README.md to include missing documentation identified in the previous analysis.
+
+Previous validation analysis:
+$(cat "$README_VALIDATION_FILE")
+
+Based on this analysis and the CHANGELOG.md [Unreleased] section, please:
+
+1. Update the README.md file to include all missing features and documentation
+2. Add new CLI flags/options to the appropriate usage examples
+3. Include major new features in the feature list section
+4. Update usage examples to reflect new functionality
+5. Ensure all unreleased features from CHANGELOG.md are properly documented
+
+Please update the README.md file directly. Make sure the documentation is comprehensive and follows the existing README structure and style."
+
+    README_UPDATE_EXIT_CODE=$?
+    set -e
+    
+    if [ $README_UPDATE_EXIT_CODE -ne 0 ]; then
+        echo "❌ Error: Failed to automatically update README.md"
+        echo "Please manually update README.md based on the analysis above."
+        rm -f "$README_VALIDATION_FILE"
+        exit 1
+    fi
+    
+    echo "✅ README.md has been automatically updated."
+    echo "📝 Please review the changes made to README.md before continuing."
+    echo "Press Enter after reviewing the README updates, or Ctrl+C to cancel..."
+    read -r
+    
+elif [[ "$README_STATUS" == "README_COMPLETE" ]]; then
+    echo "✅ README.md documentation is complete."
+else
+    echo "⚠️  Unable to determine README status. Please review the analysis above."
+    echo "Press Enter to continue if README looks complete, or Ctrl+C to cancel..."
+    read -r
+fi
+
+rm -f "$README_VALIDATION_FILE"
+
 echo
 echo "Release preparation complete!"
 echo "Next steps:"

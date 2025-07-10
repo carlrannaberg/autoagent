@@ -6,6 +6,8 @@ import { ProviderName, ReflectionConfig } from '../../types';
 import { mergeReflectionConfig } from '../../core/reflection-defaults';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import { validateProjectFiles } from '../../core/validators/index.js';
+import { AutofixService } from '../../core/validators/autofix-service.js';
 
 // Helper function to collect repeatable CLI options
 function collect(value: string, previous: string[]): string[] {
@@ -27,6 +29,8 @@ interface RunOptions {
   noVerify?: boolean;
   push?: boolean;
   noPush?: boolean;
+  validate?: boolean;
+  noValidate?: boolean;
 }
 
 interface StatusData {
@@ -86,7 +90,7 @@ function parseIssueRange(target: string): number[] {
 }
 
 function isIssueFile(target: string): boolean {
-  return /^\d+-[\w-]+\.md$/.test(target);
+  return /^\d+-.*\.md$/.test(target);
 }
 
 export function registerRunCommand(program: Command): void {
@@ -105,7 +109,7 @@ export function registerRunCommand(program: Command): void {
       '  autoagent run --push             # Run with auto-push enabled (implies --commit)\n' +
       '  autoagent run --no-push          # Run with auto-push disabled')
     .option('-p, --provider <provider>', 'Override AI provider for this run (claude or gemini)')
-    .option('-w, --workspace <path>', 'Workspace directory', process.cwd())
+    .option('-w, --workspace <path>', 'Workspace directory')
     .option('--all', 'Run all pending issues')
     .option('--debug', 'Enable debug output')
     .option('--no-commit', 'Disable auto-commit for this run')
@@ -119,7 +123,9 @@ export function registerRunCommand(program: Command): void {
     .option('--verify', 'Enable git hooks during commits')
     .option('--no-verify', 'Skip git hooks during commits')
     .option('--push', 'Enable auto-push for this run (implies --commit)')
-    .option('--no-push', 'Disable auto-push for this run');
+    .option('--no-push', 'Disable auto-push for this run')
+    .option('--validate', 'Enable file validation before execution (default)')
+    .option('--no-validate', 'Skip file validation before execution');
 
   // Track which conflicting flags were provided
   let verifyFlagProvided = false;
@@ -264,6 +270,62 @@ export function registerRunCommand(program: Command): void {
 
         await agent.initialize();
 
+        // Validate project files before execution (unless --no-validate is set)
+        if (options.validate !== false) {
+          Logger.info('🔍 Validating project files...');
+          const validationResult = await validateProjectFiles(workspacePath);
+          
+          if (!validationResult.valid) {
+          Logger.error('❌ Validation failed. Found the following issues:\n');
+          Logger.error(validationResult.error?.formatIssues() ?? 'Unknown validation error');
+          
+          // Check if there are formatting issues that can be autofixed
+          const formattingIssues = validationResult.issues.filter(
+            issue => issue.isFormatting === true && issue.canAutofix === true
+          );
+          
+          if (formattingIssues.length > 0) {
+            Logger.info('\n🔧 Attempting to auto-fix formatting issues...');
+            
+            const autofixService = new AutofixService(
+              (options.provider as 'claude' | 'gemini') ?? 'claude',
+              undefined
+            );
+            
+            const fixResult = await autofixService.fixValidationIssues(validationResult.issues);
+            
+            if (fixResult.success) {
+              Logger.success(`✅ Fixed ${fixResult.fixedIssues.length} formatting issues`);
+              
+              // Re-validate after fixes
+              const revalidationResult = await validateProjectFiles(workspacePath);
+              
+              if (!revalidationResult.valid) {
+                Logger.error('❌ Validation still failed after auto-fix:\n');
+                Logger.error(revalidationResult.error?.formatIssues() ?? 'Unknown validation error');
+                Logger.info('\n💡 Please fix the remaining issues manually before running.');
+                process.exit(1);
+                return;
+              } else {
+                Logger.success('✅ All validation issues resolved!');
+              }
+            } else {
+              Logger.error(`❌ Failed to fix ${fixResult.failedIssues.length} issues`);
+              Logger.info('\n💡 Please fix these issues manually before running.');
+              process.exit(1);
+              return;
+            }
+          } else {
+            Logger.info('\n💡 Please fix these issues manually before running.');
+            Logger.info('💡 Add --no-validate flag to skip validation (not recommended).');
+            process.exit(1);
+            return;
+          }
+        } else {
+          Logger.success('✅ All files are valid');
+        }
+        }
+
         // Show provider being used
         if (options.provider !== null && options.provider !== undefined && options.provider.length > 0) {
           Logger.info(`Provider override: ${options.provider}`);
@@ -293,7 +355,7 @@ export function registerRunCommand(program: Command): void {
             for (const issueNum of issueNumbers) {
               try {
                 const files = await fs.readdir(issuesDir);
-                const matchingFile = files.find(f => f.startsWith(`${issueNum}-`) && f.endsWith('.md'));
+                const matchingFile = files.find(f => f.match(new RegExp(`^${issueNum}-.*\\.md$`)));
                 if (matchingFile === undefined) {
                   missingIssues.push(issueNum);
                 }
@@ -418,7 +480,27 @@ export function registerRunCommand(program: Command): void {
           
           try {
             const files = await fs.readdir(issuesDir);
-            const matchingFile = files.find(f => f.includes(issue) && f.endsWith('.md'));
+            let matchingFile: string | undefined;
+            
+            // First try to find by issue number (e.g., "1" -> "1-title.md")
+            if (isIssueNumber(issue)) {
+              matchingFile = files.find(f => f.match(new RegExp(`^${issue}-.*\\.md$`)));
+            } else {
+              // Try to find by slug in status.json
+              const statusFile = path.join(workspacePath, '.autoagent', 'status.json');
+              try {
+                const statusContent = await fs.readFile(statusFile, 'utf-8');
+                const statusData = JSON.parse(statusContent) as StatusData;
+                const issueData = statusData[issue];
+                if (issueData?.issueNumber !== undefined && issueData.issueNumber !== null) {
+                  matchingFile = files.find(f => f.match(new RegExp(`^${issueData.issueNumber}-.*\\.md$`)));
+                }
+              } catch {
+                // Status file doesn't exist, fallback to filename search
+                matchingFile = files.find(f => f.includes(issue) && f.endsWith('.md'));
+              }
+            }
+            
             if (matchingFile !== undefined) {
               issueFile = path.join(issuesDir, matchingFile);
               
@@ -442,25 +524,41 @@ export function registerRunCommand(program: Command): void {
           // Running a specific issue
           if (process.env.AUTOAGENT_MOCK_PROVIDER === 'true') {
             // Mock execution for testing
-            const fs = await import('fs/promises');
-            const path = await import('path');
             const statusFile = path.join(workspacePath, '.autoagent', 'status.json');
+            
+            // Ensure .autoagent directory exists
+            await fs.mkdir(path.dirname(statusFile), { recursive: true });
             
             // Extract issue number for logging
             let issueNumber: number;
             issueNumber = parseInt(issue ?? '', 10);
             if (isNaN(issueNumber)) {
-              const match = issue?.match(/^(\d+)-/);
-              if (match !== null && match !== undefined && match[1] !== null && match[1] !== undefined) {
-                issueNumber = parseInt(match[1], 10);
-              } else {
-                // Try to find the issue file and extract number from it
-                const files = await fs.readdir(issuesDir);
-                const matchingFile = files.find(f => f.includes(issue ?? '') && f.endsWith('.md'));
-                if (matchingFile !== null && matchingFile !== undefined) {
-                  const fileMatch = matchingFile.match(/^(\d+)-/);
-                  if (fileMatch !== null && fileMatch !== undefined && fileMatch[1] !== null && fileMatch[1] !== undefined) {
-                    issueNumber = parseInt(fileMatch[1], 10);
+              // Try to find by slug in status.json
+              try {
+                const statusContent = await fs.readFile(statusFile, 'utf-8');
+                const statusData = JSON.parse(statusContent) as StatusData;
+                const issueData = statusData[issue ?? ''];
+                if (issueData?.issueNumber !== undefined && issueData.issueNumber !== null) {
+                  issueNumber = issueData.issueNumber;
+                }
+              } catch {
+                // Status file doesn't exist, continue to filename matching
+              }
+              
+              // If still not found, try to extract from filename pattern
+              if (isNaN(issueNumber)) {
+                const match = issue?.match(/^(\d+)-/);
+                if (match !== null && match !== undefined && match[1] !== null && match[1] !== undefined) {
+                  issueNumber = parseInt(match[1], 10);
+                } else {
+                  // Try to find the issue file and extract number from it
+                  const files = await fs.readdir(issuesDir);
+                  const matchingFile = files.find(f => f.includes(issue ?? '') && f.endsWith('.md'));
+                  if (matchingFile !== null && matchingFile !== undefined) {
+                    const fileMatch = matchingFile.match(/^(\d+)-.*\.md$/);
+                    if (fileMatch !== null && fileMatch !== undefined && fileMatch[1] !== null && fileMatch[1] !== undefined) {
+                      issueNumber = parseInt(fileMatch[1], 10);
+                    }
                   }
                 }
               }
@@ -530,61 +628,105 @@ export function registerRunCommand(program: Command): void {
               // File doesn't exist, continue
             }
             
-            if (statusData[issue] !== null && statusData[issue] !== undefined) {
-              statusData[issue].status = 'completed';
-              statusData[issue].completedAt = new Date().toISOString();
-              await fs.writeFile(statusFile, JSON.stringify(statusData, null, 2), 'utf-8');
-              
-              // Also record execution history
-              const executionsFile = path.join(workspacePath, '.autoagent', 'executions.json');
-              let executions: ExecutionData[] = [];
+            // Extract the issue key from the found issue file (filename without .md)
+            // For mock execution, we need to find the issue file to get the correct key
+            let issueKey = issue;
+            if (!isNaN(issueNumber)) {
+              // Find the actual issue file by number to get the full filename
               try {
-                const executionsContent = await fs.readFile(executionsFile, 'utf-8');
-                executions = JSON.parse(executionsContent) as ExecutionData[];
+                const issuesDir = path.join(workspacePath, 'issues');
+                const files = await fs.readdir(issuesDir);
+                const matchingFile = files.find(f => f.match(new RegExp(`^${issueNumber}-.*\\.md$`)));
+                if (matchingFile !== undefined) {
+                  issueKey = path.basename(matchingFile, '.md');
+                }
               } catch {
-                // File doesn't exist, start fresh
+                // Fallback to original issue
+                issueKey = issue;
               }
-              
-              executions.push({
-                id: `exec-${Date.now()}`,
-                issue: issue,
-                status: 'completed',
-                timestamp: new Date().toISOString()
-              });
-              
-              await fs.writeFile(executionsFile, JSON.stringify(executions, null, 2), 'utf-8');
             }
             
-            Logger.success(`✅ Mock execution completed for issue: ${issue}`);
+            // Ensure the issue exists in status data
+            if (!statusData[issueKey]) {
+              statusData[issueKey] = { status: 'completed', issueNumber, completedAt: new Date().toISOString() };
+            } else {
+              const issueData = statusData[issueKey];
+              if (issueData) {
+                issueData.status = 'completed';
+                issueData.completedAt = new Date().toISOString();
+              }
+            }
+            await fs.writeFile(statusFile, JSON.stringify(statusData, null, 2), 'utf-8');
+            
+            // Also record execution history
+            const executionsFile = path.join(workspacePath, '.autoagent', 'executions.json');
+            let executions: ExecutionData[] = [];
+            try {
+              const executionsContent = await fs.readFile(executionsFile, 'utf-8');
+              executions = JSON.parse(executionsContent) as ExecutionData[];
+            } catch {
+              // File doesn't exist, start fresh
+            }
+            
+            executions.push({
+              id: `exec-${Date.now()}`,
+              issue: issueKey,
+              status: 'completed',
+              timestamp: new Date().toISOString()
+            });
+            
+            await fs.writeFile(executionsFile, JSON.stringify(executions, null, 2), 'utf-8');
+            
+            Logger.success(`✅ Mock execution completed for issue: ${issueKey}`);
           } else {
+            // Non-mock execution path
+            const fs = await import('fs/promises');
+            const path = await import('path');
+            
             // Extract issue number from the issue string or filename
             let issueNumber: number;
             
             // First try to parse as a number
             issueNumber = parseInt(issue ?? '', 10);
             
-            // If not a number, try to extract from filename pattern
+            // If not a number, try to extract from status.json or filename pattern
             if (isNaN(issueNumber)) {
-              const match = issue?.match(/^(\d+)-/);
-              if (match !== null && match !== undefined && match[1] !== null && match[1] !== undefined) {
-                issueNumber = parseInt(match[1], 10);
-              } else {
-                // Try to find the issue file and extract number from it
-                const files = await fs.readdir(issuesDir);
-                const matchingFile = files.find(f => f.includes(issue ?? '') && f.endsWith('.md'));
-                if (matchingFile !== null && matchingFile !== undefined) {
-                  const fileMatch = matchingFile.match(/^(\d+)-/);
-                  if (fileMatch !== null && fileMatch !== undefined && fileMatch[1] !== null && fileMatch[1] !== undefined) {
-                    issueNumber = parseInt(fileMatch[1], 10);
+              // Try to find by slug in status.json
+              const statusFile = path.join(workspacePath, '.autoagent', 'status.json');
+              try {
+                const statusContent = await fs.readFile(statusFile, 'utf-8');
+                const statusData = JSON.parse(statusContent) as StatusData;
+                const issueData = statusData[issue ?? ''];
+                if (issueData?.issueNumber !== undefined && issueData.issueNumber !== null) {
+                  issueNumber = issueData.issueNumber;
+                }
+              } catch {
+                // Status file doesn't exist, continue to filename matching
+              }
+              
+              // If still not found, try to extract from filename pattern
+              if (isNaN(issueNumber)) {
+                const match = issue?.match(/^(\d+)-/);
+                if (match !== null && match !== undefined && match[1] !== null && match[1] !== undefined) {
+                  issueNumber = parseInt(match[1], 10);
+                } else {
+                  // Try to find the issue file and extract number from it
+                  const files = await fs.readdir(issuesDir);
+                  const matchingFile = files.find(f => f.includes(issue ?? '') && f.endsWith('.md'));
+                  if (matchingFile !== null && matchingFile !== undefined) {
+                    const fileMatch = matchingFile.match(/^(\d+)-.*\.md$/);
+                    if (fileMatch !== null && fileMatch !== undefined && fileMatch[1] !== null && fileMatch[1] !== undefined) {
+                      issueNumber = parseInt(fileMatch[1], 10);
+                    } else {
+                      Logger.error(`Cannot extract issue number from: ${issue}`);
+                      process.exit(1);
+                      return;
+                    }
                   } else {
-                    Logger.error(`Cannot extract issue number from: ${issue}`);
+                    Logger.error(`Invalid issue identifier: ${issue}`);
                     process.exit(1);
                     return;
                   }
-                } else {
-                  Logger.error(`Invalid issue identifier: ${issue}`);
-                  process.exit(1);
-                  return;
                 }
               }
             }
@@ -597,6 +739,51 @@ export function registerRunCommand(program: Command): void {
               Logger.error(`Failed to execute issue #${issueNumber}: ${result.error ?? 'Unknown error'}`);
               process.exit(1);
             }
+            
+            // Update status tracking for successful execution
+            const statusFile = path.join(workspacePath, '.autoagent', 'status.json');
+            
+            let statusData: StatusData = {};
+            try {
+              const statusContent = await fs.readFile(statusFile, 'utf-8');
+              statusData = JSON.parse(statusContent) as StatusData;
+            } catch {
+              // File doesn't exist, continue
+            }
+            
+            // Extract the issue key from the found issue file (filename without .md)
+            const issueKey = issueFile ? path.basename(issueFile, '.md') : issue;
+            
+            // Ensure the issue exists in status data
+            if (!statusData[issueKey]) {
+              statusData[issueKey] = { status: 'completed', issueNumber };
+            } else {
+              statusData[issueKey].status = 'completed';
+            }
+            statusData[issueKey].completedAt = new Date().toISOString();
+            
+            // Ensure directory exists
+            await fs.mkdir(path.dirname(statusFile), { recursive: true });
+            await fs.writeFile(statusFile, JSON.stringify(statusData, null, 2), 'utf-8');
+            
+            // Also record execution history
+            const executionsFile = path.join(workspacePath, '.autoagent', 'executions.json');
+            let executions: ExecutionData[] = [];
+            try {
+              const executionsContent = await fs.readFile(executionsFile, 'utf-8');
+              executions = JSON.parse(executionsContent) as ExecutionData[];
+            } catch {
+              // File doesn't exist, start fresh
+            }
+            
+            executions.push({
+              id: `exec-${Date.now()}`,
+              issue: issueKey,
+              status: 'completed',
+              timestamp: new Date().toISOString()
+            });
+            
+            await fs.writeFile(executionsFile, JSON.stringify(executions, null, 2), 'utf-8');
           }
         } else if (options.all === true) {
           // First, get the count of pending issues
@@ -610,9 +797,10 @@ export function registerRunCommand(program: Command): void {
           let results;
           if (process.env.AUTOAGENT_MOCK_PROVIDER === 'true') {
             // Mock batch execution for testing
-            const fs = await import('fs/promises');
-            const path = await import('path');
             const statusFile = path.join(workspacePath, '.autoagent', 'status.json');
+            
+            // Ensure .autoagent directory exists
+            await fs.mkdir(path.dirname(statusFile), { recursive: true });
             
             // Update all pending issues to completed
             let statusData: StatusData = {};
