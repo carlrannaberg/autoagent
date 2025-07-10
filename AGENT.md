@@ -144,6 +144,79 @@ After version 1.0.0, follow standard semantic versioning:
 - **Dependencies**: chalk (colors), commander (CLI)
 - **Package Manager**: npm
 
+## Commander.js CLI Option Behavior
+
+**IMPORTANT**: Commander.js has specific behavior for `--no-*` flags that can be confusing:
+
+### How --no-* Flags Work
+When you define options with `--no-` prefix in Commander.js:
+- `--no-validate` sets `options.validate = false` (NOT `options.noValidate = true`)
+- `--no-commit` sets `options.commit = false` (NOT `options.noCommit = true`)
+- `--no-verify` sets `options.verify = false` (NOT `options.noVerify = true`)
+
+### Key Rules:
+1. **No separate property**: Commander.js NEVER creates a `noOption` property
+2. **Boolean negation**: `--no-*` always sets the base option to `false`
+3. **CamelCase preserved**: `--no-co-author` sets `options.coAuthor = false`
+4. **Default behavior**: If only `--no-option` is defined (without `--option`), the default is `true`
+
+### Examples in our codebase:
+```typescript
+// CORRECT - Check the base option name:
+if (options.validate !== false) { /* validation is enabled */ }
+if (options.commit !== false) { /* auto-commit is enabled */ }
+if (options.verify !== false) { /* git hooks are enabled */ }
+
+// INCORRECT - These properties don't exist:
+if (options.noValidate === true) { /* This will never work! */ }
+if (options.noCommit === true) { /* This will never work! */ }
+```
+
+This is standard Commander.js behavior and applies to ALL `--no-*` flags throughout the codebase.
+
+### Repeatable Options
+
+Commander.js supports repeatable options through custom collector functions:
+
+```typescript
+// Helper function for collecting repeatable options
+function collect(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
+
+// Usage in option definition
+.option('--add-dir <path>', 'Add additional directory (repeatable)', collect, [])
+
+// Alternative inline collector (used in create command)
+.option('-a, --acceptance <criteria>', 'Acceptance criteria (can be used multiple times)', (value, prev: string[]) => {
+  return Array.isArray(prev) && prev.length > 0 ? [...prev, value] : [value];
+}, [] as string[])
+```
+
+**Key Points:**
+- The collector function receives the new value and the previous array
+- Always provide a default value (empty array `[]`)
+- The result is accessed as `options.addDir` (array of strings)
+- Users can specify the flag multiple times: `--add-dir ./src --add-dir ./test`
+
+### Option Conflict Resolution
+
+When both positive and negative versions of flags are defined (e.g., `--commit` and `--no-commit`), Commander.js uses the **last specified flag** on the command line:
+
+```typescript
+// Both options defined
+.option('--commit', 'Enable auto-commit')
+.option('--no-commit', 'Disable auto-commit')
+
+// Command line: --commit --no-commit
+// Result: options.commit = false
+
+// Command line: --no-commit --commit  
+// Result: options.commit = true
+```
+
+This "last wins" behavior is useful for overriding defaults and configuration settings.
+
 ## Git Repository
 
 The main branch for this project is called "master"
