@@ -24,6 +24,12 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "bash .claude/hooks/validate-todo-completion.sh"
+      }
     ]
   }
 }
