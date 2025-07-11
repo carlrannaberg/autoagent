@@ -94,7 +94,7 @@ export interface Hook {
   command?: string;
   timeout?: number;
   blocking?: boolean;
-  // Type-specific config
+  // Type-specific config (no 'enabled' field - hooks presence = enabled)
   message?: string;      // git-commit
   noVerify?: boolean;    // git-commit
   remote?: string;       // git-push
@@ -161,6 +161,11 @@ export class AutonomousAgent {
     
     // Save initial session
     await this.sessionManager.saveSession(this.session);
+  }
+  
+  private generateRandomId(): string {
+    // Generate 6-character random ID
+    return Math.random().toString(36).substring(2, 8);
   }
   
   async executeIssue(issueNumber: number): Promise<ExecutionResult> {
@@ -243,6 +248,11 @@ export class AutonomousAgent {
 }
 ```
 
+3. **Output Display Behavior**:
+   - **Stdout**: ALWAYS displayed to users, regardless of success/failure
+   - **Exit code 2**: stderr shown as blocking reason
+   - **Other exit codes**: Both stdout and stderr shown to user
+
 ### Configuration Structure
 
 ```json
@@ -264,7 +274,8 @@ export class AutonomousAgent {
       },
       {
         "type": "git-commit",
-        "message": "Complete issue #{{issueNumber}}: {{issueTitle}}"
+        "message": "Complete issue #{{issueNumber}}: {{issueTitle}}",
+        "noVerify": false
       },
       {
         "type": "git-push",
@@ -375,11 +386,20 @@ describe('Hooks E2E Workflow', () => {
    - Predictable execution order
    - Allows hooks to depend on previous hook results
    - May increase total execution time
+   - Example:
+     ```json
+     "PostExecutionEnd": [
+       { "type": "command", "command": "npm test" },      // Runs first
+       { "type": "git-commit", "message": "..." },          // Runs second
+       { "type": "git-push", "remote": "origin" }          // Runs third
+     ]
+     ```
 
 2. **Timeout Management**: Default 60s timeout per hook
    - Prevents hanging on misbehaving hooks
-   - Configurable per hook
-   - Killed processes treated as non-blocking errors
+   - Configurable per hook via `timeout` field
+   - Timeout kills the hook process and treats it as a non-blocking error
+   - Both stdout and stderr shown even on timeout
 
 3. **Session Storage**: Minimal disk I/O
    - Sessions stored as JSON files
@@ -394,8 +414,10 @@ describe('Hooks E2E Workflow', () => {
 ## Security Considerations
 
 1. **Command Injection**: Template interpolation is limited
-   - Only specific variables replaced
-   - No arbitrary code execution
+   - Only specific variables replaced ({{issueNumber}}, {{issueTitle}}, etc.)
+   - Template interpolation happens BEFORE command execution
+   - The actual data is passed via JSON on stdin
+   - No arbitrary code execution in templates
    - Values should be escaped in shell commands
 
 2. **File Access**: Hooks run with user permissions
@@ -462,7 +484,7 @@ describe('Hooks E2E Workflow', () => {
 2. Update `ConfigManager` to handle hooks
 3. Rewrite `set-auto-commit` command
 4. Rewrite `set-auto-push` command
-5. Remove CLI flags for commit/push
+5. Update CLI: Remove `--commit` and `--push` flags completely (no deprecation)
 
 ### Phase 6: Testing & Documentation (Week 3)
 1. Write comprehensive unit tests
@@ -493,7 +515,7 @@ describe('Hooks E2E Workflow', () => {
    - **Decision**: Use file copy instead of symlink for current session
 
 5. **Hook Output**: Should we capture and display all stdout?
-   - **Decision**: Yes, always show stdout for user feedback
+   - **Decision**: Yes, ALWAYS show stdout for user feedback
 
 6. **Default Hooks**: Should we ship with default hook configurations?
    - **Decision**: No, start with empty hooks configuration
@@ -504,6 +526,7 @@ describe('Hooks E2E Workflow', () => {
 8. **Backward Compatibility**: Keep old flags with deprecation warnings?
    - **Decision**: Remove completely since single-user project
 
+
 ## Success Metrics
 
 1. **Functionality**: All existing git features work via hooks
@@ -511,6 +534,28 @@ describe('Hooks E2E Workflow', () => {
 3. **Reliability**: Hooks don't cause crashes or hangs
 4. **Usability**: Configuration is intuitive and well-documented
 5. **Extensibility**: Users can implement complex workflows
+
+## Key Benefits
+
+1. **Control**: Block unsafe operations before they happen
+2. **Automation**: Auto-format, lint, test without manual steps
+3. **Integration**: Connect with CI/CD, issue trackers, monitoring
+4. **Flexibility**: Users customize behavior without forking
+5. **Deterministic**: Rules as code, not LLM instructions
+
+## Hook Registry
+
+Common hook patterns for AutoAgent:
+
+| Hook Point | Common Use Cases |
+|------------|------------------|
+| `PreExecutionStart` | Check prerequisites, validate environment |
+| `PostExecutionStart` | Start timers, send notifications |
+| `PreExecutionEnd` | Validate output, run tests |
+| `PostExecutionEnd` | Commit changes, update tracking |
+| `Stop` | Check incomplete work, save state |
+
+Note: No provider lifecycle hooks are supported - hooks are focused on execution lifecycle only.
 
 ## Example Hook Implementations
 
@@ -524,6 +569,14 @@ SUCCESS=$(echo "$INPUT" | jq -r '.success')
 
 if [ "$SUCCESS" != "true" ]; then
   exit 0  # Don't validate failed executions
+fi
+
+# Check if tests were added/modified
+FILES_MODIFIED=$(echo "$INPUT" | jq -r '.filesModified[]?')
+if ! echo "$FILES_MODIFIED" | grep -q "\\.test\\." && ! echo "$FILES_MODIFIED" | grep -q "\\.spec\\."; then
+  echo "ERROR: No test files were modified" >&2
+  echo "Please add tests for the implemented functionality" >&2
+  exit 2  # Block completion
 fi
 
 # Run tests
