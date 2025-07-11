@@ -52,6 +52,12 @@ test-results/
 bench-results.json
 benchmark-results.json
 
+# Test scripts and temporary test files
+test-*.js
+test-tmp/
+test-validate/
+test-workspace/
+
 # Configuration files
 .autoagent.json
 .autoagent/rate-limits.json
