@@ -441,8 +441,35 @@ autoagent/
 ├── templates/      # Issue and plan templates
 ├── bin/            # CLI entry point
 ├── dist/           # Compiled JavaScript (gitignored)
-└── examples/       # Usage examples
+├── examples/       # Usage examples
+├── .claude/        # Claude Code configuration (shared)
+│   ├── settings.json          # Hook configurations
+│   └── hooks/                 # Development hooks
+├── specs/          # Specification documents for features
+└── temp/           # Temporary files and test scripts (gitignored)
 ```
+
+## Claude Code Integration
+
+### Shared Claude Configuration
+
+The `.claude/` directory contains shared configurations for Claude Code that enhance the development experience:
+
+1. **`.claude/settings.json`** - Configures hooks that run during Claude Code sessions
+2. **`.claude/hooks/`** - Contains hook scripts that automate development workflows
+
+#### Current Hooks:
+
+- **`validate-todo-completion.sh`** - Prevents Claude from stopping when there are incomplete todos in the TodoWrite list. This ensures all tasks are completed before ending a session.
+
+### Specification Documents
+
+The `specs/` directory contains detailed specification documents for features. These serve as:
+- Historical reference for implementation decisions
+- Documentation for complex features
+- Planning documents for future enhancements
+
+Keep specs when implementing major features to help future developers understand the design decisions.
 
 ## Key Dependencies
 - **chalk**: Terminal color output
