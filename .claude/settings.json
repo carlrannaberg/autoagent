@@ -7,10 +7,6 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/full-check.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/lint-feedback.sh"
           }
         ]
       },
