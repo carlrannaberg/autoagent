@@ -107,19 +107,20 @@ export class IssueValidator extends BaseValidator {
 
   private validateIssueReferences(content: string, filePath: string): void {
     const lines = content.split('\n');
-    const issueRefPattern = /(?:issue\s*#?|(?<!\w)#)(\d+)/gi;
+    const bareIssueRefPattern = /(?<!\w)#(\d+)(?!\w)/g;
     
     lines.forEach((line, index) => {
       const lineNumber = index + 1;
-      let match;
       
       // Skip the header line
       if (lineNumber === 1) {
         return;
       }
       
-      while ((match = issueRefPattern.exec(line)) !== null) {
-        const fullMatch = match[0];
+      let match;
+      bareIssueRefPattern.lastIndex = 0; // Reset regex state
+      
+      while ((match = bareIssueRefPattern.exec(line)) !== null) {
         const issueNumber = match[1];
         const column = match.index + 1;
         
@@ -128,20 +129,18 @@ export class IssueValidator extends BaseValidator {
           continue;
         }
         
-        // Check if it's not already in the correct format
-        if (fullMatch !== `#${issueNumber}`) {
-          this.addIssue({
-            file: filePath,
-            line: lineNumber,
-            column,
-            severity: 'warning',
-            message: `Inconsistent issue reference format: "${fullMatch}"`,
-            rule: 'inconsistent-issue-ref',
-            suggestion: `Use "#${issueNumber}" format`,
-            isFormatting: true,
-            canAutofix: true
-          });
-        }
+        // Error on bare #N format - must use "Issue #N"
+        this.addIssue({
+          file: filePath,
+          line: lineNumber,
+          column,
+          severity: 'error',
+          message: `Invalid issue reference format "#${issueNumber}". Must use "Issue #${issueNumber}"`,
+          rule: 'invalid-issue-reference',
+          suggestion: `Replace "#${issueNumber}" with "Issue #${issueNumber}"`,
+          isFormatting: true,
+          canAutofix: true
+        });
       }
     });
   }

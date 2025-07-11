@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Enforce "Issue #N" format in validators - bare "#N" references are now errors, not warnings
+
 ## [0.6.3] - 2025-07-10
 
 ### Added

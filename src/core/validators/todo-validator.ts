@@ -116,36 +116,29 @@ export class TodoValidator extends BaseValidator {
 
   private validateIssueReferences(content: string, filePath: string): void {
     const lines = content.split('\n');
-    const issueRefPattern = /(?:issue\s*#?|(?<!\w)#)(\d+)/gi;
+    const bareIssueRefPattern = /\*\*\[#(\d+)\]\*\*/g;
     
     lines.forEach((line, index) => {
       const lineNumber = index + 1;
       let match;
+      bareIssueRefPattern.lastIndex = 0; // Reset regex state
       
-      while ((match = issueRefPattern.exec(line)) !== null) {
-        const fullMatch = match[0];
+      while ((match = bareIssueRefPattern.exec(line)) !== null) {
         const issueNumber = match[1];
         const column = match.index + 1;
         
-        // Skip numbers that are part of ordered lists (e.g., "1. Create a test file")
-        if (line.trim().match(/^\d+\.\s+/)) {
-          continue;
-        }
-        
-        // Check if it's not already in the correct format
-        if (fullMatch !== `#${issueNumber}`) {
-          this.addIssue({
-            file: filePath,
-            line: lineNumber,
-            column,
-            severity: 'warning',
-            message: `Inconsistent issue reference format: "${fullMatch}"`,
-            rule: 'inconsistent-issue-ref',
-            suggestion: `Use "#${issueNumber}" format`,
-            isFormatting: true,
-            canAutofix: true
-          });
-        }
+        // Error on bare #N format in TODO items - must use "Issue #N"
+        this.addIssue({
+          file: filePath,
+          line: lineNumber,
+          column,
+          severity: 'error',
+          message: `Invalid TODO issue reference "**[#${issueNumber}]**". Must use "**[Issue #${issueNumber}]**"`,
+          rule: 'invalid-todo-issue-reference',
+          suggestion: `Replace "**[#${issueNumber}]**" with "**[Issue #${issueNumber}]**"`,
+          isFormatting: true,
+          canAutofix: true
+        });
       }
     });
   }
