@@ -52,8 +52,7 @@ test-results/
 bench-results.json
 benchmark-results.json
 
-# Test scripts and temporary test files
-test-*.js
+# Temporary test directories
 test-tmp/
 test-validate/
 test-workspace/

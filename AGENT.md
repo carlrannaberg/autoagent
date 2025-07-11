@@ -333,6 +333,45 @@ This ensures that:
 - Release notes reflect actual feature/fix deliverables
 - Project management noise is excluded
 
+## Test Scripts and Debugging
+
+When creating one-off test scripts, debugging files, or capturing output:
+
+### Test Scripts
+1. **ALWAYS use the `temp/` directory** - Never create test scripts in the root directory
+2. **Name scripts descriptively** - Use names like `test-validation-logic.js` or `debug-provider-failover.js`
+3. **Clean up after debugging** - Remove scripts that are no longer needed
+4. **Never commit test scripts** - The `temp/` folder is gitignored
+
+### Output and Log Files
+1. **ALWAYS store in `temp/` directory** - Never create temporary files in the root directory
+2. **Use descriptive names** with `.log`, `.txt`, or `.json` extensions
+3. **Examples of temporary files**:
+   - Command output: `temp/npm-test-output.log`
+   - JSON results: `temp/validation-results.json` or `test-results.json`
+   - Debug logs: `temp/debug-provider-failover.log`
+
+Example:
+```bash
+# Create temp directory if it doesn't exist
+mkdir -p temp
+
+# Test script
+echo '#!/usr/bin/env node' > temp/test-validation.js
+node temp/test-validation.js > temp/validation-output.log 2>&1
+
+# Capture command output
+npm test > temp/test-results.log 2>&1
+
+# JSON output  
+node temp/analyze-issues.js > temp/issue-analysis.json
+
+# Clean up when done (optional, since temp/ is gitignored)
+rm -rf temp/*
+```
+
+**Note**: The `temp/` directory is gitignored, ensuring these files are never accidentally committed. Always use this directory to keep the root clean.
+
 ## Coding Standards
 
 ### TypeScript/JavaScript Guidelines
