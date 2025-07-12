@@ -466,6 +466,39 @@ describe('Hooks E2E Workflow', () => {
 5. Handle hook errors gracefully
 
 ### Phase 3: Built-in Hooks (Week 2)
+
+#### Git Integration Details
+
+**Git Commit Hook**:
+```typescript
+class GitCommitHook {
+  async execute(data: HookData, config: GitCommitConfig): Promise<HookResult> {
+    // 1. Check for changes
+    const hasChanges = await this.hasChangesToCommit();
+    if (!hasChanges) {
+      console.warn('No changes to commit');
+      return { blocked: false, output: 'No changes to commit' };
+    }
+    
+    // 2. Stage all changes
+    await exec('git add -A');
+    
+    // 3. Create commit
+    const message = this.interpolateMessage(config.message, data);
+    const args = config.noVerify ? ['--no-verify'] : [];
+    await exec(`git commit ${args.join(' ')} -m "${message}"`);
+    
+    return { blocked: false, output: 'Commit created' };
+  }
+}
+```
+
+**Git Push Hook**:
+- Uses current branch always (no override)
+- Relies on system git configuration for auth
+- Fails and notifies user on push failures (no retry)
+- Remote defaults to 'origin', branch to 'current'
+
 1. Extract git operations from `AutonomousAgent`
 2. Create `GitCommitHook` class
 3. Create `GitPushHook` class
