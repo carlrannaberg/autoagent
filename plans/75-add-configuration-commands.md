@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/75-add-configuration-commands.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers adding configuration commands to manage the git no-verify setting through the CLI.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Add set-git-no-verify Command
 - [ ] Locate config command registration
@@ -49,4 +55,4 @@ Follow existing config command patterns for consistency.
 
 ## Resources
 - Master Plan: `./specs/git-commit-no-verify-configuration.md`
-- Issue 72: ConfigManager support
+- #72: ConfigManager support

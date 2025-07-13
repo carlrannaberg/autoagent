@@ -1,9 +1,12 @@
 # Issue 20: Implement plan from fix-bootstrap-filename-consistency
 
-## Requirement
+## Description
+This issue tracks the decomposition and implementation of the fix for bootstrap filename consistency. The goal is to ensure all issue and plan files use consistent naming conventions by centralizing the slug generation logic.
+
+## Requirements
 Decompose the plan into individual actionable issues and create corresponding plan files for each issue.
 
-## Acceptance Criteria
+## Success Criteria
 - [x] All issues are created and numbered in the issues/ directory
 - [x] Each issue has a corresponding plan file in the plans/ directory
 - [x] Each issue has clear requirements and acceptance criteria
@@ -26,12 +29,12 @@ IMPORTANT: For each issue you create:
 
 The following issues were created from the master plan:
 
-- **Issue #26**: Centralize Slug Generation in FileManager - Core utility method
-- **Issue #27**: Update createPlan for Consistent Filenames - Plan naming fix
-- **Issue #28**: Refactor createIssue to Use Centralized Slug - Issue naming consistency
-- **Issue #29**: Remove Duplicate Slug Logic from Bootstrap - Code cleanup
-- **Issue #30**: Add Unit Tests for Slug Generation - Unit test coverage
-- **Issue #31**: Add Integration Tests for Bootstrap Filenames - Integration test coverage
-- **Issue #32**: Update Documentation for Filename Conventions - Documentation updates
+- **Issue 26**: Centralize Slug Generation in FileManager - Core utility method
+- **Issue 27**: Update createPlan for Consistent Filenames - Plan naming fix
+- **Issue 28**: Refactor createIssue to Use Centralized Slug - Issue naming consistency
+- **Issue 29**: Remove Duplicate Slug Logic from Bootstrap - Code cleanup
+- **Issue 30**: Add Unit Tests for Slug Generation - Unit test coverage
+- **Issue 31**: Add Integration Tests for Bootstrap Filenames - Integration test coverage
+- **Issue 32**: Update Documentation for Filename Conventions - Documentation updates
 
 All issues have corresponding plan files in the plans/ directory.

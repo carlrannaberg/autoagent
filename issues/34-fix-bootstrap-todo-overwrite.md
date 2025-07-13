@@ -1,9 +1,12 @@
 # Issue 34: Fix Bootstrap TODO Overwrite
 
-## Requirement
+## Description
+Fix the bootstrap command to append new issues to existing TODO.md content instead of overwriting the entire file. This prevents data loss of existing pending issues when running bootstrap on active projects.
+
+## Requirements
 Fix the bootstrap command to append new issues to existing TODO.md content instead of overwriting the entire file, preventing data loss of existing pending issues.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Bootstrap preserves existing pending issues in TODO.md
 - [ ] Bootstrap preserves completed issues section
 - [ ] Bootstrap appends new issue to pending section (not overwrites)
@@ -19,7 +22,7 @@ The current bootstrap implementation (lines 868-878 in autonomous-agent.ts) crea
 4. Preserves all existing content
 
 ## Dependencies
-- Issue #33: Extract Common TODO Update Logic (must be completed first)
+- **Issue 33**: Extract Common TODO Update Logic (must be completed first)
 
 ## Resources
 - Problematic code: `src/core/autonomous-agent.ts` lines 868-878

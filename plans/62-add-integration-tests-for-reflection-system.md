@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/62-add-integration-tests-for-reflection-system.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers creating integration tests for the complete reflection system, testing the full workflow from initial decomposition through iterative improvement.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Test Infrastructure Setup
 - [ ] Create integration test directory structure

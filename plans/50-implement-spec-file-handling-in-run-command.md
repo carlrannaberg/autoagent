@@ -1,8 +1,12 @@
-# Plan for Issue 50: Implement spec file handling in run command
+# Plan for Issue #50: Implement spec file handling in run command
 
 This document outlines the step-by-step plan to complete `issues/50-implement-spec-file-handling-in-run-command.md`.
 
-## Implementation Plan
+## Overview
+
+This plan implements spec file handling in the run command, enabling automatic bootstrap and execution workflow when a spec file is provided. This completes the smart run command feature by supporting the full development cycle from specification to implementation.
+
+## Implementation Steps
 
 ### Phase 1: Add Bootstrap Flow
 - [ ] Import bootstrap logic dependencies

@@ -1,6 +1,14 @@
 # Plan for Issue 79: Update Configuration Interfaces for Auto-Push
 
-## Phase 1: UserConfig Interface Updates
+This document outlines the step-by-step plan to complete `issues/79-update-configuration-interfaces-for-auto-push.md`.
+
+## Overview
+
+This plan covers updating configuration interfaces to support the auto-push feature for automatic git pushes after commits.
+
+## Implementation Steps
+
+### Phase 1: UserConfig Interface Updates
 - [ ] Locate UserConfig interface in src/types/index.ts
 - [ ] Add gitAutoPush: boolean field with JSDoc comment
 - [ ] Add gitPushRemote: string field with JSDoc comment

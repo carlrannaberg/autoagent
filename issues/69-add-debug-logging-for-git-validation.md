@@ -1,9 +1,13 @@
 # Issue 69: Add debug logging for git validation
 
-## Requirement
+## Description
 Add comprehensive debug logging throughout the git validation process to help users troubleshoot issues.
 
-## Acceptance Criteria
+## Requirements
+
+Add comprehensive debug logging throughout the git validation process to help users troubleshoot issues.
+
+## Success Criteria
 - [ ] Add debug logs for validation start
 - [ ] Log git availability check results
 - [ ] Log repository status check results

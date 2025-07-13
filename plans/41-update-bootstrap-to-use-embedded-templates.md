@@ -1,8 +1,12 @@
-# Plan for Issue 41: Update bootstrap to use embedded templates
+# Plan for Issue #41: Update bootstrap to use embedded templates
 
 This document outlines the step-by-step plan to complete `issues/41-update-bootstrap-to-use-embedded-templates.md`.
 
-## Implementation Plan
+## Overview
+
+This plan updates the bootstrap command to use embedded template constants instead of reading from filesystem. This eliminates file dependencies, improves reliability, and simplifies error handling by removing filesystem operations.
+
+## Implementation Steps
 
 ### Phase 1: Code Analysis and Import Setup
 - [ ] Locate bootstrap method in `src/core/autonomous-agent.ts`

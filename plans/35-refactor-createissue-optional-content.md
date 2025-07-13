@@ -1,8 +1,12 @@
-# Plan for Issue 35: Refactor createIssue to Support Optional Custom Content
+# Plan for Issue #35: Refactor createIssue to Support Optional Custom Content
 
 This document outlines the step-by-step plan to complete `issues/35-refactor-createissue-optional-content.md`.
 
-## Implementation Plan
+## Overview
+
+This plan refactors the createIssue method to accept optional custom content, enabling bootstrap to use the method directly instead of duplicating issue creation logic. This elegant solution maintains backward compatibility while eliminating code duplication and ensuring consistent TODO handling.
+
+## Implementation Steps
 
 ### Phase 1: Method Signature Update
 - [ ] Update createIssue method signature to add customContent parameter

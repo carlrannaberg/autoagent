@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/68-update-documentation-with-git-requirements.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers updating documentation to clearly explain git requirements, validation behavior, and troubleshooting steps.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Update README.md
 - [ ] Add "Git Requirements" section

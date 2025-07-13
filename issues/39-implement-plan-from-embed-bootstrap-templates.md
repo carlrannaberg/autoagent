@@ -1,9 +1,12 @@
 # Issue 39: Implement plan from embed-bootstrap-templates
 
-## Requirement
+## Description
+Decompose the embed-bootstrap-templates plan into individual actionable issues and create corresponding plan files for each issue. This enables the removal of external template dependencies by embedding them directly in the codebase.
+
+## Requirements
 Decompose the plan into individual actionable issues and create corresponding plan files for each issue.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] All issues are created and numbered in the issues/ directory
 - [ ] Each issue has a corresponding plan file in the plans/ directory
 - [ ] Each issue has clear requirements and acceptance criteria

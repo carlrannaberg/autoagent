@@ -1,9 +1,13 @@
 # Issue 60: Implement improvement application logic
 
-## Requirement
+## Description
 Create the logic to apply validated improvements to existing issue and plan files, safely modifying them based on reflection analysis results.
 
-## Acceptance Criteria
+## Requirements
+
+Create the logic to apply validated improvements to existing issue and plan files, safely modifying them based on reflection analysis results.
+
+## Success Criteria
 - [ ] Implement `applyImprovements` function
 - [ ] Create file backup mechanism before modifications
 - [ ] Handle ADD_ISSUE changes (create new issues)

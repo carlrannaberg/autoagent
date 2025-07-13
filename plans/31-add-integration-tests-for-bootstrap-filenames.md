@@ -1,6 +1,10 @@
-# Plan for Issue 31: Add integration tests for bootstrap filenames
+# Plan for Issue #31: Add integration tests for bootstrap filenames
 
-## Implementation Plan
+## Overview
+
+This plan implements integration tests to verify that the bootstrap command creates consistently named issue and plan files. The tests will cover both direct method calls and CLI execution to ensure the filename consistency works end-to-end.
+
+## Implementation Steps
 
 ### Phase 1: Core Integration Tests
 - [ ] Test bootstrap method directly
@@ -60,4 +64,4 @@ describe('Bootstrap E2E filename consistency', () => {
 
 ## Dependencies
 - Issues 26-29 must be implemented
-- Unit tests (Issue 30) should pass first
+- Unit tests (#30) should pass first

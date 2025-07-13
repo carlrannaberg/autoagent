@@ -6,6 +6,11 @@ Update Configuration Interfaces for Auto-Push
 ## Description
 Update the UserConfig and AgentConfig interfaces to support auto-push functionality, including fields for enabling auto-push, specifying remote name, and optionally specifying target branch.
 
+## Requirements
+- Extend configuration interfaces to support auto-push functionality
+- Maintain backward compatibility with existing configurations
+- Follow the established configuration priority hierarchy
+
 ## Tasks
 - [ ] Add gitAutoPush boolean field to UserConfig interface
 - [ ] Add gitPushRemote string field to UserConfig interface with default 'origin'
@@ -16,7 +21,7 @@ Update the UserConfig and AgentConfig interfaces to support auto-push functional
 - [ ] Ensure backward compatibility with existing configurations
 - [ ] Update type exports as needed
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] UserConfig interface includes all necessary auto-push fields
 - [ ] AgentConfig interface supports runtime auto-push control
 - [ ] All fields have appropriate TypeScript types and JSDoc comments

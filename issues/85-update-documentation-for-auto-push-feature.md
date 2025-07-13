@@ -6,6 +6,11 @@ Update Documentation for Auto-Push Feature
 ## Description
 Update all relevant documentation to include information about the auto-push feature, including README, configuration guides, CLI help, and troubleshooting documentation.
 
+## Requirements
+- Update all documentation to comprehensively cover the auto-push feature
+- Emphasize security considerations and best practices
+- Provide clear troubleshooting guidance
+
 ## Tasks
 - [ ] Update README.md with auto-push configuration section
 - [ ] Add prerequisites for auto-push functionality
@@ -16,7 +21,7 @@ Update all relevant documentation to include information about the auto-push fea
 - [ ] Add examples of different auto-push workflows
 - [ ] Update CHANGELOG.md with new feature
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] README includes clear auto-push setup instructions
 - [ ] Security implications are clearly documented
 - [ ] Common error scenarios have troubleshooting steps

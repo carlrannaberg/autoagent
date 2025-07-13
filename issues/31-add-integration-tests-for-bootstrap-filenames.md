@@ -1,9 +1,12 @@
 # Issue 31: Add integration tests for bootstrap filenames
 
-## Requirement
+## Description
+Create integration tests to verify that the bootstrap command creates consistent filenames for both issue and plan files. These tests will ensure the end-to-end filename generation process works correctly across different scenarios.
+
+## Requirements
 Create integration tests to verify that the bootstrap command creates consistent filenames for both issue and plan files.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Test bootstrap creates matching issue and plan filenames
 - [ ] Test various issue title formats
 - [ ] Test filename predictability

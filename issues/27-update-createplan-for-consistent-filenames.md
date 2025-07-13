@@ -1,9 +1,12 @@
 # Issue 27: Update createPlan for consistent filenames
 
-## Requirement
+## Description
+Modify the `createPlan` method in FileManager to optionally use title-based naming for plan files, ensuring consistency with issue filenames. This will allow plan files to have descriptive names that match their corresponding issue files.
+
+## Requirements
 Modify the `createPlan` method in FileManager to optionally use title-based naming for plan files, ensuring consistency with issue filenames.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Update createPlan method signature to make issueTitle optional
 - [ ] Implement conditional filename generation based on issueTitle presence
 - [ ] Use generateFileSlug method for title-based naming

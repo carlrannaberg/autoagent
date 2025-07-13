@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/9-cleanup-jest-finalize.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers cleaning up Jest configuration and finalizing the migration to the new testing framework.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Verify Migration Complete
 - [ ] Run full test suite with Vitest

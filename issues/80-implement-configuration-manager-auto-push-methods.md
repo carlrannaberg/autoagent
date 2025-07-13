@@ -6,6 +6,11 @@ Implement Configuration Manager Auto-Push Methods
 ## Description
 Add methods to the ConfigManager class for managing auto-push settings, including getters and setters for gitAutoPush and gitPushRemote configuration values.
 
+## Requirements
+- Extend ConfigManager class with methods to manage auto-push settings
+- Ensure backward compatibility and proper default values
+- Follow existing patterns for configuration management
+
 ## Tasks
 - [ ] Update getDefaultConfig() to include default values for auto-push fields
 - [ ] Implement setGitAutoPush() method to set auto-push enabled/disabled
@@ -16,7 +21,7 @@ Add methods to the ConfigManager class for managing auto-push settings, includin
 - [ ] Ensure proper validation of configuration values
 - [ ] Handle configuration persistence correctly
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Default configuration includes gitAutoPush: false and gitPushRemote: 'origin'
 - [ ] All getter methods return appropriate default values when not set
 - [ ] Setter methods properly persist configuration changes

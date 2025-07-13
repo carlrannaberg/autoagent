@@ -1,9 +1,12 @@
 # Issue 54: Create reflection engine core types and interfaces
 
-## Requirement
+## Description
+Define the TypeScript types and interfaces required for the reflection engine functionality. This establishes the foundation for the AI-powered self-reflection system.
+
+## Requirements
 Define the TypeScript types and interfaces required for the reflection engine functionality. This includes configuration types, improvement analysis types, and reflection result types.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Create `src/types/reflection.ts` with all reflection-related type definitions
 - [ ] Define `ReflectionConfig` interface with all configuration options
 - [ ] Create types for improvement analysis and scoring

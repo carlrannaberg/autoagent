@@ -1,9 +1,13 @@
 # Issue 61: Add unit tests for reflection engine
 
-## Requirement
+## Description
 Create comprehensive unit tests for the reflection engine components, ensuring all core functionality is properly tested.
 
-## Acceptance Criteria
+## Requirements
+
+Create comprehensive unit tests for the reflection engine components, ensuring all core functionality is properly tested.
+
+## Success Criteria
 - [ ] Test ReflectionConfig validation
 - [ ] Test shouldSkipReflection logic
 - [ ] Test reflection prompt building

@@ -1,9 +1,12 @@
 # Issue 18: Polish and Document Gemini Output Formatting
 
-## Requirement
+## Description
+This issue covers the final polishing phase of the Gemini output formatting feature. It includes optimizing performance, handling edge cases for abbreviations and numbers, and comprehensive documentation updates to inform users about the new functionality.
+
+## Requirements
 Handle edge cases, optimize the implementation, and update the documentation for the new Gemini output formatting feature.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] The sentence detection regex is optimized for performance and accuracy.
 - [ ] Edge cases such as abbreviations (e.g., "Dr.", "Inc.") and numbers are handled correctly.
 - [ ] The `README.md` file is updated to note the improved Gemini output readability.
@@ -172,8 +175,10 @@ export AUTOAGENT_DEBUG_FORMATTING=true
 5. Verify backward compatibility with existing functionality
 
 ## Dependencies
-- #16: Implement Gemini Output Formatting
-- #17: Add Testing for Gemini Output Formatting
+- **Issue 16**: Implement Gemini Output Formatting
+- **Issue 17**: Add Testing for Gemini Output Formatting
 
 ## Resources
 - Master Plan: `specs/gemini-output-formatting.md`
+
+```

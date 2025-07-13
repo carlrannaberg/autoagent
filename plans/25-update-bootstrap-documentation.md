@@ -1,8 +1,12 @@
-# Plan for Issue 25: Update Bootstrap Documentation
+# Plan for Issue #25: Update Bootstrap Documentation
 
 This document outlines the step-by-step plan to complete `issues/25-update-bootstrap-documentation.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers updating all relevant documentation to reflect the bootstrap command's new dynamic issue numbering behavior. The documentation updates will include code comments, user-facing documentation in README.md, changelog entries, and CLI help text to ensure users understand how bootstrap determines issue numbers.
+
+## Implementation Steps
 
 ### Phase 1: Code Documentation
 - [ ] Add inline comment at fix location explaining dynamic numbering
@@ -43,11 +47,11 @@ This document outlines the step-by-step plan to complete `issues/25-update-boots
 The `bootstrap` command creates an initial issue from a master plan:
 
 ```bash
-# In empty project - creates issue #1
+# In empty project - creates #1
 autoagent bootstrap master-plan.md
 
 # With existing issues - creates next sequential issue
-autoagent bootstrap feature-plan.md  # Creates issue #4 if issues 1-3 exist
+autoagent bootstrap feature-plan.md  # Creates #4 if issues 1-3 exist
 ```
 ```
 

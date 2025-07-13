@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/71-implement-git-utility-function-updates.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers implementing updates to git utility functions to support the no-verify flag for git commits.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Analyze Current Implementation
 - [ ] Review current `createCommit` function in `src/utils/git.ts`
@@ -39,4 +45,4 @@ Minimal changes to existing logic, focusing on conditional flag addition.
 
 ## Resources
 - Master Plan: `./specs/git-commit-no-verify-configuration.md`
-- Issue 70: Interface updates
+- #70: Interface updates

@@ -6,6 +6,11 @@ Implement Configuration Commands for Auto-Push
 ## Description
 Add new configuration subcommands to manage auto-push settings, including set-auto-push to enable/disable the feature and set-push-remote to configure the target remote repository.
 
+## Requirements
+- Add configuration subcommands for managing auto-push settings
+- Provide clear user feedback and validation
+- Support both global and local configuration
+
 ## Tasks
 - [ ] Add 'set-auto-push <value>' subcommand to config command
 - [ ] Add 'set-push-remote <remote>' subcommand to config command
@@ -16,7 +21,7 @@ Add new configuration subcommands to manage auto-push settings, including set-au
 - [ ] Add error handling for invalid inputs
 - [ ] Ensure consistent formatting with existing commands
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] set-auto-push accepts 'true' or 'false' values
 - [ ] set-push-remote accepts any valid remote name
 - [ ] Both commands support --global flag for global config

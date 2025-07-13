@@ -1,9 +1,12 @@
 # Issue 51: Delete bootstrap command and clean up references
 
-## Requirement
+## Description
+Remove the bootstrap command entirely from the CLI and clean up all references throughout the codebase. This completes the transition to the smart run command that handles spec files automatically.
+
+## Requirements
 Remove the bootstrap command entirely from the CLI and clean up all references throughout the codebase.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Delete `src/cli/commands/bootstrap.ts` file
 - [ ] Remove bootstrap command registration from CLI index
 - [ ] Remove bootstrap imports from all files

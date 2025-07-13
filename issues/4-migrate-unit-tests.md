@@ -1,9 +1,12 @@
 # Issue 4: Migrate Unit Tests from Jest to Vitest
 
-## Requirement
+## Description
+Migrate all existing unit tests from Jest syntax to Vitest syntax, updating imports, mocks, and assertions. This ensures the test suite is fully compatible with Vitest and takes advantage of its performance improvements.
+
+## Requirements
 Migrate all existing unit tests from Jest syntax to Vitest syntax, updating imports, mocks, and assertions.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Identify all test files that need migration
 - [ ] Update imports from jest to vitest
 - [ ] Convert jest.mock() to vi.mock()
@@ -19,8 +22,8 @@ Migrate all existing unit tests from Jest syntax to Vitest syntax, updating impo
 - Use new test utilities where applicable
 
 ## Dependencies
-- Issue #2: Vitest must be installed
-- Issue #3: Test utilities must be created
+- **Issue 2**: Vitest must be installed
+- **Issue 3**: Test utilities must be created
 
 ## Resources
 - Master Plan: ./specs/vitest-migration.md (Step 5)

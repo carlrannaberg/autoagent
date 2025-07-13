@@ -1,8 +1,12 @@
-# Plan for Issue 51: Delete bootstrap command and clean up references
+# Plan for Issue #51: Delete bootstrap command and clean up references
 
 This document outlines the step-by-step plan to complete `issues/51-delete-bootstrap-command-and-clean-up-references.md`.
 
-## Implementation Plan
+## Overview
+
+This plan removes the standalone bootstrap CLI command and cleans up all references, as its functionality is now integrated into the smart run command. The internal bootstrap method remains intact for use by the run command.
+
+## Implementation Steps
 
 ### Phase 1: Remove Bootstrap Command
 - [ ] Delete `src/cli/commands/bootstrap.ts` file

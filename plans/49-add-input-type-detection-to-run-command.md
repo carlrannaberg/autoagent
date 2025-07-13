@@ -1,8 +1,12 @@
-# Plan for Issue 49: Add input type detection to run command
+# Plan for Issue #49: Add input type detection to run command
 
 This document outlines the step-by-step plan to complete `issues/49-add-input-type-detection-to-run-command.md`.
 
-## Implementation Plan
+## Overview
+
+This plan adds intelligent input type detection to the run command, enabling it to automatically determine whether the input is a spec file, issue number, or issue file. This foundational change enables the smart run command functionality.
+
+## Implementation Steps
 
 ### Phase 1: Update Run Command Interface
 - [ ] Change run command parameter from `[issue]` to `[target]`
@@ -17,7 +21,7 @@ This document outlines the step-by-step plan to complete `issues/49-add-input-ty
 
 ### Phase 3: Add Routing Logic
 - [ ] Implement target type detection in run command action
-- [ ] Route plan files to bootstrap flow (prepare for issue 50)
+- [ ] Route plan files to bootstrap flow (prepare for #50)
 - [ ] Route issue references to existing execute logic
 - [ ] Maintain default behavior for no input
 
@@ -30,7 +34,7 @@ This document outlines the step-by-step plan to complete `issues/49-add-input-ty
 - Modify `src/cli/commands/run.ts` to add detection logic
 - Use regex patterns for reliable type detection
 - Maintain backward compatibility with existing usage
-- Prepare hooks for spec file handling (issue 50)
+- Prepare hooks for spec file handling (#50)
 
 ## Testing Strategy
 - Unit tests for each detection function

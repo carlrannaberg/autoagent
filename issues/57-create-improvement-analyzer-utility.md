@@ -1,9 +1,12 @@
 # Issue 57: Create improvement analyzer utility
 
-## Requirement
+## Description
+Build a utility module to analyze improvement suggestions from the reflection process, validate them, and prepare them for application. This ensures only high-quality improvements are applied.
+
+## Requirements
 Build a utility module to analyze improvement suggestions from the reflection process, validate them, and prepare them for application.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Create `src/utils/improvement-analyzer.ts`
 - [ ] Implement validation logic for improvement suggestions
 - [ ] Create scoring algorithms for improvement quality

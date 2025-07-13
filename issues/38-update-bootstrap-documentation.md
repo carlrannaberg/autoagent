@@ -1,9 +1,12 @@
 # Issue 38: Update Bootstrap Documentation
 
-## Requirement
+## Description
+Update all documentation to reflect the new bootstrap behavior that preserves existing TODO items instead of overwriting them. This ensures users understand the safe behavior and can confidently use bootstrap in active projects.
+
+## Requirements
 Update all documentation to reflect the new bootstrap behavior that preserves existing TODO items instead of overwriting them.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Update command documentation to clarify preservation behavior
 - [ ] Add examples showing bootstrap with existing issues
 - [ ] Document the safety of using bootstrap in active projects
@@ -19,7 +22,7 @@ Documentation updates should include:
 4. CHANGELOG entry for the bug fix
 
 ## Dependencies
-- Issue #34: Fix Bootstrap TODO Overwrite (must be implemented first)
+- **Issue 34**: Fix Bootstrap TODO Overwrite (must be implemented first)
 
 ## Resources
 - Documentation examples from master plan

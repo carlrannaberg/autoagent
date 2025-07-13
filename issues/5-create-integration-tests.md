@@ -1,9 +1,12 @@
 # Issue 5: Create Integration Test Infrastructure
 
-## Requirement
+## Description
+Set up integration test infrastructure and create comprehensive integration tests for provider failover and core workflows. This ensures the system works correctly in real-world scenarios.
+
+## Requirements
 Set up integration test infrastructure and create comprehensive integration tests for provider failover and core workflows.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Create test/integration directory structure
 - [ ] Implement provider failover integration tests
 - [ ] Create workflow integration tests
@@ -19,8 +22,8 @@ Set up integration test infrastructure and create comprehensive integration test
 - Verify git integration workflows
 
 ## Dependencies
-- Issue #3: Test utilities must be available
-- Issue #4: Unit tests should be migrated first
+- **Issue 3**: Test utilities must be available
+- **Issue 4**: Unit tests should be migrated first
 
 ## Resources
 - Master Plan: ./specs/vitest-migration.md (Step 7)

@@ -1,8 +1,12 @@
-# Plan for Issue 36: Add Bootstrap TODO Preservation Tests
+# Plan for Issue #36: Add Bootstrap TODO Preservation Tests
 
 This document outlines the step-by-step plan to complete `issues/36-add-bootstrap-todo-preservation-tests.md`.
 
-## Implementation Plan
+## Overview
+
+This plan implements comprehensive tests to verify that the bootstrap command properly preserves existing TODO content when adding new issues. The tests will ensure that the fix for TODO overwriting works correctly in all scenarios.
+
+## Implementation Steps
 
 ### Phase 1: Test Setup
 - [ ] Create test file for bootstrap TODO handling

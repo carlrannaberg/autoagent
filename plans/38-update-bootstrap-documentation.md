@@ -1,8 +1,12 @@
-# Plan for Issue 38: Update Bootstrap Documentation
+# Plan for Issue #38: Update Bootstrap Documentation
 
 This document outlines the step-by-step plan to complete `issues/38-update-bootstrap-documentation.md`.
 
-## Implementation Plan
+## Overview
+
+This plan updates all documentation related to the bootstrap command to reflect the new behavior where existing TODO items are preserved rather than overwritten. This includes code documentation, user documentation, changelog entries, and migration guidance.
+
+## Implementation Steps
 
 ### Phase 1: Code Documentation
 - [ ] Add comprehensive JSDoc comments to addIssueToTodo method

@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/67-write-tests-for-git-validation-functionality.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers writing comprehensive tests for all git validation functionality, including success and failure scenarios.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Unit tests for AutonomousAgent
 - [ ] Test validateGitForAutoCommit with auto-commit disabled

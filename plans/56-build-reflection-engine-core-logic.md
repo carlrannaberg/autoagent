@@ -2,7 +2,11 @@
 
 This document outlines the step-by-step plan to complete `issues/56-build-reflection-engine-core-logic.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers implementing the core reflection engine logic for iterative improvement of issues and plans. The engine will analyze decomposition quality, suggest improvements, and handle the iterative refinement process.
+
+## Implementation Steps
 
 ### Phase 1: Engine Setup
 - [ ] Create `src/core/reflection-engine.ts`

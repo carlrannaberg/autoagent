@@ -1,9 +1,12 @@
 # Issue 37: Add Bootstrap TODO Integration Tests
 
-## Requirement
+## Description
+Add integration tests that verify the complete bootstrap workflow, including TODO preservation, issue creation, plan generation, and CLI integration. These tests ensure the entire system works correctly end-to-end.
+
+## Requirements
 Add integration tests that verify the complete bootstrap workflow, including TODO preservation, issue creation, plan generation, and CLI integration.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Test full bootstrap workflow with existing project state
 - [ ] Test CLI command execution and output
 - [ ] Test that existing issues are preserved in workflow
@@ -21,8 +24,8 @@ Integration tests should cover the end-to-end bootstrap process:
 5. Verify command output and success status
 
 ## Dependencies
-- Issue #34: Fix Bootstrap TODO Overwrite (implementation to test)
-- Issue #36: Unit tests should pass first
+- **Issue 34**: Fix Bootstrap TODO Overwrite (implementation to test)
+- **Issue 36**: Unit tests should pass first
 
 ## Resources
 - Integration test examples from master plan

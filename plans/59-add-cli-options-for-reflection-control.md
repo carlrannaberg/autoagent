@@ -2,7 +2,11 @@
 
 This document outlines the step-by-step plan to complete `issues/59-add-cli-options-for-reflection-control.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers adding CLI options to control the reflection feature for the bootstrap and create commands. Users will be able to enable/disable reflection and configure iteration counts via command-line flags.
+
+## Implementation Steps
 
 ### Phase 1: Command Analysis
 - [ ] Review existing CLI command structure

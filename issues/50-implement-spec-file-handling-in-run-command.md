@@ -1,11 +1,14 @@
 # Issue 50: Implement spec file handling in run command
 
-## Requirement
+## Description
+Add capability to the run command to handle spec/plan files by performing bootstrap and optional execution flow. This allows users to go from spec to implementation in a single command.
+
+## Requirements
 Add capability to the run command to handle spec/plan files by performing bootstrap and optional execution flow.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Run command detects spec files and calls bootstrap logic
-- [ ] Bootstrap creates decomposition issue (#1) from spec file
+- [ ] Bootstrap creates decomposition issue (Issue 1) from spec file
 - [ ] After bootstrap, automatically executes the decomposition issue
 - [ ] `--all` flag continues with all created issues after decomposition
 - [ ] `--dry-run` flag previews actions without execution

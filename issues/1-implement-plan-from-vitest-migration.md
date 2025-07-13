@@ -1,9 +1,12 @@
 # Issue 1: Implement plan from vitest-migration
 
-## Requirement
+## Description
+This issue tracks the decomposition and implementation of the Vitest migration plan for the AutoAgent project. The goal is to break down the master migration plan into individual actionable issues and create corresponding plan files for systematic implementation.
+
+## Requirements
 Decompose the plan into individual actionable issues and create corresponding plan files for each issue.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] All issues are created and numbered in the issues/ directory
 - [ ] Each issue has a corresponding plan file in the plans/ directory
 - [ ] Each issue has clear requirements and acceptance criteria

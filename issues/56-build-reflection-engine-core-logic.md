@@ -1,9 +1,12 @@
 # Issue 56: Build reflection engine core logic
 
-## Requirement
+## Description
+Implement the core reflection engine that analyzes decomposed issues and plans, identifies gaps, and generates improvement suggestions. This is the heart of the self-improvement system.
+
+## Requirements
 Implement the core reflection engine that analyzes decomposed issues and plans, identifies gaps, and generates improvement suggestions.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Create `src/core/reflection-engine.ts` with main reflection logic
 - [ ] Implement `reflectiveDecomposition` function
 - [ ] Create `reflectOnIssuesAndPlans` function for analysis

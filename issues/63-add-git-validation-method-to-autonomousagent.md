@@ -1,9 +1,13 @@
 # Issue 63: Add git validation method to AutonomousAgent
 
-## Requirement
+## Description
 Add a validation method to the AutonomousAgent class that checks git repository status before auto-commit operations.
 
-## Acceptance Criteria
+## Requirements
+
+Add a validation method to the AutonomousAgent class that checks git repository status before auto-commit operations.
+
+## Success Criteria
 - [ ] Add `validateGitForAutoCommit()` method to AutonomousAgent class
 - [ ] Method should skip validation when auto-commit is disabled
 - [ ] Method should check git availability using existing utilities

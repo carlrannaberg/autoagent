@@ -1,9 +1,13 @@
 # Issue 66: Add user-friendly error messages for git validation
 
-## Requirement
+## Description
 Enhance error messages throughout the git validation system to provide clear, actionable guidance for users.
 
-## Acceptance Criteria
+## Requirements
+
+Enhance error messages throughout the git validation system to provide clear, actionable guidance for users.
+
+## Success Criteria
 - [ ] Update validateGitForAutoCommit() to use multi-line error messages
 - [ ] Include specific remediation steps in each error
 - [ ] Add command examples for fixing issues

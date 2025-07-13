@@ -1,9 +1,13 @@
 # Issue 59: Add CLI options for reflection control
 
-## Requirement
+## Description
 Add command-line interface options to control the reflection feature, allowing users to configure reflection behavior directly from the CLI.
 
-## Acceptance Criteria
+## Requirements
+
+Add command-line interface options to control the reflection feature, allowing users to configure reflection behavior directly from the CLI.
+
+## Success Criteria
 - [ ] Add `--reflection-iterations` flag to set max iterations
 - [ ] Add `--no-reflection` flag to disable reflection
 - [ ] Update CLI command parser to handle new options

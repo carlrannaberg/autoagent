@@ -1,9 +1,14 @@
 # Issue 75: Add configuration commands
 
-## Requirement
+## Description
+Implement CLI commands for managing the git no-verify configuration setting. This allows users to easily configure git hook behavior through the command line without manually editing configuration files, improving the user experience and making the feature more discoverable.
+
+## Requirements
+
+### Requirement
 Add configuration commands to set and display the git no-verify setting through the CLI.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Add `config set-git-no-verify <value>` subcommand
 - [ ] Accept "true" or "false" as values (case-insensitive)
 - [ ] Support both global and local configuration with `-g` flag

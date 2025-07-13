@@ -1,9 +1,12 @@
 # Issue 16: Implement Gemini Output Formatting
 
-## Requirement
+## Description
+This issue focuses on implementing enhanced output formatting for the Gemini provider to improve readability. The goal is to add line breaks at sentence boundaries and provide visual headers/footers similar to the Claude provider's formatting.
+
+## Requirements
 Implement the basic functionality for formatting the Gemini provider's output to improve readability, as outlined in the `gemini-output-formatting.md` specification.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Add a utility function to format text with line breaks at sentence boundaries.
 - [ ] Update the `StreamFormatter` to include a method for formatting Gemini's text output.
 - [ ] Modify the `GeminiProvider` to use the new formatting logic for its streaming output.

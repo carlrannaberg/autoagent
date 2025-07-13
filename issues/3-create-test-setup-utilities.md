@@ -1,9 +1,12 @@
 # Issue 3: Create Test Setup and Utilities
 
-## Requirement
+## Description
+Create the test setup file and migrate/create test utilities that will be used across all test suites. This includes setting up Vitest configuration, custom matchers, mocking utilities, and test workspace management.
+
+## Requirements
 Create the test setup file and migrate/create test utilities that will be used across all test suites.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Create test/setup.ts with Vitest configuration
 - [ ] Implement custom matchers for AutoAgent
 - [ ] Create mock system for providers
@@ -20,7 +23,7 @@ Create the test setup file and migrate/create test utilities that will be used a
 - Set up proper TypeScript types for custom matchers
 
 ## Dependencies
-- Issue #2: Vitest must be installed and configured
+- **Issue 2**: Vitest must be installed and configured
 
 ## Resources
 - Master Plan: ./specs/vitest-migration.md (Steps 4-6)

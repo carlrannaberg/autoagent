@@ -1,9 +1,13 @@
 # Issue 64: Integrate git validation into executeIssue method
 
-## Requirement
+## Description
 Integrate the git validation method into the executeIssue method to perform early validation before AI execution begins.
 
-## Acceptance Criteria
+## Requirements
+
+Integrate the git validation method into the executeIssue method to perform early validation before AI execution begins.
+
+## Success Criteria
 - [ ] Call `validateGitForAutoCommit()` early in executeIssue method
 - [ ] Validation should occur after setting isExecuting flag but before AI operations
 - [ ] Validation errors should be caught and handled appropriately

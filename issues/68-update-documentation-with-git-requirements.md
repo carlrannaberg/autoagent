@@ -1,9 +1,13 @@
 # Issue 68: Update documentation with git requirements
 
-## Requirement
+## Description
 Update project documentation to include git requirements for auto-commit functionality and troubleshooting guidance.
 
-## Acceptance Criteria
+## Requirements
+
+Update project documentation to include git requirements for auto-commit functionality and troubleshooting guidance.
+
+## Success Criteria
 - [ ] Add git requirements section to README.md
 - [ ] Include setup instructions for git configuration
 - [ ] Add troubleshooting section for common git validation errors

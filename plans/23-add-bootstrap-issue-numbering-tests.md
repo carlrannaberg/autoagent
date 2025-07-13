@@ -1,8 +1,12 @@
-# Plan for Issue 23: Add Bootstrap Issue Numbering Tests
+# Plan for Issue #23: Add Bootstrap Issue Numbering Tests
 
 This document outlines the step-by-step plan to complete `issues/23-add-bootstrap-issue-numbering-tests.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers the implementation of comprehensive unit tests for the bootstrap issue numbering functionality. The tests will ensure that the bootstrap command correctly determines the next available issue number, handles edge cases properly, and prevents issue overwrites.
+
+## Implementation Steps
 
 ### Phase 1: Test File Setup
 - [ ] Locate or create test file for AutonomousAgent
@@ -11,7 +15,7 @@ This document outlines the step-by-step plan to complete `issues/23-add-bootstra
 - [ ] Create helper function for creating test issues
 
 ### Phase 2: Core Test Implementation
-- [ ] Implement test: "should create issue #1 in empty project"
+- [ ] Implement test: "should create #1 in empty project"
 - [ ] Implement test: "should create next sequential issue number"
 - [ ] Implement test: "should handle gaps in issue numbering"
 - [ ] Implement test: "should not overwrite existing issues"
@@ -42,7 +46,7 @@ describe('AutonomousAgent.bootstrap', () => {
       // Setup test environment
     });
 
-    it('should create issue #1 in empty project', async () => {
+    it('should create #1 in empty project', async () => {
       // Test implementation
     });
 

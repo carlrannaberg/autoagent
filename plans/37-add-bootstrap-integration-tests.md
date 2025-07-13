@@ -1,8 +1,12 @@
-# Plan for Issue 37: Add Bootstrap TODO Integration Tests
+# Plan for Issue #37: Add Bootstrap TODO Integration Tests
 
 This document outlines the step-by-step plan to complete `issues/37-add-bootstrap-integration-tests.md`.
 
-## Implementation Plan
+## Overview
+
+This plan implements end-to-end integration tests for the bootstrap command's TODO preservation functionality. The tests will verify that the complete bootstrap workflow properly maintains existing TODO content while adding new issues through CLI execution.
+
+## Implementation Steps
 
 ### Phase 1: Test Infrastructure
 - [ ] Set up integration test utilities

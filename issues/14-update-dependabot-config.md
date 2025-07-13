@@ -1,6 +1,9 @@
 # Issue 14: Update Dependabot Configuration
 
-## Requirement
+## Description
+This issue focuses on improving the Dependabot configuration to better handle major version updates that introduce breaking changes. The current configuration allows automatic updates that can break the build, as seen with the ESLint v8 to v9 migration.
+
+## Requirements
 Update Dependabot configuration to better handle major version updates that may introduce breaking changes, particularly for tools like ESLint that require configuration format migrations.
 
 ## Current State
@@ -9,7 +12,7 @@ Update Dependabot configuration to better handle major version updates that may 
 - No version constraints or update rules configured
 - Manual intervention required when breaking changes occur
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Dependabot configuration updated with appropriate version rules
 - [ ] Major version updates are handled more gracefully
 - [ ] Critical dependencies have update policies defined

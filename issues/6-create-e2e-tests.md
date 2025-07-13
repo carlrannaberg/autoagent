@@ -1,9 +1,13 @@
 # Issue 6: Create E2E Test Infrastructure
 
-## Requirement
+## Description
 Set up end-to-end test infrastructure to test the complete CLI workflow from user perspective.
 
-## Acceptance Criteria
+## Requirements
+
+Set up end-to-end test infrastructure to test the complete CLI workflow from user perspective.
+
+## Success Criteria
 - [ ] Create test/e2e directory structure
 - [ ] Implement full CLI workflow tests
 - [ ] Test all CLI commands end-to-end
@@ -20,8 +24,8 @@ Set up end-to-end test infrastructure to test the complete CLI workflow from use
 - Capture and validate CLI output
 
 ## Dependencies
-- Issue #4: Core functionality must be working
-- Issue #5: Integration tests should be complete
+- **Issue 4**: Core functionality must be working
+- **Issue 5**: Integration tests should be complete
 
 ## Resources
 - Master Plan: ./specs/vitest-migration.md (Step 8)

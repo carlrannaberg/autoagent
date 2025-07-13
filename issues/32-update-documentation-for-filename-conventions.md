@@ -1,9 +1,12 @@
 # Issue 32: Update documentation for filename conventions
 
-## Requirement
+## Description
+Update project documentation to reflect the new consistent filename conventions for issues and plans created by the bootstrap command. This ensures users understand how files are named and can predict file paths.
+
+## Requirements
 Update project documentation to reflect the new consistent filename conventions for issues and plans created by the bootstrap command.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Update README.md with filename convention details
 - [ ] Add JSDoc comments to generateFileSlug method
 - [ ] Update CLI help text if needed

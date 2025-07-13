@@ -1,9 +1,12 @@
 # Issue 44: Implement plan from smart-run-command
 
-## Requirement
+## Description
+Decompose the smart-run-command plan into individual actionable issues and create corresponding plan files. This implements an intelligent run command that automatically detects input types and executes the appropriate action.
+
+## Requirements
 Decompose the plan into individual actionable issues and create corresponding plan files for each issue.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] All issues are created and numbered in the issues/ directory
 - [ ] Each issue has a corresponding plan file in the plans/ directory
 - [ ] Each issue has clear requirements and acceptance criteria

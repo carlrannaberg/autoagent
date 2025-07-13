@@ -1,9 +1,14 @@
 # Issue 77: Update documentation
 
-## Requirement
+## Description
+Update all project documentation to comprehensively explain the git no-verify functionality. This includes user-facing documentation in README.md, configuration guides, CLI help text, and developer documentation. The documentation should clearly explain the feature's purpose, usage patterns, and security implications.
+
+## Requirements
+
+### Requirement
 Update all documentation to explain the git no-verify functionality, usage examples, and security considerations.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Update README.md with git hooks configuration section
 - [ ] Add examples of using --verify and --no-verify flags
 - [ ] Document configuration commands and settings

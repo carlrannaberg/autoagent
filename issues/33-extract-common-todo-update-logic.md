@@ -1,9 +1,12 @@
 # Issue 33: Extract Common TODO Update Logic
 
-## Requirement
+## Description
+Extract the TODO update logic from createIssue into a shared method that can be used by both createIssue and bootstrap. This ensures consistent behavior when updating TODO.md and eliminates code duplication.
+
+## Requirements
 Extract the TODO update logic from createIssue into a shared method that can be used by both createIssue and bootstrap to ensure consistent behavior when updating TODO.md.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Create a new private method `addIssueToTodo` in AutonomousAgent
 - [ ] Method handles adding issues to existing TODO content
 - [ ] Method creates initial TODO structure if file is empty/missing

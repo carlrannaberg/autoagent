@@ -1,8 +1,12 @@
-# Plan for Issue 2: Install and Configure Vitest
+# Plan for Issue #2: Install and Configure Vitest
 
 This document outlines the step-by-step plan to complete `issues/2-install-configure-vitest.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers the complete migration from Jest to Vitest as the testing framework for the AutoAgent project. The migration includes removing all Jest dependencies, installing Vitest and its associated packages, creating appropriate configuration files for different test types, and updating all package.json scripts to use Vitest commands.
+
+## Implementation Steps
 
 ### Phase 1: Remove Jest Dependencies
 - [ ] Back up current package.json

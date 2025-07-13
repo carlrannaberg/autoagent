@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/8-update-cicd-pipeline.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers updating the CI/CD pipeline configuration to support the new testing framework and build processes.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Update Test Workflow
 - [ ] Replace Jest commands with Vitest

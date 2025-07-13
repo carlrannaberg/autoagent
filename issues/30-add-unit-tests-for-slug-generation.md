@@ -1,9 +1,12 @@
 # Issue 30: Add unit tests for slug generation
 
-## Requirement
+## Description
+Create comprehensive unit tests for the `generateFileSlug` method and related functionality to ensure correct slug generation across various input scenarios. This will validate that all edge cases are handled properly and the method produces consistent, predictable results.
+
+## Requirements
 Create comprehensive unit tests for the `generateFileSlug` method and related functionality to ensure correct slug generation across various input scenarios.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Test normal slug generation cases
 - [ ] Test edge cases (special characters, spaces, dots, hyphens)
 - [ ] Test empty and null inputs
@@ -31,8 +34,8 @@ Tests should cover:
 expect(fileManager.generateFileSlug('Implement User Authentication'))
   .toBe('implement-user-authentication');
 
-expect(fileManager.generateFileSlug('Fix Bug #123'))
-  .toBe('fix-bug-123');
+expect(fileManager.generateFileSlug('Fix Bug Issue 26'))
+  .toBe('fix-bug-26');
 
 expect(fileManager.generateFileSlug('Multiple...Dots'))
   .toBe('multiple-dots');

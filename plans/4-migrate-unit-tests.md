@@ -1,8 +1,12 @@
-# Plan for Issue 4: Migrate Unit Tests from Jest to Vitest
+# Plan for Issue #4: Migrate Unit Tests from Jest to Vitest
 
 This document outlines the step-by-step plan to complete `issues/4-migrate-unit-tests.md`.
 
-## Implementation Plan
+## Overview
+
+This plan migrates all unit tests from Jest to Vitest, updating test syntax, mocking patterns, and configuration. The migration improves test performance and aligns with modern JavaScript tooling while maintaining test coverage and reliability.
+
+## Implementation Steps
 
 ### Phase 1: Test Inventory
 - [ ] List all test files in test/ directory

@@ -1,8 +1,12 @@
-# Plan for Issue 22: Fix Bootstrap Hardcoded Issue Number
+# Plan for Issue #22: Fix Bootstrap Hardcoded Issue Number
 
 This document outlines the step-by-step plan to complete `issues/22-fix-bootstrap-hardcoded-issue-number.md`.
 
-## Implementation Plan
+## Overview
+
+This plan addresses a critical bug where the bootstrap command uses a hardcoded issue number (1) instead of dynamically determining the next available issue number. The fix ensures that bootstrap creates issues with proper sequential numbering, preventing overwrites of existing issues.
+
+## Implementation Steps
 
 ### Phase 1: Code Change
 - [ ] Locate the bootstrap method in `src/core/autonomous-agent.ts`

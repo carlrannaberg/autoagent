@@ -1,9 +1,12 @@
 # Issue 52: Write tests for smart run command
 
-## Requirement
+## Description
+Create comprehensive test coverage for the enhanced run command functionality, including input detection, spec file handling, and backward compatibility. This ensures the smart run command works reliably.
+
+## Requirements
 Create comprehensive test coverage for the enhanced run command functionality, including input detection, spec file handling, and backward compatibility.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Unit tests for isPlanFile(), isIssueNumber(), isIssueFile() functions
 - [ ] Integration tests for spec file execution flow
 - [ ] Tests for --all flag with spec files

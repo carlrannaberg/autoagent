@@ -1,9 +1,13 @@
 # Issue 72: Add configuration manager support
 
-## Requirement
+## Description
 Update the ConfigManager class to support getting and setting the git commit no-verify configuration option.
 
-## Acceptance Criteria
+## Requirements
+
+Update the ConfigManager class to support getting and setting the git commit no-verify configuration option.
+
+## Success Criteria
 - [ ] Add `gitCommitNoVerify` to default configuration with `false` value
 - [ ] Implement `setGitCommitNoVerify(noVerify: boolean)` method
 - [ ] Implement `getGitCommitNoVerify()` method returning boolean

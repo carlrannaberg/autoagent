@@ -1,9 +1,12 @@
 # Issue 36: Add Bootstrap TODO Preservation Tests
 
-## Requirement
+## Description
+Add comprehensive unit tests to verify that the bootstrap command correctly preserves existing TODO.md content and appends new issues without data loss. These tests will ensure the fix works properly and prevent regression.
+
+## Requirements
 Add comprehensive unit tests to verify that the bootstrap command correctly preserves existing TODO.md content and appends new issues without data loss.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Test bootstrap with empty TODO.md creates initial structure
 - [ ] Test bootstrap with existing pending issues preserves them
 - [ ] Test bootstrap with completed issues preserves them
@@ -21,7 +24,7 @@ Create comprehensive test coverage for the bootstrap TODO handling functionality
 - Regression tests for empty project bootstrap
 
 ## Dependencies
-- Issue #34: Fix Bootstrap TODO Overwrite (implementation to test)
+- **Issue 34**: Fix Bootstrap TODO Overwrite (implementation to test)
 
 ## Resources
 - Test examples in master plan: `specs/fix-bootstrap-todo-overwrite.md`

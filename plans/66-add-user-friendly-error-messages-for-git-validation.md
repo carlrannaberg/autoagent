@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/66-add-user-friendly-error-messages-for-git-validation.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers adding clear, actionable error messages for git validation failures with specific remediation steps.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Define error message templates
 - [ ] Create consistent error message format

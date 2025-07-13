@@ -1,6 +1,10 @@
-# Plan for Issue 28: Refactor createIssue to use centralized slug
+# Plan for Issue #28: Refactor createIssue to use centralized slug
 
-## Implementation Plan
+## Overview
+
+This plan refactors the createIssue method in FileManager to use the centralized generateFileSlug method, eliminating duplicate slug generation logic. This ensures consistent filename generation across both overloads of the createIssue method and simplifies maintenance.
+
+## Implementation Steps
 
 ### Phase 1: Refactor First Overload
 - [ ] Update createIssue(issue: Issue) to use generateFileSlug
@@ -39,4 +43,4 @@ async createIssue(issueOrNumber: Issue | number, title?: string, content?: strin
 - Maintaining type safety
 
 ## Dependencies
-- Issue 26: generateFileSlug method must be implemented first
+- #26: generateFileSlug method must be implemented first

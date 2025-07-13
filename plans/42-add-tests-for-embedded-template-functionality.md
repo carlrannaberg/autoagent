@@ -1,8 +1,12 @@
-# Plan for Issue 42: Add tests for embedded template functionality
+# Plan for Issue #42: Add tests for embedded template functionality
 
 This document outlines the step-by-step plan to complete `issues/42-add-tests-for-embedded-template-functionality.md`.
 
-## Implementation Plan
+## Overview
+
+This plan adds comprehensive unit and integration tests for the embedded template functionality, ensuring bootstrap works correctly without external template files. Tests verify that embedded templates are used, no filesystem reads occur, and the feature maintains backward compatibility.
+
+## Implementation Steps
 
 ### Phase 1: Unit Test Setup
 - [ ] Create or update test file for autonomous-agent bootstrap tests

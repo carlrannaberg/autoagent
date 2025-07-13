@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/77-update-documentation.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers updating documentation to explain the git no-verify feature, its usage, and configuration options.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Update README.md
 - [ ] Add "Git Hooks Configuration" section

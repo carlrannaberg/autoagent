@@ -2,7 +2,11 @@
 
 This document outlines the step-by-step plan to complete `issues/6-create-e2e-tests.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers creating comprehensive end-to-end tests for the AutoAgent CLI, testing full workflows from initialization through execution. The tests will validate real-world usage patterns and ensure the CLI works correctly in practice.
+
+## Implementation Steps
 
 ### Phase 1: Setup E2E Test Environment
 - [ ] Create test/e2e directory

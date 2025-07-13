@@ -1,8 +1,12 @@
-# Plan for Issue 43: Update documentation for embedded templates
+# Plan for Issue #43: Update documentation for embedded templates
 
 This document outlines the step-by-step plan to complete `issues/43-update-documentation-for-embedded-templates.md`.
 
-## Implementation Plan
+## Overview
+
+This plan updates all documentation to reflect the new embedded template feature, explaining the benefits and changes to users. Documentation will cover the removal of external template dependencies and the improved reliability of the bootstrap command.
+
+## Implementation Steps
 
 ### Phase 1: README.md Updates
 - [ ] Locate Bootstrap Command section in README

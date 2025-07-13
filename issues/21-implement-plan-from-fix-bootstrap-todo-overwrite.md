@@ -1,9 +1,12 @@
 # Issue 21: Implement plan from fix-bootstrap-todo-overwrite
 
-## Requirement
+## Description
+This issue tracks the decomposition and implementation of the fix for bootstrap TODO overwrite behavior. The goal is to prevent the bootstrap command from overwriting existing TODO items when it runs.
+
+## Requirements
 Decompose the plan into individual actionable issues and create corresponding plan files for each issue.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] All issues are created and numbered in the issues/ directory
 - [ ] Each issue has a corresponding plan file in the plans/ directory
 - [ ] Each issue has clear requirements and acceptance criteria
@@ -25,11 +28,11 @@ IMPORTANT: For each issue you create:
 ## Generated Issues
 
 ✅ Successfully created the following issues and plans:
-- Issue #33: Extract Common TODO Update Logic - `issues/33-extract-common-todo-update-logic.md`
-- Issue #34: Fix Bootstrap TODO Overwrite - `issues/34-fix-bootstrap-todo-overwrite.md`
-- Issue #35: Refactor createIssue to Support Optional Custom Content - `issues/35-refactor-createissue-optional-content.md`
-- Issue #36: Add Bootstrap TODO Preservation Tests - `issues/36-add-bootstrap-todo-preservation-tests.md`
-- Issue #37: Add Bootstrap Integration Tests - `issues/37-add-bootstrap-integration-tests.md`
-- Issue #38: Update Bootstrap Documentation - `issues/38-update-bootstrap-documentation.md`
+- **Issue 33**: Extract Common TODO Update Logic - `issues/33-extract-common-todo-update-logic.md`
+- **Issue 34**: Fix Bootstrap TODO Overwrite - `issues/34-fix-bootstrap-todo-overwrite.md`
+- **Issue 35**: Refactor createIssue to Support Optional Custom Content - `issues/35-refactor-createissue-optional-content.md`
+- **Issue 36**: Add Bootstrap TODO Preservation Tests - `issues/36-add-bootstrap-todo-preservation-tests.md`
+- **Issue 37**: Add Bootstrap Integration Tests - `issues/37-add-bootstrap-integration-tests.md`
+- **Issue 38**: Update Bootstrap Documentation - `issues/38-update-bootstrap-documentation.md`
 
 All issues have been added to TODO.md and corresponding plan files have been created.

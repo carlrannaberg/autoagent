@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/69-add-debug-logging-for-git-validation.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers adding detailed debug logging for git validation to help users troubleshoot configuration issues.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Add validation start logging
 - [ ] Log when git validation begins

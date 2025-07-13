@@ -1,9 +1,12 @@
 # Issue 43: Update documentation for embedded templates
 
-## Requirement
+## Description
+Update all relevant documentation to reflect that bootstrap templates are now embedded in the package and work out-of-the-box. This ensures users understand that no template setup is required.
+
+## Requirements
 Update all relevant documentation to reflect that bootstrap templates are now embedded in the package and work out-of-the-box. This includes README updates, code comments, and changelog entries.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] README.md updated with embedded template information
 - [ ] Remove any mentions of required template setup
 - [ ] Add section explaining built-in templates
@@ -22,9 +25,9 @@ Update all relevant documentation to reflect that bootstrap templates are now em
 - Keep documentation concise and user-focused
 
 ## Dependencies
-- Depends on: Issue #40 (Create embedded template module)
-- Depends on: Issue #41 (Update bootstrap to use embedded templates)
-- Depends on: Issue #42 (Add tests for embedded template functionality)
+- Depends on: Issue 40 (Create embedded template module)
+- Depends on: Issue 41 (Update bootstrap to use embedded templates)
+- Depends on: Issue 42 (Add tests for embedded template functionality)
 
 ## Resources
 - Master Plan: `specs/embed-bootstrap-templates.md` (lines 365-408)

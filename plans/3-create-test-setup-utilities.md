@@ -1,8 +1,12 @@
-# Plan for Issue 3: Create Test Setup and Utilities
+# Plan for Issue #3: Create Test Setup and Utilities
 
 This document outlines the step-by-step plan to complete `issues/3-create-test-setup-utilities.md`.
 
-## Implementation Plan
+## Overview
+
+This plan establishes a comprehensive test infrastructure for the Vitest migration, including custom matchers, mock utilities, test factories, and workspace management. The implementation will provide all necessary tools for writing clean, maintainable tests throughout the codebase.
+
+## Implementation Steps
 
 ### Phase 1: Create Core Setup File
 - [ ] Create test/setup.ts

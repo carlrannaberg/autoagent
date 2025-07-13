@@ -1,6 +1,10 @@
-# Plan for Issue 27: Update createPlan for consistent filenames
+# Plan for Issue #27: Update createPlan for consistent filenames
 
-## Implementation Plan
+## Overview
+
+This plan updates the createPlan method in FileManager to support optional issue titles for generating consistent filenames that match the corresponding issue files. This ensures that plan files follow the same naming convention as their associated issues, improving file organization and discoverability.
+
+## Implementation Steps
 
 ### Phase 1: Method Signature Update
 - [ ] Change createPlan method signature to make issueTitle optional
@@ -36,4 +40,4 @@ async createPlan(issueNumber: number, plan: Plan, issueTitle?: string): Promise<
 - Handling edge cases in title formatting
 
 ## Dependencies
-- Issue 26: generateFileSlug method must be implemented first
+- #26: generateFileSlug method must be implemented first

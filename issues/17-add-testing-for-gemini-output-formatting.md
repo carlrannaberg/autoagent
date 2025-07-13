@@ -1,9 +1,12 @@
 # Issue 17: Add Testing for Gemini Output Formatting
 
-## Requirement
+## Description
+This issue focuses on creating comprehensive test coverage for the Gemini output formatting functionality. The goal is to ensure the formatting logic is robust, performant, and handles various edge cases correctly through unit, integration, and end-to-end tests.
+
+## Requirements
 Add comprehensive tests for the new Gemini output formatting functionality to ensure it is working as expected and is robust.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Unit tests are created for the text line-breaking logic.
 - [ ] Unit tests cover various sentence patterns and edge cases (e.g., multiple punctuation, quotes).
 - [ ] Integration tests are added to mock Gemini CLI output and verify the formatted output.
@@ -113,7 +116,7 @@ describe('Performance Tests', () => {
 - Use consistent test data across unit and integration tests
 
 ## Dependencies
-- #16: Implement Gemini Output Formatting
+- **Issue 16**: Implement Gemini Output Formatting
 
 ## Resources
 - Master Plan: `specs/gemini-output-formatting.md`

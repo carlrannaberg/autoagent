@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/74-add-cli-flags-for-run-command.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers adding CLI flags to the run command for controlling git commit behavior including the no-verify option.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Update RunOptions Interface
 - [ ] Locate RunOptions interface in run command
@@ -51,4 +57,4 @@ Commander.js patterns for option handling and conflict resolution.
 
 ## Resources
 - Master Plan: `./specs/git-commit-no-verify-configuration.md`
-- Issue 73: Agent implementation
+- #73: Agent implementation

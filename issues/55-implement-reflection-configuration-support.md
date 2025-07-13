@@ -1,9 +1,12 @@
 # Issue 55: Implement reflection configuration support
 
-## Requirement
+## Description
+Add reflection configuration support to the existing AgentConfig interface and implement configuration loading/validation logic. This allows users to customize reflection behavior.
+
+## Requirements
 Add reflection configuration support to the existing AgentConfig interface and implement configuration loading/validation logic.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Extend `AgentConfig` interface to include optional `reflection` property
 - [ ] Add default reflection configuration values
 - [ ] Implement configuration validation logic

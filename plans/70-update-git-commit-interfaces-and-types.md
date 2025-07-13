@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/70-update-git-commit-interfaces-and-types.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers updating git-related interfaces and types to support the new no-verify functionality for skipping git hooks.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Update CommitOptions Interface
 - [ ] Locate `src/utils/git.ts` file

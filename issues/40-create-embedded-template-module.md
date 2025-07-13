@@ -1,9 +1,12 @@
 # Issue 40: Create embedded template module
 
-## Requirement
+## Description
+Create a new TypeScript module that contains the default issue and plan templates as embedded string constants. This eliminates the need for external template files by packaging templates directly with autoagent.
+
+## Requirements
 Create a new TypeScript module that contains the default issue and plan templates as embedded string constants. These templates will be packaged with autoagent to eliminate the need for external template files.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Create `src/templates/default-templates.ts` module
 - [ ] Define `DEFAULT_ISSUE_TEMPLATE` as a string constant containing the issue template
 - [ ] Define `DEFAULT_PLAN_TEMPLATE` as a string constant containing the plan template

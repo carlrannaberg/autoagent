@@ -1,8 +1,12 @@
-# Plan for Issue 40: Create embedded template module
+# Plan for Issue #40: Create embedded template module
 
 This document outlines the step-by-step plan to complete `issues/40-create-embedded-template-module.md`.
 
-## Implementation Plan
+## Overview
+
+This plan creates a new TypeScript module that embeds default issue and plan templates as string constants, eliminating the need for external template files. The embedded templates will be compiled into the build output for better reliability and portability.
+
+## Implementation Steps
 
 ### Phase 1: Directory Setup and Module Creation
 - [ ] Create `src/templates/` directory if it doesn't exist

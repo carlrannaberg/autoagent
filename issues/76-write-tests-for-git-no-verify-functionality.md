@@ -1,9 +1,14 @@
 # Issue 76: Write tests for git no-verify functionality
 
-## Requirement
+## Description
+Create comprehensive test coverage for the git no-verify functionality across all components. This includes unit tests for individual functions, integration tests for component interactions, and end-to-end tests to verify the complete feature works as expected in real-world scenarios.
+
+## Requirements
+
+### Requirement
 Write comprehensive tests for all git no-verify functionality including unit tests, integration tests, and E2E tests.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Unit tests for git utility `createCommit` with noVerify option
 - [ ] Unit tests for ConfigManager getter/setter methods
 - [ ] Unit tests for AutonomousAgent configuration precedence

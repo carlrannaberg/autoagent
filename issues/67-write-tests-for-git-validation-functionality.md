@@ -1,9 +1,13 @@
 # Issue 67: Write tests for git validation functionality
 
-## Requirement
+## Description
 Write comprehensive unit and integration tests for the git validation functionality added to the system.
 
-## Acceptance Criteria
+## Requirements
+
+Write comprehensive unit and integration tests for the git validation functionality added to the system.
+
+## Success Criteria
 - [ ] Add unit tests for validateGitForAutoCommit() method
 - [ ] Add unit tests for validateGitEnvironment() utility function
 - [ ] Add integration tests for end-to-end validation flow

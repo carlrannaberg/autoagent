@@ -1,9 +1,12 @@
 # Issue 35: Refactor createIssue to Support Optional Custom Content
 
-## Requirement
+## Description
+Enhance the createIssue method to accept optional custom content, allowing bootstrap to use createIssue directly instead of duplicating issue creation logic. This eliminates code duplication and ensures consistent issue creation behavior.
+
+## Requirements
 Enhance the createIssue method to accept optional custom content, allowing bootstrap to use createIssue directly instead of duplicating issue creation logic.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Add optional customContent parameter to createIssue method
 - [ ] When customContent is provided, use it instead of generating content
 - [ ] Fix issue number in custom content to match assigned number

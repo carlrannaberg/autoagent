@@ -6,6 +6,11 @@ Add CLI Flags for Push Control
 ## Description
 Add --push and --no-push flags to the run command to allow users to control auto-push behavior on a per-execution basis, overriding global configuration settings.
 
+## Requirements
+- Add CLI flags for controlling auto-push behavior at runtime
+- Ensure proper flag conflict resolution and priority handling
+- Maintain consistency with existing CLI patterns
+
 ## Tasks
 - [ ] Add push?: boolean and noPush?: boolean to RunOptions interface
 - [ ] Add --push flag to enable auto-push for current run
@@ -16,7 +21,7 @@ Add --push and --no-push flags to the run command to allow users to control auto
 - [ ] Update command help text with new options
 - [ ] Add examples to command description
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] --push flag enables auto-push and auto-commit for the run
 - [ ] --no-push flag disables auto-push for the run
 - [ ] Conflicting flags are handled with clear warning

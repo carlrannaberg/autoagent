@@ -1,9 +1,12 @@
 # Issue 2: Install and Configure Vitest
 
-## Requirement
+## Description
+This issue covers the initial setup of Vitest as the testing framework for AutoAgent, replacing Jest. It includes installing necessary dependencies and creating appropriate configuration files for different test types.
+
+## Requirements
 Install Vitest and create the necessary configuration files to replace Jest as the testing framework.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Remove all Jest-related packages from package.json
 - [ ] Install Vitest and required dependencies
 - [ ] Create vitest.config.ts with proper configuration

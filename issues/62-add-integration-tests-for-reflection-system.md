@@ -1,9 +1,13 @@
 # Issue 62: Add integration tests for reflection system
 
-## Requirement
+## Description
 Create integration tests that verify the reflection system works correctly with other components, including file operations, provider interactions, and the bootstrap process.
 
-## Acceptance Criteria
+## Requirements
+
+Create integration tests that verify the reflection system works correctly with other components, including file operations, provider interactions, and the bootstrap process.
+
+## Success Criteria
 - [ ] Test full reflection cycle with real specs
 - [ ] Test multiple iteration scenarios
 - [ ] Test file system operations (backup, modify, rollback)

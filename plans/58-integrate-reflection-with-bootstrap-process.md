@@ -2,7 +2,11 @@
 
 This document outlines the step-by-step plan to complete `issues/58-integrate-reflection-with-bootstrap-process.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers integrating the reflection engine with the bootstrap process to enable iterative improvement of generated issues and plans. The integration will be seamless and maintain backward compatibility.
+
+## Implementation Steps
 
 ### Phase 1: Bootstrap Analysis
 - [ ] Review current bootstrap implementation

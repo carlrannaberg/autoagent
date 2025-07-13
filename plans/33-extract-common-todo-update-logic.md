@@ -1,8 +1,12 @@
-# Plan for Issue 33: Extract Common TODO Update Logic
+# Plan for Issue #33: Extract Common TODO Update Logic
 
 This document outlines the step-by-step plan to complete `issues/33-extract-common-todo-update-logic.md`.
 
-## Implementation Plan
+## Overview
+
+This plan extracts common TODO update logic into a shared method to eliminate code duplication between createIssue and bootstrap methods. The refactoring will ensure consistent behavior when updating todo.md files and simplify maintenance.
+
+## Implementation Steps
 
 ### Phase 1: Analysis and Design
 - [ ] Analyze current createIssue TODO update logic

@@ -1,6 +1,10 @@
-# Plan for Issue 32: Update documentation for filename conventions
+# Plan for Issue #32: Update documentation for filename conventions
 
-## Implementation Plan
+## Overview
+
+This plan updates all relevant documentation to explain the filename conventions used by AutoAgent. The documentation will cover the slug generation process, provide clear examples, and ensure users understand how issue and plan files are named consistently.
+
+## Implementation Steps
 
 ### Phase 1: Code Documentation
 - [ ] Add comprehensive JSDoc to generateFileSlug method

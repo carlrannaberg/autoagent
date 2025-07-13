@@ -6,6 +6,11 @@ Write Tests for Git Push Functionality
 ## Description
 Create comprehensive test coverage for all git push functionality, including unit tests for utility functions, integration tests for the push workflow, and tests for CLI commands and configuration.
 
+## Requirements
+- Create comprehensive test coverage for all git push functionality
+- Ensure tests are isolated and don't require actual git operations
+- Follow existing test patterns and use Vitest framework
+
 ## Tasks
 - [ ] Write unit tests for checkGitRemote() function
 - [ ] Write unit tests for getCurrentBranch() function
@@ -17,7 +22,7 @@ Create comprehensive test coverage for all git push functionality, including uni
 - [ ] Write tests for CLI push flags functionality
 - [ ] Create mock test utilities for git operations
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] All git utility functions have >90% test coverage
 - [ ] Tests cover both success and failure scenarios
 - [ ] Mock git commands properly to avoid real git operations

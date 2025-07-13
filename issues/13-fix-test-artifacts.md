@@ -1,6 +1,9 @@
 # Issue 13: Fix Test Artifacts Generation and Upload
 
-## Requirement
+## Description
+This issue addresses the problem with test artifact generation in the CI/CD pipeline. GitHub Actions cannot find the expected test coverage reports and test results, preventing proper artifact upload and Codecov integration.
+
+## Requirements
 Fix the test artifact generation to ensure coverage reports and test results are properly created and uploaded in the CI/CD pipeline. Currently, GitHub Actions cannot find the expected test artifacts.
 
 ## Current State
@@ -8,7 +11,7 @@ Fix the test artifact generation to ensure coverage reports and test results are
 - **Impact**: Cannot upload test results to GitHub, cannot upload coverage to Codecov
 - **Affected**: All test jobs in GitHub workflows
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Coverage reports are generated in the expected location
 - [ ] Test results are created and accessible
 - [ ] GitHub Actions successfully uploads test artifacts

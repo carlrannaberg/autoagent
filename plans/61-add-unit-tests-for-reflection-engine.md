@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/61-add-unit-tests-for-reflection-engine.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers creating comprehensive unit tests for the reflection engine, including tests for skip logic, iteration control, prompt building, and improvement analysis.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Test Setup
 - [ ] Create test files for reflection modules

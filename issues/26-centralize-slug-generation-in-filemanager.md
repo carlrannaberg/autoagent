@@ -1,9 +1,12 @@
 # Issue 26: Centralize slug generation in FileManager
 
-## Requirement
+## Description
+Create a centralized method for generating consistent filename slugs across the codebase. This will eliminate duplicate slug generation logic and ensure consistent filename formatting throughout the application.
+
+## Requirements
 Create a centralized `generateFileSlug` method in FileManager to handle consistent filename slug generation across the codebase.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Add private `generateFileSlug` method to FileManager class
 - [ ] Method converts titles to URL-friendly slugs
 - [ ] Handles edge cases (special characters, multiple spaces, dots, hyphens)
@@ -38,8 +41,10 @@ private generateFileSlug(title: string): string {
 - Target location: `src/utils/file-manager.ts`
 
 ## Example
+```
 Input: "Implement User Authentication"
 Output: "implement-user-authentication"
 
-Input: "Fix Bug #123"
-Output: "fix-bug-123"
+Input: "Fix Bug Issue 26"
+Output: "fix-bug-26"
+```

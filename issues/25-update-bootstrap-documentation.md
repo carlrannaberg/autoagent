@@ -1,9 +1,12 @@
 # Issue 25: Update Bootstrap Documentation
 
-## Requirement
+## Description
+Update documentation to reflect the bootstrap issue numbering fix and clarify expected behavior. This includes updating code comments, user documentation, and release notes to ensure users understand how bootstrap properly handles issue numbering.
+
+## Requirements
 Update documentation to reflect the bootstrap issue numbering fix and clarify expected behavior.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Update inline code comments explaining the change
 - [ ] Update method docstring for bootstrap method
 - [ ] Add CHANGELOG.md entry for the fix
@@ -35,4 +38,4 @@ Documentation updates needed:
 
 ## Resources
 - Master Specification: `specs/fix-bootstrap-issue-numbering.md`
-- Related Issues: #22 (core fix), #19 (decomposition task)
+- Related Issues: Issue 22 (core fix), Issue 19 (decomposition task)

@@ -1,9 +1,12 @@
 # Issue 19: Implement plan from fix-bootstrap-issue-numbering
 
-## Requirement
+## Description
+This issue tracks the decomposition and implementation of the fix for bootstrap issue numbering. The goal is to ensure the bootstrap command properly calculates the next available issue number instead of using a hardcoded value.
+
+## Requirements
 Decompose the plan into individual actionable issues and create corresponding plan files for each issue.
 
-## Acceptance Criteria
+## Success Criteria
 - [x] All issues are created and numbered in the issues/ directory
 - [x] Each issue has a corresponding plan file in the plans/ directory
 - [x] Each issue has clear requirements and acceptance criteria
@@ -26,9 +29,9 @@ IMPORTANT: For each issue you create:
 
 The following issues were created from the master plan:
 
-- **#22**: Fix Bootstrap Hardcoded Issue Number - Core implementation fix
-- **#23**: Add Bootstrap Issue Numbering Tests - Unit test coverage
-- **#24**: Add Bootstrap Integration Tests - Integration test coverage  
-- **#25**: Update Bootstrap Documentation - Documentation updates
+- **Issue 22**: Fix Bootstrap Hardcoded Issue Number - Core implementation fix
+- **Issue 23**: Add Bootstrap Issue Numbering Tests - Unit test coverage
+- **Issue 24**: Add Bootstrap Integration Tests - Integration test coverage  
+- **Issue 25**: Update Bootstrap Documentation - Documentation updates
 
 All issues have corresponding plan files in the plans/ directory.

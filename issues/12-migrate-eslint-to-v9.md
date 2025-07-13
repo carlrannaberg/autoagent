@@ -1,6 +1,9 @@
 # Issue 12: Migrate ESLint Configuration to v9 Format
 
-## Requirement
+## Description
+This issue addresses the need to migrate ESLint configuration from the legacy `.eslintrc.js` format to the new flat config format required by ESLint v9. The Dependabot update to ESLint v9.30.1 has broken the linting process as the new version no longer supports the old configuration format.
+
+## Requirements
 Migrate the ESLint configuration from the old `.eslintrc.js` format to the new flat config format required by ESLint v9. Dependabot has updated ESLint to v9.30.1, which no longer supports the legacy configuration format.
 
 ## Current State
@@ -9,11 +12,11 @@ Migrate the ESLint configuration from the old `.eslintrc.js` format to the new f
 - **Required Config**: `eslint.config.js` (new flat config format)
 - **Impact**: Cannot run `npm run lint`, blocking Dependabot PRs and development workflow
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] ESLint configuration migrated to flat config format
 - [ ] `npm run lint` executes successfully with ESLint v9.30.1
 - [ ] All existing lint rules are preserved in the new format
-- [ ] Dependabot PR #10 can pass linting checks
+- [ ] Dependabot PR (Issue 10) can pass linting checks
 - [ ] No regression in code quality standards
 - [ ] TypeScript files are properly linted
 

@@ -1,9 +1,12 @@
 # Issue 24: Add Bootstrap Integration Tests
 
-## Requirement
+## Description
+Create integration tests to verify the bootstrap command works correctly in real-world scenarios with the issue numbering fix. These tests will ensure the complete workflow functions properly from CLI invocation through file creation.
+
+## Requirements
 Create integration tests to verify the bootstrap command works correctly in real-world scenarios with the issue numbering fix.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Test end-to-end bootstrap workflow with existing issues
 - [ ] Test CLI integration for bootstrap command
 - [ ] Test bootstrap with various master plan configurations
@@ -27,4 +30,4 @@ Integration tests should verify the complete bootstrap workflow:
 
 ## Resources
 - Master Specification: `specs/fix-bootstrap-issue-numbering.md`
-- Related Issues: #22 (core fix), #23 (unit tests), #19 (decomposition task)
+- Related Issues: Issue 22 (core fix), Issue 23 (unit tests), Issue 19 (decomposition task)

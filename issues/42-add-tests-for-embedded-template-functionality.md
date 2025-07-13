@@ -1,9 +1,12 @@
 # Issue 42: Add tests for embedded template functionality
 
-## Requirement
+## Description
+Create comprehensive unit and integration tests to verify that the bootstrap command correctly uses embedded templates. This ensures the new embedded template functionality works reliably without external files.
+
+## Requirements
 Create comprehensive unit and integration tests to verify that the bootstrap command correctly uses embedded templates and handles various scenarios without requiring external template files.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Unit tests verify embedded templates are used when no files exist
 - [ ] Unit tests ensure no filesystem operations for templates
 - [ ] Integration tests confirm bootstrap works without template directory
@@ -21,8 +24,8 @@ Create comprehensive unit and integration tests to verify that the bootstrap com
 - Use Vitest testing framework and conventions
 
 ## Dependencies
-- Depends on: Issue #40 (Create embedded template module)
-- Depends on: Issue #41 (Update bootstrap to use embedded templates)
+- Depends on: Issue 40 (Create embedded template module)
+- Depends on: Issue 41 (Update bootstrap to use embedded templates)
 
 ## Resources
 - Master Plan: `specs/embed-bootstrap-templates.md` (lines 245-324)

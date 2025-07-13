@@ -1,6 +1,10 @@
-# Plan for Issue 30: Add unit tests for slug generation
+# Plan for Issue #30: Add unit tests for slug generation
 
-## Implementation Plan
+## Overview
+
+This plan implements comprehensive unit tests for the centralized slug generation functionality in FileManager. The tests will ensure that filename generation is consistent, handles edge cases properly, and maintains backward compatibility.
+
+## Implementation Steps
 
 ### Phase 1: Basic Tests
 - [ ] Test simple title to slug conversion

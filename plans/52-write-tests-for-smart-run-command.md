@@ -1,8 +1,12 @@
-# Plan for Issue 52: Write tests for smart run command
+# Plan for Issue #52: Write tests for smart run command
 
 This document outlines the step-by-step plan to complete `issues/52-write-tests-for-smart-run-command.md`.
 
-## Implementation Plan
+## Overview
+
+This plan creates comprehensive test coverage for the smart run command, including unit tests for detection logic, integration tests for command routing, and end-to-end tests for complete workflows. The tests ensure reliability and protect against regressions.
+
+## Implementation Steps
 
 ### Phase 1: Unit Tests for Detection Functions
 - [ ] Create test file for input detection functions

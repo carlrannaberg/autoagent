@@ -1,6 +1,10 @@
-# Plan for Issue 26: Centralize slug generation in FileManager
+# Plan for Issue #26: Centralize slug generation in FileManager
 
-## Implementation Plan
+## Overview
+
+This plan implements a centralized slug generation method in the FileManager class to ensure consistent filename generation across the application. This centralization will eliminate duplicate slug generation logic and ensure all files follow the same naming conventions.
+
+## Implementation Steps
 
 ### Phase 1: Core Implementation
 - [ ] Add generateFileSlug method to FileManager class

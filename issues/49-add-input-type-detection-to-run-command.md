@@ -1,9 +1,12 @@
 # Issue 49: Add input type detection to run command
 
-## Requirement
+## Description
+Enhance the run command to detect different input types (spec files, issue numbers, issue names) and route to appropriate execution paths. This enables more flexible command usage.
+
+## Requirements
 Enhance the run command to detect different input types (spec files, issue numbers, issue names) and route to appropriate execution paths.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Run command accepts optional `[target]` parameter instead of `[issue]`
 - [ ] Function `isPlanFile()` detects spec/plan files by checking for absence of issue markers
 - [ ] Function `isIssueNumber()` detects numeric issue references

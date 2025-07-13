@@ -1,9 +1,12 @@
 # Issue 29: Remove duplicate slug logic from bootstrap
 
-## Requirement
+## Description
+Remove the duplicate filename slug generation logic from the bootstrap method in AutonomousAgent, relying instead on FileManager's consistent implementation. This eliminates redundant code and ensures all filename generation follows the same rules.
+
+## Requirements
 Remove the duplicate filename slug generation logic from the bootstrap method in AutonomousAgent, relying instead on FileManager's consistent implementation.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Remove inline slug generation from bootstrap method
 - [ ] FileManager handles all filename generation
 - [ ] Bootstrap continues to work correctly

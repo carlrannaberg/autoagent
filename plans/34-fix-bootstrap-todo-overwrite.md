@@ -1,11 +1,15 @@
-# Plan for Issue 34: Fix Bootstrap TODO Overwrite
+# Plan for Issue #34: Fix Bootstrap TODO Overwrite
 
 This document outlines the step-by-step plan to complete `issues/34-fix-bootstrap-todo-overwrite.md`.
 
-## Implementation Plan
+## Overview
+
+This plan implements the fix for the bootstrap command's TODO overwrite issue by replacing hardcoded template creation with the shared addIssueToTodo method. This ensures that existing TODO content is preserved when running bootstrap, maintaining task tracking integrity.
+
+## Implementation Steps
 
 ### Phase 1: Prerequisites
-- [ ] Ensure Issue #33 is completed (addIssueToTodo method exists)
+- [ ] Ensure #33 is completed (addIssueToTodo method exists)
 - [ ] Review current bootstrap implementation
 - [ ] Understand the TODO overwrite problem
 
@@ -37,5 +41,5 @@ Replace the hardcoded TODO template creation with a call to the shared addIssueT
 
 ## Testing Strategy
 - Manual testing with various TODO states
-- Automated tests will be added in Issue #36
+- Automated tests will be added in #36
 - Regression testing for empty projects

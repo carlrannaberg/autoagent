@@ -1,9 +1,12 @@
 # Issue 58: Integrate reflection with bootstrap process
 
-## Requirement
+## Description
+Modify the existing bootstrap process in AutonomousAgent to incorporate the reflection engine, enabling iterative improvement of decomposed issues and plans. This completes the integration of the self-improvement system.
+
+## Requirements
 Modify the existing bootstrap process in AutonomousAgent to incorporate the reflection engine, enabling iterative improvement of decomposed issues and plans.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Update `AutonomousAgent.bootstrap()` method to include reflection
 - [ ] Add `performReflectiveImprovement` method
 - [ ] Integrate reflection configuration checks

@@ -1,9 +1,12 @@
 # Issue 41: Update bootstrap to use embedded templates
 
-## Requirement
+## Description
+Modify the bootstrap command implementation to use the embedded templates from the new module instead of trying to load external template files. This makes bootstrap work out-of-the-box without requiring template files.
+
+## Requirements
 Modify the bootstrap method in `src/core/autonomous-agent.ts` to use the embedded template constants instead of reading template files from the filesystem. This will make bootstrap work out-of-the-box without requiring external template files.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] Import template constants from the new template module
 - [ ] Replace filesystem reads (lines 787-789) with template constants
 - [ ] Remove dependency on template directory existence
@@ -20,7 +23,7 @@ Modify the bootstrap method in `src/core/autonomous-agent.ts` to use the embedde
 - Update any error messages to reflect new embedded template approach
 
 ## Dependencies
-- Depends on: Issue #40 (Create embedded template module)
+- Depends on: Issue 40 (Create embedded template module)
 
 ## Resources
 - Master Plan: `specs/embed-bootstrap-templates.md` (lines 177-189)

@@ -2,7 +2,13 @@
 
 This document outlines the step-by-step plan to complete `issues/73-update-autonomous-agent-git-commit-logic.md`.
 
-## Implementation Plan
+## Overview
+
+This plan covers updating the AutonomousAgent class to use the new git commit options with no-verify support.
+
+## Implementation Steps
+
+
 
 ### Phase 1: Analyze Current Implementation
 - [ ] Review `performGitCommit` method in AutonomousAgent

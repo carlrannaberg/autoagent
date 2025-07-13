@@ -1,9 +1,12 @@
 # Issue 15: Implement plan from gemini-output-formatting
 
-## Requirement
+## Description
+This issue tracks the decomposition and implementation of the Gemini output formatting improvements. The goal is to break down the master plan into individual actionable issues for enhancing how Gemini provider formats and displays output.
+
+## Requirements
 Decompose the plan into individual actionable issues and create corresponding plan files for each issue.
 
-## Acceptance Criteria
+## Success Criteria
 - [ ] All issues are created and numbered in the issues/ directory
 - [ ] Each issue has a corresponding plan file in the plans/ directory
 - [ ] Each issue has clear requirements and acceptance criteria
