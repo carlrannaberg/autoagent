@@ -73,7 +73,7 @@ ${issue.requirements}
 ## Requirements
 ${issue.technicalDetails ?? 'No additional technical details.'}
 
-## Success Criteria
+## Acceptance Criteria
 ${issue.acceptanceCriteria.map(ac => `- [ ] ${ac}`).join('\n')}`;
       
       await fs.writeFile(filepath, issueContent, 'utf-8');

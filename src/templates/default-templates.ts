@@ -36,7 +36,10 @@
  */
 export const DEFAULT_ISSUE_TEMPLATE: string = `# Issue [NUMBER]: [TITLE]
 
-## Requirement
+## Description
+[REQUIREMENT]
+
+## Requirements
 [REQUIREMENT]
 
 ## Acceptance Criteria

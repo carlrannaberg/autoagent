@@ -86,7 +86,7 @@ describe('Error Handling E2E', () => {
     it('should handle provider timeout', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for timeout testing\n\n## Requirements\nTest requirement\n\n## Success Criteria\n- [ ] Test passes');
+      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for timeout testing\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes');
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_TIMEOUT', 'true');
@@ -100,7 +100,7 @@ describe('Error Handling E2E', () => {
     it('should handle provider rate limit', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for rate limit testing\n\n## Requirements\nTest requirement\n\n## Success Criteria\n- [ ] Test passes');
+      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for rate limit testing\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes');
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_RATE_LIMIT', 'true');
@@ -114,7 +114,7 @@ describe('Error Handling E2E', () => {
     it('should handle provider authentication failure', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for auth testing\n\n## Requirements\nTest requirement\n\n## Success Criteria\n- [ ] Test passes');
+      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for auth testing\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes');
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_AUTH_FAIL', 'true');
@@ -155,8 +155,8 @@ describe('Error Handling E2E', () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
 
-      await context.workspace.createFile('issues/1-issue-a.md', '# Issue #1: Issue A\n\n## Description\nFirst issue with circular dependency\n\n## Requirements\nTest requirement\n\n## Success Criteria\n- [ ] Test passes\n\n## Dependencies\n- 2-issue-b');
-      await context.workspace.createFile('issues/2-issue-b.md', '# Issue #2: Issue B\n\n## Description\nSecond issue with circular dependency\n\n## Requirements\nTest requirement\n\n## Success Criteria\n- [ ] Test passes\n\n## Dependencies\n- 1-issue-a');
+      await context.workspace.createFile('issues/1-issue-a.md', '# Issue #1: Issue A\n\n## Description\nFirst issue with circular dependency\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes\n\n## Dependencies\n- 2-issue-b');
+      await context.workspace.createFile('issues/2-issue-b.md', '# Issue #2: Issue B\n\n## Description\nSecond issue with circular dependency\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes\n\n## Dependencies\n- 1-issue-a');
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       const result = await context.cli.execute(['run', '--no-validate', '--all']);
@@ -170,7 +170,7 @@ describe('Error Handling E2E', () => {
     it('should recover from partial execution', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for partial recovery\n\n## Requirements\nTest requirement\n\n## Success Criteria\n- [ ] Test passes');
+      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for partial recovery\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes');
 
       // Simulate partial execution
       await context.workspace.createFile('.autoagent/status.json', JSON.stringify({
@@ -190,7 +190,7 @@ describe('Error Handling E2E', () => {
     it('should clean up after failed execution', async () => {
       await context.workspace.initGit();
       await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for cleanup testing\n\n## Requirements\nTest requirement\n\n## Success Criteria\n- [ ] Test passes');
+      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for cleanup testing\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes');
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_FAIL', 'true');

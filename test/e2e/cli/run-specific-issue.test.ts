@@ -17,7 +17,7 @@ Decompose the plan into individual actionable issues and create corresponding pl
 ## Requirements
 This issue decomposes the plan into individual actionable tasks for implementation.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] All issues are created and numbered in the issues/ directory
 - [ ] Each issue has a corresponding plan file in the plans/ directory
 
@@ -129,9 +129,9 @@ Create embedded template constants.
       await context.workspace.initGit();
       
       // Create multiple issues with similar names
-      await context.workspace.createFile('issues/10-test-issue.md', '# Issue 10: Test Issue\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Success Criteria\n- [ ] Test completion');
-      await context.workspace.createFile('issues/100-test-issue.md', '# Issue 100: Test Issue\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Success Criteria\n- [ ] Test completion');
-      await context.workspace.createFile('issues/1000-test-issue.md', '# Issue 1000: Test Issue\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Success Criteria\n- [ ] Test completion');
+      await context.workspace.createFile('issues/10-test-issue.md', '# Issue 10: Test Issue\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Acceptance Criteria\n- [ ] Test completion');
+      await context.workspace.createFile('issues/100-test-issue.md', '# Issue 100: Test Issue\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Acceptance Criteria\n- [ ] Test completion');
+      await context.workspace.createFile('issues/1000-test-issue.md', '# Issue 1000: Test Issue\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Acceptance Criteria\n- [ ] Test completion');
       
       // Create corresponding plan files
       await context.workspace.createFile('plans/10-test-issue.md', '# Plan for Issue 10: Test Issue\n\n## Overview\nTest plan\n\n## Implementation Steps\n- [ ] Test step');
@@ -151,8 +151,8 @@ Create embedded template constants.
       await context.workspace.initGit();
       
       // Create issues with overlapping names
-      await context.workspace.createFile('issues/5-implement.md', '# Issue 5: Implement\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Success Criteria\n- [ ] Test completion');
-      await context.workspace.createFile('issues/50-implement-feature.md', '# Issue 50: Implement Feature\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Success Criteria\n- [ ] Test completion');
+      await context.workspace.createFile('issues/5-implement.md', '# Issue 5: Implement\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Acceptance Criteria\n- [ ] Test completion');
+      await context.workspace.createFile('issues/50-implement-feature.md', '# Issue 50: Implement Feature\n\n## Description\nTest issue\n\n## Requirements\nTest\n\n## Acceptance Criteria\n- [ ] Test completion');
       
       // Create corresponding plan files
       await context.workspace.createFile('plans/5-implement.md', '# Plan for Issue 5: Implement\n\n## Overview\nTest plan\n\n## Implementation Steps\n- [ ] Test step');

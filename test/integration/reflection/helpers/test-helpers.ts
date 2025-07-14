@@ -160,7 +160,10 @@ Design and implement a distributed task queue system with priority scheduling, d
 export function createSampleIssue(number: number, title: string): string {
   return `# Issue ${number}: ${title}
 
-## Requirement
+## Description
+Implement ${title.toLowerCase()}.
+
+## Requirements
 Implement ${title.toLowerCase()}.
 
 ## Acceptance Criteria

@@ -391,6 +391,7 @@ ${content}`;
     }
     
     const sectionOrder = [
+      'Description',
       'Requirements', 'Requirement',
       'Acceptance Criteria',
       'Technical Details',

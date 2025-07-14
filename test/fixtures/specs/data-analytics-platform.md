@@ -148,7 +148,7 @@ Raw Data → Ingestion → Validation → Transformation → Storage → Analyti
   - Alerting for SLA violations
   - Capacity planning metrics
 
-## Success Criteria
+## Acceptance Criteria
 - Process 100TB+ data daily
 - Support 10,000+ concurrent users
 - Achieve 99.9% uptime SLA

@@ -140,7 +140,7 @@ This is a test issue for differentiation testing.
 ## Requirements
 This is an issue file, not a spec file.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Verify issue execution works correctly
 `);
 
@@ -153,7 +153,7 @@ This is the actual issue file for testing differentiation.
 ## Requirements
 This is the actual issue file.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Issue is properly recognized and executed
 `);
 

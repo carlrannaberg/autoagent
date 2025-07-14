@@ -173,6 +173,9 @@ export const IMPROVEMENT_SCENARIOS = {
       description: 'Add monitoring issue',
       content: `# Issue 5: Monitoring Setup
 
+## Description
+Set up comprehensive monitoring for the system.
+
 ## Requirements
 Set up comprehensive monitoring for the system.
 
@@ -364,6 +367,9 @@ export const REFLECTION_RESPONSES = {
         target: '6-security-audit.md',
         description: 'Add security audit issue',
         content: `# Issue 6: Security Audit
+
+## Description
+Perform comprehensive security audit and implement recommendations.
 
 ## Requirements
 Perform comprehensive security audit and implement recommendations.

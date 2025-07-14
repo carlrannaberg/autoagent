@@ -469,14 +469,14 @@ describe('AutonomousAgent', () => {
     beforeEach(() => {
       // Add issue 2 files to mock for the created issue
       mockFiles.set('/test/issues', ['1-test-issue.md', '2-user-authentication.md']);
-      mockFileContents.set('/test/issues/2-user-authentication.md', '# Issue 2: User Authentication\n\n## Requirements\nImplement user authentication');
+      mockFileContents.set('/test/issues/2-user-authentication.md', '# Issue 2: User Authentication\n\n## Description\nImplement user authentication\n\n## Requirements\nImplement user authentication\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
     });
     
     it('should create a new issue', async () => {
       const claudeProvider = testProviders.get('claude')!;
       claudeProvider.setResponse(
         'create', 
-        '# Issue 2: User Authentication\n\n## Requirements\nImplement user authentication'
+        '# Issue 2: User Authentication\n\n## Description\nImplement user authentication\n\n## Requirements\nImplement user authentication\n\n## Acceptance Criteria\n- [ ] Test passes successfully'
       );
 
       const issueNumber = await agent.createIssue('User Authentication');
@@ -570,7 +570,7 @@ describe('AutonomousAgent', () => {
       
       // Add template files needed for bootstrap
       mockFiles.set('/test/templates', ['issue.md', 'plan.md']);
-      mockFileContents.set('/test/templates/issue.md', '# Issue Template\n\n## Requirements\n\n## Acceptance Criteria');
+      mockFileContents.set('/test/templates/issue.md', '# Issue Template\n\n## Description\n\n## Requirements\n\n## Acceptance Criteria');
       mockFileContents.set('/test/templates/plan.md', '# Plan Template\n\n## Implementation Plan\n\n### Phase 1');
     });
     
@@ -585,7 +585,7 @@ describe('AutonomousAgent', () => {
       `);
 
       const claudeProvider = testProviders.get('claude')!;
-      claudeProvider.setResponse('Create issue from master plan', '# Issue 1: Setup\n\n## Requirements\nSetup project');
+      claudeProvider.setResponse('Create issue from master plan', '# Issue 1: Setup\n\n## Description\nSetup project\n\n## Requirements\nSetup project\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
 
       await agent.bootstrap('/test/master-plan.md');
       
@@ -947,7 +947,7 @@ describe('AutonomousAgent', () => {
       // Verify the prompt includes embedded templates
       expect(capturedPrompt).toContain('ISSUE TEMPLATE:');
       expect(capturedPrompt).toContain('# Issue [NUMBER]: [TITLE]');
-      expect(capturedPrompt).toContain('## Requirement');
+      expect(capturedPrompt).toContain('## Requirements');
       expect(capturedPrompt).toContain('## Acceptance Criteria');
       expect(capturedPrompt).toContain('## Technical Details');
       
@@ -1100,7 +1100,7 @@ describe('AutonomousAgent', () => {
       
       // Verify the created issue contains expected sections from bootstrap
       expect(issueContent).toContain('# Issue');
-      expect(issueContent).toContain('## Requirement');
+      expect(issueContent).toContain('## Requirements');
       expect(issueContent).toContain('## Acceptance Criteria');
       expect(issueContent).toContain('## Technical Details');
       expect(issueContent).toContain('## Generated Issues');
@@ -1518,7 +1518,7 @@ describe('AutonomousAgent', () => {
       });
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -1576,7 +1576,7 @@ describe('AutonomousAgent', () => {
       gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -1632,7 +1632,7 @@ describe('AutonomousAgent', () => {
       gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -1689,7 +1689,7 @@ describe('AutonomousAgent', () => {
       gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -1766,7 +1766,7 @@ describe('AutonomousAgent', () => {
       });
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -1831,7 +1831,7 @@ describe('AutonomousAgent', () => {
       gitSimulator.setRemoteConfig('origin', 'https://github.com/test/repo.git');
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -1913,7 +1913,7 @@ describe('AutonomousAgent', () => {
       });
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -1992,7 +1992,7 @@ describe('AutonomousAgent', () => {
       });
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -2068,7 +2068,7 @@ describe('AutonomousAgent', () => {
       });
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -2149,7 +2149,7 @@ describe('AutonomousAgent', () => {
       });
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -2233,7 +2233,7 @@ describe('AutonomousAgent', () => {
       });
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -2310,7 +2310,7 @@ describe('AutonomousAgent', () => {
       });
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',
@@ -2376,7 +2376,7 @@ describe('AutonomousAgent', () => {
       });
       
       // Setup issue and plan
-      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Requirements\nTest requirements');
+      fileManager.createIssue(1, 'Test Issue', '# Issue 1: Test Issue\n\n## Description\nTest requirements\n\n## Requirements\nTest requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully');
       fileManager.createPlan(1, {
         issueNumber: 1,
         file: 'plans/1-test-issue.md',

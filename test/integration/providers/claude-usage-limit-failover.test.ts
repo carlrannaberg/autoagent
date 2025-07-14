@@ -36,7 +36,7 @@ This is a test issue for integration testing.
 ## Requirements
 Test requirements for issue ${i}.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Test completion for issue ${i}
 `;
     
@@ -75,6 +75,7 @@ describe('Claude Usage Limit Failover Integration Tests', () => {
     agent = new AutonomousAgent({
       workspace: context.workspace.rootPath,
       autoCommit: false,
+      autoPush: false,
       debug: true
     });
     await agent.initialize();
@@ -97,7 +98,10 @@ describe('Claude Usage Limit Failover Integration Tests', () => {
       const issueFile = path.join(issuesDir, 'issue-1.md');
       await fs.writeFile(issueFile, `# Issue 1: Test Issue for Usage Limit
 
-## Requirement
+## Description
+Test issue for usage limit testing.
+
+## Requirements
 Complete a simple task
 
 ## Acceptance Criteria

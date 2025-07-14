@@ -47,7 +47,7 @@ This is a sample issue for testing purposes.
 ## Requirements
 Sample requirements for ${name}.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Task 1
 - [ ] Task 2
 `;

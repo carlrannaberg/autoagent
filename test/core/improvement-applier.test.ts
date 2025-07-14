@@ -47,7 +47,7 @@ describe('DefaultImprovementApplier', () => {
         type: ChangeType.ADD_ISSUE,
         target: '99-new-feature.md',
         description: 'Add new feature issue',
-        content: '# Issue 99: New Feature\n\n## Requirements\nImplement new feature',
+        content: '# Issue 99: New Feature\n\n## Description\nImplement new feature\n\n## Requirements\nImplement new feature\n\n## Acceptance Criteria\n- [ ] Test passes successfully',
         rationale: 'Missing feature coverage'
       }];
       
@@ -67,7 +67,7 @@ describe('DefaultImprovementApplier', () => {
           type: ChangeType.ADD_ISSUE,
           target: '99-new-feature.md',
           description: 'Add new feature issue',
-          content: '# Issue 99: New Feature\n\n## Requirements\nImplement new feature',
+          content: '# Issue 99: New Feature\n\n## Description\nImplement new feature\n\n## Requirements\nImplement new feature\n\n## Acceptance Criteria\n- [ ] Test passes successfully',
           rationale: 'Missing feature coverage'
         },
         {
@@ -94,7 +94,7 @@ describe('DefaultImprovementApplier', () => {
           type: ChangeType.ADD_ISSUE,
           target: '99-new-feature.md',
           description: 'Add new feature issue',
-          content: '# Issue 99: New Feature',
+          content: '# Issue 99: New Feature\n\n## Description\nNew feature requirements\n\n## Requirements\nNew feature requirements\n\n## Acceptance Criteria\n- [ ] Test passes successfully',
           rationale: 'Test'
         },
         {
@@ -150,7 +150,7 @@ Implement user authentication
         type: ChangeType.ADD_ISSUE,
         target: 'new-issue.md',
         description: 'Add new issue',
-        content: '## Requirement\nTest issue',
+        content: '## Description\nTest issue\n\n## Requirements\nTest issue',
         rationale: 'Test'
       };
       
@@ -182,6 +182,9 @@ Implement user authentication
       
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(fs.readFile).mockResolvedValue(`# Issue 1: Existing Issue
+
+## Description
+Existing issue description
 
 ## Requirements
 Original requirements
@@ -233,8 +236,14 @@ Original requirements
       vi.mocked(fs.readdir).mockResolvedValue(['1-test-issue.md']);
       vi.mocked(fs.readFile).mockResolvedValue(`# Issue 1: Test Issue
 
+## Description
+Test issue description
+
 ## Requirements
-Test requirements`);
+Test requirements
+
+## Acceptance Criteria
+- [ ] Test passes successfully`);
       
       const result = await applier.applyImprovements([change], mockWorkspace);
       
@@ -292,6 +301,9 @@ Test requirements`);
       vi.mocked(fs.readdir).mockResolvedValue(['1-test-issue.md']);
       vi.mocked(fs.readFile).mockResolvedValue(`# Issue 1: Test Issue
 
+## Description
+Test issue description
+
 ## Requirements
 Test requirements
 
@@ -319,6 +331,9 @@ Test requirements
       
       vi.mocked(fs.readdir).mockResolvedValue(['1-test-issue.md']);
       vi.mocked(fs.readFile).mockResolvedValue(`# Issue 1: Test Issue
+
+## Description
+Test issue description
 
 ## Requirements
 Test requirements
@@ -479,6 +494,9 @@ Updated technical details`,
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(fs.readFile).mockResolvedValue(`# Issue 1: Test
 
+## Description
+Test issue description
+
 ## Requirements
 Requirements here
 
@@ -503,6 +521,7 @@ Requirements here
       const sections = content.match(/## [^\n]+/g);
       
       expect(sections).toEqual([
+        '## Description',
         '## Requirements',
         '## Acceptance Criteria',
         '## Technical Details',
@@ -552,7 +571,7 @@ describe('applyImprovements function', () => {
       type: ChangeType.ADD_ISSUE,
       target: 'test.md',
       description: 'Test',
-      content: '## Requirement\nTest requirement',
+      content: '## Description\nTest requirement\n\n## Requirements\nTest requirement',
       rationale: 'Test'
     }];
     

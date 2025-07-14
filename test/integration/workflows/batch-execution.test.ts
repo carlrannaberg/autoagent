@@ -143,6 +143,7 @@ export const parse = (str: string) => new Date(str);`);
         workspace: context.workspace.rootPath,
         provider: 'claude' as any,
         autoCommit: false,
+        autoPush: false,
         debug: false,
         dryRun: true // Use dry run to avoid actual provider execution
       });
@@ -540,6 +541,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
         workspace: context.workspace.rootPath,
         provider: 'claude' as any,
         autoCommit: false,
+        autoPush: false,
         debug: false,
         dryRun: true // Use dry run to test the logic without provider execution
       });

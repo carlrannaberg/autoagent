@@ -1097,7 +1097,7 @@ ${description ?? 'To be defined'}
 ## Requirements
 ${details ?? 'To be defined'}
 
-## Success Criteria
+## Acceptance Criteria
 ${acceptanceCriteria !== undefined && acceptanceCriteria.length > 0 ? acceptanceCriteria.map(ac => `- [ ] ${ac}`).join('\n') : '- [ ] To be defined'}`;
     } else {
       // Otherwise try to use a provider to generate content
@@ -1112,7 +1112,7 @@ To be defined
 ## Requirements
 To be defined
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] To be defined`;
       } else {
         // Create prompt for provider

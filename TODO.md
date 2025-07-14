@@ -4,18 +4,18 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 
 ## Pending Issues
 
-- [ ] **[Issue #87]** Create HookManager class - `issues/87-create-hookmanager-class.md`
-- [ ] **[Issue #88]** Create SessionManager class - `issues/88-create-sessionmanager-class.md`
+- [ ] **[Issue #87]** Create HookManager class - `issues/87-create-hook-manager-class.md`
+- [ ] **[Issue #88]** Create SessionManager class - `issues/88-create-session-manager-class.md`
 - [ ] **[Issue #89]** Define hook type interfaces - `issues/89-define-hook-type-interfaces.md`
-- [ ] **[Issue #90]** Integrate hooks into AutonomousAgent - `issues/90-integrate-hooks-into-autonomousagent.md`
+- [ ] **[Issue #90]** Integrate hooks into AutonomousAgent - `issues/90-integrate-hooks-into-autonomous-agent.md`
 - [ ] **[Issue #91]** Implement Stop hook support - `issues/91-implement-stop-hook-support.md`
-- [ ] **[Issue #92]** Create GitCommitHook built-in hook - `issues/92-create-gitcommithook-built-in-hook.md`
-- [ ] **[Issue #93]** Create GitPushHook built-in hook - `issues/93-create-gitpushhook-built-in-hook.md`
-- [ ] **[Issue #94]** Update HookManager for built-in hooks - `issues/94-update-hookmanager-for-built-in-hooks.md`
+- [ ] **[Issue #92]** Create GitCommitHook built-in hook - `issues/92-create-git-commit-hook.md`
+- [ ] **[Issue #93]** Create GitPushHook built-in hook - `issues/93-create-git-push-hook.md`
+- [ ] **[Issue #94]** Update HookManager for built-in hooks - `issues/94-update-hook-manager-for-builtin-hooks.md`
 - [ ] **[Issue #95]** Remove legacy git config fields - `issues/95-remove-legacy-git-config-fields.md`
 - [ ] **[Issue #96]** Remove CLI git flags - `issues/96-remove-cli-git-flags.md`
 - [ ] **[Issue #97]** Update config commands for hooks - `issues/97-update-config-commands-for-hooks.md`
-- [ ] **[Issue #98]** Extract git logic from AutonomousAgent - `issues/98-extract-git-logic-from-autonomousagent.md`
+- [ ] **[Issue #98]** Extract git logic from AutonomousAgent - `issues/98-extract-git-logic-from-autonomous-agent.md`
 - [ ] **[Issue #99]** Write hook system unit tests - `issues/99-write-hook-system-unit-tests.md`
 
 ## Completed Issues

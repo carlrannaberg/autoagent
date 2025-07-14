@@ -59,7 +59,7 @@ export class TestWorkspace {
     const content = [
       `# Issue ${issueNumber}: ${issue.title}`,
       '',
-      '## Requirement',
+      '## Requirements',
       issue.requirements,
       '',
       '## Acceptance Criteria',
