@@ -323,7 +323,9 @@ describe('ProviderRateLimiter', () => {
       const status = await rateLimiter.getRateLimitStatus('claude');
 
       expect(status.isLimited).toBe(true);
-      expect(status.timeRemaining).toBe(1800000); // 30 minutes remaining
+      // Allow for small timing variations (1-2ms) during test execution
+      expect(status.timeRemaining).toBeGreaterThan(1799990); // At least 29:59.990 remaining
+      expect(status.timeRemaining).toBeLessThanOrEqual(1800000); // At most 30:00.000 remaining
       expect(status.attempts).toBe(3);
       expect(status.lastError).toBe('too many requests');
     });
