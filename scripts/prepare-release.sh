@@ -190,32 +190,50 @@ else
     TIMEOUT_CMD=""
 fi
 
-$TIMEOUT_CMD $AI_CLI $AI_MODEL $AI_FLAGS -p "Create a changelog entry for version $NEW_VERSION based on these commits:
+$TIMEOUT_CMD $AI_CLI $AI_MODEL $AI_FLAGS -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 
+CURRENT SITUATION:
+- Current version in package.json: $CURRENT_VERSION
+- Latest published version on NPM: ${PUBLISHED_VERSION:-"Not published yet"}
+- Reference version for changes: ${LAST_TAG#v}
+- New version will be: $NEW_VERSION
+- Date: $(date +%Y-%m-%d)
+
+COMMITS SINCE LAST RELEASE ($COMMIT_COUNT commits):
 $RECENT_COMMITS
 
-Code files changed: $(echo "$CODE_CHANGED_FILES" | tr '\n' ' ')
+CODE FILES CHANGED:
+$(echo "$CODE_CHANGED_FILES" | tr '\n' ' ')
 
-Update CHANGELOG.md to add this new section after the [Unreleased] section:
+FILE CHANGES STATISTICS (all files):
+$DIFF_STAT
 
-## [$NEW_VERSION] - $(date +%Y-%m-%d)
+ACTUAL CODE CHANGES (filtered - code files only):
+$DIFF_FULL
 
-### Fixed
-- Update issue validation to use 'Acceptance Criteria' section  
-- Update test fixtures and templates to use Acceptance Criteria
-- Make rate limiter test more robust to timing variations
+$INCLUDE_DIFF_INSTRUCTION
 
-### Added
-- Smart diff handling to prevent context window overflow
+CURRENT CHANGELOG (first 100 lines):
+$CHANGELOG_CONTENT
 
-### Changed
-- Optimize release script by pre-computing data for Claude
-- Filter out docs/planning files from release diff analysis
+TASK:
+1. Analyze the ACTUAL CODE CHANGES (not just commit messages) and write accurate changelog entries:
+   - Fixed: bug fixes (what was actually fixed in the code)
+   - Added: new features (what new functionality was added)
+   - Changed: changes to existing functionality (what behavior changed)
+   - Removed: removed features (what was deleted)
+   - Security: security fixes
+   - Documentation: documentation only changes
 
-Then run: npm version $RELEASE_TYPE --no-git-tag-version
-Then commit with: git commit -m \"chore: prepare for v$NEW_VERSION release\"
+2. Update CHANGELOG.md with a new section for version $NEW_VERSION, organizing changes by category
 
-Keep it simple and focused on the actual changes."
+3. Update the version in package.json using: npm version $RELEASE_TYPE --no-git-tag-version
+
+4. Create a git commit with message \"chore: prepare for v$NEW_VERSION release\"
+
+Follow the Keep a Changelog format and include today's date ($(date +%Y-%m-%d)). Only include categories that have changes.
+
+DO NOT create a git tag - the GitHub Actions workflow will create it during the release process."
 
 AI_EXIT_CODE=$?
 set -e  # Re-enable exit on error
