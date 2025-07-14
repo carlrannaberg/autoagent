@@ -36,9 +36,9 @@
     "check": "run-p typecheck lint test",
     "check:sequential": "npm run typecheck && npm run lint && npm test",
     "prepublishOnly": "npm run build",
-    "release:patch": "exec ./scripts/prepare-release.sh patch",
-    "release:minor": "exec ./scripts/prepare-release.sh minor",
-    "release:major": "exec ./scripts/prepare-release.sh major",
+    "release:patch": "./scripts/prepare-release.sh --type patch",
+    "release:minor": "./scripts/prepare-release.sh --type minor",
+    "release:major": "./scripts/prepare-release.sh --type major",
     "release:rollback": "./scripts/rollback-release.sh"
   },
   "keywords": [
