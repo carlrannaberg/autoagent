@@ -97,7 +97,7 @@ export class IssueValidator extends BaseValidator {
     const requiredSections = [
       { name: 'Description', pattern: /^##\s+Description/m },
       { name: 'Requirements', pattern: /^##\s+Requirements/m },
-      { name: 'Success Criteria', pattern: /^##\s+Success\s+Criteria/m }
+      { name: 'Acceptance Criteria', pattern: /^##\s+Acceptance\s+Criteria/m }
     ];
     
     requiredSections.forEach(section => {

@@ -1,9 +1,22 @@
-# To-Do
+# TODO
 
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
 
+- [ ] **[Issue #87]** Create HookManager class - `issues/87-create-hookmanager-class.md`
+- [ ] **[Issue #88]** Create SessionManager class - `issues/88-create-sessionmanager-class.md`
+- [ ] **[Issue #89]** Define hook type interfaces - `issues/89-define-hook-type-interfaces.md`
+- [ ] **[Issue #90]** Integrate hooks into AutonomousAgent - `issues/90-integrate-hooks-into-autonomousagent.md`
+- [ ] **[Issue #91]** Implement Stop hook support - `issues/91-implement-stop-hook-support.md`
+- [ ] **[Issue #92]** Create GitCommitHook built-in hook - `issues/92-create-gitcommithook-built-in-hook.md`
+- [ ] **[Issue #93]** Create GitPushHook built-in hook - `issues/93-create-gitpushhook-built-in-hook.md`
+- [ ] **[Issue #94]** Update HookManager for built-in hooks - `issues/94-update-hookmanager-for-built-in-hooks.md`
+- [ ] **[Issue #95]** Remove legacy git config fields - `issues/95-remove-legacy-git-config-fields.md`
+- [ ] **[Issue #96]** Remove CLI git flags - `issues/96-remove-cli-git-flags.md`
+- [ ] **[Issue #97]** Update config commands for hooks - `issues/97-update-config-commands-for-hooks.md`
+- [ ] **[Issue #98]** Extract git logic from AutonomousAgent - `issues/98-extract-git-logic-from-autonomousagent.md`
+- [ ] **[Issue #99]** Write hook system unit tests - `issues/99-write-hook-system-unit-tests.md`
 
 ## Completed Issues
 - [x] **[Issue #86]** Implement plan from hooks-system-implementation - `issues/86-implement-plan-from-hooks-system-implementation.md`
@@ -74,3 +87,22 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [x] **[Issue #21]** Implement plan from fix-bootstrap-todo-overwrite - `issues/21-implement-plan-from-fix-bootstrap-todo-overwrite.md`
 - [x] **[Issue #19]** Implement plan from fix-bootstrap-issue-numbering - `issues/19-implement-plan-from-fix-bootstrap-issue-numbering.md`
 - [x] **[Issue #20]** Implement plan from fix-bootstrap-filename-consistency - `issues/20-implement-plan-from-fix-bootstrap-filename-consistency.md`
+- [x] **[Issue #1]** Implement plan from vitest-migration - `issues/1-implement-plan-from-vitest-migration.md`
+- [x] **[Issue #2]** Install and Configure Vitest - `issues/2-install-and-configure-vitest.md`
+- [x] **[Issue #3]** API Layer - `issues/3-api-layer.md`
+- [x] **[Issue #3]** Create Test Setup and Utilities - `issues/3-create-test-setup-and-utilities.md`
+- [x] **[Issue #4]** Migrate Unit Tests from Jest to Vitest - `issues/4-migrate-unit-tests-from-jest-to-vitest.md`
+- [x] **[Issue #5]** Create Integration Test Infrastructure - `issues/5-create-integration-test-infrastructure.md`
+- [x] **[Issue #6]** Create E2E Test Infrastructure - `issues/6-create-e2e-test-infrastructure.md`
+- [x] **[Issue #7]** Add Benchmark Tests - `issues/7-add-benchmark-tests.md`
+- [x] **[Issue #8]** Update CI/CD Pipeline for Vitest - `issues/8-update-cicd-pipeline-for-vitest.md`
+- [x] **[Issue #9]** Clean Up Jest and Finalize Migration - `issues/9-clean-up-jest-and-finalize-migration.md`
+- [x] **[Issue #10]** Implement plan from POST-VITEST-MIGRATION-ISSUES - `issues/10-implement-plan-from-post-vitest-migration-issues.md`
+- [x] **[Issue #11]** Fix Vitest Benchmark Reporter Configuration - `issues/11-fix-vitest-benchmark-reporter-configuration.md`
+- [x] **[Issue #12]** Migrate ESLint Configuration to v9 Format - `issues/12-migrate-eslint-configuration-to-v9-format.md`
+- [x] **[Issue #13]** Fix Test Artifacts Generation and Upload - `issues/13-fix-test-artifacts-generation-and-upload.md`
+- [x] **[Issue #14]** Update Dependabot Configuration - `issues/14-update-dependabot-configuration.md`
+- [x] **[Issue #15]** Implement plan from gemini-output-formatting - `issues/15-implement-plan-from-gemini-output-formatting.md`
+- [x] **[Issue #16]** Implement Gemini Output Formatting - `issues/16-implement-gemini-output-formatting.md`
+- [x] **[Issue #17]** Add Testing for Gemini Output Formatting - `issues/17-add-testing-for-gemini-output-formatting.md`
+- [x] **[Issue #18]** Polish and Document Gemini Output Formatting - `issues/18-polish-and-document-gemini-output-formatting.md`
