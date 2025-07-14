@@ -20,7 +20,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PACKAGE_JSON="${PROJECT_ROOT}/package.json"
 CHANGELOG_FILE="${PROJECT_ROOT}/CHANGELOG.md"
 README_FILE="${PROJECT_ROOT}/README.md"
-PACKAGE_NAME="autoagent"
+PACKAGE_NAME="autoagent-cli"
 
 # Default values
 DRY_RUN=false

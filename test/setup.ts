@@ -8,7 +8,7 @@ import { config } from 'dotenv';
 import type { ExecutionResult, Issue, TodoItem, Configuration } from '../src/types/index.js';
 
 // Load test environment variables
-config({ path: '.env.test' });
+config({ path: '.env.test', quiet: true });
 
 // Import enhanced custom matchers
 import './helpers/assertions/custom-matchers';
