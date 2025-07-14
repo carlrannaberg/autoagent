@@ -104,22 +104,26 @@ echo "Found $COMMIT_COUNT commits since $LAST_TAG"
 # Get recent commits
 RECENT_COMMITS=$(git log ${LAST_TAG}..HEAD --oneline | head -20)
 
-# Get file changes statistics
+# Get file changes statistics - filter out docs and planning files
 if [ "$LAST_TAG" != "HEAD" ]; then
+    # Get all changes for statistics
     DIFF_STAT=$(git diff ${LAST_TAG}..HEAD --stat)
     
-    # Only include full diff if it's reasonably sized (< 10k lines or < 100k characters)
-    DIFF_FULL=$(git diff ${LAST_TAG}..HEAD)
-    DIFF_LINES=$(echo "$DIFF_FULL" | wc -l)
-    DIFF_CHARS=$(echo "$DIFF_FULL" | wc -c)
+    # Filter out documentation and planning files for the actual diff
+    # Only include: src/, test/, package.json, tsconfig.json, and key config files
+    FILTERED_DIFF=$(git diff ${LAST_TAG}..HEAD -- src/ test/ package.json tsconfig.json tsconfig.prod.json vitest.config.ts .eslintrc.js 2>/dev/null || echo "")
     
-    if [ "$DIFF_LINES" -gt 10000 ] || [ "$DIFF_CHARS" -gt 100000 ]; then
-        echo "Diff is large ($DIFF_LINES lines, $DIFF_CHARS characters) - Claude will need to check it dynamically"
-        DIFF_FULL="[DIFF TOO LARGE - Use 'git diff ${LAST_TAG}..HEAD' to analyze changes]"
-        INCLUDE_DIFF_INSTRUCTION="The diff is too large to include here. Please use 'git diff ${LAST_TAG}..HEAD' to analyze the actual code changes."
-    else
-        echo "Diff is manageable ($DIFF_LINES lines, $DIFF_CHARS characters) - including in prompt"
+    if [ -n "$FILTERED_DIFF" ]; then
+        DIFF_LINES=$(echo "$FILTERED_DIFF" | wc -l)
+        DIFF_CHARS=$(echo "$FILTERED_DIFF" | wc -c)
+        echo "Filtered diff (code changes only): $DIFF_LINES lines, $DIFF_CHARS characters"
+        
+        # Use filtered diff which should be much smaller
+        DIFF_FULL="$FILTERED_DIFF"
         INCLUDE_DIFF_INSTRUCTION=""
+    else
+        DIFF_FULL="[NO CODE CHANGES - Only documentation/planning files changed]"
+        INCLUDE_DIFF_INSTRUCTION="No source code changes found. This release contains only documentation updates."
     fi
 else
     DIFF_STAT="No previous release found - this is the first release"
@@ -130,8 +134,9 @@ fi
 # Get current CHANGELOG content (first 100 lines for context)
 CHANGELOG_CONTENT=$(head -100 CHANGELOG.md 2>/dev/null || echo "# Changelog\n\nAll notable changes to this project will be documented in this file.")
 
-# Get changed files list for focused analysis
-CHANGED_FILES=$(git diff ${LAST_TAG}..HEAD --name-only | head -50)
+# Get changed files list for focused analysis - separate code vs docs
+CODE_FILES=$(git diff ${LAST_TAG}..HEAD --name-only | grep -E '^(src/|test/|package\.json|tsconfig|vitest|eslint)' | head -20)
+DOC_FILES=$(git diff ${LAST_TAG}..HEAD --name-only | grep -E '^(docs/|issues/|plans/|specs/|README|CHANGELOG)' | head -10)
 
 # Calculate the new version that will be created
 if [ "$RELEASE_TYPE" = "patch" ]; then
@@ -154,7 +159,7 @@ echo "This should be much faster now with pre-computed data..."
 set +e
 
 # Check if timeout command is available (not on macOS by default)
-# Timeout is set to 180 seconds (3 minutes) since we're providing all the data
+# Timeout is set to 180 seconds (3 minutes) as a safety net
 if command -v gtimeout >/dev/null 2>&1; then
     # On macOS with GNU coreutils installed
     TIMEOUT_CMD="gtimeout 180"
@@ -179,13 +184,16 @@ CURRENT SITUATION:
 COMMITS SINCE LAST RELEASE ($COMMIT_COUNT commits):
 $RECENT_COMMITS
 
-CHANGED FILES (first 50):
-$CHANGED_FILES
+CODE FILES CHANGED (first 20):
+$CODE_FILES
 
-FILE CHANGES STATISTICS:
+DOCUMENTATION FILES CHANGED (first 10):
+$DOC_FILES
+
+FILE CHANGES STATISTICS (all files):
 $DIFF_STAT
 
-ACTUAL CODE CHANGES:
+ACTUAL CODE CHANGES (filtered - src/, test/, config files only):
 $DIFF_FULL
 
 $INCLUDE_DIFF_INSTRUCTION
