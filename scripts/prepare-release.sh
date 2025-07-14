@@ -325,7 +325,6 @@ pre_compute_release_data() {
 # Function to generate AI changelog and update README
 generate_ai_updates() {
     print_ai "Analyzing changes and updating CHANGELOG.md and README.md..."
-    echo "This should be much faster now with pre-computed data and combined updates..."
 
     # Check if timeout command is available
     if command -v gtimeout >/dev/null 2>&1; then
