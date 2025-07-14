@@ -123,10 +123,10 @@ validate_environment() {
         exit 1
     fi
 
-    # Check if we're on main branch
+    # Check if we're on master branch
     current_branch=$(git branch --show-current)
-    if [[ "$current_branch" != "main" ]]; then
-        print_warning "Not on main branch (current: $current_branch)"
+    if [[ "$current_branch" != "master" ]]; then
+        print_warning "Not on master branch (current: $current_branch)"
         if [[ "$INTERACTIVE" == "true" ]]; then
             read -p "Continue anyway? [y/N]: " -r
             if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -469,7 +469,7 @@ show_release_summary() {
     if [[ "$DRY_RUN" == "false" ]]; then
         echo "🚀 Next steps:"
         echo "  1. Review the changes: git diff HEAD~1"
-        echo "  2. Push to GitHub: git push origin main"
+        echo "  2. Push to GitHub: git push origin master"
         echo "  3. The GitHub Actions will create the tag and publish to npm"
         echo
         echo "🔗 Links:"
