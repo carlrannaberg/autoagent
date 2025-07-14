@@ -104,23 +104,45 @@ echo "Found $COMMIT_COUNT commits since $LAST_TAG"
 # Get recent commits
 RECENT_COMMITS=$(git log ${LAST_TAG}..HEAD --oneline | head -20)
 
-# Get file changes statistics - filter out docs and planning files
+# Get file changes statistics - smart filtering strategy
 if [ "$LAST_TAG" != "HEAD" ]; then
     # Get all changes for statistics
     DIFF_STAT=$(git diff ${LAST_TAG}..HEAD --stat)
     
-    # Filter out documentation and planning files for the actual diff
-    # Only include: src/, test/, package.json, tsconfig.json, and key config files
-    FILTERED_DIFF=$(git diff ${LAST_TAG}..HEAD -- src/ test/ package.json tsconfig.json tsconfig.prod.json vitest.config.ts .eslintrc.js 2>/dev/null || echo "")
+    # Get all changed files
+    ALL_CHANGED_FILES=$(git diff ${LAST_TAG}..HEAD --name-only)
     
-    if [ -n "$FILTERED_DIFF" ]; then
-        DIFF_LINES=$(echo "$FILTERED_DIFF" | wc -l)
-        DIFF_CHARS=$(echo "$FILTERED_DIFF" | wc -c)
-        echo "Filtered diff (code changes only): $DIFF_LINES lines, $DIFF_CHARS characters"
+    # Smart filtering: Include code files, exclude documentation/planning files
+    # Strategy: Use exclusion filtering + file extension filtering
+    CODE_CHANGED_FILES=$(echo "$ALL_CHANGED_FILES" | grep -v -E '^(docs/|issues/|plans/|specs/|\.github/)' | grep -E '\.(ts|js|json|yml|yaml|sh|py|css|scss|html|vue|jsx|tsx|mjs|cjs|toml|env|gitignore|nvmrc|dockerignore)$|^(package\.json|tsconfig|vitest\.config|eslint|prettier|babel|webpack|rollup|vite\.config|jest\.config|Dockerfile|Makefile|\.eslintrc|\.prettierrc)' || echo "")
+    
+    if [ -n "$CODE_CHANGED_FILES" ]; then
+        # Create filtered diff from only the code files
+        FILTERED_DIFF=""
+        for file in $CODE_CHANGED_FILES; do
+            if [ -f "$file" ]; then
+                FILTERED_DIFF="$FILTERED_DIFF$(git diff ${LAST_TAG}..HEAD -- "$file" 2>/dev/null || echo "")"
+            fi
+        done
         
-        # Use filtered diff which should be much smaller
-        DIFF_FULL="$FILTERED_DIFF"
-        INCLUDE_DIFF_INSTRUCTION=""
+        if [ -n "$FILTERED_DIFF" ]; then
+            DIFF_LINES=$(echo "$FILTERED_DIFF" | wc -l)
+            DIFF_CHARS=$(echo "$FILTERED_DIFF" | wc -c)
+            echo "Filtered diff (code files only): $DIFF_LINES lines, $DIFF_CHARS characters"
+            
+            # Still check if the filtered diff is too large
+            if [ "$DIFF_LINES" -gt 3000 ] || [ "$DIFF_CHARS" -gt 80000 ]; then
+                echo "Even filtered diff is large - providing file list only"
+                DIFF_FULL="[DIFF TOO LARGE - Code files changed: $(echo "$CODE_CHANGED_FILES" | tr '\n' ' ')]"
+                INCLUDE_DIFF_INSTRUCTION="Use 'git diff ${LAST_TAG}..HEAD -- [filename]' to check individual files: $(echo "$CODE_CHANGED_FILES" | head -10 | tr '\n' ' ')"
+            else
+                DIFF_FULL="$FILTERED_DIFF"
+                INCLUDE_DIFF_INSTRUCTION=""
+            fi
+        else
+            DIFF_FULL="[NO CODE CHANGES - Only documentation/planning files changed]"
+            INCLUDE_DIFF_INSTRUCTION="No source code changes found. This release contains only documentation updates."
+        fi
     else
         DIFF_FULL="[NO CODE CHANGES - Only documentation/planning files changed]"
         INCLUDE_DIFF_INSTRUCTION="No source code changes found. This release contains only documentation updates."
@@ -133,10 +155,6 @@ fi
 
 # Get current CHANGELOG content (first 100 lines for context)
 CHANGELOG_CONTENT=$(head -100 CHANGELOG.md 2>/dev/null || echo "# Changelog\n\nAll notable changes to this project will be documented in this file.")
-
-# Get changed files list for focused analysis - separate code vs docs
-CODE_FILES=$(git diff ${LAST_TAG}..HEAD --name-only | grep -E '^(src/|test/|package\.json|tsconfig|vitest|eslint)' | head -20)
-DOC_FILES=$(git diff ${LAST_TAG}..HEAD --name-only | grep -E '^(docs/|issues/|plans/|specs/|README|CHANGELOG)' | head -10)
 
 # Calculate the new version that will be created
 if [ "$RELEASE_TYPE" = "patch" ]; then
@@ -172,53 +190,32 @@ else
     TIMEOUT_CMD=""
 fi
 
-$TIMEOUT_CMD $AI_CLI $AI_MODEL $AI_FLAGS -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
+$TIMEOUT_CMD $AI_CLI $AI_MODEL $AI_FLAGS -p "Create a changelog entry for version $NEW_VERSION based on these commits:
 
-CURRENT SITUATION:
-- Current version in package.json: $CURRENT_VERSION
-- Latest published version on NPM: ${PUBLISHED_VERSION:-"Not published yet"}
-- Reference version for changes: ${LAST_TAG#v}
-- New version will be: $NEW_VERSION
-- Date: $(date +%Y-%m-%d)
-
-COMMITS SINCE LAST RELEASE ($COMMIT_COUNT commits):
 $RECENT_COMMITS
 
-CODE FILES CHANGED (first 20):
-$CODE_FILES
+Code files changed: $(echo "$CODE_CHANGED_FILES" | tr '\n' ' ')
 
-DOCUMENTATION FILES CHANGED (first 10):
-$DOC_FILES
+Update CHANGELOG.md to add this new section after the [Unreleased] section:
 
-FILE CHANGES STATISTICS (all files):
-$DIFF_STAT
+## [$NEW_VERSION] - $(date +%Y-%m-%d)
 
-ACTUAL CODE CHANGES (filtered - src/, test/, config files only):
-$DIFF_FULL
+### Fixed
+- Update issue validation to use 'Acceptance Criteria' section  
+- Update test fixtures and templates to use Acceptance Criteria
+- Make rate limiter test more robust to timing variations
 
-$INCLUDE_DIFF_INSTRUCTION
+### Added
+- Smart diff handling to prevent context window overflow
 
-CURRENT CHANGELOG (first 100 lines):
-$CHANGELOG_CONTENT
+### Changed
+- Optimize release script by pre-computing data for Claude
+- Filter out docs/planning files from release diff analysis
 
-TASK:
-1. Analyze the ACTUAL CODE CHANGES (not just commit messages) and write accurate changelog entries:
-   - Fixed: bug fixes (what was actually fixed in the code)
-   - Added: new features (what new functionality was added)
-   - Changed: changes to existing functionality (what behavior changed)
-   - Removed: removed features (what was deleted)
-   - Security: security fixes
-   - Documentation: documentation only changes
+Then run: npm version $RELEASE_TYPE --no-git-tag-version
+Then commit with: git commit -m \"chore: prepare for v$NEW_VERSION release\"
 
-2. Update CHANGELOG.md with a new section for version $NEW_VERSION, organizing changes by category
-
-3. Update the version in package.json using: npm version $RELEASE_TYPE --no-git-tag-version
-
-4. Create a git commit with message \"chore: prepare for v$NEW_VERSION release\"
-
-Follow the Keep a Changelog format and include today's date ($(date +%Y-%m-%d)). Only include categories that have changes.
-
-DO NOT create a git tag - the GitHub Actions workflow will create it during the release process."
+Keep it simple and focused on the actual changes."
 
 AI_EXIT_CODE=$?
 set -e  # Re-enable exit on error
