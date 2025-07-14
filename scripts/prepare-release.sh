@@ -107,14 +107,31 @@ RECENT_COMMITS=$(git log ${LAST_TAG}..HEAD --oneline | head -20)
 # Get file changes statistics
 if [ "$LAST_TAG" != "HEAD" ]; then
     DIFF_STAT=$(git diff ${LAST_TAG}..HEAD --stat)
+    
+    # Only include full diff if it's reasonably sized (< 10k lines or < 100k characters)
     DIFF_FULL=$(git diff ${LAST_TAG}..HEAD)
+    DIFF_LINES=$(echo "$DIFF_FULL" | wc -l)
+    DIFF_CHARS=$(echo "$DIFF_FULL" | wc -c)
+    
+    if [ "$DIFF_LINES" -gt 10000 ] || [ "$DIFF_CHARS" -gt 100000 ]; then
+        echo "Diff is large ($DIFF_LINES lines, $DIFF_CHARS characters) - Claude will need to check it dynamically"
+        DIFF_FULL="[DIFF TOO LARGE - Use 'git diff ${LAST_TAG}..HEAD' to analyze changes]"
+        INCLUDE_DIFF_INSTRUCTION="The diff is too large to include here. Please use 'git diff ${LAST_TAG}..HEAD' to analyze the actual code changes."
+    else
+        echo "Diff is manageable ($DIFF_LINES lines, $DIFF_CHARS characters) - including in prompt"
+        INCLUDE_DIFF_INSTRUCTION=""
+    fi
 else
     DIFF_STAT="No previous release found - this is the first release"
     DIFF_FULL=""
+    INCLUDE_DIFF_INSTRUCTION=""
 fi
 
 # Get current CHANGELOG content (first 100 lines for context)
 CHANGELOG_CONTENT=$(head -100 CHANGELOG.md 2>/dev/null || echo "# Changelog\n\nAll notable changes to this project will be documented in this file.")
+
+# Get changed files list for focused analysis
+CHANGED_FILES=$(git diff ${LAST_TAG}..HEAD --name-only | head -50)
 
 # Calculate the new version that will be created
 if [ "$RELEASE_TYPE" = "patch" ]; then
@@ -162,11 +179,16 @@ CURRENT SITUATION:
 COMMITS SINCE LAST RELEASE ($COMMIT_COUNT commits):
 $RECENT_COMMITS
 
+CHANGED FILES (first 50):
+$CHANGED_FILES
+
 FILE CHANGES STATISTICS:
 $DIFF_STAT
 
 ACTUAL CODE CHANGES:
 $DIFF_FULL
+
+$INCLUDE_DIFF_INSTRUCTION
 
 CURRENT CHANGELOG (first 100 lines):
 $CHANGELOG_CONTENT
