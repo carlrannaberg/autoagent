@@ -92,30 +92,58 @@ else
     fi
 fi
 
-# Show recent commits
+# Pre-compute all data that Claude needs
 echo
-echo "Commits since last release ($LAST_TAG):"
+echo "Pre-computing release data..."
 echo "==========================="
+
+# Get commit information
 COMMIT_COUNT=$(git rev-list ${LAST_TAG}..HEAD --count)
 echo "Found $COMMIT_COUNT commits since $LAST_TAG"
-git log ${LAST_TAG}..HEAD --oneline | head -20
-echo
-echo "Using $AI_CLI to analyze changes and prepare release..."
-echo "This process typically takes 3-5 minutes as the AI analyzes the codebase..."
-echo "Timeout set to 10 minutes for safety."
 
-# Use AI CLI to prepare the release with faster model and longer timeout
+# Get recent commits
+RECENT_COMMITS=$(git log ${LAST_TAG}..HEAD --oneline | head -20)
+
+# Get file changes statistics
+if [ "$LAST_TAG" != "HEAD" ]; then
+    DIFF_STAT=$(git diff ${LAST_TAG}..HEAD --stat)
+    DIFF_FULL=$(git diff ${LAST_TAG}..HEAD)
+else
+    DIFF_STAT="No previous release found - this is the first release"
+    DIFF_FULL=""
+fi
+
+# Get current CHANGELOG content (first 100 lines for context)
+CHANGELOG_CONTENT=$(head -100 CHANGELOG.md 2>/dev/null || echo "# Changelog\n\nAll notable changes to this project will be documented in this file.")
+
+# Calculate the new version that will be created
+if [ "$RELEASE_TYPE" = "patch" ]; then
+    NEW_VERSION=$(node -p "const v=require('./package.json').version.split('.').map(Number); v[2]++; v.join('.')")
+elif [ "$RELEASE_TYPE" = "minor" ]; then
+    NEW_VERSION=$(node -p "const v=require('./package.json').version.split('.').map(Number); v[1]++; v[2]=0; v.join('.')")
+elif [ "$RELEASE_TYPE" = "major" ]; then
+    NEW_VERSION=$(node -p "const v=require('./package.json').version.split('.').map(Number); v[0]++; v[1]=0; v[2]=0; v.join('.')")
+fi
+
+echo "New version will be: $NEW_VERSION"
+echo "Changes to analyze: $COMMIT_COUNT commits"
+echo
+
+echo "Using $AI_CLI to analyze changes and prepare release..."
+echo "This should be much faster now with pre-computed data..."
+
+# Use AI CLI to prepare the release with pre-computed data
 # Temporarily disable exit on error for AI command
 set +e
 
 # Check if timeout command is available (not on macOS by default)
-# Timeout is set to 600 seconds (10 minutes) for AI processing
+# Timeout is set to 180 seconds (3 minutes) since we're providing all the data
 if command -v gtimeout >/dev/null 2>&1; then
     # On macOS with GNU coreutils installed
-    TIMEOUT_CMD="gtimeout 600"
+    TIMEOUT_CMD="gtimeout 180"
 elif command -v timeout >/dev/null 2>&1; then
     # On Linux or other systems with timeout
-    TIMEOUT_CMD="timeout 600"
+    TIMEOUT_CMD="timeout 180"
 else
     # No timeout command available
     echo "Warning: No timeout command available. Install coreutils on macOS: brew install coreutils"
@@ -124,27 +152,41 @@ fi
 
 $TIMEOUT_CMD $AI_CLI $AI_MODEL $AI_FLAGS -p "You are preparing a new $RELEASE_TYPE release for the AutoAgent npm package.
 
-Current version in package.json: $CURRENT_VERSION
-Latest published version on NPM: ${PUBLISHED_VERSION:-"Not published yet"}
-Reference version for changes: ${LAST_TAG#v}
+CURRENT SITUATION:
+- Current version in package.json: $CURRENT_VERSION
+- Latest published version on NPM: ${PUBLISHED_VERSION:-"Not published yet"}
+- Reference version for changes: ${LAST_TAG#v}
+- New version will be: $NEW_VERSION
+- Date: $(date +%Y-%m-%d)
 
-Please do the following:
-1. Check the published version using: npm view autoagent-cli version
-2. Find the last release tag using: git describe --tags --abbrev=0
-2. Get the actual changes since that tag using: git diff <last-tag>..HEAD --stat and git diff <last-tag>..HEAD
-3. Analyze the ACTUAL CODE CHANGES (not just commit messages) and write accurate changelog entries:
+COMMITS SINCE LAST RELEASE ($COMMIT_COUNT commits):
+$RECENT_COMMITS
+
+FILE CHANGES STATISTICS:
+$DIFF_STAT
+
+ACTUAL CODE CHANGES:
+$DIFF_FULL
+
+CURRENT CHANGELOG (first 100 lines):
+$CHANGELOG_CONTENT
+
+TASK:
+1. Analyze the ACTUAL CODE CHANGES (not just commit messages) and write accurate changelog entries:
    - Fixed: bug fixes (what was actually fixed in the code)
    - Added: new features (what new functionality was added)
    - Changed: changes to existing functionality (what behavior changed)
    - Removed: removed features (what was deleted)
    - Security: security fixes
    - Documentation: documentation only changes
-4. DO NOT just copy commit messages. Look at what files changed and what the changes actually do.
-5. Update CHANGELOG.md with a new section for the new version, organizing changes by category
-6. Update the version in package.json using: npm version $RELEASE_TYPE --no-git-tag-version
-7. Create a git commit with message \"chore: prepare for vX.X.X release\" where X.X.X is the new version
 
-Follow the Keep a Changelog format and include the date. Only include categories that have changes.
+2. Update CHANGELOG.md with a new section for version $NEW_VERSION, organizing changes by category
+
+3. Update the version in package.json using: npm version $RELEASE_TYPE --no-git-tag-version
+
+4. Create a git commit with message \"chore: prepare for v$NEW_VERSION release\"
+
+Follow the Keep a Changelog format and include today's date ($(date +%Y-%m-%d)). Only include categories that have changes.
 
 DO NOT create a git tag - the GitHub Actions workflow will create it during the release process."
 
