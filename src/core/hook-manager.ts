@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import { HookConfig, HookPoint, Hook, HookData, HookResult, CommandResult } from '../types/index.js';
 import { GitCommitHook } from '../hooks/git-commit-hook.js';
+import { GitPushHook } from '../hooks/git-push-hook.js';
 
 /**
  * Manages execution of hooks at various lifecycle points
@@ -137,6 +138,10 @@ export class HookManager {
       case 'git-commit': {
         const gitCommitHook = new GitCommitHook();
         return gitCommitHook.execute(data, hook);
+      }
+      case 'git-push': {
+        const gitPushHook = new GitPushHook();
+        return gitPushHook.execute(data, hook);
       }
       default: {
         // eslint-disable-next-line no-console

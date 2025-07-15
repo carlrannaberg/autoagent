@@ -1,6 +1,22 @@
 export * from './hooks.js';
 export * from './session.js';
 
+import { HookData, HookResult } from './hooks.js';
+
+/**
+ * Interface for built-in hook handlers.
+ * Implement this interface to add new built-in hook types.
+ */
+export interface BuiltinHookHandler {
+  /**
+   * Execute the built-in hook with the given configuration.
+   * @param data - Hook event data
+   * @param config - Hook configuration
+   * @returns Promise resolving to hook result
+   */
+  execute(data: HookData, config: Hook): Promise<HookResult>;
+}
+
 /**
  * Configuration for hooks at each lifecycle point.
  * Maps hook points to arrays of hooks that should execute at that point.
@@ -187,10 +203,6 @@ export interface UserConfig {
   maxTokens: number;
   /** Cooldown period for rate-limited providers (ms) */
   rateLimitCooldown: number;
-  /** Whether to automatically commit changes */
-  gitAutoCommit: boolean;
-  /** Interval for git auto-commits (ms) */
-  gitCommitInterval: number;
   /** Logging level */
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   /** Custom instructions for providers */
@@ -199,14 +211,6 @@ export interface UserConfig {
   includeCoAuthoredBy?: boolean;
   /** Additional directories to give AI providers access to */
   additionalDirectories?: string[];
-  /** Skip git pre-commit and commit-msg hooks when committing */
-  gitCommitNoVerify: boolean;
-  /** Whether to automatically push changes after committing (default: false) */
-  gitAutoPush: boolean;
-  /** Git remote to push to (default: 'origin') */
-  gitPushRemote: string;
-  /** Optional target branch to push to (default: current branch) */
-  gitPushBranch?: string;
   /** Hook configuration for lifecycle events */
   hooks?: HookConfig;
 }

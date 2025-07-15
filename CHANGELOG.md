@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add GitPushHook built-in hook for automatic git push operations
+  - Detects current branch automatically
+  - Uses configured remote or defaults to 'origin'
+  - Provides clear error messages for authentication failures
+  - Handles non-fast-forward rejections with resolution steps
+  - Validates remote repository before attempting push
+  - Sets upstream automatically when needed
+
 ## [0.6.4] - 2025-07-11
 
 ### Fixed

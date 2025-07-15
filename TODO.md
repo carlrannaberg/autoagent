@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #93]** Create GitPushHook built-in hook - `issues/93-create-git-push-hook.md`
 - [ ] **[Issue #94]** Update HookManager for built-in hooks - `issues/94-update-hook-manager-for-builtin-hooks.md`
 - [ ] **[Issue #95]** Remove legacy git config fields - `issues/95-remove-legacy-git-config-fields.md`
 - [ ] **[Issue #96]** Remove CLI git flags - `issues/96-remove-cli-git-flags.md`
@@ -12,6 +11,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #99]** Write hook system unit tests - `issues/99-write-hook-system-unit-tests.md`
 
 ## Completed Issues
+- [x] **[Issue #93]** Create GitPushHook built-in hook - `issues/93-create-git-push-hook.md`
 - [x] **[Issue #92]** Create GitCommitHook built-in hook - `issues/92-create-git-commit-hook.md`
 - [x] **[Issue #91]** Implement Stop hook support - `issues/91-implement-stop-hook-support.md`
 - [x] **[Issue #90]** Integrate hooks into AutonomousAgent - `issues/90-integrate-hooks-into-autonomous-agent.md`
