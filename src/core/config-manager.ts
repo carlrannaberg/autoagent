@@ -11,14 +11,9 @@ export class ConfigManager {
     retryAttempts: 3,
     maxTokens: 100000,
     rateLimitCooldown: 3600000, // 1 hour in milliseconds
-    gitAutoCommit: false,
-    gitCommitInterval: 600000, // 10 minutes
     logLevel: 'info',
     customInstructions: '',
-    additionalDirectories: [],
-    gitCommitNoVerify: false,
-    gitAutoPush: false,
-    gitPushRemote: 'origin'
+    additionalDirectories: []
   };
 
   private static readonly GLOBAL_CONFIG_DIR = path.join(os.homedir(), '.autoagent');
@@ -295,109 +290,13 @@ export class ConfigManager {
     await this.saveRateLimits(rateLimits);
   }
 
-  /**
-   * Set the git commit no-verify configuration
-   * @param noVerify - Whether to skip git hooks when committing
-   * @param global - Whether to update global config (true) or local config (false)
-   */
-  async setGitCommitNoVerify(noVerify: boolean, global = false): Promise<void> {
-    await this.updateConfig({ gitCommitNoVerify: noVerify }, global ? 'global' : 'local');
-  }
 
-  /**
-   * Get the git commit no-verify configuration
-   * @returns Whether git hooks should be skipped when committing
-   */
-  getGitCommitNoVerify(): boolean {
-    return this.config.gitCommitNoVerify ?? false;
-  }
 
-  /**
-   * Set the git auto-push configuration
-   * @param autoPush - Whether to automatically push after commits
-   * @param global - Whether to update global config (true) or local config (false)
-   */
-  async setGitAutoPush(autoPush: boolean, global = false): Promise<void> {
-    await this.updateConfig({ gitAutoPush: autoPush }, global ? 'global' : 'local');
-  }
 
-  /**
-   * Get the git auto-push configuration
-   * @returns Whether to automatically push after commits
-   */
-  getGitAutoPush(): boolean {
-    return this.config.gitAutoPush ?? false;
-  }
 
-  /**
-   * Set the git push remote configuration
-   * @param remote - The remote to push to
-   * @param global - Whether to update global config (true) or local config (false)
-   */
-  async setGitPushRemote(remote: string, global = false): Promise<void> {
-    // Basic validation for remote name
-    const trimmedRemote = remote.trim();
-    if (!trimmedRemote || trimmedRemote.length === 0) {
-      throw new Error('Remote name cannot be empty');
-    }
-    
-    // Check for invalid characters in remote name
-    if (!/^[a-zA-Z0-9._-]+$/.test(trimmedRemote)) {
-      throw new Error('Invalid remote name. Remote names can only contain letters, numbers, dots, underscores, and hyphens');
-    }
-    
-    await this.updateConfig({ gitPushRemote: trimmedRemote }, global ? 'global' : 'local');
-  }
 
-  /**
-   * Get the git push remote configuration
-   * @returns The remote to push to
-   */
-  getGitPushRemote(): string {
-    return this.config.gitPushRemote ?? 'origin';
-  }
 
-  /**
-   * Set the git push branch configuration
-   * @param branch - The branch to push to (undefined to use current branch)
-   * @param global - Whether to update global config (true) or local config (false)
-   */
-  async setGitPushBranch(branch: string | undefined, global = false): Promise<void> {
-    if (branch !== undefined) {
-      // Basic validation for branch name
-      const trimmedBranch = branch.trim();
-      if (trimmedBranch.length === 0) {
-        throw new Error('Branch name cannot be empty');
-      }
-      
-      // Check for invalid characters in branch name
-      if (!/^[a-zA-Z0-9._/-]+$/.test(trimmedBranch)) {
-        throw new Error('Invalid branch name. Branch names can only contain letters, numbers, dots, underscores, hyphens, and forward slashes');
-      }
-      
-      // Check for invalid patterns
-      if (trimmedBranch.startsWith('/') || trimmedBranch.endsWith('/') || trimmedBranch.includes('//')) {
-        throw new Error('Invalid branch name. Branch names cannot start or end with slashes, or contain consecutive slashes');
-      }
-      
-      await this.updateConfig({ gitPushBranch: trimmedBranch }, global ? 'global' : 'local');
-    } else {
-      // Remove the branch setting to use current branch
-      const configPath = global ? this.globalConfigPath : this.localConfigPath;
-      const currentConfig = await this.loadConfigFile(configPath);
-      delete currentConfig.gitPushBranch;
-      await this.saveConfigFile(configPath, currentConfig);
-      await this.loadConfig(); // Reload to update internal state
-    }
-  }
 
-  /**
-   * Get the git push branch configuration
-   * @returns The branch to push to (undefined means current branch)
-   */
-  getGitPushBranch(): string | undefined {
-    return this.config.gitPushBranch;
-  }
 
   /**
    * Save configuration
@@ -459,12 +358,6 @@ export class ConfigManager {
       }
     }
     
-    // Show git hooks status
-    Logger.info('\n🔧 Git Hooks Status:');
-    const gitHooksStatus = this.config.gitCommitNoVerify 
-      ? 'disabled (--no-verify)' 
-      : 'enabled';
-    Logger.info(`Git pre-commit and commit-msg hooks: ${gitHooksStatus}`);
   }
 
   /**

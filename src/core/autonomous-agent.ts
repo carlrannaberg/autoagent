@@ -51,7 +51,6 @@ export class AutonomousAgent extends EventEmitter {
     this.config = {
       workspace: process.cwd(),
       provider: undefined,
-      autoCommit: false,
       includeCoAuthoredBy: true,
       autoUpdateContext: true,
       debug: false,
@@ -700,10 +699,6 @@ export class AutonomousAgent extends EventEmitter {
       await this.updateProviderInstructions(result);
     }
 
-    // Git auto-commit and auto-push if configured
-    if (this.config.autoCommit === true) {
-      await this.performGitCommitAndPush(issue, result);
-    }
 
     this.reportProgress('Execution completed successfully', 100);
   }
@@ -828,52 +823,6 @@ ${issueEntry}
     }
   }
 
-  /**
-   * Validate git repository status for auto-commit operations.
-   * Checks git availability, repository status, and user configuration.
-   * 
-   * @throws Error with clear remediation guidance if validation fails
-   */
-  private async validateGitForAutoCommit(): Promise<void> {
-    // Skip validation if auto-commit is disabled
-    if (this.config.autoCommit !== true) {
-      return;
-    }
-
-    // Add debug logging at the start
-    if (this.config.debug === true) {
-      this.reportProgress('🔐 Validating git environment for auto-commit...', 0);
-      this.reportProgress(`📍 Auto-commit: ${this.config.autoCommit === true ? 'enabled' : 'disabled'}`, 0);
-    }
-
-    // Use the comprehensive validation function with debug logging
-    const validationResult = await validateGitEnvironment({
-      onDebug: this.config.debug === true ? (message: string): void => this.reportProgress(message, 0) : undefined
-    });
-
-    if (!validationResult.isValid) {
-      // Build comprehensive error message
-      const errorMessage = [
-        'Git validation failed for auto-commit.',
-        '',
-        'Errors found:',
-        ...validationResult.errors.map((e, i) => `${i + 1}. ${e}`),
-        '',
-        'To fix these issues:',
-        ...validationResult.suggestions.map((s, i) => `${i + 1}. ${s}`),
-        '',
-        'Alternative: Disable auto-commit by setting autoCommit to false in your config'
-      ].join('\n');
-
-      throw new Error(errorMessage);
-    }
-
-    // Log successful validation in debug mode
-    if (this.config.debug === true) {
-      const version = validationResult.gitVersion ?? 'unknown version';
-      this.reportProgress(`✅ Git validation passed for auto-commit (${version})`, 0);
-    }
-  }
 
   /**
    * Validate git repository for auto-push operations.
@@ -884,7 +833,7 @@ ${issueEntry}
   private async validateGitForAutoPush(): Promise<void> {
     // Get push configuration
     const userConfig = this.configManager.getConfig();
-    const autoPush = this.config.autoPush ?? userConfig.gitAutoPush;
+    const autoPush = this.config.autoPush ?? false;
     
     // Skip validation if auto-push is disabled
     if (!autoPush) {
@@ -898,7 +847,7 @@ ${issueEntry}
 
     // Validate remote repository
     const { validateRemoteForPush } = await import('../utils/git');
-    const remote = userConfig.gitPushRemote ?? 'origin';
+    const remote = 'origin';
     const validationResult = await validateRemoteForPush(remote);
 
     if (!validationResult.isValid) {
@@ -912,7 +861,7 @@ ${issueEntry}
         'To fix these issues:',
         ...validationResult.suggestions.map((s, i) => `${i + 1}. ${s}`),
         '',
-        'Alternative: Disable auto-push by setting gitAutoPush to false in your config'
+        'Alternative: Disable auto-push by running: autoagent config autoPush false'
       ].join('\n');
 
       throw new Error(errorMessage);
@@ -933,23 +882,16 @@ ${issueEntry}
   private async validateGitForAutoCommitAndPush(): Promise<void> {
     // Get effective configuration
     const userConfig = this.configManager.getConfig();
-    const autoCommit = this.config.autoCommit ?? false;
-    const autoPush = this.config.autoPush ?? userConfig.gitAutoPush;
+    const autoPush = this.config.autoPush ?? false;
 
-    // Skip validation if both are disabled
-    if (!autoCommit && !autoPush) {
+    // Skip validation if auto-push is disabled
+    if (!autoPush) {
       return;
     }
 
     if (this.config.debug === true) {
       this.reportProgress('🔐 Validating git environment...', 0);
-      this.reportProgress(`📍 Auto-commit: ${autoCommit ? 'enabled' : 'disabled'}`, 0);
       this.reportProgress(`📍 Auto-push: ${autoPush ? 'enabled' : 'disabled'}`, 0);
-    }
-
-    // Validate for commit if enabled
-    if (autoCommit) {
-      await this.validateGitForAutoCommit();
     }
 
     // Validate for push if enabled
@@ -965,7 +907,7 @@ ${issueEntry}
   private async performGitPush(result?: ExecutionResult): Promise<void> {
     try {
       const userConfig = this.configManager.getConfig();
-      const autoPush = this.config.autoPush ?? userConfig.gitAutoPush;
+      const autoPush = this.config.autoPush ?? false;
       
       // Skip if auto-push is disabled
       if (!autoPush) {

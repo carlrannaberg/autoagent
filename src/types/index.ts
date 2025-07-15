@@ -163,8 +163,6 @@ export interface AgentConfig {
   provider?: ProviderName;
   /** Working directory for the agent */
   workspace?: string;
-  /** Whether to automatically commit changes */
-  autoCommit?: boolean;
   /** Include co-authored-by in commit messages */
   includeCoAuthoredBy?: boolean;
   /** Automatically update context files after execution */
@@ -185,7 +183,7 @@ export interface AgentConfig {
   additionalDirectories?: string[];
   /** Skip git pre-commit and commit-msg hooks when committing */
   noVerify?: boolean;
-  /** Whether to automatically push changes after committing (runtime override of UserConfig.gitAutoPush) */
+  /** Whether to automatically push changes after committing */
   autoPush?: boolean;
 }
 
