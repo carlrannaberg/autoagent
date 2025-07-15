@@ -332,3 +332,6 @@ export interface ReflectionState {
 
 // Re-export hook types
 export * from './hooks.js';
+
+// Re-export session types
+export * from './session.js';

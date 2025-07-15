@@ -3,7 +3,6 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #88]** Create SessionManager class - `issues/88-create-session-manager-class.md`
 - [ ] **[Issue #89]** Define hook type interfaces - `issues/89-define-hook-type-interfaces.md`
 - [ ] **[Issue #90]** Integrate hooks into AutonomousAgent - `issues/90-integrate-hooks-into-autonomous-agent.md`
 - [ ] **[Issue #91]** Implement Stop hook support - `issues/91-implement-stop-hook-support.md`
@@ -17,6 +16,7 @@ This file tracks all issues for the autonomous agent. Issues are automatically m
 - [ ] **[Issue #99]** Write hook system unit tests - `issues/99-write-hook-system-unit-tests.md`
 
 ## Completed Issues
+- [x] **[Issue #88]** Create SessionManager class - `issues/88-create-session-manager-class.md`
 - [x] **[Issue #87]** Create HookManager class - `issues/87-create-hook-manager-class.md`
 - [x] **[Issue #86]** Implement plan from hooks-system-implementation - `issues/86-implement-plan-from-hooks-system-implementation.md`
 - [x] **[Issue #85]** Update documentation for auto-push feature - `issues/85-update-documentation-for-auto-push-feature.md`
