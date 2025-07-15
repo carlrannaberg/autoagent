@@ -329,3 +329,6 @@ export interface ReflectionState {
   /** Current plan files being improved */
   currentPlans: string[];
 }
+
+// Re-export hook types
+export * from './hooks.js';

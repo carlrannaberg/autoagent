@@ -13,3 +13,4 @@ export {
   type ApplicationResult,
   type BackupInfo
 } from './improvement-applier';
+export { HookManager } from './hook-manager';
