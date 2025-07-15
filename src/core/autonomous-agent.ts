@@ -1209,46 +1209,6 @@ ${issueEntry}
   /**
    * Execute Stop hook with session summary
    */
-  private async executeStopHook(reason: 'completed' | 'failed' | 'interrupted'): Promise<void> {
-    if (!this.hookManager || !this.currentSession) {
-      return;
-    }
-
-    try {
-      // Prepare session summary data
-      const sessionSummary = {
-        sessionId: this.currentSession.id,
-        reason,
-        issuesCompleted: this.currentSession.issuesCompleted || [],
-        issuesCreated: this.currentSession.issuesCreated || [],
-        issuesFailed: this.currentSession.issuesFailed || [],
-        totalIssues: (this.currentSession.issuesCompleted?.length || 0) + 
-                    (this.currentSession.issuesFailed?.length || 0),
-        filesModified: this.currentSession.filesModified || [],
-        startTime: this.currentSession.startTime,
-        endTime: new Date().toISOString(),
-        error: this.currentSession.error
-      };
-
-      // Execute Stop hook
-      const hookResult = await this.hookManager.executeHooks('Stop', sessionSummary);
-
-      if (hookResult.blocked) {
-        // Stop hook blocked termination
-        const errorMessage = `Stop hook blocked termination: ${hookResult.reason || 'Unknown reason'}`;
-        this.reportProgress(errorMessage, 0);
-        throw new Error(errorMessage);
-      }
-    } catch (error) {
-      // Log error but allow termination to proceed
-      this.reportProgress(`Stop hook error: ${error instanceof Error ? error.message : String(error)}`, 0);
-      throw error;
-    }
-  }
-
-  """  /**
-   * Execute Stop hook with session summary
-   */
   async executeStopHook(reason: 'completed' | 'failed' | 'interrupted'): Promise<void> {
     if (!this.hookManager || !this.currentSession) {
       return;
@@ -1304,7 +1264,7 @@ ${issueEntry}
       }
     }
     process.exit(0);
-  }""
+  }
 
   /**
    * Delay helper

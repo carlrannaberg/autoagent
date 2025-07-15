@@ -1,3 +1,42 @@
+export * from './hooks.js';
+export * from './session.js';
+
+/**
+ * Configuration for hooks at each lifecycle point.
+ * Maps hook points to arrays of hooks that should execute at that point.
+ * Hooks are executed in the order they appear in the array.
+ */
+export interface HookConfig {
+  [key: string]: Hook[];
+}
+
+/**
+ * Individual hook configuration supporting different hook types.
+ * 
+ * Hook types:
+ * - command: Execute an external command with JSON input/output
+ * - git-commit: Perform a git commit with configurable options
+ * - git-push: Push changes to a remote repository
+ */
+export interface Hook {
+  /** Type of hook - command or built-in */
+  type: 'command' | 'git-commit' | 'git-push';
+  /** Command to execute (required for command type) */
+  command?: string;
+  /** Timeout in milliseconds (default: 60000) */
+  timeout?: number;
+  /** Whether the hook can block execution (Pre hooks only, exit code 2 blocks) */
+  blocking?: boolean;
+  /** Commit message template (git-commit) - supports template variables */
+  message?: string;
+  /** Skip git pre-commit hooks (git-commit) */
+  noVerify?: boolean;
+  /** Remote repository (git-push, default: 'origin') */
+  remote?: string;
+  /** Branch to push (git-push, default: current branch) */
+  branch?: string;
+}
+
 /**
  * Core data structure for tracking issues in the autonomous agent system.
  */

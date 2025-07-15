@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
-import { HookConfig, HookPoint, Hook, HookData, HookResult, CommandResult } from '../types/hooks.js';
+import { HookConfig, HookPoint, Hook, HookData, HookResult, CommandResult } from '../types/index.js';
+import { GitCommitHook } from '../hooks/git-commit-hook.js';
 
 /**
  * Manages execution of hooks at various lifecycle points
@@ -42,7 +43,7 @@ export class HookManager {
           result = await this.executeCommandHook(hook, hookData, hookPoint);
         } else {
           // Built-in hooks will be handled by separate classes
-          result = this.executeBuiltinHook(hook, hookData);
+          result = await this.executeBuiltinHook(hook, hookData);
         }
 
         // Check if execution was blocked
@@ -129,13 +130,20 @@ export class HookManager {
   }
 
   /**
-   * Execute a built-in hook (placeholder for future implementation)
+   * Execute a built-in hook
    */
-  private executeBuiltinHook(hook: Hook, _data: HookData): HookResult {
-    // Built-in hooks (git-commit, git-push) will be implemented separately
-    // eslint-disable-next-line no-console
-    console.warn(`Built-in hook type '${hook.type}' not yet implemented`);
-    return { blocked: false };
+  private async executeBuiltinHook(hook: Hook, data: HookData): Promise<HookResult> {
+    switch (hook.type) {
+      case 'git-commit': {
+        const gitCommitHook = new GitCommitHook();
+        return gitCommitHook.execute(data, hook);
+      }
+      default: {
+        // eslint-disable-next-line no-console
+        console.warn(`Built-in hook type '${hook.type}' not yet implemented`);
+        return { blocked: false };
+      }
+    }
   }
 
   /**
