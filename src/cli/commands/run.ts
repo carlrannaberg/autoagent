@@ -19,7 +19,6 @@ interface RunOptions {
   provider?: string;
   workspace?: string;
   debug?: boolean;
-  commit?: boolean;
   coAuthor?: boolean;
   dryRun?: boolean;
   reflectionIterations?: number;
@@ -27,8 +26,6 @@ interface RunOptions {
   addDir?: string[];
   verify?: boolean;
   noVerify?: boolean;
-  push?: boolean;
-  noPush?: boolean;
   validate?: boolean;
   noValidate?: boolean;
 }
@@ -105,15 +102,11 @@ export function registerRunCommand(program: Command): void {
       '  autoagent run 5-add-auth         # Run issue by name\n' +
       '  autoagent run --all              # Run all pending issues\n' +
       '  autoagent run --reflection-iterations 5  # Run with 5 reflection iterations\n' +
-      '  autoagent run --no-reflection    # Run without reflection improvements\n' +
-      '  autoagent run --push             # Run with auto-push enabled (implies --commit)\n' +
-      '  autoagent run --no-push          # Run with auto-push disabled')
+      '  autoagent run --no-reflection    # Run without reflection improvements')
     .option('-p, --provider <provider>', 'Override AI provider for this run (claude or gemini)')
     .option('-w, --workspace <path>', 'Workspace directory')
     .option('--all', 'Run all pending issues')
     .option('--debug', 'Enable debug output')
-    .option('--no-commit', 'Disable auto-commit for this run')
-    .option('--commit', 'Enable auto-commit for this run')
     .option('--no-co-author', 'Disable co-authorship for this run')
     .option('--co-author', 'Enable co-authorship for this run')
     .option('--dry-run', 'Preview what would be done without making changes')
@@ -122,16 +115,12 @@ export function registerRunCommand(program: Command): void {
     .option('--add-dir <path>', 'Add additional directory for AI access (repeatable)', collect, [])
     .option('--verify', 'Enable git hooks during commits')
     .option('--no-verify', 'Skip git hooks during commits')
-    .option('--push', 'Enable auto-push for this run (implies --commit)')
-    .option('--no-push', 'Disable auto-push for this run')
     .option('--validate', 'Enable file validation before execution (default)')
     .option('--no-validate', 'Skip file validation before execution');
 
   // Track which conflicting flags were provided
   let verifyFlagProvided = false;
   let noVerifyFlagProvided = false;
-  let pushFlagProvided = false;
-  let noPushFlagProvided = false;
 
   // Override option parsing to track which flags were actually provided
   const originalParseOptions = runCommand.parseOptions.bind(runCommand);
@@ -139,8 +128,6 @@ export function registerRunCommand(program: Command): void {
     // Check which flags are present in the argv
     verifyFlagProvided = argv.includes('--verify');
     noVerifyFlagProvided = argv.includes('--no-verify');
-    pushFlagProvided = argv.includes('--push');
-    noPushFlagProvided = argv.includes('--no-push');
     
     return originalParseOptions(argv);
   };
@@ -198,40 +185,17 @@ export function registerRunCommand(program: Command): void {
         }
         // If neither flag is set, resolvedNoVerify remains undefined
         
-        // Handle --push and --no-push flag conflict resolution
-        let resolvedAutoPush: boolean | undefined;
-        let resolvedAutoCommit = options.commit !== undefined ? options.commit : undefined;
-        
-        if (pushFlagProvided && noPushFlagProvided) {
-          // Both flags provided - warn and use --no-push
-          Logger.warning('Both --push and --no-push flags provided. Using --no-push.');
-          resolvedAutoPush = false;
-        } else if (options.noPush !== undefined) {
-          resolvedAutoPush = !options.noPush;
-        } else if (options.push !== undefined) {
-          resolvedAutoPush = options.push;
-          // --push implies --commit
-          if (options.push === true && (resolvedAutoCommit === undefined || resolvedAutoCommit === false)) {
-            if (resolvedAutoCommit === false) {
-              Logger.info('Note: --push implies --commit. Auto-commit has been enabled.');
-            }
-            resolvedAutoCommit = true;
-          }
-        }
-        // If neither flag is set, resolvedAutoPush remains undefined
         
         const agent = new AutonomousAgent({
           provider: options.provider as ProviderName | undefined,
           workspace: options.workspace,
           debug: options.debug,
-          autoCommit: resolvedAutoCommit,
           includeCoAuthoredBy: options.coAuthor !== undefined ? options.coAuthor : undefined,
           dryRun: options.dryRun,
           signal: abortController.signal,
           reflection: reflectionConfig,
           additionalDirectories: options.addDir || [],
           noVerify: resolvedNoVerify,
-          autoPush: resolvedAutoPush,
           onProgress: (message: string, percentage?: number): void => {
             if (percentage !== undefined) {
               Logger.info(`[${percentage}%] ${message}`);

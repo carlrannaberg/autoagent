@@ -121,9 +121,6 @@ If you don't want to use git or prefer manual commits:
 # Via CLI
 autoagent config set-auto-commit false
 
-# Via command flag
-autoagent run --no-commit
-
 # Via configuration file
 {
   "gitAutoCommit": false
@@ -142,8 +139,8 @@ autoagent config set-git-no-verify true
 autoagent config set-git-no-verify false
 
 # Override per execution
-autoagent run 1 --commit --no-verify    # Skip hooks for this run
-autoagent run 1 --commit --verify       # Force hooks for this run
+autoagent run 1 --no-verify    # Skip hooks for this run
+autoagent run 1 --verify       # Force hooks for this run
 ```
 
 #### When to use `--no-verify`
@@ -170,15 +167,15 @@ Only use `--no-verify` when you understand the implications and are certain the 
 ```bash
 # Development workflow with slow hooks
 autoagent config set-git-no-verify true     # Set globally for dev
-autoagent run --all --commit                 # Runs without hooks
-autoagent run 5 --commit --verify            # Override for important changes
+autoagent run --all                          # Runs without hooks
+autoagent run 5 --verify                     # Override for important changes
 
 # CI/CD pipeline configuration
 export AUTOAGENT_GIT_NO_VERIFY=true         # Environment variable
-autoagent run specs/feature.md --all --commit
+autoagent run specs/feature.md --all
 
 # Emergency fix workflow
-autoagent run critical-fix --commit --no-verify
+autoagent run critical-fix --no-verify
 
 # Testing environment configuration
 # In .autoagent/config.json:
@@ -229,12 +226,6 @@ autoagent config set-push-remote upstream
 
 # Set specific branch (default: current branch)
 autoagent config set-push-branch main
-
-# Enable for single execution
-autoagent run --push
-
-# Disable for single execution (when globally enabled)
-autoagent run --no-push
 ```
 
 #### Security Considerations
@@ -268,20 +259,6 @@ autoagent run --no-push
 - `gitPushRemote`: Remote name to push to (default: "origin")
 - `gitPushBranch`: Branch to push to (default: current branch)
 
-#### Command-Line Flags
-
-```bash
-# Force push (with auto-push enabled)
-autoagent run --push
-
-# Skip push (with auto-push enabled)
-autoagent run --no-push
-
-# Combine with other flags
-autoagent run --all --commit --push
-autoagent run specs/feature.md --push --no-verify
-```
-
 #### Auto-Push Workflow Examples
 
 **1. CI/CD Pipeline Integration**
@@ -310,7 +287,7 @@ jobs:
           npm install -g autoagent-cli
           autoagent config set-auto-push true
           autoagent config set-push-branch main
-          autoagent run --all --commit --push
+          autoagent run --all
 ```
 
 **2. Development Feature Branch Workflow**
@@ -545,16 +522,9 @@ autoagent run --dry-run
 # Override provider
 autoagent run --provider gemini
 
-# Disable auto-commit
-autoagent run --no-commit
-
 # Control git hooks during commits
-autoagent run --commit --no-verify   # Skip git hooks
-autoagent run --commit --verify      # Force git hooks (default)
-
-# Control auto-push
-autoagent run --push                 # Force push after commit
-autoagent run --no-push              # Skip push even if enabled
+autoagent run --no-verify   # Skip git hooks
+autoagent run --verify      # Force git hooks (default)
 
 # Use mock provider for testing
 AUTOAGENT_MOCK_PROVIDER=true autoagent run
@@ -1357,8 +1327,8 @@ autoagent config get gitAutoCommit
 # Enable auto-commit
 autoagent config set-auto-commit true
 
-# Disable auto-commit temporarily
-autoagent run --no-commit
+# Disable auto-commit
+autoagent config set-auto-commit false
 
 # Debug git validation
 AUTOAGENT_DEBUG=true autoagent run
@@ -1451,7 +1421,6 @@ git pull --rebase origin main
 
 # Or disable auto-push until resolved:
 autoagent config set-auto-push false
-autoagent run --no-push
 ```
 
 5. **Quick push debugging**
@@ -1465,10 +1434,7 @@ autoagent config get gitPushRemote
 autoagent config get gitPushBranch
 
 # Enable debug logging:
-AUTOAGENT_DEBUG=true autoagent run --push
-
-# Disable auto-push temporarily:
-autoagent run --no-push
+AUTOAGENT_DEBUG=true autoagent run
 ```
 
 For more troubleshooting help, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
