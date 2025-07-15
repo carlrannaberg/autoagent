@@ -375,8 +375,9 @@ export function registerConfigCommand(program: Command): void {
     .action(async (value: string, options: { global?: boolean }) => {
       try {
         const configManager = new ConfigManager();
+        let userConfig;
         try {
-          await configManager.loadConfig();
+          userConfig = await configManager.loadConfig();
         } catch (error) {
           if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
             Logger.error('Failed to parse configuration');
@@ -393,7 +394,25 @@ export function registerConfigCommand(program: Command): void {
         }
         
         const noVerify = normalizedValue === 'true';
-        await configManager.setGitCommitNoVerify(noVerify, options.global);
+        
+        // Initialize hooks if not present
+        if (!userConfig.hooks) {
+          userConfig.hooks = {};
+        }
+        
+        // Update all git-commit hooks to set noVerify property
+        for (const hookPoint in userConfig.hooks) {
+          const hooks = userConfig.hooks[hookPoint];
+          if (Array.isArray(hooks)) {
+            for (const hook of hooks) {
+              if (hook.type === 'git-commit') {
+                hook.noVerify = noVerify;
+              }
+            }
+          }
+        }
+        
+        await configManager.saveConfig(userConfig, options.global);
         
         Logger.success(`Git hooks ${noVerify ? 'disabled (--no-verify)' : 'enabled'} for commits`);
         Logger.info(noVerify 

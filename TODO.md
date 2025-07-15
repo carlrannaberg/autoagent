@@ -3,9 +3,10 @@
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 
 ## Pending Issues
-- [ ] **[Issue #99]** Write hook system unit tests - `issues/99-write-hook-system-unit-tests.md`
+
 
 ## Completed Issues
+- [x] **[Issue #99]** Write hook system unit tests - `issues/99-write-hook-system-unit-tests.md`
 - [x] **[Issue #98]** Extract git logic from AutonomousAgent - `issues/98-extract-git-logic-from-autonomous-agent.md`
 - [x] **[Issue #97]** Update config commands for hooks - `issues/97-update-config-commands-for-hooks.md`
 - [x] **[Issue #96]** Remove CLI git flags - `issues/96-remove-cli-git-flags.md`
