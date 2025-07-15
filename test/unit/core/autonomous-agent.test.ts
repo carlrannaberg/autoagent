@@ -189,20 +189,10 @@ describe('AutonomousAgent', () => {
     // Mock git utilities with simulator
     vi.spyOn(gitUtils, 'checkGitAvailable').mockImplementation(() => Promise.resolve(gitSimulator.checkGitAvailable()));
     vi.spyOn(gitUtils, 'isGitRepository').mockImplementation(() => Promise.resolve(gitSimulator.isGitRepository()));
-    vi.spyOn(gitUtils, 'hasChangesToCommit').mockImplementation(() => Promise.resolve(gitSimulator.hasChangesToCommit()));
-    vi.spyOn(gitUtils, 'stageAllChanges').mockImplementation(() => Promise.resolve(gitSimulator.stageAllChanges()));
-    vi.spyOn(gitUtils, 'createCommit').mockImplementation((msg) => Promise.resolve(gitSimulator.createCommit(msg)));
     vi.spyOn(gitUtils, 'getCurrentCommitHash').mockImplementation(() => Promise.resolve(gitSimulator.getCurrentCommitHash() || null));
     vi.spyOn(gitUtils, 'getUncommittedChanges').mockImplementation(() => Promise.resolve(gitSimulator.getUncommittedChanges()));
     vi.spyOn(gitUtils, 'revertToCommit').mockImplementation((hash) => Promise.resolve(gitSimulator.revertToCommit(hash)));
     
-    // Mock validateGitEnvironment - default to valid
-    vi.spyOn(gitUtils, 'validateGitEnvironment').mockImplementation(() => Promise.resolve({
-      isValid: true,
-      errors: [],
-      suggestions: [],
-      gitVersion: 'git version 2.39.0'
-    }));
     
     // Mock validateRemoteForPush - default to valid
     vi.spyOn(gitUtils, 'validateRemoteForPush').mockImplementation(() => Promise.resolve({
