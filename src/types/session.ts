@@ -35,6 +35,8 @@ export interface Session {
   issuesCreated?: number[];
   /** Issues completed during the session */
   issuesCompleted?: number[];
+  /** Issues that failed during the session */
+  issuesFailed?: number[];
   /** Error message if session failed */
   error?: string;
   /** Additional metadata (e.g., hook execution results, environment info) */

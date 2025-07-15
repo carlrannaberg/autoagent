@@ -737,6 +737,40 @@ export function registerRunCommand(program: Command): void {
             
             if (result.success !== true) {
               Logger.error(`Failed to execute issue #${issueNumber}: ${result.error ?? 'Unknown error'}`);
+              // Execute Stop hook for failed single issue
+              try {
+                await agent.executeStopHook('failed');
+              } catch (error) {
+                // Stop hook blocked or failed
+                Logger.error(`Stop hook error: ${error instanceof Error ? error.message : String(error)}`);
+              }
+              process.exit(1);
+            }
+            
+            // Execute Stop hook for successful single issue
+            try {
+              await agent.executeStopHook('completed');
+            } catch (error) {
+              // Stop hook blocked or failed
+              Logger.error(`Stop hook error: ${error instanceof Error ? error.message : String(error)}`);
+              process.exit(1);
+            }
+            
+            // Execute Stop hook for successful single issue
+            try {
+              await agent.executeStopHook('completed');
+            } catch (error) {
+              // Stop hook blocked or failed
+              Logger.error(`Stop hook error: ${error instanceof Error ? error.message : String(error)}`);
+              process.exit(1);
+            }
+            
+            // Execute Stop hook for successful single issue
+            try {
+              await agent.executeStopHook('completed');
+            } catch (error) {
+              // Stop hook blocked or failed
+              Logger.error(`Stop hook error: ${error instanceof Error ? error.message : String(error)}`);
               process.exit(1);
             }
             

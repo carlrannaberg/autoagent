@@ -67,6 +67,7 @@ export class HookManager {
 
   /**
    * Execute a command hook
+   * Pre hooks and Stop hooks can block execution with exit code 2
    */
   private async executeCommandHook(hook: Hook, data: HookData, hookPoint: string): Promise<HookResult> {
     if (hook.command === undefined || hook.command === null || hook.command === '') {
@@ -90,8 +91,8 @@ export class HookManager {
     }
 
     // Handle exit codes
-    if (result.exitCode === 2 && hookPoint.startsWith('Pre')) {
-      // Exit code 2 blocks for Pre hooks
+    if (result.exitCode === 2 && (hookPoint.startsWith('Pre') || hookPoint === 'Stop')) {
+      // Exit code 2 blocks for Pre hooks and Stop hooks
       return {
         blocked: true,
         reason: result.stderr || 'Blocked by hook',

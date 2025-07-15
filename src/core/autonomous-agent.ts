@@ -68,8 +68,8 @@ export class AutonomousAgent extends EventEmitter {
 
     // Set up signal handlers for graceful shutdown
     if (!this.config.signal) {
-      process.on('SIGINT', () => this.handleInterrupt());
-      process.on('SIGTERM', () => this.handleInterrupt());
+      process.on('SIGINT', () => void this.handleInterrupt());
+      process.on('SIGTERM', () => void this.handleInterrupt());
     }
   }
 
@@ -275,9 +275,13 @@ export class AutonomousAgent extends EventEmitter {
         error: error instanceof Error ? error.message : String(error)
       };
 
-      // Update session with error
+      // Update session with error and failed issue
       if (this.currentSession) {
         this.currentSession.error = errorResult.error;
+        if (!this.currentSession.issuesFailed) {
+          this.currentSession.issuesFailed = [];
+        }
+        this.currentSession.issuesFailed.push(issueNumber);
         await this.sessionManager.saveSession(this.currentSession);
       }
 
@@ -362,6 +366,30 @@ export class AutonomousAgent extends EventEmitter {
       if (!foundNextTodo) {
         hasMoreTasks = false;
       }
+    }
+
+    // Execute Stop hook before ending session
+    try {
+      const reason = hasFailure ? 'failed' : 'completed';
+      await this.executeStopHook(reason);
+    } catch (error) {
+      // Stop hook blocked or failed
+      if (this.currentSession) {
+        await this.sessionManager.endSession(this.currentSession.id, 'failed');
+      }
+      throw error;
+    }
+
+    // Execute Stop hook before ending session
+    try {
+      const reason = hasFailure ? 'failed' : 'completed';
+      await this.executeStopHook(reason);
+    } catch (error) {
+      // Stop hook blocked or failed
+      if (this.currentSession) {
+        await this.sessionManager.endSession(this.currentSession.id, 'failed');
+      }
+      throw error;
     }
 
     // End session when all tasks are complete
@@ -1179,15 +1207,104 @@ ${issueEntry}
   }
 
   /**
+   * Execute Stop hook with session summary
+   */
+  private async executeStopHook(reason: 'completed' | 'failed' | 'interrupted'): Promise<void> {
+    if (!this.hookManager || !this.currentSession) {
+      return;
+    }
+
+    try {
+      // Prepare session summary data
+      const sessionSummary = {
+        sessionId: this.currentSession.id,
+        reason,
+        issuesCompleted: this.currentSession.issuesCompleted || [],
+        issuesCreated: this.currentSession.issuesCreated || [],
+        issuesFailed: this.currentSession.issuesFailed || [],
+        totalIssues: (this.currentSession.issuesCompleted?.length || 0) + 
+                    (this.currentSession.issuesFailed?.length || 0),
+        filesModified: this.currentSession.filesModified || [],
+        startTime: this.currentSession.startTime,
+        endTime: new Date().toISOString(),
+        error: this.currentSession.error
+      };
+
+      // Execute Stop hook
+      const hookResult = await this.hookManager.executeHooks('Stop', sessionSummary);
+
+      if (hookResult.blocked) {
+        // Stop hook blocked termination
+        const errorMessage = `Stop hook blocked termination: ${hookResult.reason || 'Unknown reason'}`;
+        this.reportProgress(errorMessage, 0);
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      // Log error but allow termination to proceed
+      this.reportProgress(`Stop hook error: ${error instanceof Error ? error.message : String(error)}`, 0);
+      throw error;
+    }
+  }
+
+  """  /**
+   * Execute Stop hook with session summary
+   */
+  async executeStopHook(reason: 'completed' | 'failed' | 'interrupted'): Promise<void> {
+    if (!this.hookManager || !this.currentSession) {
+      return;
+    }
+
+    try {
+      // Prepare session summary data
+      const sessionSummary = {
+        sessionId: this.currentSession.id,
+        reason,
+        issuesCompleted: this.currentSession.issuesCompleted || [],
+        issuesCreated: this.currentSession.issuesCreated || [],
+        issuesFailed: this.currentSession.issuesFailed || [],
+        totalIssues: (this.currentSession.issuesCompleted?.length || 0) + 
+                    (this.currentSession.issuesFailed?.length || 0),
+        filesModified: this.currentSession.filesModified || [],
+        startTime: this.currentSession.startTime,
+        endTime: new Date().toISOString(),
+        error: this.currentSession.error
+      };
+
+      // Execute Stop hook
+      const hookResult = await this.hookManager.executeHooks('Stop', sessionSummary);
+
+      if (hookResult.blocked) {
+        // Stop hook blocked termination
+        const errorMessage = `Stop hook blocked termination: ${hookResult.reason || 'Unknown reason'}`;
+        this.reportProgress(errorMessage, 0);
+        throw new Error(errorMessage);
+      }
+    } catch (error) {
+      // Log error but allow termination to proceed
+      this.reportProgress(`Stop hook error: ${error instanceof Error ? error.message : String(error)}`, 0);
+      throw error;
+    }
+  }
+
+  /**
    * Handle interrupt signal
    */
-  private handleInterrupt(): void {
+  private async handleInterrupt(): Promise<void> {
     if (this.isExecuting) {
       this.emit('interrupt', 'Interrupting execution...');
       this.abortController?.abort();
+      
+      try {
+        // Execute Stop hook before termination
+        await this.executeStopHook('interrupted');
+      } catch (error) {
+        // Stop hook blocked or failed - log and exit with error code
+        process.exit(1);
+        return;
+      }
     }
     process.exit(0);
-  }
+  }""
 
   /**
    * Delay helper

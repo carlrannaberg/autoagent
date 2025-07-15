@@ -7,10 +7,10 @@
  * - PostExecutionEnd: After execution completes successfully
  * - Stop: When execution is stopped or interrupted
  */
-export type HookPoint = 
-  | 'PreExecutionStart' 
+export type HookPoint =
+  | 'PreExecutionStart'
   | 'PostExecutionStart'
-  | 'PreExecutionEnd' 
+  | 'PreExecutionEnd'
   | 'PostExecutionEnd'
   | 'Stop';
 
