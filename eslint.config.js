@@ -14,7 +14,8 @@ module.exports = [
       'coverage/**',
       'examples/**/*.js',
       'bin/**/*.js',
-      '**/*.js'
+      '**/*.js',
+      'temp/**'
     ]
   },
 

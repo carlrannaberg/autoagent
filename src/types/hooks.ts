@@ -1,5 +1,11 @@
 /**
- * Lifecycle hook points in the AutoAgent execution flow
+ * Lifecycle hook points in the AutoAgent execution flow.
+ * 
+ * - PreExecutionStart: Before AI provider starts processing an issue
+ * - PostExecutionStart: After AI provider has started but before any code changes
+ * - PreExecutionEnd: Before execution completes (after all changes made)
+ * - PostExecutionEnd: After execution completes successfully
+ * - Stop: When execution is stopped or interrupted
  */
 export type HookPoint = 
   | 'PreExecutionStart' 
@@ -9,67 +15,79 @@ export type HookPoint =
   | 'Stop';
 
 /**
- * Configuration for hooks at each lifecycle point
+ * Configuration for hooks at each lifecycle point.
+ * Maps hook points to arrays of hooks that should execute at that point.
+ * Hooks are executed in the order they appear in the array.
  */
 export interface HookConfig {
   [key: string]: Hook[];
 }
 
 /**
- * Individual hook configuration
+ * Individual hook configuration supporting different hook types.
+ * 
+ * Hook types:
+ * - command: Execute an external command with JSON input/output
+ * - git-commit: Perform a git commit with configurable options
+ * - git-push: Push changes to a remote repository
  */
 export interface Hook {
   /** Type of hook - command or built-in */
   type: 'command' | 'git-commit' | 'git-push';
-  /** Command to execute (for command type) */
+  /** Command to execute (required for command type) */
   command?: string;
   /** Timeout in milliseconds (default: 60000) */
   timeout?: number;
-  /** Whether the hook can block execution (Pre hooks only) */
+  /** Whether the hook can block execution (Pre hooks only, exit code 2 blocks) */
   blocking?: boolean;
-  /** Commit message template (git-commit) */
+  /** Commit message template (git-commit) - supports template variables */
   message?: string;
   /** Skip git pre-commit hooks (git-commit) */
   noVerify?: boolean;
-  /** Remote repository (git-push) */
+  /** Remote repository (git-push, default: 'origin') */
   remote?: string;
-  /** Branch to push (git-push) */
+  /** Branch to push (git-push, default: current branch) */
   branch?: string;
 }
 
 /**
- * Data passed to hooks via stdin
+ * Data passed to hooks via stdin as JSON.
+ * Command hooks receive this data and can use it to make decisions.
+ * Additional fields may be added based on the specific hook point.
  */
 export interface HookData {
-  /** Name of the lifecycle event */
+  /** Name of the lifecycle event (matches HookPoint) */
   eventName: string;
   /** Unique session identifier */
   sessionId: string;
   /** Working directory path */
   workspace: string;
-  /** Unix timestamp */
+  /** Unix timestamp in milliseconds */
   timestamp: number;
-  /** Additional event-specific data */
+  /** Additional event-specific data (e.g., issueNumber, filesModified) */
   [key: string]: unknown;
 }
 
 /**
- * Result from hook execution
+ * Result from hook execution.
+ * For command hooks, this is derived from the JSON output and exit code.
+ * Exit code 0 = success, 2 = blocked (Pre hooks only), other = error.
  */
 export interface HookResult {
-  /** Whether the hook blocked execution */
+  /** Whether the hook blocked execution (Pre hooks with exit code 2) */
   blocked: boolean;
-  /** Reason for blocking (if blocked) */
+  /** Reason for blocking (if blocked) - from JSON output */
   reason?: string;
-  /** Output from the hook */
+  /** Output from the hook (stdout for debugging) */
   output?: string;
 }
 
 /**
- * Result from executing a command
+ * Result from executing a command.
+ * Used internally by HookManager to track command execution results.
  */
 export interface CommandResult {
-  /** Exit code from the command */
+  /** Exit code from the command (0 = success, 2 = blocked, other = error) */
   exitCode: number;
   /** Standard output */
   stdout: string;
@@ -80,14 +98,34 @@ export interface CommandResult {
 }
 
 /**
- * Interface for built-in hook handlers
+ * Interface for built-in hook handlers.
+ * Implement this interface to add new built-in hook types.
  */
 export interface BuiltinHookHandler {
+  /**
+   * Execute the built-in hook with the given configuration.
+   * @param data - Hook event data
+   * @param config - Hook configuration
+   * @returns Promise resolving to hook result
+   */
   execute(data: HookData, config: Hook): Promise<HookResult>;
 }
 
 /**
- * Template variable names that can be interpolated
+ * Template variable names that can be interpolated in commands and messages.
+ * Variables are replaced with their actual values at runtime using {{variable}} syntax.
+ * 
+ * Available variables:
+ * - issueNumber: Current issue number being processed
+ * - issueTitle: Title of the current issue
+ * - issueFile: Path to the issue file
+ * - planFile: Path to the plan file
+ * - sessionId: Unique session identifier
+ * - workspace: Working directory path
+ * - provider: AI provider used (claude/gemini)
+ * - success: Whether execution succeeded (true/false)
+ * - duration: Execution duration in milliseconds
+ * - filesModified: Comma-separated list of modified files
  */
 export type TemplateVariable = 
   | 'issueNumber'

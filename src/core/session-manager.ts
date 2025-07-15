@@ -58,6 +58,10 @@ export class SessionManager {
     }
     
     const sessionFile = sessionFiles[0];
+    if (sessionFile === undefined) {
+      throw new Error(`Session ${sessionId} file not found`);
+    }
+    
     const isWindows = platform() === 'win32';
     
     try {
@@ -136,6 +140,10 @@ export class SessionManager {
     }
     
     const sessionFile = sessionFiles[0];
+    if (sessionFile === undefined) {
+      throw new Error(`Session ${sessionId} file not found`);
+    }
+    
     const filepath = path.join(this.sessionsDir, sessionFile);
     
     try {
