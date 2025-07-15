@@ -168,6 +168,8 @@ export interface UserConfig {
   gitPushRemote: string;
   /** Optional target branch to push to (default: current branch) */
   gitPushBranch?: string;
+  /** Hook configuration for lifecycle events */
+  hooks?: HookConfig;
 }
 
 /**

@@ -7,7 +7,8 @@ import {
   Issue,
   ProviderName,
   Status,
-  RollbackData
+  RollbackData,
+  Session
 } from '../types';
 import { DEFAULT_REFLECTION_CONFIG } from './reflection-defaults';
 import { ConfigManager } from './config-manager';
@@ -25,6 +26,8 @@ import {
   validateGitEnvironment
 } from '../utils/git';
 import { isRateLimitOrUsageError } from '../utils/retry';
+import { HookManager } from './hook-manager';
+import { SessionManager } from './session-manager';
 
 const execAsync = promisify(exec);
 
@@ -39,6 +42,9 @@ export class AutonomousAgent extends EventEmitter {
   private config: AgentConfig;
   private isExecuting: boolean = false;
   private abortController: AbortController | null = null;
+  private hookManager: HookManager | null = null;
+  private sessionManager: SessionManager;
+  private currentSession: Session | null = null;
 
   constructor(config?: AgentConfig) {
     super();
@@ -58,6 +64,7 @@ export class AutonomousAgent extends EventEmitter {
     this.configManager = new ConfigManager(this.config.workspace);
     this.fileManager = new FileManager(this.config.workspace);
     this.providerLearning = new ProviderLearning(this.fileManager, this.config.workspace);
+    this.sessionManager = new SessionManager();
 
     // Set up signal handlers for graceful shutdown
     if (!this.config.signal) {
@@ -72,6 +79,24 @@ export class AutonomousAgent extends EventEmitter {
   async initialize(): Promise<void> {
     await this.configManager.loadConfig();
     await this.fileManager.createProviderInstructionsIfMissing();
+
+    // Initialize hook manager if hooks are configured
+    const userConfig = this.configManager.getConfig();
+    if (userConfig.hooks) {
+      // Create a session for this agent execution
+      this.currentSession = this.sessionManager.createSession(
+        this.config.workspace ?? process.cwd()
+      );
+      await this.sessionManager.saveSession(this.currentSession);
+      await this.sessionManager.setCurrentSession(this.currentSession.id);
+
+      // Initialize hook manager with session ID
+      this.hookManager = new HookManager(
+        userConfig.hooks,
+        this.currentSession.id,
+        this.config.workspace ?? process.cwd()
+      );
+    }
   }
 
   /**
@@ -84,6 +109,13 @@ export class AutonomousAgent extends EventEmitter {
 
     this.isExecuting = true;
     this.emit('execution-start', issueNumber);
+
+    // Update session with current issue
+    if (this.currentSession) {
+      this.currentSession.issueNumber = issueNumber;
+      this.currentSession.status = 'active';
+      await this.sessionManager.saveSession(this.currentSession);
+    }
 
     try {
       // Load issue and plan files
@@ -105,6 +137,26 @@ export class AutonomousAgent extends EventEmitter {
         throw new Error('Failed to read issue or plan files');
       }
 
+      // Update session with issue title
+      if (this.currentSession) {
+        this.currentSession.issueTitle = issue.title;
+        await this.sessionManager.saveSession(this.currentSession);
+      }
+
+      // Execute PreExecutionStart hook
+      if (this.hookManager) {
+        const hookResult = await this.hookManager.executeHooks('PreExecutionStart', {
+          issueNumber,
+          issueTitle: issue.title,
+          issueFile,
+          planFile
+        });
+
+        if (hookResult.blocked) {
+          throw new Error(`Execution blocked by hook: ${hookResult.reason ?? 'Unknown reason'}`);
+        }
+      }
+
       // Report initial progress
       this.reportProgress('Starting execution...', 0);
 
@@ -123,6 +175,22 @@ export class AutonomousAgent extends EventEmitter {
         throw new Error('No available providers found');
       }
 
+      // Update session with provider
+      if (this.currentSession) {
+        this.currentSession.provider = provider.name;
+        await this.sessionManager.saveSession(this.currentSession);
+      }
+
+      // Execute PostExecutionStart hook
+      if (this.hookManager) {
+        await this.hookManager.executeHooks('PostExecutionStart', {
+          issueNumber,
+          issueTitle: issue.title,
+          issueFile,
+          planFile,
+          provider: provider.name
+        });
+      }
 
       // Prepare context files
       const contextFiles = await this.prepareContextFiles(provider.name as ProviderName);
@@ -149,9 +217,51 @@ export class AutonomousAgent extends EventEmitter {
         result.filesModified = await this.captureFileChanges();
       }
 
+      // Execute PreExecutionEnd hook
+      if (this.hookManager) {
+        const hookResult = await this.hookManager.executeHooks('PreExecutionEnd', {
+          issueNumber,
+          issueTitle: issue.title,
+          issueFile,
+          planFile,
+          provider: result.provider,
+          success: result.success,
+          duration: result.duration,
+          filesModified: result.filesModified ?? []
+        });
+
+        if (hookResult.blocked) {
+          throw new Error(`Execution blocked by hook: ${hookResult.reason ?? 'Unknown reason'}`);
+        }
+      }
+
       // Handle post-execution tasks
       if (result.success && this.config.dryRun !== true) {
         await this.handlePostExecution(issue, result);
+      }
+
+      // Execute PostExecutionEnd hook
+      if (this.hookManager) {
+        await this.hookManager.executeHooks('PostExecutionEnd', {
+          issueNumber,
+          issueTitle: issue.title,
+          issueFile,
+          planFile,
+          provider: result.provider,
+          success: result.success,
+          duration: result.duration,
+          filesModified: result.filesModified ?? []
+        });
+      }
+
+      // Update session with completion
+      if (this.currentSession) {
+        this.currentSession.filesModified = result.filesModified ?? [];
+        if (!this.currentSession.issuesCompleted) {
+          this.currentSession.issuesCompleted = [];
+        }
+        this.currentSession.issuesCompleted.push(issueNumber);
+        await this.sessionManager.saveSession(this.currentSession);
       }
 
       this.emit('execution-end', result);
@@ -164,6 +274,12 @@ export class AutonomousAgent extends EventEmitter {
         duration: 0,
         error: error instanceof Error ? error.message : String(error)
       };
+
+      // Update session with error
+      if (this.currentSession) {
+        this.currentSession.error = errorResult.error;
+        await this.sessionManager.saveSession(this.currentSession);
+      }
 
       this.emit('error', error);
       this.emit('execution-end', errorResult);
@@ -179,6 +295,7 @@ export class AutonomousAgent extends EventEmitter {
    */
   async executeAll(): Promise<ExecutionResult[]> {
     const results: ExecutionResult[] = [];
+    let hasFailure = false;
 
     // Keep checking for new tasks until no more pending tasks exist
     let hasMoreTasks = true;
@@ -220,9 +337,14 @@ export class AutonomousAgent extends EventEmitter {
           const result = await this.executeIssue(issueNumber);
           results.push(result);
 
+          // Track failures
+          if (!result.success) {
+            hasFailure = true;
+          }
+
           // Stop on failure unless configured otherwise
           if (!result.success && this.config.debug !== true) {
-            return results;
+            break;
           }
 
           // Check for cancellation
@@ -240,6 +362,12 @@ export class AutonomousAgent extends EventEmitter {
       if (!foundNextTodo) {
         hasMoreTasks = false;
       }
+    }
+
+    // End session when all tasks are complete
+    if (this.currentSession) {
+      const status = hasFailure ? 'failed' : 'completed';
+      await this.sessionManager.endSession(this.currentSession.id, status);
     }
 
     return results;
@@ -1145,6 +1273,15 @@ ${result.output ?? 'Success'}`;
 
     // Update todo list using shared method
     await this.addIssueToTodo(nextNumber, title);
+
+    // Update session with created issue
+    if (this.currentSession) {
+      if (!this.currentSession.issuesCreated) {
+        this.currentSession.issuesCreated = [];
+      }
+      this.currentSession.issuesCreated.push(nextNumber);
+      await this.sessionManager.saveSession(this.currentSession);
+    }
 
     return nextNumber;
   }

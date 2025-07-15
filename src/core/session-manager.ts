@@ -58,7 +58,7 @@ export class SessionManager {
     }
     
     const sessionFile = sessionFiles[0];
-    if (sessionFile === undefined) {
+    if (sessionFile === undefined || sessionFile === null || sessionFile === '') {
       throw new Error(`Session ${sessionId} file not found`);
     }
     
@@ -140,7 +140,7 @@ export class SessionManager {
     }
     
     const sessionFile = sessionFiles[0];
-    if (sessionFile === undefined) {
+    if (sessionFile === undefined || sessionFile === null || sessionFile === '') {
       throw new Error(`Session ${sessionId} file not found`);
     }
     

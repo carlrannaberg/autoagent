@@ -51,7 +51,7 @@ export class HookManager {
         }
 
         // Display output to user
-        if (result.output && result.output.length > 0) {
+        if (result.output !== undefined && result.output !== null && result.output.length > 0) {
           // eslint-disable-next-line no-console
           console.log(result.output);
         }
@@ -69,7 +69,7 @@ export class HookManager {
    * Execute a command hook
    */
   private async executeCommandHook(hook: Hook, data: HookData, hookPoint: string): Promise<HookResult> {
-    if (!hook.command) {
+    if (hook.command === undefined || hook.command === null || hook.command === '') {
       throw new Error('Command hook missing command field');
     }
 
@@ -141,7 +141,7 @@ export class HookManager {
    * Interpolate template variables in a command string
    */
   private interpolateCommand(command: string, data: Record<string, unknown>): string {
-    return command.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return command.replace(/\{\{(\w+)\}\}/g, (match, key: string) => {
       const value = data[key];
       if (value === undefined) {
         return match; // Keep original if no value
