@@ -3,10 +3,28 @@ import { spawn } from 'child_process';
 import { HookManager } from '../../src/core/hook-manager.js';
 import { HookConfig, HookData } from '../../src/types/hooks.js';
 import { EventEmitter } from 'events';
+import { 
+  hasChangesToCommit, 
+  stageAllChanges, 
+  createCommit, 
+  getCurrentBranch, 
+  pushToRemote, 
+  validateRemoteForPush 
+} from '../../src/utils/git.js';
 
 // Mock child_process
 vi.mock('child_process', () => ({
   spawn: vi.fn()
+}));
+
+// Mock git utilities for built-in hooks
+vi.mock('../../src/utils/git.js', () => ({
+  hasChangesToCommit: vi.fn(),
+  stageAllChanges: vi.fn(),
+  createCommit: vi.fn(),
+  getCurrentBranch: vi.fn(),
+  pushToRemote: vi.fn(),
+  validateRemoteForPush: vi.fn()
 }));
 
 describe('HookManager', () => {
@@ -280,7 +298,7 @@ describe('HookManager', () => {
       expect(spawnMock).not.toHaveBeenCalled();
     });
 
-    it('should warn about unimplemented built-in hooks', async () => {
+    it('should execute git-commit built-in hook', async () => {
       const config: HookConfig = {
         'PostExecutionEnd': [
           { type: 'git-commit', message: 'Test commit' }
@@ -289,12 +307,117 @@ describe('HookManager', () => {
       
       hookManager = new HookManager(config, 'session-123', '/workspace');
       
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      // Mock git utilities
+      vi.mocked(hasChangesToCommit).mockResolvedValue(true);
+      vi.mocked(stageAllChanges).mockResolvedValue(undefined);
+      vi.mocked(createCommit).mockResolvedValue({
+        success: true,
+        commitHash: 'abc123'
+      });
+      
+      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
       
       const result = await hookManager.executeHooks('PostExecutionEnd', {});
       
       expect(result.blocked).toBe(false);
-      expect(consoleWarn).toHaveBeenCalledWith("Built-in hook type 'git-commit' not yet implemented");
+      expect(hasChangesToCommit).toHaveBeenCalled();
+      expect(stageAllChanges).toHaveBeenCalled();
+      expect(createCommit).toHaveBeenCalledWith({
+        message: 'Test commit',
+        noVerify: false
+      });
+      expect(consoleLog).toHaveBeenCalledWith('Commit created: abc123');
+    });
+
+    it('should skip git-commit if no changes', async () => {
+      const config: HookConfig = {
+        'PostExecutionEnd': [
+          { type: 'git-commit', message: 'Test commit' }
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      // Mock no changes
+      vi.mocked(hasChangesToCommit).mockResolvedValue(false);
+      
+      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+      
+      const result = await hookManager.executeHooks('PostExecutionEnd', {});
+      
+      expect(result.blocked).toBe(false);
+      expect(hasChangesToCommit).toHaveBeenCalled();
+      expect(stageAllChanges).not.toHaveBeenCalled();
+      expect(createCommit).not.toHaveBeenCalled();
+      expect(consoleLog).toHaveBeenCalledWith('No changes to commit.');
+    });
+
+    it('should execute git-push built-in hook', async () => {
+      const config: HookConfig = {
+        'PostExecutionEnd': [
+          { type: 'git-push', remote: 'origin' }
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      // Mock git utilities
+      vi.mocked(getCurrentBranch).mockResolvedValue('main');
+      vi.mocked(validateRemoteForPush).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: []
+      });
+      vi.mocked(pushToRemote).mockResolvedValue({
+        success: true,
+        remote: 'origin',
+        branch: 'main'
+      });
+      
+      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+      
+      const result = await hookManager.executeHooks('PostExecutionEnd', {});
+      
+      expect(result.blocked).toBe(false);
+      expect(getCurrentBranch).toHaveBeenCalled();
+      expect(validateRemoteForPush).toHaveBeenCalledWith('origin');
+      expect(pushToRemote).toHaveBeenCalledWith({
+        remote: 'origin',
+        branch: 'main',
+        setUpstream: true
+      });
+      expect(consoleLog).toHaveBeenCalledWith('Successfully pushed to origin/main');
+    });
+
+    it('should handle git-push failure', async () => {
+      const config: HookConfig = {
+        'PostExecutionEnd': [
+          { type: 'git-push' }
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      // Mock git utilities
+      vi.mocked(getCurrentBranch).mockResolvedValue('main');
+      vi.mocked(validateRemoteForPush).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: []
+      });
+      vi.mocked(pushToRemote).mockResolvedValue({
+        success: false,
+        error: 'Authentication failed',
+        remote: 'origin',
+        branch: 'main'
+      });
+      
+      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+      
+      const result = await hookManager.executeHooks('PostExecutionEnd', {});
+      
+      expect(result.blocked).toBe(false);
+      expect(consoleLog).toHaveBeenCalledWith(expect.stringContaining('Authentication failed'));
     });
   });
 
@@ -623,6 +746,327 @@ describe('HookManager', () => {
       await hookManager.executeHooks('PreExecutionStart', {});
       
       expect(spawnOptions.shell).toBe(true);
+    });
+  });
+
+  describe('mixed hook types', () => {
+    it('should execute command and built-in hooks sequentially', async () => {
+      const config: HookConfig = {
+        'PostExecutionEnd': [
+          { type: 'command', command: 'echo "Running command hook"' },
+          { type: 'git-commit', message: 'feat: Complete task {{issueNumber}}' },
+          { type: 'git-push', remote: 'origin' }
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      // Mock command hook
+      spawnMock.mockImplementation(() => {
+        const child = new EventEmitter() as any;
+        child.stdout = new EventEmitter();
+        child.stderr = new EventEmitter();
+        child.stdin = { write: vi.fn(), end: vi.fn() };
+        child.kill = vi.fn();
+        child.killed = false;
+        
+        setTimeout(() => {
+          child.stdout.emit('data', 'Running command hook');
+          child.emit('exit', 0);
+        }, 10);
+        
+        return child;
+      });
+      
+      // Mock git utilities
+      vi.mocked(hasChangesToCommit).mockResolvedValue(true);
+      vi.mocked(stageAllChanges).mockResolvedValue(undefined);
+      vi.mocked(createCommit).mockResolvedValue({
+        success: true,
+        commitHash: 'def456'
+      });
+      vi.mocked(getCurrentBranch).mockResolvedValue('main');
+      vi.mocked(validateRemoteForPush).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: []
+      });
+      vi.mocked(pushToRemote).mockResolvedValue({
+        success: true,
+        remote: 'origin',
+        branch: 'main'
+      });
+      
+      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+      
+      const result = await hookManager.executeHooks('PostExecutionEnd', {
+        issueNumber: 42
+      });
+      
+      expect(result.blocked).toBe(false);
+      expect(spawnMock).toHaveBeenCalledTimes(1);
+      expect(consoleLog).toHaveBeenCalledWith('Running command hook');
+      expect(consoleLog).toHaveBeenCalledWith('Commit created: def456');
+      expect(consoleLog).toHaveBeenCalledWith('Successfully pushed to origin/main');
+      expect(createCommit).toHaveBeenCalledWith({
+        message: 'feat: Complete task 42',
+        noVerify: false
+      });
+    });
+
+    it('should stop execution if a Pre hook blocks', async () => {
+      const config: HookConfig = {
+        'PreExecutionStart': [
+          { type: 'command', command: 'exit 2' },
+          { type: 'git-commit', message: 'Should not run' }
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      // Mock blocking command hook
+      spawnMock.mockImplementation(() => {
+        const child = new EventEmitter() as any;
+        child.stdout = new EventEmitter();
+        child.stderr = new EventEmitter();
+        child.stdin = { write: vi.fn(), end: vi.fn() };
+        child.kill = vi.fn();
+        child.killed = false;
+        
+        setTimeout(() => {
+          child.stderr.emit('data', 'Blocking execution');
+          child.emit('exit', 2);
+        }, 10);
+        
+        return child;
+      });
+      
+      const result = await hookManager.executeHooks('PreExecutionStart', {});
+      
+      expect(result.blocked).toBe(true);
+      expect(result.reason).toBe('Blocking execution');
+      expect(hasChangesToCommit).not.toHaveBeenCalled(); // Second hook should not run
+    });
+  });
+
+  describe('configuration passing', () => {
+    it('should pass configuration to git-commit hook', async () => {
+      const config: HookConfig = {
+        'PostExecutionEnd': [
+          { 
+            type: 'git-commit', 
+            message: 'custom: {{issueTitle}}',
+            noVerify: true
+          }
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      vi.mocked(hasChangesToCommit).mockResolvedValue(true);
+      vi.mocked(stageAllChanges).mockResolvedValue(undefined);
+      vi.mocked(createCommit).mockResolvedValue({
+        success: true,
+        commitHash: 'ghi789'
+      });
+      
+      await hookManager.executeHooks('PostExecutionEnd', {
+        issueTitle: 'Fix authentication bug'
+      });
+      
+      expect(createCommit).toHaveBeenCalledWith({
+        message: 'custom: Fix authentication bug',
+        noVerify: true
+      });
+    });
+
+    it('should use default values when configuration not provided', async () => {
+      const config: HookConfig = {
+        'PostExecutionEnd': [
+          { type: 'git-push' } // No remote specified
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      vi.mocked(getCurrentBranch).mockResolvedValue('feature-branch');
+      vi.mocked(validateRemoteForPush).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: []
+      });
+      vi.mocked(pushToRemote).mockResolvedValue({
+        success: true,
+        remote: 'origin',
+        branch: 'feature-branch'
+      });
+      
+      await hookManager.executeHooks('PostExecutionEnd', {});
+      
+      expect(validateRemoteForPush).toHaveBeenCalledWith('origin'); // Default remote
+      expect(pushToRemote).toHaveBeenCalledWith({
+        remote: 'origin',
+        branch: 'feature-branch',
+        setUpstream: true
+      });
+    });
+  });
+
+  describe('error handling for built-in hooks', () => {
+    it('should handle git-commit errors gracefully', async () => {
+      const config: HookConfig = {
+        'PostExecutionEnd': [
+          { type: 'git-commit', message: 'Test commit' }
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      vi.mocked(hasChangesToCommit).mockResolvedValue(true);
+      vi.mocked(stageAllChanges).mockResolvedValue(undefined);
+      vi.mocked(createCommit).mockResolvedValue({
+        success: false,
+        error: 'Pre-commit hook failed'
+      });
+      
+      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+      
+      const result = await hookManager.executeHooks('PostExecutionEnd', {});
+      
+      expect(result.blocked).toBe(false); // Commit failures should not block
+      expect(consoleLog).toHaveBeenCalledWith('Failed to create commit: Pre-commit hook failed');
+    });
+
+    it('should handle git-push validation errors', async () => {
+      const config: HookConfig = {
+        'PostExecutionEnd': [
+          { type: 'git-push', remote: 'upstream' }
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      vi.mocked(getCurrentBranch).mockResolvedValue('main');
+      vi.mocked(validateRemoteForPush).mockResolvedValue({
+        isValid: false,
+        errors: ['Remote "upstream" not found'],
+        suggestions: ['Did you mean "origin"?']
+      });
+      
+      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+      
+      const result = await hookManager.executeHooks('PostExecutionEnd', {});
+      
+      expect(result.blocked).toBe(false);
+      expect(pushToRemote).not.toHaveBeenCalled();
+      expect(consoleLog).toHaveBeenCalledWith(expect.stringContaining('Remote "upstream" not found'));
+      expect(consoleLog).toHaveBeenCalledWith(expect.stringContaining('Did you mean "origin"?'));
+    });
+
+    it('should handle detached HEAD state in git-push', async () => {
+      const config: HookConfig = {
+        'PostExecutionEnd': [
+          { type: 'git-push' }
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      vi.mocked(getCurrentBranch).mockResolvedValue(null);
+      
+      const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+      
+      const result = await hookManager.executeHooks('PostExecutionEnd', {});
+      
+      expect(result.blocked).toBe(false);
+      expect(validateRemoteForPush).not.toHaveBeenCalled();
+      expect(pushToRemote).not.toHaveBeenCalled();
+      expect(consoleLog).toHaveBeenCalledWith('Cannot push: Currently in detached HEAD state. Please checkout a branch first.');
+    });
+
+    it('should handle exceptions in built-in hooks', async () => {
+      const config: HookConfig = {
+        'PostExecutionEnd': [
+          { type: 'git-commit', message: 'Test' }
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      vi.mocked(hasChangesToCommit).mockRejectedValue(new Error('Git command failed'));
+      
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      
+      const result = await hookManager.executeHooks('PostExecutionEnd', {});
+      
+      expect(result.blocked).toBe(false);
+      expect(consoleError).toHaveBeenCalledWith('Hook error: Git command failed');
+    });
+  });
+
+  describe('sequential execution', () => {
+    it('should maintain sequential execution for all hook types', async () => {
+      const executionOrder: string[] = [];
+      
+      const config: HookConfig = {
+        'PostExecutionEnd': [
+          { type: 'command', command: 'echo "1"' },
+          { type: 'git-commit', message: 'Commit 2' },
+          { type: 'command', command: 'echo "3"' },
+          { type: 'git-push' }
+        ]
+      };
+      
+      hookManager = new HookManager(config, 'session-123', '/workspace');
+      
+      // Mock command hooks
+      let commandCount = 0;
+      spawnMock.mockImplementation(() => {
+        commandCount++;
+        const currentCommand = commandCount;
+        const child = new EventEmitter() as any;
+        child.stdout = new EventEmitter();
+        child.stderr = new EventEmitter();
+        child.stdin = { write: vi.fn(), end: vi.fn() };
+        child.kill = vi.fn();
+        child.killed = false;
+        
+        setTimeout(() => {
+          executionOrder.push(`command-${currentCommand === 1 ? '1' : '3'}`);
+          child.emit('exit', 0);
+        }, 10);
+        
+        return child;
+      });
+      
+      // Mock git utilities
+      vi.mocked(hasChangesToCommit).mockImplementation(async () => {
+        executionOrder.push('git-commit');
+        return true;
+      });
+      vi.mocked(stageAllChanges).mockResolvedValue(undefined);
+      vi.mocked(createCommit).mockResolvedValue({
+        success: true,
+        commitHash: 'xyz'
+      });
+      vi.mocked(getCurrentBranch).mockImplementation(async () => {
+        executionOrder.push('git-push');
+        return 'main';
+      });
+      vi.mocked(validateRemoteForPush).mockResolvedValue({
+        isValid: true,
+        errors: [],
+        suggestions: []
+      });
+      vi.mocked(pushToRemote).mockResolvedValue({
+        success: true,
+        remote: 'origin',
+        branch: 'main'
+      });
+      
+      await hookManager.executeHooks('PostExecutionEnd', {});
+      
+      expect(executionOrder).toEqual(['command-1', 'git-commit', 'command-3', 'git-push']);
     });
   });
 });
