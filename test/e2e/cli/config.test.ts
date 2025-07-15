@@ -124,26 +124,33 @@ describe('autoagent config', () => {
     it('should set push remote configuration', async () => {
       await initializeProject(context.workspace, context.cli);
 
+      // First enable auto-push to create a git-push hook
+      await context.cli.execute(['config', 'set-auto-push', 'true']);
+
       const result = await context.cli.execute(['config', 'set-push-remote', 'upstream']);
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Push remote set to: upstream');
-      expect(result.stdout).toContain('remote exists');
+      expect(result.stdout).toContain('Updated 1 git-push hook to use \'upstream\' remote');
     });
 
     it('should support global flag', async () => {
       await initializeProject(context.workspace, context.cli);
+
+      // First enable auto-push to create a git-push hook
+      await context.cli.execute(['config', 'set-auto-push', 'true', '--global']);
 
       const result = await context.cli.execute(['config', 'set-push-remote', 'origin', '--global']);
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Push remote set to: origin');
     });
 
-    it('should handle invalid remote names', async () => {
+    it('should inform when no git-push hooks exist', async () => {
       await initializeProject(context.workspace, context.cli);
 
-      const result = await context.cli.execute(['config', 'set-push-remote', 'invalid@remote']);
-      expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('Invalid remote name');
+      const result = await context.cli.execute(['config', 'set-push-remote', 'upstream']);
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Push remote set to: upstream');
+      expect(result.stdout).toContain('No git-push hooks found');
     });
   });
 });

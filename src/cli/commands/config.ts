@@ -279,7 +279,7 @@ export function registerConfigCommand(program: Command): void {
 
   config
     .command('set-auto-commit <enabled>')
-    .description('Enable or disable automatic git commits (true/false)')
+    .description('Enable or disable automatic git commits via hooks (true/false)')
     .option('-g, --global', 'Set globally')
     .action(async (enabled: string, options: { global?: boolean }) => {
       try {
@@ -294,9 +294,48 @@ export function registerConfigCommand(program: Command): void {
           }
           throw error;
         }
-        userConfig.gitAutoCommit = enabled === 'true';
+        
+        // Initialize hooks if not present
+        if (!userConfig.hooks) {
+          userConfig.hooks = {};
+        }
+        
+        const hookPoint = 'PostExecutionEnd';
+        const gitCommitHook = {
+          type: 'git-commit' as const,
+          message: 'Complete issue from {{issueFile}}'
+        };
+        
+        if (enabled === 'true') {
+          // Add git-commit hook to PostExecutionEnd
+          if (!userConfig.hooks[hookPoint]) {
+            userConfig.hooks[hookPoint] = [];
+          }
+          
+          // Check if git-commit hook already exists
+          const existingCommitHook = userConfig.hooks[hookPoint].find(h => h.type === 'git-commit');
+          if (!existingCommitHook) {
+            userConfig.hooks[hookPoint].push(gitCommitHook);
+          }
+          
+          Logger.success('✅ Auto-commit enabled via git-commit hook');
+          Logger.info('ℹ️  Git commits will be created after each successful execution');
+        } else {
+          // Remove all git-commit hooks from PostExecutionEnd
+          if (userConfig.hooks[hookPoint]) {
+            userConfig.hooks[hookPoint] = userConfig.hooks[hookPoint].filter(h => h.type !== 'git-commit');
+            
+            // Clean up empty arrays
+            if (userConfig.hooks[hookPoint].length === 0) {
+              delete userConfig.hooks[hookPoint];
+            }
+          }
+          
+          Logger.success('✅ Auto-commit disabled');
+          Logger.info('ℹ️  Git commits will not be created automatically');
+        }
+        
         await configManager.saveConfig(userConfig, options.global);
-        Logger.success(`Auto-commit ${userConfig.gitAutoCommit ? 'enabled' : 'disabled'}`);
       } catch (error) {
         Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
@@ -368,13 +407,14 @@ export function registerConfigCommand(program: Command): void {
 
   config
     .command('set-auto-push <value>')
-    .description('Enable or disable automatic git push after commit (true/false)')
+    .description('Enable or disable automatic git push via hooks (true/false)')
     .option('-g, --global', 'Set globally')
     .action(async (value: string, options: { global?: boolean }) => {
       try {
         const configManager = new ConfigManager();
+        let userConfig;
         try {
-          await configManager.loadConfig();
+          userConfig = await configManager.loadConfig();
         } catch (error) {
           if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
             Logger.error('Failed to parse configuration');
@@ -390,17 +430,50 @@ export function registerConfigCommand(program: Command): void {
           process.exit(1);
         }
         
-        const autoPush = normalizedValue === 'true';
-        await configManager.setGitAutoPush(autoPush, options.global);
+        // Initialize hooks if not present
+        if (!userConfig.hooks) {
+          userConfig.hooks = {};
+        }
         
-        Logger.success(`✅ Auto-push ${autoPush ? 'enabled' : 'disabled'}`);
+        const hookPoint = 'PostExecutionEnd';
+        const gitPushHook = {
+          type: 'git-push' as const,
+          remote: 'origin'
+        };
+        
+        const autoPush = normalizedValue === 'true';
         
         if (autoPush) {
+          // Add git-push hook to PostExecutionEnd
+          if (!userConfig.hooks[hookPoint]) {
+            userConfig.hooks[hookPoint] = [];
+          }
+          
+          // Check if git-push hook already exists
+          const existingPushHook = userConfig.hooks[hookPoint].find(h => h.type === 'git-push');
+          if (!existingPushHook) {
+            userConfig.hooks[hookPoint].push(gitPushHook);
+          }
+          
+          Logger.success('✅ Auto-push enabled via git-push hook');
           Logger.info('ℹ️  Git commits will automatically be pushed to the remote repository');
           Logger.warning('Make sure you have a git remote configured with proper permissions');
         } else {
+          // Remove all git-push hooks from PostExecutionEnd
+          if (userConfig.hooks[hookPoint]) {
+            userConfig.hooks[hookPoint] = userConfig.hooks[hookPoint].filter(h => h.type !== 'git-push');
+            
+            // Clean up empty arrays
+            if (userConfig.hooks[hookPoint].length === 0) {
+              delete userConfig.hooks[hookPoint];
+            }
+          }
+          
+          Logger.success('✅ Auto-push disabled');
           Logger.info('ℹ️  Git commits will not be pushed automatically');
         }
+        
+        await configManager.saveConfig(userConfig, options.global);
       } catch (error) {
         Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
@@ -409,13 +482,14 @@ export function registerConfigCommand(program: Command): void {
 
   config
     .command('set-push-remote <remote>')
-    .description('Set the git remote for auto-push operations')
+    .description('Set the git remote for git-push hooks')
     .option('-g, --global', 'Set globally')
     .action(async (remote: string, options: { global?: boolean }) => {
       try {
         const configManager = new ConfigManager();
+        let userConfig;
         try {
-          await configManager.loadConfig();
+          userConfig = await configManager.loadConfig();
         } catch (error) {
           if (error instanceof SyntaxError || (error instanceof Error && error.message.includes('JSON'))) {
             Logger.error('Failed to parse configuration');
@@ -424,10 +498,28 @@ export function registerConfigCommand(program: Command): void {
           throw error;
         }
         
-        await configManager.setGitPushRemote(remote, options.global);
+        // Update all git-push hooks with the new remote
+        let hooksUpdated = 0;
+        if (userConfig.hooks) {
+          for (const hookPoint of Object.keys(userConfig.hooks)) {
+            const hooks = userConfig.hooks[hookPoint];
+            for (const hook of hooks) {
+              if (hook.type === 'git-push') {
+                hook.remote = remote;
+                hooksUpdated++;
+              }
+            }
+          }
+        }
+        
+        await configManager.saveConfig(userConfig, options.global);
         
         Logger.success(`✅ Push remote set to: ${remote}`);
-        Logger.info(`ℹ️  Commits will be pushed to the '${remote}' remote when auto-push is enabled`);
+        if (hooksUpdated > 0) {
+          Logger.info(`ℹ️  Updated ${hooksUpdated} git-push hook${hooksUpdated > 1 ? 's' : ''} to use '${remote}' remote`);
+        } else {
+          Logger.info(`ℹ️  No git-push hooks found. Run 'autoagent config set-auto-push true' to enable auto-push`);
+        }
         Logger.info('ℹ️  Make sure this remote exists in your git repository');
       } catch (error) {
         Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -487,8 +579,6 @@ function getConfigValue(key: string, config: UserConfig): unknown {
       return config.providers;
     case 'verbose':
       return config.logLevel === 'debug';
-    case 'autoMode':
-      return config.gitAutoCommit;
     case 'logLevel':
       return config.logLevel;
     case 'maxTokens':
@@ -497,22 +587,14 @@ function getConfigValue(key: string, config: UserConfig): unknown {
       return config.retryAttempts;
     case 'failoverDelay':
       return config.failoverDelay;
-    case 'gitAutoCommit':
-      return config.gitAutoCommit;
-    case 'gitCommitInterval':
-      return config.gitCommitInterval;
     case 'includeCoAuthoredBy':
       return config.includeCoAuthoredBy;
     case 'customInstructions':
       return config.customInstructions;
     case 'rateLimitCooldown':
       return config.rateLimitCooldown;
-    case 'gitAutoPush':
-      return config.gitAutoPush;
-    case 'gitPushRemote':
-      return config.gitPushRemote;
-    case 'gitPushBranch':
-      return config.gitPushBranch;
+    case 'hooks':
+      return config.hooks;
     default:
       return undefined;
   }
@@ -529,9 +611,6 @@ function setConfigValue(key: string, value: unknown, updates: Partial<UserConfig
     case 'verbose':
       updates.logLevel = Boolean(value) === true ? 'debug' : 'info';
       break;
-    case 'autoMode':
-      updates.gitAutoCommit = value as boolean;
-      break;
     case 'logLevel':
       updates.logLevel = value as 'debug' | 'info' | 'warn' | 'error';
       break;
@@ -544,12 +623,6 @@ function setConfigValue(key: string, value: unknown, updates: Partial<UserConfig
     case 'failoverDelay':
       updates.failoverDelay = value as number;
       break;
-    case 'gitAutoCommit':
-      updates.gitAutoCommit = value as boolean;
-      break;
-    case 'gitCommitInterval':
-      updates.gitCommitInterval = value as number;
-      break;
     case 'includeCoAuthoredBy':
       updates.includeCoAuthoredBy = value as boolean;
       break;
@@ -558,15 +631,6 @@ function setConfigValue(key: string, value: unknown, updates: Partial<UserConfig
       break;
     case 'rateLimitCooldown':
       updates.rateLimitCooldown = value as number;
-      break;
-    case 'gitAutoPush':
-      updates.gitAutoPush = value as boolean;
-      break;
-    case 'gitPushRemote':
-      updates.gitPushRemote = value as string;
-      break;
-    case 'gitPushBranch':
-      updates.gitPushBranch = value as string;
       break;
     default:
       throw new Error(`Unknown configuration key: ${key}`);
@@ -577,19 +641,13 @@ function getEnvValue(key: string): unknown {
   const envMap: Record<string, string> = {
     'verbose': 'AUTOAGENT_VERBOSE',
     'provider': 'AUTOAGENT_PROVIDER',
-    'autoMode': 'AUTOAGENT_AUTO_MODE',
     'logLevel': 'AUTOAGENT_LOG_LEVEL',
     'maxTokens': 'AUTOAGENT_MAX_TOKENS',
     'retryAttempts': 'AUTOAGENT_RETRY_ATTEMPTS',
     'failoverDelay': 'AUTOAGENT_FAILOVER_DELAY',
-    'gitAutoCommit': 'AUTOAGENT_GIT_AUTO_COMMIT',
-    'gitCommitInterval': 'AUTOAGENT_GIT_COMMIT_INTERVAL',
     'includeCoAuthoredBy': 'AUTOAGENT_INCLUDE_CO_AUTHORED_BY',
     'customInstructions': 'AUTOAGENT_CUSTOM_INSTRUCTIONS',
-    'rateLimitCooldown': 'AUTOAGENT_RATE_LIMIT_COOLDOWN',
-    'gitAutoPush': 'AUTOAGENT_GIT_AUTO_PUSH',
-    'gitPushRemote': 'AUTOAGENT_GIT_PUSH_REMOTE',
-    'gitPushBranch': 'AUTOAGENT_GIT_PUSH_BRANCH'
+    'rateLimitCooldown': 'AUTOAGENT_RATE_LIMIT_COOLDOWN'
   };
 
   const envKey = envMap[key];
@@ -600,13 +658,13 @@ function getEnvValue(key: string): unknown {
   const envValue = process.env[envKey];
   
   // Parse boolean values
-  if (key === 'verbose' || key === 'autoMode' || key === 'gitAutoCommit' || key === 'includeCoAuthoredBy' || key === 'gitAutoPush') {
+  if (key === 'verbose' || key === 'includeCoAuthoredBy') {
     return envValue === 'true';
   }
   
   // Parse number values
   if (key === 'maxTokens' || key === 'retryAttempts' || key === 'failoverDelay' || 
-      key === 'gitCommitInterval' || key === 'rateLimitCooldown') {
+      key === 'rateLimitCooldown') {
     return parseInt(envValue, 10);
   }
   
@@ -622,10 +680,7 @@ function validateConfigValue(key: string, value: string): unknown {
       return value;
     
     case 'verbose':
-    case 'autoMode':
-    case 'gitAutoCommit':
     case 'includeCoAuthoredBy':
-    case 'gitAutoPush':
       if (!['true', 'false'].includes(value)) {
         throw new Error(`Invalid value for ${key}: ${value}. Value must be boolean (true/false)`);
       }
@@ -640,7 +695,6 @@ function validateConfigValue(key: string, value: string): unknown {
     case 'maxTokens':
     case 'retryAttempts':
     case 'failoverDelay':
-    case 'gitCommitInterval':
     case 'rateLimitCooldown': {
       const num = parseInt(value, 10);
       if (isNaN(num) || num < 0) {
@@ -650,8 +704,6 @@ function validateConfigValue(key: string, value: string): unknown {
     }
     
     case 'customInstructions':
-    case 'gitPushRemote':
-    case 'gitPushBranch':
       return value;
     
     default:
