@@ -7,7 +7,7 @@ Enhance the git utility module with a comprehensive validation function that pro
 
 Enhance the git utility module with a comprehensive validation function that provides detailed validation results with errors and suggestions.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Add GitValidationResult interface with isValid, errors, and suggestions fields
 - [ ] Add validateGitEnvironment() function that performs comprehensive checks
 - [ ] Function should check git availability

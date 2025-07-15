@@ -7,7 +7,7 @@ Enhance error messages throughout the git validation system to provide clear, ac
 
 Enhance error messages throughout the git validation system to provide clear, actionable guidance for users.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Update validateGitForAutoCommit() to use multi-line error messages
 - [ ] Include specific remediation steps in each error
 - [ ] Add command examples for fixing issues

@@ -6,7 +6,7 @@ Create integration tests to verify the bootstrap command works correctly in real
 ## Requirements
 Create integration tests to verify the bootstrap command works correctly in real-world scenarios with the issue numbering fix.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Test end-to-end bootstrap workflow with existing issues
 - [ ] Test CLI integration for bootstrap command
 - [ ] Test bootstrap with various master plan configurations

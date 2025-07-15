@@ -6,7 +6,7 @@ Update all relevant documentation to reflect that bootstrap templates are now em
 ## Requirements
 Update all relevant documentation to reflect that bootstrap templates are now embedded in the package and work out-of-the-box. This includes README updates, code comments, and changelog entries.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] README.md updated with embedded template information
 - [ ] Remove any mentions of required template setup
 - [ ] Add section explaining built-in templates

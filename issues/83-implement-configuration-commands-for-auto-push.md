@@ -21,7 +21,7 @@ Add new configuration subcommands to manage auto-push settings, including set-au
 - [ ] Add error handling for invalid inputs
 - [ ] Ensure consistent formatting with existing commands
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] set-auto-push accepts 'true' or 'false' values
 - [ ] set-push-remote accepts any valid remote name
 - [ ] Both commands support --global flag for global config

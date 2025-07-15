@@ -6,6 +6,13 @@ Set up integration test infrastructure and create comprehensive integration test
 ## Requirements
 Set up integration test infrastructure and create comprehensive integration tests for provider failover and core workflows.
 
+## Acceptance Criteria
+- [ ] Integration tests run with separate command `npm run test:integration`
+- [ ] Provider failover tests demonstrate automatic switching between providers
+- [ ] Core workflow tests cover complete task execution from start to finish
+- [ ] All integration tests use real file system operations (not mocked)
+- [ ] Test execution time is under 30 seconds for the full integration suite
+
 ## Success Criteria
 - [ ] Create test/integration directory structure
 - [ ] Implement provider failover integration tests

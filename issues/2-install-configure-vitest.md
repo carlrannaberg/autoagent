@@ -6,6 +6,13 @@ This issue covers the initial setup of Vitest as the testing framework for AutoA
 ## Requirements
 Install Vitest and create the necessary configuration files to replace Jest as the testing framework.
 
+## Acceptance Criteria
+- [ ] All Jest dependencies (@jest/*, jest, ts-jest) are removed from package.json
+- [ ] Vitest and related packages (vitest, @vitest/ui, @vitest/coverage-v8) are installed
+- [ ] Three separate Vitest config files are created and properly configured
+- [ ] Package.json test scripts are updated to use Vitest commands
+- [ ] Running `npm test` successfully executes at least one test with Vitest
+
 ## Success Criteria
 - [ ] Remove all Jest-related packages from package.json
 - [ ] Install Vitest and required dependencies

@@ -21,7 +21,7 @@ Integrate auto-push functionality into the AutonomousAgent class, including vali
 - [ ] Add debug logging for push operations
 - [ ] Update progress reporting for push operations
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Auto-push only executes after successful auto-commit
 - [ ] Remote validation provides clear error messages
 - [ ] Push failures don't break the overall execution

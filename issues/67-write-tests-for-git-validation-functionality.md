@@ -7,7 +7,7 @@ Write comprehensive unit and integration tests for the git validation functional
 
 Write comprehensive unit and integration tests for the git validation functionality added to the system.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Add unit tests for validateGitForAutoCommit() method
 - [ ] Add unit tests for validateGitEnvironment() utility function
 - [ ] Add integration tests for end-to-end validation flow

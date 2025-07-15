@@ -8,7 +8,7 @@ Implement CLI commands for managing the git no-verify configuration setting. Thi
 ### Requirement
 Add configuration commands to set and display the git no-verify setting through the CLI.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Add `config set-git-no-verify <value>` subcommand
 - [ ] Accept "true" or "false" as values (case-insensitive)
 - [ ] Support both global and local configuration with `-g` flag

@@ -6,7 +6,7 @@ Extract the TODO update logic from createIssue into a shared method that can be 
 ## Requirements
 Extract the TODO update logic from createIssue into a shared method that can be used by both createIssue and bootstrap to ensure consistent behavior when updating TODO.md.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Create a new private method `addIssueToTodo` in AutonomousAgent
 - [ ] Method handles adding issues to existing TODO content
 - [ ] Method creates initial TODO structure if file is empty/missing

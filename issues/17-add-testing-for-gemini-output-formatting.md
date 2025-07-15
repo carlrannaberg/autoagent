@@ -6,7 +6,7 @@ This issue focuses on creating comprehensive test coverage for the Gemini output
 ## Requirements
 Add comprehensive tests for the new Gemini output formatting functionality to ensure it is working as expected and is robust.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Unit tests are created for the text line-breaking logic.
 - [ ] Unit tests cover various sentence patterns and edge cases (e.g., multiple punctuation, quotes).
 - [ ] Integration tests are added to mock Gemini CLI output and verify the formatted output.

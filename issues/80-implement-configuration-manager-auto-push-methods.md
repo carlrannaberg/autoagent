@@ -21,7 +21,7 @@ Add methods to the ConfigManager class for managing auto-push settings, includin
 - [ ] Ensure proper validation of configuration values
 - [ ] Handle configuration persistence correctly
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Default configuration includes gitAutoPush: false and gitPushRemote: 'origin'
 - [ ] All getter methods return appropriate default values when not set
 - [ ] Setter methods properly persist configuration changes

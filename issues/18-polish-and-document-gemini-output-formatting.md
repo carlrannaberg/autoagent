@@ -6,7 +6,7 @@ This issue covers the final polishing phase of the Gemini output formatting feat
 ## Requirements
 Handle edge cases, optimize the implementation, and update the documentation for the new Gemini output formatting feature.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] The sentence detection regex is optimized for performance and accuracy.
 - [ ] Edge cases such as abbreviations (e.g., "Dr.", "Inc.") and numbers are handled correctly.
 - [ ] The `README.md` file is updated to note the improved Gemini output readability.

@@ -6,7 +6,7 @@ Update documentation to reflect the bootstrap issue numbering fix and clarify ex
 ## Requirements
 Update documentation to reflect the bootstrap issue numbering fix and clarify expected behavior.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Update inline code comments explaining the change
 - [ ] Update method docstring for bootstrap method
 - [ ] Add CHANGELOG.md entry for the fix

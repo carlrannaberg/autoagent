@@ -21,7 +21,7 @@ Update all relevant documentation to include information about the auto-push fea
 - [ ] Add examples of different auto-push workflows
 - [ ] Update CHANGELOG.md with new feature
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] README includes clear auto-push setup instructions
 - [ ] Security implications are clearly documented
 - [ ] Common error scenarios have troubleshooting steps

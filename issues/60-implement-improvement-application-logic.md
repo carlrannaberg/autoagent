@@ -7,7 +7,7 @@ Create the logic to apply validated improvements to existing issue and plan file
 
 Create the logic to apply validated improvements to existing issue and plan files, safely modifying them based on reflection analysis results.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Implement `applyImprovements` function
 - [ ] Create file backup mechanism before modifications
 - [ ] Handle ADD_ISSUE changes (create new issues)

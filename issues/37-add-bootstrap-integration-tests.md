@@ -6,7 +6,7 @@ Add integration tests that verify the complete bootstrap workflow, including TOD
 ## Requirements
 Add integration tests that verify the complete bootstrap workflow, including TODO preservation, issue creation, plan generation, and CLI integration.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Test full bootstrap workflow with existing project state
 - [ ] Test CLI command execution and output
 - [ ] Test that existing issues are preserved in workflow

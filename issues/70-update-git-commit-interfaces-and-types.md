@@ -7,7 +7,7 @@ Update the TypeScript interfaces and types to support the `--no-verify` flag con
 
 Update the TypeScript interfaces and types to support the `--no-verify` flag configuration for git commits.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Update `CommitOptions` interface in `src/utils/git.ts` to include `noVerify?: boolean` field
 - [ ] Update `UserConfig` interface in `src/types/index.ts` to include `gitCommitNoVerify: boolean` field  
 - [ ] Update `AgentConfig` interface in `src/types/index.ts` to include `noVerify?: boolean` field

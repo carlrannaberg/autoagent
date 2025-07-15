@@ -6,7 +6,7 @@ Create comprehensive unit and integration tests to verify that the bootstrap com
 ## Requirements
 Create comprehensive unit and integration tests to verify that the bootstrap command correctly uses embedded templates and handles various scenarios without requiring external template files.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Unit tests verify embedded templates are used when no files exist
 - [ ] Unit tests ensure no filesystem operations for templates
 - [ ] Integration tests confirm bootstrap works without template directory

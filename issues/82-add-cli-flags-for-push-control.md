@@ -21,7 +21,7 @@ Add --push and --no-push flags to the run command to allow users to control auto
 - [ ] Update command help text with new options
 - [ ] Add examples to command description
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] --push flag enables auto-push and auto-commit for the run
 - [ ] --no-push flag disables auto-push for the run
 - [ ] Conflicting flags are handled with clear warning

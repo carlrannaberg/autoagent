@@ -8,7 +8,7 @@ Add command-line flags to the `run` command that allow users to control git hook
 ### Requirement
 Add `--verify` and `--no-verify` CLI flags to the run command to control git hook behavior at runtime.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Add `--verify` flag to force git hooks enabled
 - [ ] Add `--no-verify` flag to skip git hooks
 - [ ] Handle conflicting flags gracefully (warn user, use --no-verify)

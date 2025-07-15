@@ -7,6 +7,13 @@ Set up end-to-end test infrastructure to test the complete CLI workflow from use
 
 Set up end-to-end test infrastructure to test the complete CLI workflow from user perspective.
 
+## Acceptance Criteria
+- [ ] E2E tests run with separate command `npm run test:e2e`
+- [ ] CLI binary is tested with real command-line invocations
+- [ ] Test coverage includes all major CLI commands (run, complete, validate, etc.)
+- [ ] Output validation confirms correct formatting and content
+- [ ] Tests pass consistently without flakiness
+
 ## Success Criteria
 - [ ] Create test/e2e directory structure
 - [ ] Implement full CLI workflow tests

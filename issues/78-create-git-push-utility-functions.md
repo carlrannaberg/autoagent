@@ -21,7 +21,7 @@ Implement the foundational git push utilities needed for the auto-push feature, 
 - [ ] Add proper error handling and helpful error messages
 - [ ] Export all new functions and interfaces
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] All utility functions are implemented with proper TypeScript types
 - [ ] Functions handle errors gracefully and return appropriate results
 - [ ] Remote validation provides clear error messages and suggestions

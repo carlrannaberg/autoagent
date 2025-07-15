@@ -6,6 +6,13 @@ Migrate all existing unit tests from Jest syntax to Vitest syntax, updating impo
 ## Requirements
 Migrate all existing unit tests from Jest syntax to Vitest syntax, updating imports, mocks, and assertions.
 
+## Acceptance Criteria
+- [ ] All test files import from 'vitest' instead of '@jest/globals' or 'jest'
+- [ ] All jest.mock() calls are replaced with vi.mock() equivalents
+- [ ] All mock functions use vi.fn() instead of jest.fn()
+- [ ] Test suite runs successfully with `npm test` command
+- [ ] Code coverage remains at or above previous levels (>80%)
+
 ## Success Criteria
 - [ ] Identify all test files that need migration
 - [ ] Update imports from jest to vitest

@@ -6,7 +6,7 @@ Create comprehensive unit tests for the bootstrap issue numbering fix to ensure 
 ## Requirements
 Create comprehensive unit tests for the bootstrap issue numbering fix to ensure correct behavior in all scenarios.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Test bootstrap creates issue 1 in empty project
 - [ ] Test bootstrap creates next sequential issue with existing issues
 - [ ] Test bootstrap handles gaps in issue numbering correctly

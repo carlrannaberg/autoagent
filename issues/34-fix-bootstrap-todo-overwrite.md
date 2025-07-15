@@ -6,7 +6,7 @@ Fix the bootstrap command to append new issues to existing TODO.md content inste
 ## Requirements
 Fix the bootstrap command to append new issues to existing TODO.md content instead of overwriting the entire file, preventing data loss of existing pending issues.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Bootstrap preserves existing pending issues in TODO.md
 - [ ] Bootstrap preserves completed issues section
 - [ ] Bootstrap appends new issue to pending section (not overwrites)

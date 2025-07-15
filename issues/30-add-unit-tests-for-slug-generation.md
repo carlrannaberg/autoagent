@@ -6,7 +6,7 @@ Create comprehensive unit tests for the `generateFileSlug` method and related fu
 ## Requirements
 Create comprehensive unit tests for the `generateFileSlug` method and related functionality to ensure correct slug generation across various input scenarios.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Test normal slug generation cases
 - [ ] Test edge cases (special characters, spaces, dots, hyphens)
 - [ ] Test empty and null inputs

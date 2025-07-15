@@ -6,7 +6,7 @@ Build a utility module to analyze improvement suggestions from the reflection pr
 ## Requirements
 Build a utility module to analyze improvement suggestions from the reflection process, validate them, and prepare them for application.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Create `src/utils/improvement-analyzer.ts`
 - [ ] Implement validation logic for improvement suggestions
 - [ ] Create scoring algorithms for improvement quality

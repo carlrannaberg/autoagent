@@ -11,7 +11,7 @@ Fix the Vitest benchmark reporter configuration that is causing CI/CD pipeline f
 - **Command**: `npm run bench` → `vitest bench --config vitest.bench.config.ts --reporter=json --outputFile=bench-results.json`
 - **Impact**: Performance benchmarks cannot run, blocking all builds on master branch
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Performance benchmarks run successfully in CI/CD pipeline
 - [ ] Benchmark results are generated in a format that can be stored
 - [ ] GitHub workflow can process and store benchmark results

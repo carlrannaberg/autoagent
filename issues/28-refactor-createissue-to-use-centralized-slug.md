@@ -6,7 +6,7 @@ Refactor the `createIssue` method in FileManager to use the centralized `generat
 ## Requirements
 Refactor the `createIssue` method in FileManager to use the centralized `generateFileSlug` method instead of inline slug generation logic.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Replace inline slug generation with generateFileSlug method call
 - [ ] Handle both method overloads correctly
 - [ ] Maintain exact same slug generation behavior

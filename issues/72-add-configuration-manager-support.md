@@ -7,7 +7,7 @@ Update the ConfigManager class to support getting and setting the git commit no-
 
 Update the ConfigManager class to support getting and setting the git commit no-verify configuration option.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Add `gitCommitNoVerify` to default configuration with `false` value
 - [ ] Implement `setGitCommitNoVerify(noVerify: boolean)` method
 - [ ] Implement `getGitCommitNoVerify()` method returning boolean

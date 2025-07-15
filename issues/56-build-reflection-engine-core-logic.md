@@ -6,7 +6,7 @@ Implement the core reflection engine that analyzes decomposed issues and plans, 
 ## Requirements
 Implement the core reflection engine that analyzes decomposed issues and plans, identifies gaps, and generates improvement suggestions.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Create `src/core/reflection-engine.ts` with main reflection logic
 - [ ] Implement `reflectiveDecomposition` function
 - [ ] Create `reflectOnIssuesAndPlans` function for analysis

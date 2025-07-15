@@ -22,7 +22,7 @@ Create comprehensive test coverage for all git push functionality, including uni
 - [ ] Write tests for CLI push flags functionality
 - [ ] Create mock test utilities for git operations
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] All git utility functions have >90% test coverage
 - [ ] Tests cover both success and failure scenarios
 - [ ] Mock git commands properly to avoid real git operations

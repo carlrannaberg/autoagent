@@ -6,7 +6,7 @@ Update all documentation to reflect the new smart run command functionality and 
 ## Requirements
 Update all documentation to reflect the new smart run command functionality and remove references to the deprecated bootstrap command.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] README.md updated with new run command examples
 - [ ] README shows spec file terminology and usage
 - [ ] CLI help text updated for run command

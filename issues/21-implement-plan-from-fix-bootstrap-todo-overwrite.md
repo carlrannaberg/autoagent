@@ -6,7 +6,7 @@ This issue tracks the decomposition and implementation of the fix for bootstrap 
 ## Requirements
 Decompose the plan into individual actionable issues and create corresponding plan files for each issue.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] All issues are created and numbered in the issues/ directory
 - [ ] Each issue has a corresponding plan file in the plans/ directory
 - [ ] Each issue has clear requirements and acceptance criteria

@@ -7,7 +7,7 @@ Create comprehensive unit tests for the reflection engine components, ensuring a
 
 Create comprehensive unit tests for the reflection engine components, ensuring all core functionality is properly tested.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Test ReflectionConfig validation
 - [ ] Test shouldSkipReflection logic
 - [ ] Test reflection prompt building

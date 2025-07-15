@@ -6,7 +6,7 @@ Remove the bootstrap command entirely from the CLI and clean up all references t
 ## Requirements
 Remove the bootstrap command entirely from the CLI and clean up all references throughout the codebase.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Delete `src/cli/commands/bootstrap.ts` file
 - [ ] Remove bootstrap command registration from CLI index
 - [ ] Remove bootstrap imports from all files

@@ -11,7 +11,7 @@ Fix the test artifact generation to ensure coverage reports and test results are
 - **Impact**: Cannot upload test results to GitHub, cannot upload coverage to Codecov
 - **Affected**: All test jobs in GitHub workflows
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Coverage reports are generated in the expected location
 - [ ] Test results are created and accessible
 - [ ] GitHub Actions successfully uploads test artifacts

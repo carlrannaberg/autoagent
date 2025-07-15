@@ -6,7 +6,7 @@ Enhance the createIssue method to accept optional custom content, allowing boots
 ## Requirements
 Enhance the createIssue method to accept optional custom content, allowing bootstrap to use createIssue directly instead of duplicating issue creation logic.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Add optional customContent parameter to createIssue method
 - [ ] When customContent is provided, use it instead of generating content
 - [ ] Fix issue number in custom content to match assigned number

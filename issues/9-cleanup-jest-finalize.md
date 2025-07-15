@@ -8,6 +8,13 @@ Complete the migration from Jest to Vitest by removing all Jest-related dependen
 ### Requirement
 Remove all Jest dependencies and configuration, update documentation, and finalize the migration to Vitest.
 
+## Acceptance Criteria
+- [ ] Running `npm ls jest` shows no Jest packages in dependency tree
+- [ ] No files named jest.config.* exist in the repository
+- [ ] README.md testing section describes Vitest commands and setup
+- [ ] Migration guide document exists with clear before/after examples
+- [ ] Search for "jest" in codebase returns no results (except historical references)
+
 ## Success Criteria
 - [ ] Remove all Jest packages from package.json
 - [ ] Delete Jest configuration files

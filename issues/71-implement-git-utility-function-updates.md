@@ -7,7 +7,7 @@ Update the `createCommit` function in the git utilities to support the `--no-ver
 
 Update the `createCommit` function in the git utilities to support the `--no-verify` flag when creating commits.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Update `createCommit` function to accept `noVerify` option from `CommitOptions`
 - [ ] Add `--no-verify` flag to git command when `noVerify` is `true`
 - [ ] Ensure flag is not added when `noVerify` is `false` or `undefined`

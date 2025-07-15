@@ -12,7 +12,7 @@ Update Dependabot configuration to better handle major version updates that may 
 - No version constraints or update rules configured
 - Manual intervention required when breaking changes occur
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Dependabot configuration updated with appropriate version rules
 - [ ] Major version updates are handled more gracefully
 - [ ] Critical dependencies have update policies defined

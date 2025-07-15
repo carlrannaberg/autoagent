@@ -6,7 +6,7 @@ This issue addresses a bug in the bootstrap command where issue number 1 is hard
 ## Requirements
 Fix the bootstrap command to use dynamic issue numbering instead of hardcoded issue number 1.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Replace hardcoded `issueNumber = 1` with `await this.fileManager.getNextIssueNumber()`
 - [ ] Bootstrap creates issue 1 in empty projects
 - [ ] Bootstrap creates next sequential issue in projects with existing issues

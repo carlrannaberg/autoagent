@@ -6,7 +6,7 @@ Create integration tests to verify that the bootstrap command creates consistent
 ## Requirements
 Create integration tests to verify that the bootstrap command creates consistent filenames for both issue and plan files.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Test bootstrap creates matching issue and plan filenames
 - [ ] Test various issue title formats
 - [ ] Test filename predictability

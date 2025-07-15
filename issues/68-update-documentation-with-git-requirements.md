@@ -7,7 +7,7 @@ Update project documentation to include git requirements for auto-commit functio
 
 Update project documentation to include git requirements for auto-commit functionality and troubleshooting guidance.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Add git requirements section to README.md
 - [ ] Include setup instructions for git configuration
 - [ ] Add troubleshooting section for common git validation errors

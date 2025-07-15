@@ -8,7 +8,7 @@ Update all project documentation to comprehensively explain the git no-verify fu
 ### Requirement
 Update all documentation to explain the git no-verify functionality, usage examples, and security considerations.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Update README.md with git hooks configuration section
 - [ ] Add examples of using --verify and --no-verify flags
 - [ ] Document configuration commands and settings

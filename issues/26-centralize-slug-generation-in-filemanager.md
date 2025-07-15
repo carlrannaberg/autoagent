@@ -6,7 +6,7 @@ Create a centralized method for generating consistent filename slugs across the 
 ## Requirements
 Create a centralized `generateFileSlug` method in FileManager to handle consistent filename slug generation across the codebase.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Add private `generateFileSlug` method to FileManager class
 - [ ] Method converts titles to URL-friendly slugs
 - [ ] Handles edge cases (special characters, multiple spaces, dots, hyphens)

@@ -6,7 +6,7 @@ Update all documentation to reflect the new bootstrap behavior that preserves ex
 ## Requirements
 Update all documentation to reflect the new bootstrap behavior that preserves existing TODO items instead of overwriting them.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Update command documentation to clarify preservation behavior
 - [ ] Add examples showing bootstrap with existing issues
 - [ ] Document the safety of using bootstrap in active projects

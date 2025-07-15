@@ -7,7 +7,7 @@ Update the AutonomousAgent class to use the git no-verify configuration when per
 
 Update the AutonomousAgent class to use the git no-verify configuration when performing automatic commits.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Update `performGitCommit` method to check configuration settings
 - [ ] Apply runtime `noVerify` override from AgentConfig if provided
 - [ ] Fall back to user configuration `gitCommitNoVerify` setting

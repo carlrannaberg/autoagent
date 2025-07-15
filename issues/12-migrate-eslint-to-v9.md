@@ -12,7 +12,7 @@ Migrate the ESLint configuration from the old `.eslintrc.js` format to the new f
 - **Required Config**: `eslint.config.js` (new flat config format)
 - **Impact**: Cannot run `npm run lint`, blocking Dependabot PRs and development workflow
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] ESLint configuration migrated to flat config format
 - [ ] `npm run lint` executes successfully with ESLint v9.30.1
 - [ ] All existing lint rules are preserved in the new format

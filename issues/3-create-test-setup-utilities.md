@@ -6,6 +6,13 @@ Create the test setup file and migrate/create test utilities that will be used a
 ## Requirements
 Create the test setup file and migrate/create test utilities that will be used across all test suites.
 
+## Acceptance Criteria
+- [ ] Test setup file loads correctly when running Vitest tests
+- [ ] Custom matchers (toMatchInlineSnapshot, toThrowError) work in test files
+- [ ] Mock providers can simulate success, failure, and rate limit scenarios
+- [ ] TestWorkspace utility creates and cleans up temporary test directories
+- [ ] All test utilities have proper TypeScript type definitions
+
 ## Success Criteria
 - [ ] Create test/setup.ts with Vitest configuration
 - [ ] Implement custom matchers for AutoAgent

@@ -7,7 +7,7 @@ Add command-line interface options to control the reflection feature, allowing u
 
 Add command-line interface options to control the reflection feature, allowing users to configure reflection behavior directly from the CLI.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Add `--reflection-iterations` flag to set max iterations
 - [ ] Add `--no-reflection` flag to disable reflection
 - [ ] Update CLI command parser to handle new options

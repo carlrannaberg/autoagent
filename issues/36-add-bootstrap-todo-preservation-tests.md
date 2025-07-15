@@ -6,7 +6,7 @@ Add comprehensive unit tests to verify that the bootstrap command correctly pres
 ## Requirements
 Add comprehensive unit tests to verify that the bootstrap command correctly preserves existing TODO.md content and appends new issues without data loss.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Test bootstrap with empty TODO.md creates initial structure
 - [ ] Test bootstrap with existing pending issues preserves them
 - [ ] Test bootstrap with completed issues preserves them

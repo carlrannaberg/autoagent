@@ -21,7 +21,7 @@ Update the UserConfig and AgentConfig interfaces to support auto-push functional
 - [ ] Ensure backward compatibility with existing configurations
 - [ ] Update type exports as needed
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] UserConfig interface includes all necessary auto-push fields
 - [ ] AgentConfig interface supports runtime auto-push control
 - [ ] All fields have appropriate TypeScript types and JSDoc comments

@@ -6,7 +6,7 @@ Add capability to the run command to handle spec/plan files by performing bootst
 ## Requirements
 Add capability to the run command to handle spec/plan files by performing bootstrap and optional execution flow.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Run command detects spec files and calls bootstrap logic
 - [ ] Bootstrap creates decomposition issue (Issue 1) from spec file
 - [ ] After bootstrap, automatically executes the decomposition issue

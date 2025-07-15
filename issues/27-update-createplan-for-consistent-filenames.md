@@ -6,7 +6,7 @@ Modify the `createPlan` method in FileManager to optionally use title-based nami
 ## Requirements
 Modify the `createPlan` method in FileManager to optionally use title-based naming for plan files, ensuring consistency with issue filenames.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Update createPlan method signature to make issueTitle optional
 - [ ] Implement conditional filename generation based on issueTitle presence
 - [ ] Use generateFileSlug method for title-based naming

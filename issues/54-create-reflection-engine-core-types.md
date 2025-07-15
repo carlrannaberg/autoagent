@@ -6,7 +6,7 @@ Define the TypeScript types and interfaces required for the reflection engine fu
 ## Requirements
 Define the TypeScript types and interfaces required for the reflection engine functionality. This includes configuration types, improvement analysis types, and reflection result types.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Create `src/types/reflection.ts` with all reflection-related type definitions
 - [ ] Define `ReflectionConfig` interface with all configuration options
 - [ ] Create types for improvement analysis and scoring

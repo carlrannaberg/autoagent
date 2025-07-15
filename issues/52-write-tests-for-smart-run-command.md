@@ -6,7 +6,7 @@ Create comprehensive test coverage for the enhanced run command functionality, i
 ## Requirements
 Create comprehensive test coverage for the enhanced run command functionality, including input detection, spec file handling, and backward compatibility.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Unit tests for isPlanFile(), isIssueNumber(), isIssueFile() functions
 - [ ] Integration tests for spec file execution flow
 - [ ] Tests for --all flag with spec files

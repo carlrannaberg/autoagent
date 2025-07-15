@@ -6,7 +6,7 @@ Update project documentation to reflect the new consistent filename conventions 
 ## Requirements
 Update project documentation to reflect the new consistent filename conventions for issues and plans created by the bootstrap command.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Update README.md with filename convention details
 - [ ] Add JSDoc comments to generateFileSlug method
 - [ ] Update CLI help text if needed

@@ -6,7 +6,7 @@ Modify the bootstrap command implementation to use the embedded templates from t
 ## Requirements
 Modify the bootstrap method in `src/core/autonomous-agent.ts` to use the embedded template constants instead of reading template files from the filesystem. This will make bootstrap work out-of-the-box without requiring external template files.
 
-## Success Criteria
+## Acceptance Criteria
 - [ ] Import template constants from the new template module
 - [ ] Replace filesystem reads (lines 787-789) with template constants
 - [ ] Remove dependency on template directory existence
