@@ -7,14 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-07-16
+
 ### Added
-- Add GitPushHook built-in hook for automatic git push operations
-  - Detects current branch automatically
-  - Uses configured remote or defaults to 'origin'
-  - Provides clear error messages for authentication failures
-  - Handles non-fast-forward rejections with resolution steps
-  - Validates remote repository before attempting push
-  - Sets upstream automatically when needed
+- Comprehensive hook system for extensible automation
+  - New `HookManager` class for managing and executing hooks at different lifecycle points
+  - Built-in `GitCommitHook` for automatic git commits with configurable options
+  - Built-in `GitPushHook` for automatic git push operations
+  - Support for custom hooks via configuration
+  - Hook execution points: PreExecutionStart, PostExecutionStop, PostIssueSuccess, PostIssueFailure
+  - Configurable timeout and retry behavior for hooks
+  - Clear error messages and resolution steps for common git issues
+- New configuration options for hooks in `autoagent.config.json`
+  - `hooks` field with support for multiple hooks per execution point
+  - Built-in hooks: `git-commit` and `git-push` with customizable settings
+  - Support for custom shell command hooks
+- CLI commands for hook management
+  - `autoagent config set-auto-commit` to enable/disable git commit hook
+  - `autoagent config set-auto-push` to enable/disable git push hook
+  - `autoagent config set-push-remote` to configure git push remote
+
+### Changed
+- Extracted git operations from `AutonomousAgent` into dedicated utility modules
+  - Git operations now in `src/utils/git.ts` for better modularity
+  - Cleaner separation of concerns between agent logic and git operations
+- Improved error handling for git operations with more descriptive messages
+- Enhanced test coverage with proper mocking patterns for async functions
+
+### Fixed
+- TypeScript compilation errors related to null safety and type checking
+- ESLint violations for strict boolean expressions and unused variables
+- Test failures due to incorrect mocking patterns
+- Proper handling of nullable values throughout the codebase
+- Commander.js error handling in CLI run commands
+
+### Removed
+- Legacy git configuration fields from user config
+- Direct git operation flags from CLI commands (replaced with hook system)
 
 ## [0.6.4] - 2025-07-11
 
