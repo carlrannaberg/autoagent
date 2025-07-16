@@ -2,7 +2,7 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "tools:Write,Edit,MultiEdit",
         "hooks": [
           {
             "type": "command",
@@ -11,8 +11,7 @@
         ]
       },
       {
-        "matcher": "Write",
-        "file_paths": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],
+        "matcher": "tools:Write AND file_paths:src/**/*.ts,src/**/*.tsx,src/**/*.js,src/**/*.jsx",
         "hooks": [
           {
             "type": "command",
@@ -23,8 +22,13 @@
     ],
     "Stop": [
       {
-        "type": "command",
-        "command": "bash .claude/hooks/validate-todo-completion.sh"
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/validate-todo-completion.sh"
+          }
+        ]
       }
     ]
   }
