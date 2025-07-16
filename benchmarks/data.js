@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752675582006,
+  "lastUpdate": 1752676723934,
   "repoUrl": "https://github.com/carlrannaberg/autoagent",
   "entries": {
     "TypeScript Benchmarks": [
@@ -14797,6 +14797,308 @@ window.BENCHMARK_DATA = {
               "p99": 0.0006309999999984939,
               "p995": 0.0007120000000213622,
               "p999": 0.0012319999999590436
+            }
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "test@example.com",
+            "name": "Test User"
+          },
+          "committer": {
+            "email": "test@example.com",
+            "name": "Test User"
+          },
+          "distinct": true,
+          "id": "2f5f5ae7db180cdd4d78fdf936530bed708fea0e",
+          "message": "chore: prepare release v0.7.0\n\n- Update CHANGELOG.md with comprehensive hook system changes\n- Bump version from 0.6.5 to 0.7.0\n- Document all features, fixes, and improvements since last release\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>",
+          "timestamp": "2025-07-16T17:36:28+03:00",
+          "tree_id": "f4434f64e03f8cf7ded540312ed9d6679525178f",
+          "url": "https://github.com/carlrannaberg/autoagent/commit/2f5f5ae7db180cdd4d78fdf936530bed708fea0e"
+        },
+        "date": 1752676723391,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "test/performance/benchmarks/core/config.bench.ts > load config from file",
+            "value": 4547.163312856107,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.2199173267370273,
+              "min": 0.15174400000000787,
+              "max": 1.213341000000014,
+              "p75": 0.24319600000001174,
+              "p99": 0.3131070000000591,
+              "p995": 0.375362999999993,
+              "p999": 0.7296870000000126
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/core/config.bench.ts > load config with defaults",
+            "value": 10164.784271471657,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.09837887094235596,
+              "min": 0.07689400000003843,
+              "max": 0.6273850000000039,
+              "p75": 0.10662900000011177,
+              "p99": 0.148729000000003,
+              "p995": 0.15530999999998585,
+              "p999": 0.31683300000008785
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/core/config.bench.ts > load large config",
+            "value": 4880.59245100799,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.20489315795943375,
+              "min": 0.15309700000011617,
+              "max": 2.756992000000082,
+              "p75": 0.21525299999984782,
+              "p99": 0.2648260000000846,
+              "p995": 0.2804449999998724,
+              "p999": 0.7046089999998912
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/core/config.bench.ts > load rate limits",
+            "value": 10458.749629790951,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0956137239533468,
+              "min": 0.0730970000004163,
+              "max": 0.4482499999999163,
+              "p75": 0.09858500000018466,
+              "p99": 0.13163699999995515,
+              "p995": 0.14598300000034214,
+              "p999": 0.3472799999999552
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/core/file-manager.bench.ts > check file existence",
+            "value": 6748.006355506386,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.1481919173333318,
+              "min": 0.13929200000006858,
+              "max": 0.46321899999998095,
+              "p75": 0.15043200000002344,
+              "p99": 0.20313199999998233,
+              "p995": 0.2715189999999552,
+              "p999": 0.3628009999999904
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/example-enhanced.bench.ts > Array operations comparison",
+            "value": 14.126823204977464,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 70.78732320000003,
+              "min": 68.05904300000009,
+              "max": 88.53296499999999,
+              "p75": 69.46133299999997,
+              "p99": 88.53296499999999,
+              "p995": 88.53296499999999,
+              "p999": 88.53296499999999
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/example-enhanced.bench.ts > Performance trend analysis",
+            "value": 1749.8899564201834,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.5714645062857199,
+              "min": 0.3637330000001384,
+              "max": 3.0368600000001607,
+              "p75": 0.6356040000000576,
+              "p99": 1.3724669999996877,
+              "p995": 1.4714229999999588,
+              "p999": 3.0368600000001607
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/example-enhanced.bench.ts > Statistical analysis demonstration",
+            "value": 689.564644740673,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 1.4501903594202883,
+              "min": 0.9951779999998962,
+              "max": 3.8545180000000983,
+              "p75": 1.5976490000000467,
+              "p99": 2.986176999999998,
+              "p995": 3.0703130000001693,
+              "p999": 3.8545180000000983
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/git.bench.ts > extract file names",
+            "value": 788483.1216299122,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0012682579659192336,
+              "min": 0.0010910000000876607,
+              "max": 0.1297469999999521,
+              "p75": 0.0012320000000727305,
+              "p99": 0.0018339999999170686,
+              "p995": 0.002152999999907479,
+              "p999": 0.013494000000036976
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/git.bench.ts > normalize file paths",
+            "value": 509845.2821378651,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0019613793341517953,
+              "min": 0.0017629999999826396,
+              "max": 0.34732099999996535,
+              "p75": 0.0019130000000586733,
+              "p99": 0.003595999999902233,
+              "p995": 0.0038580000000365544,
+              "p999": 0.012133000000062566
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > calculate backoff delays",
+            "value": 1897343.3966576552,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.000527052721063352,
+              "min": 0.0004999999946448952,
+              "max": 2.808413999999175,
+              "p75": 0.0005110000056447461,
+              "p99": 0.000730999992811121,
+              "p995": 0.0008420000085607171,
+              "p999": 0.0010420000035082921
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > calculate jittered delays",
+            "value": 1408917.253254966,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0007097648905141443,
+              "min": 0.0006709999870508909,
+              "max": 0.37466000000131316,
+              "p75": 0.0006819999980507419,
+              "p99": 0.0009710000013001263,
+              "p995": 0.0010320000001229346,
+              "p999": 0.0015229999989969656
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > check rate limit error (negative)",
+            "value": 284863.05197700486,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0035104587732940652,
+              "min": 0.0032770000034361146,
+              "max": 0.04700800000136951,
+              "p75": 0.003506999993987847,
+              "p99": 0.003818000004685018,
+              "p995": 0.005461000000650529,
+              "p999": 0.012253000000782777
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > check rate limit error (positive)",
+            "value": 287708.2202378334,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0034757435820685005,
+              "min": 0.0032359999968321063,
+              "max": 0.17954599999939092,
+              "p75": 0.003435999999055639,
+              "p99": 0.0050289999999222346,
+              "p995": 0.006132000002253335,
+              "p999": 0.013324999999895226
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > check various error types",
+            "value": 42313.70431181052,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.023633005341035147,
+              "min": 0.022662000003037974,
+              "max": 0.3055119999917224,
+              "p75": 0.023363999993307516,
+              "p99": 0.03292199999850709,
+              "p995": 0.04072599999199156,
+              "p999": 0.0449839999928372
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > error checking 1000 times",
+            "value": 11786.726836710497,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0848411958513739,
+              "min": 0.08212400000775233,
+              "max": 0.4036959999939427,
+              "p75": 0.08404800000425894,
+              "p99": 0.10302399999636691,
+              "p995": 0.11187900000368245,
+              "p999": 0.22954899999604095
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > operation with 1 retry",
+            "value": 0.9985733477445243,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 1001.4286904999999,
+              "min": 1000.2152299999998,
+              "max": 1002.0772969999998,
+              "p75": 1001.7935600000001,
+              "p99": 1002.0772969999998,
+              "p995": 1002.0772969999998,
+              "p999": 1002.0772969999998
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > operation with 2 retries",
+            "value": 0.3328502478530842,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 3004.3540795000013,
+              "min": 3002.5311280000024,
+              "max": 3005.2755270000052,
+              "p75": 3004.5502720000004,
+              "p99": 3005.2755270000052,
+              "p995": 3005.2755270000052,
+              "p999": 3005.2755270000052
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > retry with jitter (100 operations)",
+            "value": 10.127638067961936,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 98.73970547618886,
+              "min": 97.6746060000005,
+              "max": 100.04522400000133,
+              "p75": 99.09834099999716,
+              "p99": 100.04522400000133,
+              "p995": 100.04522400000133,
+              "p999": 100.04522400000133
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > successful operation (no retry)",
+            "value": 2622265.8898649164,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0003813495816213794,
+              "min": 0.00031999999998788553,
+              "max": 0.2630829999999946,
+              "p75": 0.0003609999999980573,
+              "p99": 0.0006210000000237414,
+              "p995": 0.0007209999999986394,
+              "p999": 0.0011620000000220898
             }
           }
         ]
