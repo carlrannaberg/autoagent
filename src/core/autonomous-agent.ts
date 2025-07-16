@@ -19,8 +19,7 @@ import { reflectiveDecomposition } from './reflection-engine';
 import {
   getCurrentCommitHash,
   getUncommittedChanges,
-  revertToCommit,
-  getChangedFiles
+  revertToCommit
 } from '../utils/git';
 import { isRateLimitOrUsageError } from '../utils/retry';
 import { HookManager } from './hook-manager';
@@ -589,8 +588,8 @@ export class AutonomousAgent extends EventEmitter {
         const signal = this.config.signal || this.abortController.signal;
 
         // Resolve additional directories from config and CLI
-        const configDirs = userConfig.additionalDirectories || [];
-        const cliDirs = this.config.additionalDirectories || [];
+        const configDirs = userConfig.additionalDirectories ?? [];
+        const cliDirs = this.config.additionalDirectories ?? [];
         const additionalDirectories = await this.configManager.resolveAdditionalDirectories(
           configDirs,
           cliDirs,
@@ -940,12 +939,12 @@ ${issueEntry}
       const sessionSummary = {
         sessionId: this.currentSession.id,
         reason,
-        issuesCompleted: this.currentSession.issuesCompleted || [],
-        issuesCreated: this.currentSession.issuesCreated || [],
-        issuesFailed: this.currentSession.issuesFailed || [],
-        totalIssues: (this.currentSession.issuesCompleted?.length || 0) + 
-                    (this.currentSession.issuesFailed?.length || 0),
-        filesModified: this.currentSession.filesModified || [],
+        issuesCompleted: this.currentSession.issuesCompleted ?? [],
+        issuesCreated: this.currentSession.issuesCreated ?? [],
+        issuesFailed: this.currentSession.issuesFailed ?? [],
+        totalIssues: (this.currentSession.issuesCompleted?.length ?? 0) + 
+                    (this.currentSession.issuesFailed?.length ?? 0),
+        filesModified: this.currentSession.filesModified ?? [],
         startTime: this.currentSession.startTime,
         endTime: new Date().toISOString(),
         error: this.currentSession.error
@@ -956,7 +955,7 @@ ${issueEntry}
 
       if (hookResult.blocked) {
         // Stop hook blocked termination
-        const errorMessage = `Stop hook blocked termination: ${hookResult.reason || 'Unknown reason'}`;
+        const errorMessage = `Stop hook blocked termination: ${hookResult.reason ?? 'Unknown reason'}`;
         this.reportProgress(errorMessage, 0);
         throw new Error(errorMessage);
       }
@@ -1404,8 +1403,8 @@ ${result.output ?? 'Success'}`;
 
       // Extract issue and plan file information from the decomposition
       // This is a simplified extraction - in production, you might parse the actual generated files
-      const issueMatches = initialDecomposition.match(/issues\/\d+-[\w-]+\.md/g) || [];
-      const planMatches = initialDecomposition.match(/plans\/\d+-[\w-]+\.md/g) || [];
+      const issueMatches = initialDecomposition.match(/issues\/\d+-[\w-]+\.md/g) ?? [];
+      const planMatches = initialDecomposition.match(/plans\/\d+-[\w-]+\.md/g) ?? [];
       
       // Calculate word count for skip check
       const totalWordCount = masterPlanContent.split(/\s+/).length;

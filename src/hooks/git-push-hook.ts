@@ -5,7 +5,7 @@ export class GitPushHook implements BuiltinHookHandler {
   async execute(_data: HookData, config: Hook): Promise<HookResult> {
     // Get current branch
     const currentBranch = await getCurrentBranch();
-    if (!currentBranch) {
+    if (currentBranch === null) {
       return {
         blocked: false,
         output: 'Cannot push: Currently in detached HEAD state. Please checkout a branch first.',
@@ -45,7 +45,7 @@ export class GitPushHook implements BuiltinHookHandler {
       // Handle push failure with clear messaging
       let errorMessage = `Failed to push to ${remote}/${currentBranch}`;
       
-      if (pushResult.error) {
+      if (pushResult.error !== undefined) {
         // Check for common error scenarios
         if (pushResult.error.includes('Authentication failed') || 
             pushResult.error.includes('Permission denied') ||
@@ -68,7 +68,7 @@ export class GitPushHook implements BuiltinHookHandler {
       }
 
       // Include stderr if available for additional context
-      if (pushResult.stderr) {
+      if (pushResult.stderr !== undefined) {
         errorMessage += `\n\nGit output:\n${pushResult.stderr}`;
       }
 

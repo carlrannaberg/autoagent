@@ -4,16 +4,26 @@ import { AutonomousAgent } from '@/core/autonomous-agent';
 import { registerRunCommand } from '@/cli/commands/run';
 import { Command } from 'commander';
 import { Logger } from '@/utils/logger';
+import { FileManager } from '@/utils/file-manager';
+import { validateProjectFiles } from '@/core/validators/index.js';
 
 // Mock dependencies
 vi.mock('fs/promises');
 vi.mock('@/core/autonomous-agent');
 vi.mock('@/utils/logger');
+vi.mock('@/utils/file-manager');
+vi.mock('@/core/validators/index.js', () => ({
+  validateProjectFiles: vi.fn()
+}));
+vi.mock('@/core/validators/autofix-service.js');
 
 interface MockAgent {
   initialize: ReturnType<typeof vi.fn>;
   executeIssue: ReturnType<typeof vi.fn>;
   on: ReturnType<typeof vi.fn>;
+  executeStartHook: ReturnType<typeof vi.fn>;
+  executeStopHook: ReturnType<typeof vi.fn>;
+  removeAllListeners: ReturnType<typeof vi.fn>;
 }
 
 describe('Run Command Range Functionality', () => {
@@ -38,13 +48,33 @@ describe('Run Command Range Functionality', () => {
     vi.spyOn(Logger, 'success').mockImplementation(() => {});
     vi.spyOn(Logger, 'warning').mockImplementation(() => {});
     
+    // Mock FileManager
+    const mockFileManager = {
+      readIssue: vi.fn().mockResolvedValue({
+        number: 1,
+        title: 'Test Issue',
+        requirements: 'Test requirements',
+        acceptanceCriteria: ['Test criteria']
+      })
+    };
+    vi.mocked(FileManager).mockImplementation(() => mockFileManager);
+    
+    // Mock validation functions
+    vi.mocked(validateProjectFiles).mockResolvedValue({
+      valid: true,
+      issues: []
+    });
+    
     registerRunCommand(program);
     runCommand = program.commands.find(cmd => cmd.name() === 'run')!;
     
     mockAgent = {
       initialize: vi.fn().mockResolvedValue(undefined),
       executeIssue: vi.fn().mockResolvedValue({ success: true, issueNumber: 1, issueTitle: 'Test Issue' }),
-      on: vi.fn()
+      on: vi.fn(),
+      executeStartHook: vi.fn().mockResolvedValue(undefined),
+      executeStopHook: vi.fn().mockResolvedValue(undefined),
+      removeAllListeners: vi.fn()
     };
     
     vi.mocked(AutonomousAgent).mockImplementation(() => mockAgent as AutonomousAgent);

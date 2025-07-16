@@ -29,6 +29,9 @@ describe('Run Command', () => {
     syncTodoWithIssues: ReturnType<typeof vi.fn>;
     on: ReturnType<typeof vi.fn>;
     emit: ReturnType<typeof vi.fn>;
+    executeStartHook: ReturnType<typeof vi.fn>;
+    executeStopHook: ReturnType<typeof vi.fn>;
+    removeAllListeners: ReturnType<typeof vi.fn>;
   };
   let mockFileManager: {
     readIssue: ReturnType<typeof vi.fn>;
@@ -87,7 +90,10 @@ describe('Run Command', () => {
       bootstrap: vi.fn().mockResolvedValue(42),
       syncTodoWithIssues: vi.fn().mockResolvedValue(undefined),
       on: vi.fn(),
-      emit: vi.fn()
+      emit: vi.fn(),
+      executeStartHook: vi.fn().mockResolvedValue(undefined),
+      executeStopHook: vi.fn().mockResolvedValue(undefined),
+      removeAllListeners: vi.fn()
     };
     vi.mocked(AutonomousAgent).mockImplementation(() => mockAgent);
     

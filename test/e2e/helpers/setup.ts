@@ -14,9 +14,11 @@ export function setupE2ETest(): E2EContext {
   beforeEach(async (): Promise<void> => {
     const workspacePath = await workspace.create();
     cli = new CliExecutor(workspacePath);
+    await cli.setupIsolatedEnvironment();
   });
 
   afterEach(async (): Promise<void> => {
+    await cli.cleanup();
     await workspace.cleanup();
   });
 

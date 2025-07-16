@@ -1,6 +1,8 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
+import * as fs from 'fs/promises';
+import * as os from 'os';
 
 const execFileAsync = promisify(execFile);
 
@@ -13,6 +15,7 @@ export interface ExecuteResult {
 export class CliExecutor {
   private cliPath: string;
   private env: Record<string, string>;
+  private tempHomeDir: string | null = null;
 
   constructor(private workingDir: string) {
     this.cliPath = path.join(__dirname, '../../../bin/autoagent');
@@ -22,6 +25,24 @@ export class CliExecutor {
       FORCE_COLOR: '0', // Disable colors for predictable output
       AUTOAGENT_MOCK_PROVIDER: 'true', // Enable mock provider for E2E tests
     };
+  }
+
+  async setupIsolatedEnvironment(): Promise<void> {
+    // Create temporary home directory for isolated global config
+    this.tempHomeDir = await fs.mkdtemp(path.join(os.tmpdir(), 'autoagent-e2e-home-'));
+    this.env.HOME = this.tempHomeDir;
+    this.env.USERPROFILE = this.tempHomeDir; // Windows support
+  }
+
+  async cleanup(): Promise<void> {
+    if (this.tempHomeDir !== null) {
+      try {
+        await fs.rm(this.tempHomeDir, { recursive: true, force: true });
+      } catch (error) {
+        console.warn(`Failed to cleanup temp home directory: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      this.tempHomeDir = null;
+    }
   }
 
   async execute(args: string[], options: { timeout?: number; cwd?: string } = {}): Promise<ExecuteResult> {

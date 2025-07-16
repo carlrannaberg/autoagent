@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { spawn } from 'child_process';
 import { HookManager } from '../../src/core/hook-manager.js';
-import { HookConfig, HookData } from '../../src/types/hooks.js';
+import { HookConfig } from '../../src/types/hooks.js';
 import { EventEmitter } from 'events';
 import { 
   hasChangesToCommit, 
@@ -435,7 +435,7 @@ describe('HookManager', () => {
       hookManager = new HookManager(config, 'session-123', '/workspace');
       
       let actualCommand = '';
-      spawnMock.mockImplementation((cmd: string, options: any) => {
+      spawnMock.mockImplementation((cmd: string, _options: any) => {
         actualCommand = cmd;
         const child = new EventEmitter() as any;
         child.stdout = new EventEmitter();
@@ -472,7 +472,7 @@ describe('HookManager', () => {
       hookManager = new HookManager(config, 'session-123', '/workspace');
       
       let actualCommand = '';
-      spawnMock.mockImplementation((cmd: string, options: any) => {
+      spawnMock.mockImplementation((cmd: string, _options: any) => {
         actualCommand = cmd;
         const child = new EventEmitter() as any;
         child.stdout = new EventEmitter();
@@ -508,7 +508,7 @@ describe('HookManager', () => {
       hookManager = new HookManager(config, 'session-123', '/workspace');
       
       let actualCommand = '';
-      spawnMock.mockImplementation((cmd: string, options: any) => {
+      spawnMock.mockImplementation((cmd: string, _options: any) => {
         actualCommand = cmd;
         const child = new EventEmitter() as any;
         child.stdout = new EventEmitter();
@@ -554,7 +554,7 @@ describe('HookManager', () => {
         return child;
       });
       
-      const resultPromise = hookManager.executeHooks('PreExecutionStart', {});
+      void hookManager.executeHooks('PreExecutionStart', {});
       
       // Wait for timeout
       await new Promise(resolve => setTimeout(resolve, 150));
@@ -574,8 +574,8 @@ describe('HookManager', () => {
       let timeoutValue = 0;
       const originalSetTimeout = global.setTimeout;
       vi.spyOn(global, 'setTimeout').mockImplementation((fn, delay) => {
-        if (delay && delay > 1000) {
-          timeoutValue = delay as number;
+        if (delay !== null && delay !== undefined && delay > 1000) {
+          timeoutValue = delay;
         }
         return originalSetTimeout(fn as any, delay);
       });
@@ -1040,18 +1040,18 @@ describe('HookManager', () => {
       });
       
       // Mock git utilities
-      vi.mocked(hasChangesToCommit).mockImplementation(async () => {
+      vi.mocked(hasChangesToCommit).mockImplementation(() => {
         executionOrder.push('git-commit');
-        return true;
+        return Promise.resolve(true);
       });
       vi.mocked(stageAllChanges).mockResolvedValue(undefined);
       vi.mocked(createCommit).mockResolvedValue({
         success: true,
         commitHash: 'xyz'
       });
-      vi.mocked(getCurrentBranch).mockImplementation(async () => {
+      vi.mocked(getCurrentBranch).mockImplementation(() => {
         executionOrder.push('git-push');
-        return 'main';
+        return Promise.resolve('main');
       });
       vi.mocked(validateRemoteForPush).mockResolvedValue({
         isValid: true,

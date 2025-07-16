@@ -522,10 +522,12 @@ export function registerConfigCommand(program: Command): void {
         if (userConfig.hooks) {
           for (const hookPoint of Object.keys(userConfig.hooks)) {
             const hooks = userConfig.hooks[hookPoint];
-            for (const hook of hooks) {
-              if (hook.type === 'git-push') {
-                hook.remote = remote;
-                hooksUpdated++;
+            if (hooks) {
+              for (const hook of hooks) {
+                if (hook.type === 'git-push') {
+                  hook.remote = remote;
+                  hooksUpdated++;
+                }
               }
             }
           }
@@ -537,7 +539,7 @@ export function registerConfigCommand(program: Command): void {
         if (hooksUpdated > 0) {
           Logger.info(`ℹ️  Updated ${hooksUpdated} git-push hook${hooksUpdated > 1 ? 's' : ''} to use '${remote}' remote`);
         } else {
-          Logger.info(`ℹ️  No git-push hooks found. Run 'autoagent config set-auto-push true' to enable auto-push`);
+          Logger.info('ℹ️  No git-push hooks found. Run \'autoagent config set-auto-push true\' to enable auto-push');
         }
         Logger.info('ℹ️  Make sure this remote exists in your git repository');
       } catch (error) {

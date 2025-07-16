@@ -181,6 +181,8 @@ export interface AgentConfig {
   reflection?: ReflectionConfig;
   /** Additional directories to give AI providers access to */
   additionalDirectories?: string[];
+  /** Skip git pre-commit hooks when committing */
+  noVerify?: boolean;
 }
 
 /**

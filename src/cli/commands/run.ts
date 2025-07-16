@@ -910,6 +910,10 @@ export function registerRunCommand(program: Command): void {
           }
         }
       } catch (error) {
+        // Check if this is a CommanderError from exitOverride() - if so, re-throw it
+        if (error instanceof Error && error.name === 'CommanderError') {
+          throw error;
+        }
         Logger.error(`Failed: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       } finally {

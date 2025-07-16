@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GitCommitHook } from '../../../src/hooks/git-commit-hook.js';
 import { hasChangesToCommit, stageAllChanges, createCommit } from '../../../src/utils/git.js';
 
-vi.mock('../../src/utils/git');
+vi.mock('../../../src/utils/git.js', () => ({
+  hasChangesToCommit: vi.fn(),
+  stageAllChanges: vi.fn(),
+  createCommit: vi.fn()
+}));
 
 describe('GitCommitHook', () => {
   let hook: GitCommitHook;
