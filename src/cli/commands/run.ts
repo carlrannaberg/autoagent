@@ -28,6 +28,10 @@ interface RunOptions {
   noVerify?: boolean;
   validate?: boolean;
   noValidate?: boolean;
+  strictCompletion?: boolean;
+  completionConfidence?: number;
+  ignoreToolFailures?: boolean;
+  maxRetryAttempts?: number;
 }
 
 interface StatusData {
@@ -102,7 +106,11 @@ export function registerRunCommand(program: Command): void {
       '  autoagent run 5-add-auth         # Run issue by name\n' +
       '  autoagent run --all              # Run all pending issues\n' +
       '  autoagent run --reflection-iterations 5  # Run with 5 reflection iterations\n' +
-      '  autoagent run --no-reflection    # Run without reflection improvements')
+      '  autoagent run --no-reflection    # Run without reflection improvements\n' +
+      '  autoagent run --strict-completion # Enable strict completion validation\n' +
+      '  autoagent run --completion-confidence 80  # Require 80% confidence for completion\n' +
+      '  autoagent run --ignore-tool-failures     # Complete tasks even with tool failures\n' +
+      '  autoagent run --max-retry-attempts 3     # Retry failed tasks up to 3 times')
     .option('-p, --provider <provider>', 'Override AI provider for this run (claude or gemini)')
     .option('-w, --workspace <path>', 'Workspace directory')
     .option('--all', 'Run all pending issues')
@@ -116,7 +124,11 @@ export function registerRunCommand(program: Command): void {
     .option('--verify', 'Enable git hooks during commits')
     .option('--no-verify', 'Skip git hooks during commits')
     .option('--validate', 'Enable file validation before execution (default)')
-    .option('--no-validate', 'Skip file validation before execution');
+    .option('--no-validate', 'Skip file validation before execution')
+    .option('--strict-completion', 'Require strict task completion validation')
+    .option('--completion-confidence <threshold>', 'Minimum confidence for completion (0-100), default 70', parseInt)
+    .option('--ignore-tool-failures', 'Mark tasks complete even with tool failures')
+    .option('--max-retry-attempts <count>', 'Max retry attempts for failed tasks, default 1', parseInt);
 
   // Track which conflicting flags were provided
   let verifyFlagProvided = false;
@@ -160,6 +172,30 @@ export function registerRunCommand(program: Command): void {
           }
         }
         
+        // Validate completion confidence if provided
+        if (options.completionConfidence !== undefined) {
+          if (isNaN(options.completionConfidence)) {
+            Logger.error('--completion-confidence must be a number');
+            process.exit(1);
+          }
+          if (options.completionConfidence < 0 || options.completionConfidence > 100) {
+            Logger.error('--completion-confidence must be between 0 and 100');
+            process.exit(1);
+          }
+        }
+        
+        // Validate max retry attempts if provided
+        if (options.maxRetryAttempts !== undefined) {
+          if (isNaN(options.maxRetryAttempts)) {
+            Logger.error('--max-retry-attempts must be a number');
+            process.exit(1);
+          }
+          if (options.maxRetryAttempts < 0) {
+            Logger.error('--max-retry-attempts must be a positive number');
+            process.exit(1);
+          }
+        }
+        
         // Build reflection config from CLI options
         const cliReflectionConfig: Partial<ReflectionConfig> = {
           ...(options.reflection === false ? { enabled: false } : {}),
@@ -196,6 +232,10 @@ export function registerRunCommand(program: Command): void {
           reflection: reflectionConfig,
           additionalDirectories: options.addDir || [],
           noVerify: resolvedNoVerify,
+          strictCompletion: options.strictCompletion,
+          completionConfidence: options.completionConfidence,
+          ignoreToolFailures: options.ignoreToolFailures,
+          maxRetryAttempts: options.maxRetryAttempts,
           onProgress: (message: string, percentage?: number): void => {
             if (percentage !== undefined) {
               Logger.info(`[${percentage}%] ${message}`);

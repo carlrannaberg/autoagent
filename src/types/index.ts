@@ -189,6 +189,14 @@ export interface AgentConfig {
   additionalDirectories?: string[];
   /** Skip git pre-commit hooks when committing */
   noVerify?: boolean;
+  /** Require strict task completion validation */
+  strictCompletion?: boolean;
+  /** Minimum confidence threshold for completion validation (0-100) */
+  completionConfidence?: number;
+  /** Mark tasks complete even with tool failures */
+  ignoreToolFailures?: boolean;
+  /** Maximum retry attempts for failed tasks */
+  maxRetryAttempts?: number;
 }
 
 /**
@@ -215,6 +223,14 @@ export interface UserConfig {
   additionalDirectories?: string[];
   /** Hook configuration for lifecycle events */
   hooks?: HookConfig;
+  /** Require strict task completion validation */
+  strictCompletion?: boolean;
+  /** Minimum confidence threshold for completion validation (0-100) */
+  completionConfidence?: number;
+  /** Mark tasks complete even with tool failures */
+  ignoreToolFailures?: boolean;
+  /** Maximum retry attempts for failed tasks */
+  maxRetryAttempts?: number;
 }
 
 /**

@@ -17,7 +17,7 @@ export interface TaskCompletionValidator {
    */
   validateCompletion(
     originalTask: string,
-    execution: any, // Using any to avoid circular dependency with ExecutionResult
+    execution: unknown, // Using unknown to avoid circular dependency with ExecutionResult
     toolResults: ToolResult[]
   ): Promise<CompletionValidationResult>;
 }
@@ -43,7 +43,7 @@ export interface CompletionValidationResult {
  */
 export interface ToolFailure {
   /** Type of failure (e.g., 'tool_error', 'permission_denied', 'file_not_found') */
-  type: string;
+  type: FailureType;
   /** Regular expression pattern that matched the failure */
   pattern: string;
   /** Actual error message from the tool */
@@ -54,7 +54,45 @@ export interface ToolFailure {
   toolName?: string;
   /** Optional timestamp when the failure occurred */
   timestamp?: Date;
+  /** Line number where the failure was detected */
+  lineNumber?: number;
+  /** Contextual lines around the failure for debugging */
+  context?: string[];
 }
+
+/**
+ * Types of failures that can be detected in tool output
+ */
+export type FailureType = 
+  | 'generic_error'
+  | 'file_not_found'
+  | 'permission_denied'
+  | 'command_not_found'
+  | 'syntax_error'
+  | 'type_error'
+  | 'reference_error'
+  | 'module_not_found'
+  | 'git_error'
+  | 'git_merge_conflict'
+  | 'typescript_error'
+  | 'build_error'
+  | 'test_failure'
+  | 'network_error'
+  | 'api_error'
+  | 'resource_error'
+  | 'process_error'
+  | 'tool_error'
+  | 'string_not_found'
+  | 'npm_error'
+  | 'file_already_exists'
+  | 'not_a_directory'
+  | 'is_a_directory'
+  | 'warning'
+  | 'deprecation'
+  | 'no_changes'
+  | 'hint'
+  | 'tip'
+  | 'note';
 
 /**
  * Result of validating task objectives.

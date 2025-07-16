@@ -616,6 +616,14 @@ function getConfigValue(key: string, config: UserConfig): unknown {
       return config.rateLimitCooldown;
     case 'hooks':
       return config.hooks;
+    case 'strictCompletion':
+      return config.strictCompletion;
+    case 'completionConfidence':
+      return config.completionConfidence;
+    case 'ignoreToolFailures':
+      return config.ignoreToolFailures;
+    case 'maxRetryAttempts':
+      return config.maxRetryAttempts;
     default:
       return undefined;
   }
@@ -653,6 +661,18 @@ function setConfigValue(key: string, value: unknown, updates: Partial<UserConfig
     case 'rateLimitCooldown':
       updates.rateLimitCooldown = value as number;
       break;
+    case 'strictCompletion':
+      updates.strictCompletion = value as boolean;
+      break;
+    case 'completionConfidence':
+      updates.completionConfidence = value as number;
+      break;
+    case 'ignoreToolFailures':
+      updates.ignoreToolFailures = value as boolean;
+      break;
+    case 'maxRetryAttempts':
+      updates.maxRetryAttempts = value as number;
+      break;
     default:
       throw new Error(`Unknown configuration key: ${key}`);
   }
@@ -668,7 +688,11 @@ function getEnvValue(key: string): unknown {
     'failoverDelay': 'AUTOAGENT_FAILOVER_DELAY',
     'includeCoAuthoredBy': 'AUTOAGENT_INCLUDE_CO_AUTHORED_BY',
     'customInstructions': 'AUTOAGENT_CUSTOM_INSTRUCTIONS',
-    'rateLimitCooldown': 'AUTOAGENT_RATE_LIMIT_COOLDOWN'
+    'rateLimitCooldown': 'AUTOAGENT_RATE_LIMIT_COOLDOWN',
+    'strictCompletion': 'AUTOAGENT_STRICT_COMPLETION',
+    'completionConfidence': 'AUTOAGENT_COMPLETION_CONFIDENCE',
+    'ignoreToolFailures': 'AUTOAGENT_IGNORE_TOOL_FAILURES',
+    'maxRetryAttempts': 'AUTOAGENT_MAX_RETRY_ATTEMPTS'
   };
 
   const envKey = envMap[key];
@@ -679,13 +703,14 @@ function getEnvValue(key: string): unknown {
   const envValue = process.env[envKey];
   
   // Parse boolean values
-  if (key === 'verbose' || key === 'includeCoAuthoredBy') {
+  if (key === 'verbose' || key === 'includeCoAuthoredBy' || key === 'strictCompletion' || 
+      key === 'ignoreToolFailures') {
     return envValue === 'true';
   }
   
   // Parse number values
   if (key === 'maxTokens' || key === 'retryAttempts' || key === 'failoverDelay' || 
-      key === 'rateLimitCooldown') {
+      key === 'rateLimitCooldown' || key === 'completionConfidence' || key === 'maxRetryAttempts') {
     return parseInt(envValue, 10);
   }
   
@@ -702,6 +727,8 @@ function validateConfigValue(key: string, value: string): unknown {
     
     case 'verbose':
     case 'includeCoAuthoredBy':
+    case 'strictCompletion':
+    case 'ignoreToolFailures':
       if (!['true', 'false'].includes(value)) {
         throw new Error(`Invalid value for ${key}: ${value}. Value must be boolean (true/false)`);
       }
@@ -716,10 +743,19 @@ function validateConfigValue(key: string, value: string): unknown {
     case 'maxTokens':
     case 'retryAttempts':
     case 'failoverDelay':
-    case 'rateLimitCooldown': {
+    case 'rateLimitCooldown':
+    case 'maxRetryAttempts': {
       const num = parseInt(value, 10);
       if (isNaN(num) || num < 0) {
         throw new Error(`Invalid value for ${key}: ${value}. Must be a positive number`);
+      }
+      return num;
+    }
+    
+    case 'completionConfidence': {
+      const num = parseInt(value, 10);
+      if (isNaN(num) || num < 0 || num > 100) {
+        throw new Error(`Invalid value for completionConfidence: ${value}. Must be a number between 0 and 100`);
       }
       return num;
     }

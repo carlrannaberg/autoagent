@@ -13,7 +13,11 @@ export class ConfigManager {
     rateLimitCooldown: 3600000, // 1 hour in milliseconds
     logLevel: 'info',
     customInstructions: '',
-    additionalDirectories: []
+    additionalDirectories: [],
+    strictCompletion: false,
+    completionConfidence: 70,
+    ignoreToolFailures: false,
+    maxRetryAttempts: 1
   };
 
   private static readonly GLOBAL_CONFIG_DIR = path.join(os.homedir(), '.autoagent');

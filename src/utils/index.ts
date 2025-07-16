@@ -26,3 +26,11 @@ export {
   CommitOptions,
   GitCommitResult
 } from './git';
+export { TaskStatusReporter } from './status-reporter';
+export { 
+  ToolFailureDetector,
+  TaskObjectiveValidator,
+  hasCriticalFailures,
+  groupFailuresByType,
+  formatFailuresForDisplay
+} from './validation';

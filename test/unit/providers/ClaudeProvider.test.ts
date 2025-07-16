@@ -140,7 +140,13 @@ describe('ClaudeProvider', () => {
         provider: 'claude',
         issueNumber: 0,
         duration: expect.any(Number),
-        filesChanged: ['src/file.ts']
+        filesChanged: ['src/file.ts'],
+        taskCompletion: expect.objectContaining({
+          isComplete: expect.any(Boolean),
+          confidence: expect.any(Number),
+          issues: expect.any(Array),
+          recommendations: expect.any(Array)
+        })
       });
 
       // Check spawn was called with correct arguments
@@ -325,6 +331,12 @@ describe('ClaudeProvider', () => {
       expect(result.success).toBe(true);
       expect(result.output).toContain('Regular output without JSON');
       expect(result.filesChanged).toEqual(['src/test.ts']);
+      expect(result.taskCompletion).toEqual(expect.objectContaining({
+        isComplete: expect.any(Boolean),
+        confidence: expect.any(Number),
+        issues: expect.any(Array),
+        recommendations: expect.any(Array)
+      }));
     });
 
     it('should handle signal abort', async () => {

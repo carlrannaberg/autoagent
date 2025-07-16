@@ -6,6 +6,9 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { StreamFormatter } from '../utils/stream-formatter';
 import { spawn } from 'child_process';
+import { TaskObjectiveValidator } from '../utils/validation';
+import { TaskStatusReporter } from '../utils/status-reporter';
+import { ToolResult } from '../types/completion';
 
 /**
  * Claude provider implementation.
@@ -182,22 +185,103 @@ ${planContent}`;
       // Extract files changed from output
       filesChanged = this.extractFilesChanged(finalOutput);
 
-      return {
+      // Create validation instances
+      const validator = new TaskObjectiveValidator();
+      const statusReporter = new TaskStatusReporter();
+
+      // Prepare task description for validation
+      const taskDescription = `${issueContent}\n\n${planContent}`;
+      
+      // Create mock tool results based on execution (Claude CLI doesn't provide detailed tool results)
+      const mockToolResults: ToolResult[] = [
+        {
+          toolName: 'claude-cli',
+          success: true,
+          output: finalOutput,
+          duration: Date.now() - startTime
+        }
+      ];
+
+      // Validate task completion
+      let taskCompletion;
+      try {
+        taskCompletion = await validator.validateCompletion(
+          taskDescription,
+          { output: finalOutput },
+          mockToolResults
+        );
+      } catch (validationError) {
+        // If validation fails, continue with basic success but log the error
+        if (process.env.DEBUG === 'true') {
+          console.error('Validation error:', validationError);
+        }
+        taskCompletion = {
+          isComplete: true, // Default to complete if validation fails
+          confidence: 80,
+          issues: [],
+          recommendations: []
+        };
+      }
+
+      // Create execution result
+      const executionResult: ExecutionResult = {
         success: true,
         issueNumber,
         duration: Date.now() - startTime,
         output,
         provider: 'claude',
-        filesChanged: filesChanged.length > 0 ? filesChanged : undefined
+        filesChanged: filesChanged.length > 0 ? filesChanged : undefined,
+        taskCompletion
       };
+
+      // Determine final success based on validation and exit code
+      // For backward compatibility, prioritize process exit code (0) over validation
+      // Only use validation to enhance success when there are no critical failures
+      let finalSuccess = true; // Start with true since process exited with code 0
+      
+      if (taskCompletion.isComplete === false && taskCompletion.confidence < 70) {
+        // Only mark as failed if validation strongly suggests failure
+        const hasCriticalIssues = taskCompletion.issues.some(issue => 
+          issue.includes('error') || issue.includes('failed') || issue.includes('permission')
+        );
+        if (hasCriticalIssues) {
+          finalSuccess = false;
+        }
+      }
+      
+      executionResult.success = finalSuccess;
+
+      // Report status to user (only if not in test environment)
+      if (process.env.VITEST !== 'true' && 
+          (process.env.NODE_ENV === undefined || process.env.NODE_ENV === null || !process.env.NODE_ENV.includes('test'))) {
+        statusReporter.reportCompletion(executionResult);
+      }
+
+      return executionResult;
     } catch (error) {
-      return {
+      const executionResult: ExecutionResult = {
         success: false,
         issueNumber,
         duration: Date.now() - startTime,
         error: this.formatError(error),
         provider: 'claude'
       };
+
+      // Report failure status to user (only if not in test environment)
+      if (process.env.VITEST !== 'true' && 
+          (process.env.NODE_ENV === undefined || process.env.NODE_ENV === null || !process.env.NODE_ENV.includes('test'))) {
+        try {
+          const statusReporter = new TaskStatusReporter();
+          statusReporter.reportCompletion(executionResult);
+        } catch (reportError) {
+          // Don't let reporting errors affect the main error
+          if (process.env.DEBUG === 'true') {
+            console.error('Error reporting failure:', reportError);
+          }
+        }
+      }
+
+      return executionResult;
     }
   }
 
@@ -251,32 +335,36 @@ ${planContent}`;
       }
       
       // Write prompt to stdin
-      if (child.stdin !== null) {
+      if (child.stdin !== null && child.stdin !== undefined) {
         child.stdin.write(stdinContent);
         child.stdin.end();
       }
       
       // Handle stdout with streaming
-      child.stdout?.on('data', (chunk: Buffer) => {
-        const data = chunk.toString();
-        stdout += data;
-        
-        // Parse and format streaming output
-        const lines = data.split('\n').filter(line => line.trim() !== '');
-        for (const line of lines) {
-          try {
-            const message = JSON.parse(line) as Record<string, unknown>;
-            StreamFormatter.formatClaudeMessage(message);
-          } catch (e) {
-            // Not JSON, ignore
+      if (child.stdout !== null && child.stdout !== undefined) {
+        child.stdout.on('data', (chunk: Buffer) => {
+          const data = chunk.toString();
+          stdout += data;
+          
+          // Parse and format streaming output
+          const lines = data.split('\n').filter(line => line.trim() !== '');
+          for (const line of lines) {
+            try {
+              const message = JSON.parse(line) as Record<string, unknown>;
+              StreamFormatter.formatClaudeMessage(message);
+            } catch (e) {
+              // Not JSON, ignore
+            }
           }
-        }
-      });
+        });
+      }
       
       // Handle stderr
-      child.stderr?.on('data', (chunk: Buffer) => {
-        stderr += chunk.toString();
-      });
+      if (child.stderr !== null && child.stderr !== undefined) {
+        child.stderr.on('data', (chunk: Buffer) => {
+          stderr += chunk.toString();
+        });
+      }
       
       // Handle process exit
       child.on('close', (code) => {

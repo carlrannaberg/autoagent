@@ -2,5 +2,9 @@
   "providers": [
     "claude",
     "gemini"
-  ]
+  ],
+  "strictCompletion": true,
+  "completionConfidence": 85,
+  "maxRetryAttempts": 3,
+  "ignoreToolFailures": true
 }
