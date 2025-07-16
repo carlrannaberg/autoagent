@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Tool failure detection system for improved task completion validation
+  - New `ToolFailureDetector` class in `src/utils/validation.ts`
+  - Pattern-based detection for common tool failures (errors, warnings, info)
+  - Support for categorizing failures by type (file_not_found, permission_denied, build_error, etc.)
+  - Severity classification for failures (error, warning, info)
+  - Multi-line error context extraction for better error reporting
+  - Helper functions for failure analysis: `hasCriticalFailures`, `groupFailuresByType`, `formatFailuresForDisplay`
+
 ## [0.7.0] - 2025-07-16
 
 ### Added

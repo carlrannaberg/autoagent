@@ -1,4 +1,4 @@
-# To-Do
+# TODO
 
 This file tracks all issues for the autonomous agent. Issues are automatically marked as complete when the agent finishes them.
 

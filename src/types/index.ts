@@ -1,7 +1,9 @@
 export * from './hooks.js';
 export * from './session.js';
+export * from './completion.js';
 
 import { HookData, HookResult } from './hooks.js';
+import { CompletionValidationResult, ToolFailure } from './completion.js';
 
 /**
  * Interface for built-in hook handlers.
@@ -123,6 +125,10 @@ export interface ExecutionResult {
   issueTitle?: string;
   /** List of files that were modified (full paths) */
   filesModified?: string[];
+  /** Task completion validation result */
+  taskCompletion?: CompletionValidationResult;
+  /** List of tool failures encountered during execution */
+  toolFailures?: ToolFailure[];
 }
 
 /**
