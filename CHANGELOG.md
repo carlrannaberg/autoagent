@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix release script hanging in interactive mode by using `npm run test:ci` instead of `npm test`
 - Add explicit build step before running tests in release script to ensure proper compilation
+- Add dry-run check for AI updates to prevent script hanging in dry-run mode
+- Ensure `--yes` flag properly enables non-interactive mode throughout the script
+- Add `--allowedTools` flag to Claude CLI invocation to prevent interactive tool permission prompts
 
 ## [0.7.1] - 2025-01-16
 
