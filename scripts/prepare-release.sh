@@ -331,6 +331,11 @@ pre_compute_release_data() {
 # Function to generate AI changelog and update README
 generate_ai_updates() {
     print_ai "Analyzing changes and updating CHANGELOG.md and README.md..."
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        print_info "Dry run: Skipping AI-powered CHANGELOG and README updates"
+        return
+    fi
 
     # Check if timeout command is available
     if command -v gtimeout >/dev/null 2>&1; then
