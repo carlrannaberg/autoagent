@@ -89,7 +89,7 @@ detect_ai_cli() {
     elif command -v gemini &> /dev/null; then
         AI_CLI="gemini"
         AI_MODEL="--model gemini-2.0-flash"
-        AI_FLAGS="--include-all"
+        AI_FLAGS="--include-all --yolo"
         print_success "Found Gemini CLI with gemini-2.0-flash model"
     else
         print_error "No AI CLI found. Install Claude CLI or Gemini CLI to use this script."
