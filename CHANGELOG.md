@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix release script hanging in interactive mode by using `npm run test:ci` instead of `npm test`
+- Add explicit build step before running tests in release script to ensure proper compilation
+
 ## [0.7.1] - 2025-01-16
 
 ### Fixed

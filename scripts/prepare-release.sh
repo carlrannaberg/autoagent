@@ -203,8 +203,14 @@ run_tests() {
         return
     fi
 
-    # Run tests
-    if ! npm test; then
+    # Build and run tests in non-interactive mode
+    if ! npm run build; then
+        print_error "Build failed. Please fix the build errors before preparing a release."
+        exit 1
+    fi
+    
+    # Run tests with CI reporter (non-interactive)
+    if ! npm run test:ci; then
         print_error "Tests are failing. Please fix the failing tests before preparing a release."
         exit 1
     fi
