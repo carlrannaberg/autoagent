@@ -83,14 +83,14 @@ detect_ai_cli() {
 
     if command -v claude &> /dev/null; then
         AI_CLI="claude"
-        AI_MODEL="--model claude-3-5-sonnet-latest"
+        AI_MODEL="--model claude-3-5-sonnet-4-20250514"
         AI_FLAGS='--output-format stream-json --verbose --max-turns 30 --allowedTools "Edit" "MultiEdit" "Read" "Write"'
-        print_success "Found Claude CLI with sonnet model"
+        print_success "Found Claude CLI with Sonnet 4 model"
     elif command -v gemini &> /dev/null; then
         AI_CLI="gemini"
-        AI_MODEL="--model gemini-2.0-flash"
+        AI_MODEL="--model gemini-2.5-flash-exp"
         AI_FLAGS="--include-all --yolo"
-        print_success "Found Gemini CLI with gemini-2.0-flash model"
+        print_success "Found Gemini CLI with Flash 2.5 model"
     else
         print_error "No AI CLI found. Install Claude CLI or Gemini CLI to use this script."
         echo "Installation instructions:"

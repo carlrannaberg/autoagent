@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `--allowedTools` flag to Claude CLI invocation to prevent interactive tool permission prompts
 - Add `--yolo` flag to Gemini CLI invocation for non-interactive tool approval
 
+### Changed
+- Update release script to use Claude Sonnet 4 model (claude-3-5-sonnet-4-20250514)
+- Update release script to use Gemini Flash 2.5 model (gemini-2.5-flash-exp)
+
 ## [0.7.1] - 2025-01-16
 
 ### Fixed
