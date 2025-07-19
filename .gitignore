@@ -96,3 +96,6 @@ temp/
 # Provider instruction symlinks/files (auto-generated)
 CLAUDE.md
 GEMINI.md
+# Simple Task Master - User tasks are git-ignored
+.simple-task-master/tasks/
+.simple-task-master/lock
