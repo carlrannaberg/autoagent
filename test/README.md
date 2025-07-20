@@ -507,21 +507,57 @@ it('should handle initialization errors', async () => {
 
 **DO NOT** delete STM tasks manually - the project uses STM for its own task management!
 
-If tests accidentally create STM tasks:
+#### Safe Test Task Cleanup for Integration Tests
+
+When integration tests need to use real STMManager:
+
+```typescript
+import { cleanupTestTasks, addTestTags } from '../helpers/stm-test-cleanup';
+import { STMManager } from '../../src/utils/stm-manager';
+
+describe('Integration Test with Real STM', () => {
+  afterAll(() => {
+    // Clean up any test tasks created during this test suite
+    cleanupTestTasks();
+  });
+
+  it('should create a task with test tags', async () => {
+    const stmManager = new STMManager();
+    await stmManager.createTask('Test Task', {
+      description: 'Test description',
+      tags: addTestTags(['feature', 'test']) // Always add test tags!
+    });
+  });
+});
+```
+
+**Manual Test Task Identification** (for debugging only):
 
 ```bash
-# Check for task files accidentally created in project root (these can be safely removed)
+# List only test tasks (safe to identify)
+stm list --tags autoagent-test-only
+
+# Count test tasks
+stm list --tags autoagent-test-only | wc -l
+
+# If you absolutely must clean up test tasks manually (use with extreme caution):
+stm list --tags autoagent-test-only -f json | jq -r '.[].id' | xargs -I {} stm delete {}
+```
+
+**Task files in project root** (always safe to remove):
+```bash
+# Check for task files accidentally created in project root
 ls [0-9]*-*.md 2>/dev/null | wc -l
 
 # Remove any task files from project root only
 rm -f [0-9]*-*.md
 ```
 
-**Prevention is the only solution**:
+**Prevention is the best approach**:
 - Tests MUST use `InMemorySTMManager` exclusively
 - Tests MUST NOT import or instantiate real `STMManager`
 - E2E tests MUST use isolated temporary directories
-- The project's `.simple-task-master/` directory is for real project tasks only
+- All test tasks are tagged with `autoagent-test-only` for identification
 
 #### Test Cleanup Best Practices
 
