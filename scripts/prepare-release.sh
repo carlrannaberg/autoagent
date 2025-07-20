@@ -281,6 +281,7 @@ pre_compute_release_data() {
             # Count files and estimate diff size first
             FILE_COUNT=$(echo "$CODE_CHANGED_FILES" | wc -l)
             echo "Code files to analyze: $FILE_COUNT"
+            echo "DEBUG: About to check if FILE_COUNT ($FILE_COUNT) > 50"
             
             # If too many files, skip diff generation entirely
             if [ "$FILE_COUNT" -gt 50 ]; then
