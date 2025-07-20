@@ -511,7 +511,13 @@ If you accidentally create real STM tasks during development:
 # Check how many tasks exist
 stm list | wc -l
 
-# Remove all STM tasks (WARNING: This removes ALL tasks)
+# Method 1: Use STM commands to delete tasks (safest)
+stm list -f json | jq -r '.[].id' | xargs -I {} stm delete {}
+
+# Method 2: Remove only task files (preserves STM config)
+rm -rf .simple-task-master/tasks/
+
+# Method 3: Complete STM reset (removes config and tasks)
 rm -rf .simple-task-master
 
 # Check for task files accidentally created in project root
