@@ -268,7 +268,7 @@ pre_compute_release_data() {
 
         # Get recent commits
         echo "DEBUG: Getting recent commits..."
-        RECENT_COMMITS=$(git log ${LAST_TAG}..HEAD --oneline | head -20)
+        RECENT_COMMITS=$(git log ${LAST_TAG}..HEAD --oneline)
 
         # Get file changes with smart filtering
         echo "DEBUG: Getting diff stats..."
