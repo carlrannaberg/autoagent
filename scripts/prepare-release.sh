@@ -274,19 +274,27 @@ pre_compute_release_data() {
         ALL_CHANGED_FILES=$(git diff ${LAST_TAG}..HEAD --name-only)
 
         # Smart filtering: Include code files, exclude documentation/planning
-        CODE_CHANGED_FILES=$(echo "$ALL_CHANGED_FILES" | grep -v -E '^(docs/|issues/|plans/|specs/|\.github/)' | \
-            grep -E '\.(ts|js|json|yml|yaml|sh|py|css|scss|html|vue|jsx|tsx|mjs|cjs|toml|env|gitignore|nvmrc|dockerignore)$|^(package\.json|tsconfig|vitest\.config|eslint|prettier|babel|webpack|rollup|vite\.config|jest\.config|Dockerfile|Makefile|\.eslintrc|\.prettierrc)' || echo "")
+        # First check if we have too many files to process efficiently
+        FILE_COUNT=$(echo "$ALL_CHANGED_FILES" | wc -l)
+        echo "Total files changed: $FILE_COUNT"
+        
+        if [ "$FILE_COUNT" -gt 200 ]; then
+            echo "Too many files changed ($FILE_COUNT) - skipping detailed diff analysis"
+            CODE_CHANGED_FILES=""
+        else
+            CODE_CHANGED_FILES=$(echo "$ALL_CHANGED_FILES" | grep -v -E '^(docs/|issues/|plans/|specs/|\.github/)' | \
+                grep -E '\.(ts|js|json|yml|yaml|sh|py|css|scss|html|vue|jsx|tsx|mjs|cjs|toml|env|gitignore|nvmrc|dockerignore)$|^(package\.json|tsconfig|vitest\.config|eslint|prettier|babel|webpack|rollup|vite\.config|jest\.config|Dockerfile|Makefile|\.eslintrc|\.prettierrc)' || echo "")
+        fi
 
         if [ -n "$CODE_CHANGED_FILES" ]; then
             # Count files and estimate diff size first
-            FILE_COUNT=$(echo "$CODE_CHANGED_FILES" | wc -l)
-            echo "Code files to analyze: $FILE_COUNT"
-            echo "DEBUG: About to check if FILE_COUNT ($FILE_COUNT) > 50"
+            CODE_FILE_COUNT=$(echo "$CODE_CHANGED_FILES" | wc -l)
+            echo "Code files to analyze: $CODE_FILE_COUNT"
             
             # If too many files, skip diff generation entirely
-            if [ "$FILE_COUNT" -gt 50 ]; then
-                echo "Too many code files changed ($FILE_COUNT) - providing file list only"
-                DIFF_FULL="[DIFF TOO LARGE - $FILE_COUNT code files changed: $(echo "$CODE_CHANGED_FILES" | head -20 | tr '\n' ' ')...]"
+            if [ "$CODE_FILE_COUNT" -gt 50 ]; then
+                echo "Too many code files changed ($CODE_FILE_COUNT) - providing file list only"
+                DIFF_FULL="[DIFF TOO LARGE - $CODE_FILE_COUNT code files changed: $(echo "$CODE_CHANGED_FILES" | head -20 | tr '\n' ' ')...]"
                 INCLUDE_DIFF_INSTRUCTION="Use 'git diff ${LAST_TAG}..HEAD -- [filename]' to check individual files: $(echo "$CODE_CHANGED_FILES" | head -10 | tr '\n' ' ')"
             else
                 # Create filtered diff for smaller changesets
@@ -317,8 +325,13 @@ pre_compute_release_data() {
                 fi
             fi
         else
-            DIFF_FULL="[NO CODE CHANGES - Only documentation/planning files changed]"
-            INCLUDE_DIFF_INSTRUCTION="No source code changes found. This release contains only documentation updates."
+            if [ "$FILE_COUNT" -gt 200 ]; then
+                DIFF_FULL="[DIFF TOO LARGE - $FILE_COUNT total files changed - analysis skipped for performance]"
+                INCLUDE_DIFF_INSTRUCTION="Use 'git diff ${LAST_TAG}..HEAD --stat' to see file changes and 'git log ${LAST_TAG}..HEAD --oneline' for commit history"
+            else
+                DIFF_FULL="[NO CODE CHANGES - Only documentation/planning files changed]"
+                INCLUDE_DIFF_INSTRUCTION="No source code changes found. This release contains only documentation updates."
+            fi
         fi
     else
         COMMIT_COUNT=0
