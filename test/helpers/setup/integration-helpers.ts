@@ -1,15 +1,17 @@
 import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { TestWorkspace } from '@test/utils/test-workspace';
+import { TestWorkspace } from '../../utils/test-workspace';
 import type { AIProvider } from '@/types/ai-provider';
-import type { Issue } from '@/types/issue';
-// import type { ExecutionResult } from '@/types/execution';
+import type { Task, TaskCreateInput } from 'simple-task-master';
+import type { TaskContent } from '@/types/stm-types';
 import type { Configuration } from '@/types/config';
+import { InMemorySTMManager } from '../test-doubles/in-memory-stm-manager';
 
 export interface IntegrationTestContext {
   workspace: TestWorkspace;
   providers: Map<string, MockProvider>;
+  stmManager: InMemorySTMManager;
   capturedLogs: string[];
 }
 
@@ -87,11 +89,13 @@ export async function createIntegrationContext(): Promise<IntegrationTestContext
     ['gemini', new MockProvider('gemini')]
   ]);
 
+  const stmManager = new InMemorySTMManager();
   const capturedLogs: string[] = [];
 
   return {
     workspace,
     providers,
+    stmManager,
     capturedLogs
   };
 }
@@ -99,6 +103,7 @@ export async function createIntegrationContext(): Promise<IntegrationTestContext
 export async function cleanupIntegrationContext(context: IntegrationTestContext): Promise<void> {
   await context.workspace.cleanup();
   context.providers.clear();
+  context.stmManager.reset();
   context.capturedLogs.length = 0;
 }
 
@@ -145,37 +150,92 @@ export async function runAutoAgent(args: string[], cwd?: string): Promise<{
   });
 }
 
-export async function createTestIssue(workspace: TestWorkspace, issue: Partial<Issue>, issueNumber?: number): Promise<{ issuePath: string; issueNumber: number }> {
-  // Extract issue number from id if provided in format "N-title"
-  let actualIssueNumber = issueNumber;
-  if (actualIssueNumber === undefined && issue.id !== undefined) {
-    const match = issue.id.match(/^(\d+)-/);
-    if (match !== null && match[1] !== undefined) {
-      actualIssueNumber = parseInt(match[1], 10);
+/**
+ * Creates a test task in the STM manager.
+ */
+export async function createTestTask(
+  stmManager: InMemorySTMManager, 
+  title: string, 
+  content: TaskContent,
+  options: { id?: number } = {}
+): Promise<{ taskId: string; task: Task }> {
+  // If specific ID is requested, set it
+  if (options.id) {
+    stmManager.setNextId(options.id);
+  }
+
+  const taskId = await stmManager.createTask(title, content);
+  const task = await stmManager.getTask(taskId);
+  
+  if (!task) {
+    throw new Error(`Failed to create test task: ${title}`);
+  }
+
+  return { taskId, task };
+}
+
+/**
+ * Creates a test task using TaskCreateInput format.
+ */
+export async function createTestTaskFromInput(
+  stmManager: InMemorySTMManager,
+  input: TaskCreateInput
+): Promise<{ taskId: string; task: Task }> {
+  // Extract TaskContent from the markdown content if needed
+  const content: TaskContent = {
+    description: extractSectionFromMarkdown(input.content, 'Why & what') || 'Default task description',
+    technicalDetails: extractSectionFromMarkdown(input.content, 'How') || 'Default technical details',
+    implementationPlan: 'Default implementation plan',
+    acceptanceCriteria: extractAcceptanceCriteria(input.content) || ['Task is complete'],
+    tags: input.tags?.filter(tag => tag !== 'autoagent')
+  };
+
+  return createTestTask(stmManager, input.title, content);
+}
+
+/**
+ * Helper to extract sections from STM markdown content.
+ */
+function extractSectionFromMarkdown(content: string | undefined, sectionName: string): string | undefined {
+  if (!content) return undefined;
+  
+  const lines = content.split('\n');
+  let inSection = false;
+  let sectionContent: string[] = [];
+  
+  for (const line of lines) {
+    if (line.startsWith('## ')) {
+      if (inSection) break; // End of current section
+      inSection = line.substring(3).trim() === sectionName;
+    } else if (inSection && !line.startsWith('###')) {
+      sectionContent.push(line);
     }
   }
-  actualIssueNumber = actualIssueNumber ?? 1;
+  
+  return sectionContent.length > 0 ? sectionContent.join('\n').trim() : undefined;
+}
 
-  const issueContent = `# Issue ${actualIssueNumber}: ${issue.title ?? 'Test Issue'}
-
-## Requirement
-${issue.requirement ?? 'Test requirement'}
-
-## Acceptance Criteria
-${(issue.acceptanceCriteria ?? ['Test criteria']).map(c => `- [ ] ${c}`).join('\n')}
-
-## Technical Details
-${issue.technicalDetails ?? 'No additional technical details.'}
-
-## Resources
-- No resources specified.
-`;
-
-  const fileName = issue.id ?? `${actualIssueNumber}-test-issue`;
-  const issuePath = path.join(workspace.rootPath, 'issues', `${fileName}.md`);
-  await fs.mkdir(path.dirname(issuePath), { recursive: true });
-  await fs.writeFile(issuePath, issueContent);
-  return { issuePath, issueNumber: actualIssueNumber };
+/**
+ * Helper to extract acceptance criteria from markdown content.
+ */
+function extractAcceptanceCriteria(content: string | undefined): string[] | undefined {
+  if (!content) return undefined;
+  
+  const lines = content.split('\n');
+  let inCriteriaSection = false;
+  let criteria: string[] = [];
+  
+  for (const line of lines) {
+    if (line.startsWith('### Acceptance Criteria')) {
+      inCriteriaSection = true;
+    } else if (line.startsWith('##') || line.startsWith('###')) {
+      inCriteriaSection = false;
+    } else if (inCriteriaSection && line.trim().startsWith('- [ ]')) {
+      criteria.push(line.trim().substring(5).trim());
+    }
+  }
+  
+  return criteria.length > 0 ? criteria : undefined;
 }
 
 export async function createTestConfig(workspace: TestWorkspace, config: Partial<Configuration>): Promise<void> {
@@ -254,3 +314,315 @@ export async function measureExecutionTime<T>(fn: () => Promise<T>): Promise<{ r
   
   return { result, duration };
 }
+
+/**
+ * STM-specific cleanup utilities for tests.
+ */
+export const stmTestUtils = {
+  /**
+   * Reset STM manager to clean state.
+   */
+  async resetSTMManager(stmManager: InMemorySTMManager): Promise<void> {
+    stmManager.reset();
+  },
+
+  /**
+   * Create multiple test tasks for collection testing.
+   */
+  async createMultipleTasks(
+    stmManager: InMemorySTMManager,
+    count: number,
+    baseContent?: Partial<TaskContent>
+  ): Promise<Task[]> {
+    const tasks: Task[] = [];
+    
+    for (let i = 1; i <= count; i++) {
+      const content: TaskContent = {
+        description: `Test task ${i} description`,
+        technicalDetails: `Technical details for task ${i}`,
+        implementationPlan: `Implementation plan for task ${i}`,
+        acceptanceCriteria: [`Task ${i} is complete`],
+        ...baseContent
+      };
+      
+      const { task } = await createTestTask(stmManager, `Test Task ${i}`, content, { id: i });
+      tasks.push(task);
+    }
+    
+    return tasks;
+  },
+
+  /**
+   * Verify task content matches expected structure.
+   */
+  async verifyTaskContent(stmManager: InMemorySTMManager, taskId: string, expected: Partial<TaskContent>): Promise<boolean> {
+    const sections = await stmManager.getTaskSections(taskId);
+    
+    if (expected.description && !sections.description?.includes(expected.description)) {
+      return false;
+    }
+    
+    if (expected.technicalDetails && !sections.details?.includes(expected.technicalDetails)) {
+      return false;
+    }
+    
+    if (expected.testingStrategy && !sections.validation?.includes(expected.testingStrategy)) {
+      return false;
+    }
+    
+    return true;
+  },
+
+  /**
+   * Setup STM test environment with initialization check.
+   */
+  async setupSTMEnvironment(stmManager: InMemorySTMManager): Promise<void> {
+    // Reset to clean state
+    stmManager.reset();
+    
+    // Verify initialization works
+    if (!stmManager.isInitialized()) {
+      // Force initialization by calling a method that triggers it
+      await stmManager.listTasks();
+    }
+    
+    if (!stmManager.isInitialized()) {
+      throw new Error('Failed to initialize STM manager for testing');
+    }
+  },
+
+  /**
+   * Cleanup STM environment after tests.
+   */
+  async cleanupSTMEnvironment(stmManager: InMemorySTMManager): Promise<void> {
+    stmManager.reset();
+  },
+
+  /**
+   * Create test task with specific status.
+   */
+  async createTaskWithStatus(
+    stmManager: InMemorySTMManager,
+    title: string,
+    status: 'pending' | 'in-progress' | 'done',
+    content?: Partial<TaskContent>
+  ): Promise<{ taskId: string; task: Task }> {
+    const taskContent: TaskContent = {
+      description: `Task with ${status} status`,
+      technicalDetails: 'Standard technical details',
+      implementationPlan: 'Standard implementation plan',
+      acceptanceCriteria: ['Task completion criteria'],
+      ...content
+    };
+    
+    const { taskId, task } = await createTestTask(stmManager, title, taskContent);
+    
+    if (status !== 'pending') {
+      await stmManager.updateTaskStatus(taskId, status);
+    }
+    
+    return { taskId, task: await stmManager.getTask(taskId) || task };
+  },
+
+  /**
+   * Create a task hierarchy with dependencies for testing relationships.
+   */
+  async createTaskHierarchy(stmManager: InMemorySTMManager): Promise<Task[]> {
+    const tasks: Task[] = [];
+    
+    // Root task (no dependencies)
+    const { task: rootTask } = await this.createTaskWithStatus(
+      stmManager,
+      'Root Task: Project Setup',
+      'done',
+      {
+        description: 'Initialize project structure and configuration',
+        technicalDetails: 'Setup package.json, TypeScript config, and basic structure',
+        acceptanceCriteria: ['Project is initialized', 'All tools are configured']
+      }
+    );
+    tasks.push(rootTask);
+
+    // Child tasks (depend on root)
+    const { task: childTask1 } = await this.createTaskWithStatus(
+      stmManager,
+      'Child Task 1: Add Authentication',
+      'in-progress',
+      {
+        description: 'Implement user authentication system',
+        technicalDetails: 'Use OAuth2 and JWT for secure authentication',
+        acceptanceCriteria: ['Login works', 'Sessions are managed', 'Security is verified']
+      }
+    );
+    tasks.push(childTask1);
+
+    const { task: childTask2 } = await this.createTaskWithStatus(
+      stmManager,
+      'Child Task 2: Add Database',
+      'pending',
+      {
+        description: 'Setup database connection and models',
+        technicalDetails: 'Use PostgreSQL with TypeORM for data persistence',
+        acceptanceCriteria: ['Database connected', 'Models defined', 'Migrations work']
+      }
+    );
+    tasks.push(childTask2);
+
+    // Grandchild task (depends on both children)
+    const { task: grandchildTask } = await this.createTaskWithStatus(
+      stmManager,
+      'Final Task: Integration Testing',
+      'pending',
+      {
+        description: 'Test complete application flow',
+        technicalDetails: 'End-to-end testing of authentication and database integration',
+        acceptanceCriteria: ['All flows tested', 'Performance validated', 'Security audited']
+      }
+    );
+    tasks.push(grandchildTask);
+
+    return tasks;
+  },
+
+  /**
+   * Validate STM task structure and content integrity.
+   */
+  async validateTaskStructure(stmManager: InMemorySTMManager, taskId: string): Promise<{
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  }> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    
+    try {
+      const task = await stmManager.getTask(taskId);
+      if (!task) {
+        errors.push('Task not found');
+        return { isValid: false, errors, warnings };
+      }
+
+      // Validate required fields
+      if (!task.title) errors.push('Task title is missing');
+      if (!task.status) errors.push('Task status is missing');
+      if (!task.created) errors.push('Task created timestamp is missing');
+      if (!task.updated) errors.push('Task updated timestamp is missing');
+      if (!Array.isArray(task.tags)) errors.push('Task tags must be an array');
+      if (!Array.isArray(task.dependencies)) errors.push('Task dependencies must be an array');
+      
+      // Validate sections
+      const sections = await stmManager.getTaskSections(taskId);
+      if (!sections.description) warnings.push('Task description section is empty');
+      if (!sections.details) warnings.push('Task details section is empty');
+      
+      // Validate acceptance criteria
+      const acceptanceCriteria = await stmManager.getAcceptanceCriteria(taskId);
+      if (!acceptanceCriteria || acceptanceCriteria.length === 0) {
+        warnings.push('Task has no acceptance criteria');
+      }
+
+      return {
+        isValid: errors.length === 0,
+        errors,
+        warnings
+      };
+    } catch (error) {
+      errors.push(`Validation error: ${error instanceof Error ? error.message : String(error)}`);
+      return { isValid: false, errors, warnings };
+    }
+  },
+
+  /**
+   * Create tasks with realistic test data for comprehensive testing.
+   */
+  async createRealisticTestSuite(stmManager: InMemorySTMManager): Promise<{
+    tasks: Task[];
+    summary: { total: number; byStatus: Record<string, number>; byTag: Record<string, number> };
+  }> {
+    const taskDefinitions = [
+      {
+        title: 'Setup CI/CD Pipeline',
+        status: 'done' as const,
+        content: {
+          description: 'Configure automated testing and deployment pipeline',
+          technicalDetails: 'Use GitHub Actions for CI/CD with automated testing and deployment',
+          implementationPlan: '1. Setup GitHub Actions\n2. Configure test automation\n3. Setup deployment pipeline',
+          acceptanceCriteria: ['Tests run on PR', 'Deployment is automated', 'Pipeline is secure'],
+          tags: ['devops', 'automation', 'ci-cd']
+        }
+      },
+      {
+        title: 'Implement User Management',
+        status: 'in-progress' as const,
+        content: {
+          description: 'Create user registration, authentication, and profile management',
+          technicalDetails: 'OAuth2 with JWT tokens, user profiles stored in PostgreSQL',
+          implementationPlan: '1. User registration\n2. Login/logout\n3. Profile management\n4. Password reset',
+          acceptanceCriteria: ['Users can register', 'Login works', 'Profiles are editable', 'Password reset works'],
+          tags: ['authentication', 'users', 'security']
+        }
+      },
+      {
+        title: 'Add Real-time Notifications',
+        status: 'pending' as const,
+        content: {
+          description: 'Implement real-time push notifications for important events',
+          technicalDetails: 'WebSocket connection with fallback to Server-Sent Events',
+          implementationPlan: '1. WebSocket server\n2. Client connection\n3. Event handlers\n4. Fallback mechanism',
+          acceptanceCriteria: ['Real-time updates work', 'Fallback is reliable', 'Performance is good'],
+          tags: ['real-time', 'websocket', 'notifications']
+        }
+      },
+      {
+        title: 'Performance Optimization',
+        status: 'pending' as const,
+        content: {
+          description: 'Optimize application performance and reduce load times',
+          technicalDetails: 'Code splitting, lazy loading, caching, and bundle optimization',
+          implementationPlan: '1. Analyze bundle size\n2. Implement code splitting\n3. Add caching\n4. Optimize images',
+          acceptanceCriteria: ['Load time < 2s', 'Bundle size reduced', 'Caching works'],
+          tags: ['performance', 'optimization', 'caching']
+        }
+      },
+      {
+        title: 'Security Audit',
+        status: 'pending' as const,
+        content: {
+          description: 'Comprehensive security review and vulnerability assessment',
+          technicalDetails: 'Automated security scanning, manual review, and penetration testing',
+          implementationPlan: '1. Automated scanning\n2. Manual code review\n3. Penetration testing\n4. Fix issues',
+          acceptanceCriteria: ['No critical vulnerabilities', 'Security standards met', 'Documentation updated'],
+          tags: ['security', 'audit', 'compliance']
+        }
+      }
+    ];
+
+    const tasks: Task[] = [];
+    const statusCounts: Record<string, number> = {};
+    const tagCounts: Record<string, number> = {};
+
+    for (const def of taskDefinitions) {
+      const { task } = await this.createTaskWithStatus(stmManager, def.title, def.status, def.content);
+      tasks.push(task);
+
+      // Count by status
+      statusCounts[task.status] = (statusCounts[task.status] || 0) + 1;
+
+      // Count by tags
+      task.tags.forEach(tag => {
+        if (tag !== 'autoagent') { // Skip the auto-added tag
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        }
+      });
+    }
+
+    return {
+      tasks,
+      summary: {
+        total: tasks.length,
+        byStatus: statusCounts,
+        byTag: tagCounts
+      }
+    };
+  }
+};

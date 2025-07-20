@@ -94,44 +94,114 @@ export function mockFsModule(mockFs: IFs): { fs: IFs; promises: FsPromisesApi } 
 
 export function createTestFiles(): Record<string, Record<string, string>> {
   return {
-    simpleIssue: {
-      'issues/issue-1.md': `# Issue 1: Test Issue
-
-## Requirement
-This is a test requirement.
-
-## Acceptance Criteria
-- [ ] First criterion
-- [ ] Second criterion
-
-## Technical Details
-Test technical details.`
-    },
-    
-    projectWithIssues: {
+    simpleProject: {
       '.gitignore': 'node_modules/\ndist/',
       'package.json': JSON.stringify({
         name: 'test-project',
         version: '1.0.0',
         type: 'module'
       }, null, 2),
-      'issues/issue-1.md': `# Issue 1: First Issue
+      'src/index.ts': 'console.log("Hello, world!");',
+      'README.md': '# Test Project\n\nA simple test project.'
+    },
+    
+    projectWithSTM: {
+      '.gitignore': 'node_modules/\ndist/',
+      'package.json': JSON.stringify({
+        name: 'test-project-stm',
+        version: '1.0.0',
+        type: 'module'
+      }, null, 2),
+      '.stm/config.json': JSON.stringify({
+        schema: 1,
+        taskIdCounter: 2
+      }, null, 2),
+      '.stm/tasks/1.md': `schema: 1
+id: 1
+title: "First Task: Setup Project"
+status: pending
+created: "2024-01-01T00:00:00.000Z"
+updated: "2024-01-01T00:00:00.000Z"
+tags: ["autoagent", "setup"]
+dependencies: []
 
-## Requirement
-First requirement.
+---
 
-## Acceptance Criteria
-- [ ] First criterion`,
-      'issues/issue-2.md': `# Issue 2: Second Issue
+## Why & what
 
-## Requirement
-Second requirement.
+Setup project structure and basic configuration.
 
-## Acceptance Criteria
-- [ ] Second criterion
+### Acceptance Criteria
 
-## Dependencies
-- Issue #1`
+- [ ] Project structure is created
+- [ ] Package.json is configured
+- [ ] Basic dependencies are installed
+
+## How
+
+Create the basic project structure with TypeScript configuration.
+
+### Implementation Plan
+
+1. Initialize package.json
+2. Setup TypeScript configuration
+3. Install basic dependencies
+4. Create source directory structure
+
+## Validation
+
+### Testing Strategy
+
+Basic validation with npm test and typecheck.
+
+### Verification Steps
+
+1. Verify package.json is valid
+2. Check TypeScript compilation
+3. Run basic tests`,
+      '.stm/tasks/2.md': `schema: 1
+id: 2
+title: "Second Task: Add Features"
+status: in-progress
+created: "2024-01-01T01:00:00.000Z"
+updated: "2024-01-01T02:00:00.000Z"
+tags: ["autoagent", "feature"]
+dependencies: [1]
+
+---
+
+## Why & what
+
+Add core application features and functionality.
+
+### Acceptance Criteria
+
+- [ ] Core features implemented
+- [ ] Tests are passing
+- [ ] Documentation updated
+
+## How
+
+Implement features using modern TypeScript patterns.
+
+### Implementation Plan
+
+1. Design feature architecture
+2. Implement core functionality
+3. Add comprehensive tests
+4. Update documentation
+
+## Validation
+
+### Testing Strategy
+
+Unit tests, integration tests, and manual testing.
+
+### Verification Steps
+
+1. All tests pass
+2. Manual feature testing
+3. Documentation review`
     },
     
     autoagentProject: {

@@ -61,12 +61,24 @@ export class E2EWorkspace {
     await fs.writeFile(fullPath, content);
   }
 
-  async createIssue(name: string, content: string): Promise<void> {
-    await this.createFile(path.join('issues', `${name}.md`), content);
+  async createSTMTask(taskId: number, content: string): Promise<void> {
+    await this.createFile(path.join('.stm', 'tasks', `${taskId}.md`), content);
   }
 
-  async createPlan(issueName: string, content: string): Promise<void> {
-    await this.createFile(path.join('plans', `${issueName}.md`), content);
+  async createSTMConfig(config: object): Promise<void> {
+    await this.createFile(path.join('.stm', 'config.json'), JSON.stringify(config, null, 2));
+  }
+
+  async initializeSTM(): Promise<void> {
+    // Create .stm directory structure
+    await fs.mkdir(path.join(this.getPath(), '.stm', 'tasks'), { recursive: true });
+    
+    // Create basic STM config
+    const config = {
+      schema: 1,
+      taskIdCounter: 1
+    };
+    await this.createSTMConfig(config);
   }
 
   async readFile(relativePath: string): Promise<string> {

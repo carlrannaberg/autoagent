@@ -1,9 +1,12 @@
 import { expect } from 'vitest';
-import { Issue, ExecutionResult } from '../../../src/types';
+import type { Task } from 'simple-task-master';
+import type { TaskContent } from '../../../src/types/stm-types';
+import type { ExecutionResult } from '../../../src/types';
 import { StatisticalSummary } from '../../performance/benchmarks/utils/statistics';
 
 interface CustomMatchers<R = unknown> {
-  toBeValidIssue(): R;
+  toBeValidTask(): R;
+  toBeValidTaskContent(): R;
   toHaveExecutedSuccessfully(): R;
   toMatchStatisticalBaseline(baseline: Partial<StatisticalSummary>, tolerance?: number): R;
   toBeWithinPerformanceThreshold(maxTime: number): R;
@@ -16,34 +19,41 @@ declare module 'vitest' {
 }
 
 expect.extend({
-  toBeValidIssue(received: unknown): { pass: boolean; message: () => string } {
-    const issue = received as Issue;
+  toBeValidTask(received: unknown): { pass: boolean; message: () => string } {
+    const task = received as Task;
     const errors: string[] = [];
 
     // Check required fields
-    if (typeof issue.number !== 'number' || issue.number <= 0) {
-      errors.push('Issue number must be a positive number');
+    if (typeof task.id !== 'number' || task.id <= 0) {
+      errors.push('Task ID must be a positive number');
     }
 
-    if (!issue.title || typeof issue.title !== 'string') {
-      errors.push('Issue must have a valid title');
+    if (!task.title || typeof task.title !== 'string') {
+      errors.push('Task must have a valid title');
     }
 
-    if (!issue.file || typeof issue.file !== 'string') {
-      errors.push('Issue must have a valid file path');
+    if (!task.status || !['pending', 'in-progress', 'done'].includes(task.status)) {
+      errors.push('Task must have a valid status (pending, in-progress, or done)');
     }
 
-    if (!issue.requirements || typeof issue.requirements !== 'string') {
-      errors.push('Issue must have requirements');
+    if (!task.created || typeof task.created !== 'string') {
+      errors.push('Task must have a valid creation timestamp');
     }
 
-    if (!Array.isArray(issue.acceptanceCriteria) || issue.acceptanceCriteria.length === 0) {
-      errors.push('Issue must have at least one acceptance criteria');
+    if (!task.updated || typeof task.updated !== 'string') {
+      errors.push('Task must have a valid update timestamp');
     }
 
-    // Check file path format
-    if (issue.file && !issue.file.match(/^issues\/issue-\d+\.md$/)) {
-      errors.push('Issue file must follow pattern: issues/issue-{number}.md');
+    if (!Array.isArray(task.tags)) {
+      errors.push('Task must have a tags array');
+    }
+
+    if (!Array.isArray(task.dependencies)) {
+      errors.push('Task must have a dependencies array');
+    }
+
+    if (task.schema !== 1) {
+      errors.push('Task schema version must be 1');
     }
 
     const pass = errors.length === 0;
@@ -51,8 +61,52 @@ expect.extend({
     return {
       pass,
       message: () => pass
-        ? 'Expected issue to be invalid'
-        : `Invalid issue:\n${errors.map(e => `  - ${e}`).join('\n')}`
+        ? 'Expected task to be invalid'
+        : `Invalid task:\n${errors.map(e => `  - ${e}`).join('\n')}`
+    };
+  },
+
+  toBeValidTaskContent(received: unknown): { pass: boolean; message: () => string } {
+    const taskContent = received as TaskContent;
+    const errors: string[] = [];
+
+    // Check required fields
+    if (!taskContent.description || typeof taskContent.description !== 'string') {
+      errors.push('TaskContent must have a valid description');
+    }
+
+    if (!taskContent.technicalDetails || typeof taskContent.technicalDetails !== 'string') {
+      errors.push('TaskContent must have valid technical details');
+    }
+
+    if (!taskContent.implementationPlan || typeof taskContent.implementationPlan !== 'string') {
+      errors.push('TaskContent must have a valid implementation plan');
+    }
+
+    if (!Array.isArray(taskContent.acceptanceCriteria) || taskContent.acceptanceCriteria.length === 0) {
+      errors.push('TaskContent must have at least one acceptance criteria');
+    }
+
+    // Check optional fields if present
+    if (taskContent.testingStrategy !== undefined && typeof taskContent.testingStrategy !== 'string') {
+      errors.push('Testing strategy must be a string if provided');
+    }
+
+    if (taskContent.verificationSteps !== undefined && typeof taskContent.verificationSteps !== 'string') {
+      errors.push('Verification steps must be a string if provided');
+    }
+
+    if (taskContent.tags !== undefined && !Array.isArray(taskContent.tags)) {
+      errors.push('Tags must be an array if provided');
+    }
+
+    const pass = errors.length === 0;
+
+    return {
+      pass,
+      message: () => pass
+        ? 'Expected task content to be invalid'
+        : `Invalid task content:\n${errors.map(e => `  - ${e}`).join('\n')}`
     };
   },
 
@@ -68,17 +122,17 @@ expect.extend({
       failures.push('✗ Success flag is false');
     }
 
-    // Issue number check
-    if (typeof result.issueNumber === 'number' && result.issueNumber > 0) {
-      checks.push('✓ Valid issue number');
+    // Task ID check
+    if (typeof result.taskId === 'string' && result.taskId.length > 0) {
+      checks.push('✓ Valid task ID');
     } else {
-      failures.push('✗ Invalid issue number');
+      failures.push('✗ Invalid task ID');
     }
 
     // Provider check
     if (result.provider && ['claude', 'gemini', 'mock'].includes(result.provider)) {
       checks.push(`✓ Valid provider: ${result.provider}`);
-    } else {
+    } else if (result.provider) {
       failures.push(`✗ Invalid provider: ${result.provider}`);
     }
 
