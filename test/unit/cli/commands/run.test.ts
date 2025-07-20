@@ -4,7 +4,6 @@ import { registerRunCommand } from '@/cli/commands/run';
 import { AutonomousAgent } from '@/core/autonomous-agent';
 import { Logger } from '@/utils/logger';
 import { InMemorySTMManager } from '../../../helpers/test-doubles/in-memory-stm-manager';
-import type { Task } from 'simple-task-master';
 
 // Mock modules
 vi.mock('@/core/autonomous-agent');
@@ -72,7 +71,7 @@ describe('Run Command', () => {
         provider: 'claude'
       }),
       listTasks: vi.fn().mockImplementation(async (status?: string) => {
-        const tasks = await mockStmManager.listTasks(status ? { status: status as any } : undefined);
+        const tasks = await mockStmManager.listTasks(status !== undefined && status !== '' ? { status: status as any } : undefined);
         return tasks.map(task => ({
           id: String(task.id),
           title: task.title,

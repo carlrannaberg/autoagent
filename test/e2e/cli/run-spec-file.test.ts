@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { setupE2ETest } from '../helpers/setup';
-import * as path from 'path';
 
 describe('Run Task Management E2E', () => {
   const context = setupE2ETest();

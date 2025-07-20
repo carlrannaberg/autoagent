@@ -6,7 +6,6 @@
 
 import type { 
   Task, 
-  TaskCreateInput, 
   TaskUpdateInput, 
   TaskListFilters,
   TaskStatus,
@@ -43,7 +42,7 @@ export class InMemorySTMManager {
   /**
    * Simulate initialization (always succeeds unless mocked to fail)
    */
-  private async ensureInitialized(): Promise<void> {
+  private ensureInitialized(): void {
     if (this.initializationError) {
       throw new STMError(
         'Failed to initialize STM TaskManager',
@@ -58,7 +57,7 @@ export class InMemorySTMManager {
    * Creates a new STM task from AutoAgent TaskContent.
    */
   async createTask(title: string, content: TaskContent): Promise<string> {
-    await this.ensureInitialized();
+    this.ensureInitialized();
 
     try {
       // Validate inputs
@@ -94,7 +93,7 @@ export class InMemorySTMManager {
    * Retrieves a task by ID.
    */
   async getTask(id: string): Promise<Task | null> {
-    await this.ensureInitialized();
+    this.ensureInitialized();
 
     try {
       const numericId = parseInt(id, 10);
@@ -117,7 +116,7 @@ export class InMemorySTMManager {
    * Lists tasks with optional filtering.
    */
   async listTasks(filters?: TaskListFilters): Promise<Task[]> {
-    await this.ensureInitialized();
+    this.ensureInitialized();
 
     try {
       let tasks = Array.from(this.tasks.values());
@@ -136,11 +135,11 @@ export class InMemorySTMManager {
         }
 
         // Search in title and content
-        if (filters.search) {
+        if (filters.search !== undefined && filters.search !== '') {
           const searchPattern = filters.search.toLowerCase();
           tasks = tasks.filter(task => {
             const titleMatch = task.title.toLowerCase().includes(searchPattern);
-            const contentMatch = task.content ? 
+            const contentMatch = task.content !== undefined && task.content !== null && task.content !== '' ? 
               task.content.toLowerCase().includes(searchPattern) : false;
             return titleMatch || contentMatch;
           });
@@ -166,7 +165,7 @@ export class InMemorySTMManager {
    * Updates an existing task.
    */
   async updateTask(id: string, updates: TaskUpdateInput): Promise<Task> {
-    await this.ensureInitialized();
+    this.ensureInitialized();
 
     try {
       const numericId = parseInt(id, 10);
@@ -268,17 +267,17 @@ export class InMemorySTMManager {
       tags?: string[];
     }
   ): Promise<Task[]> {
-    await this.ensureInitialized();
+    this.ensureInitialized();
 
     try {
       const filters: TaskListFilters = {
         search: searchPattern
       };
 
-      if (options?.status) {
+      if (options?.status !== undefined) {
         filters.status = options.status;
       }
-      if (options?.tags) {
+      if (options?.tags !== undefined && options.tags.length > 0) {
         filters.tags = options.tags;
       }
 
@@ -296,7 +295,7 @@ export class InMemorySTMManager {
    * Get task sections parsed from markdown content
    */
   async getTaskSections(taskId: string): Promise<{ description?: string; details?: string; validation?: string }> {
-    await this.ensureInitialized();
+    this.ensureInitialized();
     
     try {
       const numericId = this.parseTaskId(taskId);
@@ -306,7 +305,7 @@ export class InMemorySTMManager {
         throw new TestNotFoundError(`Task not found: ${taskId}`);
       }
       
-      if (!task.content) {
+      if (task.content === undefined || task.content === null || task.content === '') {
         return {};
       }
 
@@ -319,7 +318,7 @@ export class InMemorySTMManager {
       for (const line of lines) {
         if (line.startsWith('## ')) {
           // Save previous section
-          if (currentSection && sectionContent.length > 0) {
+          if (currentSection !== null && sectionContent.length > 0) {
             const content = sectionContent.join('\n').trim();
             sections[currentSection as keyof typeof sections] = content;
           }
@@ -336,13 +335,13 @@ export class InMemorySTMManager {
             currentSection = null;
           }
           sectionContent = [];
-        } else if (currentSection) {
+        } else if (currentSection !== null) {
           sectionContent.push(line);
         }
       }
 
       // Save last section
-      if (currentSection && sectionContent.length > 0) {
+      if (currentSection !== null && sectionContent.length > 0) {
         const content = sectionContent.join('\n').trim();
         sections[currentSection as keyof typeof sections] = content;
       }
@@ -462,11 +461,11 @@ export class InMemorySTMManager {
   private formatDescription(content: TaskContent): string {
     const sections: string[] = [];
 
-    if (content.description) {
+    if (content.description !== undefined && content.description !== '') {
       sections.push('## Why & what\n');
       sections.push(content.description);
       
-      if (content.acceptanceCriteria && content.acceptanceCriteria.length > 0) {
+      if (content.acceptanceCriteria !== undefined && content.acceptanceCriteria.length > 0) {
         sections.push('\n### Acceptance Criteria\n');
         content.acceptanceCriteria.forEach(criteria => {
           sections.push(`- [ ] ${criteria}`);
@@ -483,15 +482,16 @@ export class InMemorySTMManager {
   private formatDetails(content: TaskContent): string {
     const sections: string[] = [];
 
-    if (content.technicalDetails || content.implementationPlan) {
+    if ((content.technicalDetails !== undefined && content.technicalDetails !== '') || 
+        (content.implementationPlan !== undefined && content.implementationPlan !== '')) {
       sections.push('## How\n');
       
-      if (content.technicalDetails) {
+      if (content.technicalDetails !== undefined && content.technicalDetails !== '') {
         sections.push(content.technicalDetails);
       }
 
-      if (content.implementationPlan) {
-        if (content.technicalDetails) {
+      if (content.implementationPlan !== undefined && content.implementationPlan !== '') {
+        if (content.technicalDetails !== undefined && content.technicalDetails !== '') {
           sections.push('\n### Implementation Plan\n');
         }
         sections.push(content.implementationPlan);
@@ -507,16 +507,17 @@ export class InMemorySTMManager {
   private formatValidation(content: TaskContent): string {
     const sections: string[] = [];
     
-    if (content.testingStrategy || content.verificationSteps) {
+    if ((content.testingStrategy !== undefined && content.testingStrategy !== '') || 
+        (content.verificationSteps !== undefined && content.verificationSteps !== '')) {
       sections.push('## Validation\n');
       
-      if (content.testingStrategy) {
+      if (content.testingStrategy !== undefined && content.testingStrategy !== '') {
         sections.push('### Testing Strategy\n');
         sections.push(content.testingStrategy);
       }
 
-      if (content.verificationSteps) {
-        if (content.testingStrategy) {
+      if (content.verificationSteps !== undefined && content.verificationSteps !== '') {
+        if (content.testingStrategy !== undefined && content.testingStrategy !== '') {
           sections.push('\n### Verification Steps\n');
         } else {
           sections.push('### Verification Steps\n');

@@ -98,7 +98,7 @@ export class GeminiProvider extends Provider {
   async chat(prompt: string, options?: ChatOptions): Promise<string> {
     const args = [prompt];
 
-    if (options?.systemPrompt) {
+    if (options?.systemPrompt !== undefined) {
       // Prepend system prompt to the user prompt
       args[0] = `${options.systemPrompt}\n\n${prompt}`;
     }

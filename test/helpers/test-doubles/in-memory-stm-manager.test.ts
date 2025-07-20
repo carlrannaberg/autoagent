@@ -6,7 +6,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { InMemorySTMManager } from './in-memory-stm-manager.js';
 import { STMError } from '../../../src/utils/stm-manager.js';
 import type { TaskContent } from '../../../src/types/stm-types.js';
-import type { Task } from 'simple-task-master';
 
 describe('InMemorySTMManager', () => {
   let manager: InMemorySTMManager;

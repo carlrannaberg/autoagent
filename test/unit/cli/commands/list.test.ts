@@ -70,7 +70,7 @@ describe('List Command', () => {
     mockAgent = {
       initialize: vi.fn().mockResolvedValue(undefined),
       listTasks: vi.fn().mockImplementation(async (status?: string) => {
-        const tasks = await mockStmManager.listTasks(status ? { status: status as any } : undefined);
+        const tasks = await mockStmManager.listTasks(status !== undefined && status !== '' ? { status: status as any } : undefined);
         return tasks.map(task => ({
           id: String(task.id),
           title: task.title,
@@ -131,7 +131,7 @@ describe('List Command', () => {
             status: task.status
           }));
         }
-        const tasks = await mockStmManager.listTasks(status ? { status: status as any } : undefined);
+        const tasks = await mockStmManager.listTasks(status !== undefined && status !== '' ? { status: status as any } : undefined);
         return tasks.map(task => ({
           id: String(task.id),
           title: task.title,

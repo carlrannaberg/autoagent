@@ -3,8 +3,6 @@ import { Command } from 'commander';
 import { registerCreateCommand } from '@/cli/commands/create';
 import { AutonomousAgent } from '@/core/autonomous-agent';
 import { Logger } from '@/utils/logger';
-import { InMemorySTMManager } from '../../../helpers/test-doubles/in-memory-stm-manager';
-import type { TaskContent } from '@/types/stm-types';
 
 // Mock modules
 vi.mock('@/core/autonomous-agent');
@@ -16,7 +14,6 @@ describe('Create Command', () => {
     initialize: ReturnType<typeof vi.fn>;
     createTask: ReturnType<typeof vi.fn>;
   };
-  let mockStmManager: InMemorySTMManager;
   let processExitSpy: ReturnType<typeof vi.spyOn>;
   
   beforeEach(() => {
@@ -36,8 +33,6 @@ describe('Create Command', () => {
     vi.spyOn(Logger, 'success').mockImplementation(() => {});
     vi.spyOn(Logger, 'warning').mockImplementation(() => {});
     
-    // Create in-memory STM manager
-    mockStmManager = new InMemorySTMManager();
     
     // Mock AutonomousAgent
     mockAgent = {

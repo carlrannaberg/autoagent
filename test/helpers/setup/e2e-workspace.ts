@@ -90,7 +90,7 @@ export class E2EWorkspace {
       
       // Create a basic config file
       const config = {
-        version: "1.0.0",
+        version: '1.0.0',
         created: new Date().toISOString()
       };
       await fs.writeFile(path.join(stmDir, 'config.json'), JSON.stringify(config, null, 2));

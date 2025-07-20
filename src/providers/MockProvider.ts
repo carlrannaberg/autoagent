@@ -18,7 +18,7 @@ export class MockProvider extends Provider {
    * @returns Promise resolving to true if enabled
    */
   async checkAvailability(): Promise<boolean> {
-    return process.env.AUTOAGENT_MOCK_PROVIDER === 'true';
+    return Promise.resolve(process.env.AUTOAGENT_MOCK_PROVIDER === 'true');
   }
 
   /**

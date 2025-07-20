@@ -108,7 +108,10 @@ export class STMManager {
         status: 'pending'
       };
 
-      const task = await this.taskManager!.create(taskInput);
+      if (!this.taskManager) {
+        throw new STMError('TaskManager not initialized', 'create');
+      }
+      const task = await this.taskManager.create(taskInput);
       return String(task.id);
     } catch (error) {
       throw new STMError(
@@ -135,7 +138,10 @@ export class STMManager {
         return null;
       }
       
-      return await this.taskManager!.get(numericId);
+      if (!this.taskManager) {
+        throw new STMError('TaskManager not initialized', 'get');
+      }
+      return await this.taskManager.get(numericId);
     } catch (error) {
       // Return null for "not found" errors instead of throwing
       if (error instanceof NotFoundError) {
@@ -162,7 +168,10 @@ export class STMManager {
     await this.ensureInitialized();
 
     try {
-      return await this.taskManager!.list(filters);
+      if (!this.taskManager) {
+        throw new STMError('TaskManager not initialized', 'list');
+      }
+      return await this.taskManager.list(filters);
     } catch (error) {
       const filtersDescription = filters 
         ? ` with filters: ${JSON.stringify(filters)}`
@@ -196,7 +205,10 @@ export class STMManager {
         );
       }
       
-      return await this.taskManager!.update(numericId, updates);
+      if (!this.taskManager) {
+        throw new STMError('TaskManager not initialized', 'update');
+      }
+      return await this.taskManager.update(numericId, updates);
     } catch (error) {
       // For STM errors, preserve them but with better context
       if (error instanceof STMError) {
@@ -307,7 +319,10 @@ export class STMManager {
 
       // Call the underlying TaskManager list method directly to avoid
       // STMError re-wrapping from listTasks
-      const results = await this.taskManager!.list(filters);
+      if (!this.taskManager) {
+        throw new STMError('TaskManager not initialized', 'search');
+      }
+      const results = await this.taskManager.list(filters);
 
       // If case-insensitive search is requested and STM doesn't handle it natively,
       // we would need to implement client-side filtering here.
@@ -356,7 +371,7 @@ export class STMManager {
       const numericId = this.parseTaskId(taskId);
       const task = await this.taskManager.get(numericId);
       
-      if (!task.content) {
+      if (task.content === undefined || task.content === null || task.content === '') {
         return {};
       }
 
@@ -369,7 +384,7 @@ export class STMManager {
       for (const line of lines) {
         if (line.startsWith('## ')) {
           // Save previous section
-          if (currentSection && sectionContent.length > 0) {
+          if (currentSection !== null && sectionContent.length > 0) {
             const content = sectionContent.join('\n').trim();
             sections[currentSection as keyof typeof sections] = content;
           }
@@ -382,13 +397,13 @@ export class STMManager {
           } else {
             currentSection = null;
           }
-        } else if (currentSection) {
+        } else if (currentSection !== null) {
           sectionContent.push(line);
         }
       }
 
       // Save last section
-      if (currentSection && sectionContent.length > 0) {
+      if (currentSection !== null && sectionContent.length > 0) {
         const content = sectionContent.join('\n').trim();
         sections[currentSection as keyof typeof sections] = content;
       }
@@ -469,12 +484,12 @@ export class STMManager {
   private formatDescription(content: TaskContent): string {
     const sections: string[] = [];
 
-    if (content.description) {
+    if (content.description !== undefined && content.description !== '') {
       sections.push('## Why & what\n');
       sections.push(content.description);
       
       // Add acceptance criteria as part of the description
-      if (content.acceptanceCriteria && content.acceptanceCriteria.length > 0) {
+      if (content.acceptanceCriteria !== undefined && content.acceptanceCriteria.length > 0) {
         sections.push('\n### Acceptance Criteria\n');
         content.acceptanceCriteria.forEach(criteria => {
           sections.push(`- [ ] ${criteria}`);
@@ -493,15 +508,16 @@ export class STMManager {
   private formatDetails(content: TaskContent): string {
     const sections: string[] = [];
 
-    if (content.technicalDetails || content.implementationPlan) {
+    if ((content.technicalDetails !== undefined && content.technicalDetails !== '') || 
+        (content.implementationPlan !== undefined && content.implementationPlan !== '')) {
       sections.push('## How\n');
       
-      if (content.technicalDetails) {
+      if (content.technicalDetails !== undefined && content.technicalDetails !== '') {
         sections.push(content.technicalDetails);
       }
 
-      if (content.implementationPlan) {
-        if (content.technicalDetails) {
+      if (content.implementationPlan !== undefined && content.implementationPlan !== '') {
+        if (content.technicalDetails !== undefined && content.technicalDetails !== '') {
           sections.push('\n### Implementation Plan\n');
         }
         sections.push(content.implementationPlan);
@@ -519,16 +535,17 @@ export class STMManager {
   private formatValidation(content: TaskContent): string {
     const sections: string[] = [];
     
-    if (content.testingStrategy || content.verificationSteps) {
+    if ((content.testingStrategy !== undefined && content.testingStrategy !== '') || 
+        (content.verificationSteps !== undefined && content.verificationSteps !== '')) {
       sections.push('## Validation\n');
       
-      if (content.testingStrategy) {
+      if (content.testingStrategy !== undefined && content.testingStrategy !== '') {
         sections.push('### Testing Strategy\n');
         sections.push(content.testingStrategy);
       }
 
-      if (content.verificationSteps) {
-        if (content.testingStrategy) {
+      if (content.verificationSteps !== undefined && content.verificationSteps !== '') {
+        if (content.testingStrategy !== undefined && content.testingStrategy !== '') {
           sections.push('\n### Verification Steps\n');
         } else {
           sections.push('### Verification Steps\n');

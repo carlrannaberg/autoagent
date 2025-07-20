@@ -111,7 +111,7 @@ export class ClaudeProvider extends Provider {
   async chat(prompt: string, options?: ChatOptions): Promise<string> {
     const args = ['-p', prompt];
 
-    if (options?.systemPrompt) {
+    if (options?.systemPrompt !== undefined) {
       // Claude doesn't have a direct system prompt flag in the CLI,
       // so we'll prepend it to the prompt
       args[1] = `${options.systemPrompt}\n\n${prompt}`;
@@ -120,7 +120,7 @@ export class ClaudeProvider extends Provider {
     // Add model if specified
     args.push('--model', 'claude-sonnet-4-20250514');
 
-    if (options?.maxTokens) {
+    if (options?.maxTokens !== undefined && options.maxTokens > 0) {
       args.push('--max-tokens', options.maxTokens.toString());
     }
 

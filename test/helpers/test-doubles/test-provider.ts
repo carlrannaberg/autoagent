@@ -38,9 +38,9 @@ export class TestProvider extends EventEmitter {
   // For the standard Provider interface
   async execute(
     prompt: string,
-    workspace: string,
-    additionalDirectories?: string[],
-    signal?: AbortSignal
+    _workspace: string,
+    _additionalDirectories?: string[],
+    _signal?: AbortSignal
   ): Promise<string> {
     // Increment execution count first
     this.executionCount++;

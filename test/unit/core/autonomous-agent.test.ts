@@ -41,7 +41,7 @@ vi.mock('../../../src/core/session-manager', () => ({
   SessionManager: class MockSessionManager {
     async saveSession(): Promise<void> {}
     async setCurrentSession(): Promise<void> {}
-    async getCurrentSession(): Promise<any> { return null; }
+    getCurrentSession(): any { return null; }
     createSession(): any {
       return {
         id: 'test-session-id',

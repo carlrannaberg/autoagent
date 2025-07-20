@@ -39,7 +39,7 @@ export function cleanupTestTasks(): void {
     
     // Delete each test task
     for (const task of tasks) {
-      if (task.id) {
+      if (task.id !== undefined && task.id !== null) {
         try {
           execSync(`stm delete ${task.id}`, { stdio: 'ignore' });
         } catch (err) {

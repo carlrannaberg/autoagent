@@ -168,7 +168,7 @@ describe('Status Command', () => {
       await command!.parseAsync([], { from: 'user' });
       
       const providerCalls = vi.mocked(Logger.info).mock.calls
-        .filter(call => call[0]?.includes('Available Providers') || call[0]?.includes('Rate Limited'));
+        .filter(call => typeof call[0] === 'string' && (call[0].includes('Available Providers') || call[0].includes('Rate Limited')));
       expect(providerCalls).toHaveLength(0);
     });
 

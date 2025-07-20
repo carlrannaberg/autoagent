@@ -2,11 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GeminiProvider } from '@/providers/GeminiProvider';
 import { spawn } from 'child_process';
 import { EventEmitter } from 'events';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 vi.mock('child_process');
-vi.mock('fs/promises');
-vi.mock('path');
 
 class MockChildProcess extends EventEmitter {
   stdout = new EventEmitter();
