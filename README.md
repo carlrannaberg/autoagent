@@ -40,7 +40,7 @@ AutoAgent is a powerful npm package that enables running autonomous AI agents us
 - [Configuration](#configuration)
 - [Environment Variables](#environment-variables)
 - [Agent Instructions](#agent-instructions-agentmd)
-- [File Naming Conventions](#file-naming-conventions)
+- [Task Management](#task-management)
 - [Examples](#examples)
 - [Architecture](#architecture)
 - [Testing](#testing)
@@ -396,96 +396,65 @@ autoagent config init
 autoagent config init --global
 ```
 
-### 2. Create Your First Issue
+### 2. Create Your First Task
 
 ```bash
-# Create an issue with AI assistance
+# Create a task with AI assistance
 autoagent create "Add user authentication to the API"
 
-# Or manually create an issue file
-echo "# Issue: Add Authentication
-
-## Description
-Implement JWT-based authentication for the REST API.
-
-## Requirements
-- User login endpoint
-- Token generation
-- Middleware for protected routes" > issues/1-add-authentication.md
+# This creates a task in the STM (Simple Task Master) system
+# Tasks are automatically numbered and stored in .simple-task-master/tasks/
 ```
 
-### 3. Execute the Issue
+### 3. Execute the Task
 
 ```bash
-# Execute with default provider
+# Execute next pending task
 autoagent run
 
 # Execute with specific provider
 autoagent run --provider gemini
 
-# Execute a specific issue by name
-autoagent run 1-add-authentication
+# Execute a specific task by number
+autoagent run 1
 ```
 
-## File Types
+## Task Management
 
-AutoAgent works with three types of markdown files:
+AutoAgent uses STM (Simple Task Master) for unified task management. All tasks are stored as structured data with automatic numbering, status tracking, and metadata.
 
-### 1. Specification Files (Specs)
-High-level project descriptions that define what needs to be built. These files describe the overall goal, requirements, and constraints without implementation details.
+### Task Types
 
-**Example:** `update-authentication-system.md`
-```markdown
-# Update Authentication System
+Tasks can be created from:
 
-## Goal
-Modernize the authentication system to support OAuth2 and improve security.
+1. **Specification Files (Specs)**: High-level project descriptions that get decomposed into actionable tasks
+2. **Direct Task Creation**: Using `autoagent create` command for immediate tasks
+3. **Batch Operations**: Processing multiple related tasks together
 
-## Requirements
-- Support for OAuth2 providers (Google, GitHub)
-- Backward compatibility with existing JWT tokens
-- Enhanced security with refresh tokens
-- Rate limiting on auth endpoints
-```
+### Task Structure
 
-### 2. Plan Files
-Detailed implementation plans that break down how to achieve a specification. Plans include specific technical steps, dependencies, and sequencing.
+Each task contains:
+- **Title and Description**: Clear definition of what needs to be done
+- **Status**: pending, in_progress, completed, cancelled
+- **Metadata**: Created date, tags, priority, estimated effort
+- **Validation**: Success criteria and acceptance requirements
 
-**Example:** `1-update-authentication-system-plan.md`
-```markdown
-# Plan: Update Authentication System
-
-## Implementation Steps
-1. Add OAuth2 dependencies
-2. Create OAuth provider abstraction
-3. Implement Google OAuth flow
-4. Add refresh token support
-5. Update user model for OAuth data
-6. Add rate limiting middleware
-```
-
-### 3. Issue Files
-Actionable work items with specific acceptance criteria. Issues are the atomic units of work that agents execute.
-
-**Example:** `2-add-oauth2-dependencies.md`
-```markdown
-# Issue 2: Add OAuth2 dependencies
-
-## Description
-Add required npm packages for OAuth2 implementation.
-
-## Acceptance Criteria
-- [ ] passport-oauth2 added to package.json
-- [ ] passport-google-oauth20 added
-- [ ] passport-github2 added
-- [ ] Dependencies installed and lock file updated
-```
-
-### File Flow: Spec → Plan → Issues
+### Workflow: Spec → Tasks → Execution
 The typical workflow is:
 1. **Write a spec** describing what you want to build
-2. **Run the spec** to automatically generate a plan and decomposed issues
-3. **Execute issues** to implement the changes
+2. **Run the spec** to automatically decompose it into tasks
+3. **Execute tasks** to implement the changes
+
+Example spec processing:
+```bash
+# Process a specification file
+autoagent run specs/add-authentication.md --all
+
+# This automatically:
+# 1. Analyzes the spec
+# 2. Creates structured tasks in STM
+# 3. Executes each task in sequence
+```
 
 ## CLI Usage
 
@@ -501,19 +470,13 @@ autoagent run
 # Run a specification file (creates plan + issues, then executes)
 autoagent run specs/add-authentication.md
 
-# Run specific issue by number
+# Run specific task by number
 autoagent run 5
 
-# Run specific issue by name
-autoagent run 5-update-dependencies
-
-# Run specific issue by filename
-autoagent run issues/5-update-dependencies.md
-
-# Run all pending issues
+# Run all pending tasks
 autoagent run --all
 
-# Run spec and continue with all created issues
+# Run spec and continue with all created tasks
 autoagent run specs/refactor-api.md --all
 
 # Dry run (preview without execution)
@@ -537,12 +500,11 @@ autoagent run --no-reflection
 ```
 
 **Smart Detection:**
-- **Spec/Plan files**: Automatically detected by content (no "Issue #:" marker)
-- **Issue files**: Detected by "Issue #:" marker in content
-- **Issue references**: Can use number (5), name (5-update-dependencies), or path
+- **Spec files**: Automatically detected by content and file extension
+- **Task references**: Can use task number (5) or task ID
 
 #### `autoagent create <description>`
-Create a new issue with AI assistance.
+Create a new task with AI assistance.
 
 ```bash
 # Basic usage
@@ -552,15 +514,15 @@ autoagent create "Implement user profile page"
 autoagent create "Add caching layer" --provider claude
 ```
 
-#### `autoagent status [issue]`
-Display project status, pending issues, or specific issue status.
+#### `autoagent status [task]`
+Display project status, pending tasks, or specific task status.
 
 ```bash
 # Show overall project status
 autoagent status
 
-# Show specific issue status
-autoagent status 5-update-dependencies
+# Show specific task status
+autoagent status 5
 
 # Show execution history
 autoagent status --history
@@ -570,11 +532,11 @@ Output:
 ```
 📊 Project Status
 
-Total Issues:     15
+Total Tasks:      15
 Completed:        12  
 Pending:          3
 
-Next Issue: 16-add-error-handling
+Next Task: #16 Add error handling
 
 ✅ Available Providers: claude, gemini
 ```
@@ -623,18 +585,18 @@ autoagent config set gitCommitNoVerify true
 ```
 
 #### `autoagent list <type>`
-List issues, providers, or execution history.
+List tasks, providers, or execution history.
 
 ```bash
-# List all issues
-autoagent list issues
+# List all tasks
+autoagent list tasks
 
-# List issues by status
-autoagent list issues --status pending
-autoagent list issues --status completed
+# List tasks by status  
+autoagent list tasks --status pending
+autoagent list tasks --status completed
 
 # List with JSON output
-autoagent list issues --json
+autoagent list tasks --json
 
 # List available providers
 autoagent list providers
@@ -647,11 +609,11 @@ autoagent list executions --json
 
 Example output:
 ```
-Found 3 issue(s):
+Found 3 task(s):
 
-  ⏳ 1-setup-project (pending)
-  ✅ 2-add-tests (completed)
-  🔄 3-refactor-api (in_progress)
+  ⏳ #1 Setup project (pending)
+  ✅ #2 Add tests (completed)
+  🔄 #3 Refactor API (in_progress)
 ```
 
 #### `autoagent check`
@@ -691,11 +653,11 @@ async function runAgent() {
     autoCommit: true
   });
   
-  // Execute a single issue by number
-  const result = await agent.executeIssue(1);
+  // Execute a single task by number
+  const result = await agent.executeTask(1);
   
   if (result.success) {
-    console.log('Issue completed successfully!');
+    console.log('Task completed successfully!');
   }
 }
 ```
@@ -714,22 +676,22 @@ async function advancedExample() {
   });
   
   // Listen to execution events
-  agent.on('execution-start', (issueNumber) => {
-    console.log(`Starting issue #${issueNumber}`);
+  agent.on('execution-start', (taskNumber) => {
+    console.log(`Starting task #${taskNumber}`);
   });
   
   agent.on('execution-end', (result) => {
     if (result.success) {
-      console.log(`✓ Issue #${result.issueNumber} completed`);
+      console.log(`✓ Task #${result.taskNumber} completed`);
     } else {
-      console.log(`✗ Issue #${result.issueNumber} failed: ${result.error}`);
+      console.log(`✗ Task #${result.taskNumber} failed: ${result.error}`);
     }
   });
   
-  // Execute all pending issues
+  // Execute all pending tasks
   const results = await agent.executeAll();
   
-  console.log(`Completed ${results.length} issues`);
+  console.log(`Completed ${results.length} tasks`);
 }
 ```
 
@@ -757,7 +719,7 @@ class CustomProvider extends Provider {
     // Implement execution logic
     return {
       success: true,
-      issueNumber: 1,
+      taskNumber: 1,
       duration: 1000,
       output: 'Custom provider executed successfully',
       provider: 'custom'
@@ -810,48 +772,6 @@ AutoAgent uses a layered configuration system:
 ```
 
 For detailed configuration documentation, see [docs/CONFIG.md](docs/CONFIG.md).
-
-## Migration Guide: Bootstrap to Run
-
-### What Changed?
-The `bootstrap` command has been integrated into the `run` command for a unified interface. The `run` command now intelligently detects file types and routes to the appropriate action.
-
-### Before (Old Way)
-```bash
-# Bootstrap from a spec file
-autoagent bootstrap plan.md
-
-# Then manually run the decomposition issue
-autoagent run 1-decompose-project
-
-# Then run created issues
-autoagent run --all
-```
-
-### After (New Way)
-```bash
-# Just run the spec file directly!
-autoagent run plan.md --all
-
-# Or step by step:
-autoagent run plan.md      # Creates and runs decomposition
-autoagent run --all        # Runs all created issues
-```
-
-### Key Benefits
-- **Simpler**: One command instead of multiple
-- **Smarter**: Automatically detects file types
-- **Flexible**: Works with specs, plans, issues, or issue numbers
-- **Backward Compatible**: All existing issue files still work
-
-### Quick Reference
-| Task | Old Command | New Command |
-|------|------------|-------------|
-| Bootstrap from spec | `autoagent bootstrap spec.md` | `autoagent run spec.md` |
-| Run issue by number | `autoagent run 5` | `autoagent run 5` |
-| Run issue by name | `autoagent run 5-fix-bug` | `autoagent run 5-fix-bug` |
-| Run all issues | `autoagent run --all` | `autoagent run --all` |
-| Bootstrap + run all | `bootstrap` then `run 1` then `run --all` | `autoagent run spec.md --all` |
 
 ## Environment Variables
 
@@ -910,41 +830,6 @@ For backward compatibility, `CLAUDE.md` and `GEMINI.md` are created as symlinks 
 
 Learn more about the AGENT.md standard at [https://agent.md](https://agent.md).
 
-## File Naming Conventions
-
-AutoAgent creates consistent filename patterns for issues and plans:
-
-- **Issue files**: `{number}-{title-slug}.md`
-- **Plan files**: `{number}-{title-slug}-plan.md`
-
-### How Slugs Are Generated
-
-Titles are converted to URL-friendly slugs by:
-1. Converting to lowercase
-2. Replacing spaces with hyphens
-3. Removing special characters (except dots and hyphens)
-4. Normalizing multiple dots/hyphens to single hyphens
-5. Removing leading/trailing hyphens
-
-### Examples
-
-| Issue Title | Issue Filename | Plan Filename |
-|------------|----------------|---------------|
-| Implement User Authentication | `1-implement-user-authentication.md` | `1-implement-user-authentication-plan.md` |
-| Fix Bug #123 | `2-fix-bug-123.md` | `2-fix-bug-123-plan.md` |
-| Add @mentions & #hashtags | `3-add-mentions-hashtags.md` | `3-add-mentions-hashtags-plan.md` |
-| Feature...Test!!! | `4-feature-test.md` | `4-feature-test-plan.md` |
-| Update CI/CD Pipeline | `5-update-cicd-pipeline.md` | `5-update-cicd-pipeline-plan.md` |
-
-### Backward Compatibility
-
-The consistent naming pattern ensures:
-- Easy identification of issue/plan pairs
-- Predictable file locations
-- Better organization of the issues and plans directories
-- Simplified scripting and automation
-
-When specs are processed, both issue and plan files follow this naming convention automatically.
 
 ## Examples
 
@@ -965,62 +850,62 @@ Implement user profiles with avatars and bio information.
 - Privacy settings (public/private profile)
 EOF
 
-# Run the spec - this creates a plan and issues, then executes them
+# Run the spec - this creates tasks, then executes them
 autoagent run specs/add-user-profiles.md --all
 
 # Or run step by step:
-# 1. Process spec to create plan and issues (with reflection)
+# 1. Process spec to create tasks (with reflection)
 autoagent run specs/add-user-profiles.md
 
-# 2. Review created issues
-autoagent list issues --status pending
+# 2. Review created tasks
+autoagent list tasks --status pending
 
-# 3. Execute specific issues
-autoagent run 2-create-profile-model
-autoagent run 3-add-avatar-upload
+# 3. Execute specific tasks
+autoagent run 2
+autoagent run 3
 
-# 4. Or execute remaining issues
+# 4. Or execute remaining tasks
 autoagent run --all
 ```
 
-### Example 2: Query Issues and Status
+### Example 2: Query Tasks and Status
 
 ```bash
-# List all pending issues
-autoagent list issues --status pending
+# List all pending tasks
+autoagent list tasks --status pending
 
-# Check specific issue status
-autoagent status 5-implement-auth
+# Check specific task status
+autoagent status 5
 
 # View recent executions
 autoagent status --history
 
-# Get issues in JSON format for scripting
-ISSUES=$(autoagent list issues --status pending --json)
-echo $ISSUES | jq '.[0].name'
+# Get tasks in JSON format for scripting
+TASKS=$(autoagent list tasks --status pending --json)
+echo $TASKS | jq '.[0].name'
 ```
 
 ### Example 2: Batch Processing with Mock Provider
 
 ```javascript
-const { AutonomousAgent, ConfigManager, FileManager } = require('autoagent-cli');
+const { AutonomousAgent, ConfigManager, STMManager } = require('autoagent-cli');
 
 async function processBatch() {
   // Enable mock provider for testing
   process.env.AUTOAGENT_MOCK_PROVIDER = 'true';
   
   const config = new ConfigManager();
-  const files = new FileManager();
-  const agent = new AutonomousAgent(config, files);
+  const stm = new STMManager();
+  const agent = new AutonomousAgent(config, stm);
   
-  // Process all issues with progress tracking
+  // Process all tasks with progress tracking
   const results = await agent.executeAll({
     onProgress: (percent, message) => {
       process.stdout.write(`\r[${percent}%] ${message}`);
     }
   });
   
-  console.log(`\nCompleted ${results.length} issues`);
+  console.log(`\nCompleted ${results.length} tasks`);
 }
 ```
 
@@ -1036,7 +921,7 @@ async function executeWithFailover() {
     if (await isProviderAvailable(providerName)) {
       const provider = createProvider(providerName);
       try {
-        await provider.execute('issues/current.md');
+        await provider.execute(1); // Execute task #1
         console.log(`Success with ${providerName}`);
         break;
       } catch (error) {
@@ -1131,12 +1016,12 @@ npm run test:ui
         ┌────────────────────────┼────────────────────────┐
         │                        │                        │
  ┌──────▼────────┐     ┌────────▼─────────┐    ┌────────▼────────┐
- │ File Manager  │     │ Config Manager   │    │    Providers    │
+ │ STM Manager   │     │ Config Manager   │    │    Providers    │
  │               │     │                  │    │                 │
- │ • Issues      │     │ • User Config    │    │ • Claude        │
- │ • Plans       │     │ • Rate Limits    │    │ • Gemini        │
- │ • Todo List   │     │ • Preferences    │    │ • Mock (Test)   │
- │ • Status      │     │ • Env Variables  │    │ • Failover      │
+ │ • Task CRUD   │     │ • User Config    │    │ • Claude        │
+ │ • Status      │     │ • Rate Limits    │    │ • Gemini        │
+ │ • Search      │     │ • Preferences    │    │ • Mock (Test)   │
+ │ • Validation  │     │ • Env Variables  │    │ • Failover      │
  └───────────────┘     └──────────────────┘    └─────────────────┘
 ```
 
@@ -1144,7 +1029,7 @@ npm run test:ui
 
 - **AutonomousAgent**: Main orchestrator for task execution
 - **Providers**: AI provider implementations (Claude, Gemini)
-- **FileManager**: Handles issue, plan, and todo file operations
+- **STMManager**: Manages tasks through Simple Task Master integration
 - **ConfigManager**: Manages configuration and rate limits
 - **ReflectionEngine**: Iterative improvement system for decomposed plans
 - **Logger**: Provides formatted console output
@@ -1352,10 +1237,10 @@ autoagent config show
 
 **Cyclic dependency detected**
 ```bash
-# List all issues to check dependencies
-autoagent list issues --json | jq '.[] | {name, dependencies}'
+# List all tasks to check dependencies
+autoagent list tasks --json | jq '.[] | {name, dependencies}'
 
-# Fix by editing issue files to remove circular references
+# Fix by editing tasks to remove circular references
 ```
 
 **Mock provider not working**
