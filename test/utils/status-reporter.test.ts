@@ -31,8 +31,8 @@ describe('TaskStatusReporter', () => {
     it('should report full success when task is completed successfully', () => {
       const result: ExecutionResult = {
         success: true,
-        issueNumber: 42,
-        issueTitle: 'Fix validation logic',
+        taskId: '42',
+        taskTitle: 'Fix validation logic',
         duration: 5432,
         filesChanged: ['src/validation.ts', 'test/validation.test.ts'],
         taskCompletion: {
@@ -46,7 +46,7 @@ describe('TaskStatusReporter', () => {
       reporter.reportCompletion(result);
 
       expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('✅ Successfully completed issue #42: Fix validation logic')
+        expect.stringContaining('✅ Successfully completed task 42: Fix validation logic')
       );
       expect(consoleSpy.log).toHaveBeenCalledWith(
         expect.stringContaining('Modified 2 files')
@@ -59,7 +59,7 @@ describe('TaskStatusReporter', () => {
     it('should report partial completion when confidence is moderate', () => {
       const result: ExecutionResult = {
         success: true,
-        issueNumber: 15,
+        taskId: '15',
         duration: 3000,
         taskCompletion: {
           isComplete: false,
@@ -72,7 +72,7 @@ describe('TaskStatusReporter', () => {
       reporter.reportCompletion(result);
 
       expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('⚠️  Partially completed issue #15')
+        expect.stringContaining('⚠️  Partially completed task 15')
       );
       expect(consoleSpy.log).toHaveBeenCalledWith(
         expect.stringContaining('Task appears incomplete (55% confidence)')
@@ -85,8 +85,8 @@ describe('TaskStatusReporter', () => {
     it('should report failure when task fails', () => {
       const result: ExecutionResult = {
         success: false,
-        issueNumber: 99,
-        issueTitle: 'Implement new feature',
+        taskId: '99',
+        taskTitle: 'Implement new feature',
         duration: 1500,
         error: 'TypeScript compilation failed with 5 errors'
       };
@@ -94,7 +94,7 @@ describe('TaskStatusReporter', () => {
       reporter.reportCompletion(result);
 
       expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('❌ Failed to complete issue #99: Implement new feature')
+        expect.stringContaining('❌ Failed to complete task 99: Implement new feature')
       );
       expect(consoleSpy.log).toHaveBeenCalledWith(
         expect.stringContaining('Error: TypeScript compilation failed with 5 errors')
@@ -104,7 +104,7 @@ describe('TaskStatusReporter', () => {
     it('should report tool failures when present', () => {
       const result: ExecutionResult = {
         success: true,
-        issueNumber: 7,
+        taskId: '7',
         duration: 2000,
         toolFailures: [
           {
@@ -140,7 +140,7 @@ describe('TaskStatusReporter', () => {
     it('should show recommendations when available', () => {
       const result: ExecutionResult = {
         success: true,
-        issueNumber: 23,
+        taskId: '23',
         duration: 4000,
         taskCompletion: {
           isComplete: false,
@@ -174,8 +174,8 @@ describe('TaskStatusReporter', () => {
     it('should format a comprehensive report', () => {
       const result: ExecutionResult = {
         success: false,
-        issueNumber: 10,
-        issueTitle: 'Refactor authentication',
+        taskId: '10',
+        taskTitle: 'Refactor authentication',
         duration: 120500,
         provider: 'claude',
         filesChanged: ['src/auth.ts', 'src/middleware/auth.ts'],
@@ -200,7 +200,7 @@ describe('TaskStatusReporter', () => {
       const report = reporter.formatDetailedReport(result);
 
       expect(report).toContain('📋 Detailed Execution Report');
-      expect(report).toContain('Issue: #10 - Refactor authentication');
+      expect(report).toContain('Task: 10 - Refactor authentication');
       expect(report).toContain('Duration: 2m 0s');
       expect(report).toContain('Provider: claude');
       expect(report).toContain('Status:');
@@ -220,7 +220,7 @@ describe('TaskStatusReporter', () => {
       const longOutput = 'Task completed successfully. '.repeat(20);
       const result: ExecutionResult = {
         success: true,
-        issueNumber: 5,
+        taskId: '5',
         duration: 1500,
         output: longOutput
       };
@@ -237,19 +237,19 @@ describe('TaskStatusReporter', () => {
     it('should format duration correctly', () => {
       const result1: ExecutionResult = {
         success: true,
-        issueNumber: 1,
+        taskId: '1',
         duration: 500
       };
 
       const result2: ExecutionResult = {
         success: true,
-        issueNumber: 2,
+        taskId: '2',
         duration: 45000
       };
 
       const result3: ExecutionResult = {
         success: true,
-        issueNumber: 3,
+        taskId: '3',
         duration: 185000
       };
 

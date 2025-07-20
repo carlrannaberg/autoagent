@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
-import type { AIProvider } from '../../src/types/index.js';
+import type { ProviderInterface as AIProvider } from '../../src/providers/types.js';
 
 export interface MockProviderOptions {
   name: string;

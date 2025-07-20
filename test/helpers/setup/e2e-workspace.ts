@@ -70,15 +70,25 @@ export class E2EWorkspace {
   }
 
   async initializeSTM(): Promise<void> {
-    // Create .stm directory structure
-    await fs.mkdir(path.join(this.getPath(), '.stm', 'tasks'), { recursive: true });
+    // Create .autoagent/stm-tasks directory structure and initialize STM properly
+    const stmTasksDir = path.join(this.getPath(), '.autoagent', 'stm-tasks');
+    await fs.mkdir(stmTasksDir, { recursive: true });
     
-    // Create basic STM config
-    const config = {
-      schema: 1,
-      taskIdCounter: 1
-    };
-    await this.createSTMConfig(config);
+    // Also initialize a proper STM repository in the workspace for compatibility
+    const { execFile } = require('child_process');
+    const { promisify } = require('util');
+    const execFileAsync = promisify(execFile);
+    
+    try {
+      // Run STM init to create proper STM repository structure
+      await execFileAsync('npx', ['simple-task-master', 'init'], { 
+        cwd: this.getPath(),
+        stdio: 'ignore'
+      });
+    } catch (error) {
+      // If STM init fails, at least ensure our custom directory exists
+      console.warn('STM init failed, using manual directory creation:', error instanceof Error ? error.message : String(error));
+    }
   }
 
   async readFile(relativePath: string): Promise<string> {

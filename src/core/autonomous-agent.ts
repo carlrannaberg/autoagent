@@ -13,6 +13,7 @@ import { TaskContent } from '../types/stm-types';
 import { Provider, createProvider, getFirstAvailableProvider } from '../providers';
 import { HookManager } from './hook-manager';
 import { SessionManager } from './session-manager';
+import type { Task } from 'simple-task-master';
 
 /**
  * Main autonomous agent class that orchestrates STM task execution
@@ -101,7 +102,9 @@ export class AutonomousAgent extends EventEmitter {
 
       // Update session with current task
       if (this.currentSession) {
-        this.currentSession.issueNumber = parseInt(taskId.split('-')[0] || '0', 10);
+        const taskIdParts = taskId.split('-');
+        const issueNumberStr = taskIdParts[0] !== undefined && taskIdParts[0] !== '' ? taskIdParts[0] : '0';
+        this.currentSession.issueNumber = parseInt(issueNumberStr, 10);
         this.currentSession.issueTitle = task.title;
         this.currentSession.status = 'active';
         await this.sessionManager.saveSession(this.currentSession);
@@ -216,7 +219,7 @@ export class AutonomousAgent extends EventEmitter {
    */
   async listTasks(status?: string): Promise<Array<{ id: string; title: string; status: string }>> {
     // Convert status string to TaskListFilters
-    const filters = status ? { status: status as 'pending' | 'in-progress' | 'done' } : undefined;
+    const filters = status !== undefined && status !== '' ? { status: status as 'pending' | 'in-progress' | 'done' } : undefined;
     const tasks = await this.stmManager.listTasks(filters);
     
     // Convert Task[] to our simplified format
@@ -230,7 +233,7 @@ export class AutonomousAgent extends EventEmitter {
   /**
    * Get task details
    */
-  async getTask(taskId: string) {
+  async getTask(taskId: string): Promise<Task | null> {
     return this.stmManager.getTask(taskId);
   }
 
@@ -274,20 +277,20 @@ export class AutonomousAgent extends EventEmitter {
   /**
    * Build context string for task execution
    */
-  private async buildTaskContext(task: any): Promise<string> {
-    const sections = await this.stmManager.getTaskSections(task.id);
+  private async buildTaskContext(task: Task): Promise<string> {
+    const sections = await this.stmManager.getTaskSections(task.id.toString());
     
     let context = `# Task: ${task.title}\n\n`;
     
-    if (sections.description) {
+    if (sections.description !== undefined && sections.description !== '') {
       context += `## Description\n${sections.description}\n\n`;
     }
     
-    if (sections.details) {
+    if (sections.details !== undefined && sections.details !== '') {
       context += `## Technical Details\n${sections.details}\n\n`;
     }
     
-    if (sections.validation) {
+    if (sections.validation !== undefined && sections.validation !== '') {
       context += `## Validation Criteria\n${sections.validation}\n\n`;
     }
 

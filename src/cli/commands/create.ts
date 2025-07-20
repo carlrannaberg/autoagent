@@ -31,7 +31,7 @@ export function registerCreateCommand(program: Command): void {
       workspace?: string 
     }) => {
       try {
-        if (!options.title) {
+        if (options.title === undefined || options.title === '') {
           Logger.error('Task title is required');
           process.exit(1);
         }
@@ -45,12 +45,12 @@ export function registerCreateCommand(program: Command): void {
 
         // Build task content
         const content: TaskContent = {
-          description: options.description || 'No description provided',
-          technicalDetails: options.details || '',
-          implementationPlan: options.plan || '',
+          description: options.description !== undefined && options.description !== '' ? options.description : 'No description provided',
+          technicalDetails: options.details !== undefined && options.details !== '' ? options.details : '',
+          implementationPlan: options.plan !== undefined && options.plan !== '' ? options.plan : '',
           acceptanceCriteria: options.acceptance || [],
           testingStrategy: options.testing,
-          tags: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined
+          tags: options.tags !== undefined && options.tags !== '' ? options.tags.split(',').map(t => t.trim()) : undefined
         };
 
         // Create task in STM

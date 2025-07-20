@@ -53,7 +53,7 @@ const runCommand = new Command('run')
       const workspacePath = path.resolve(options.workspace ?? process.cwd());
       
       // Enable debug logging if requested
-      if (options.debug) {
+      if (options.debug === true) {
         Logger.setDebugEnabled(true);
       }
 
@@ -67,15 +67,15 @@ const runCommand = new Command('run')
         additionalDirectories: options.addDir,
         noVerify: options.verify === false || options.noVerify === true,
         strictCompletion: options.strictCompletion,
-        completionConfidence: options.completionConfidence ? parseInt(options.completionConfidence.toString(), 10) : undefined,
+        completionConfidence: options.completionConfidence !== undefined && options.completionConfidence !== 0 && !isNaN(options.completionConfidence) ? parseInt(options.completionConfidence.toString(), 10) : undefined,
         ignoreToolFailures: options.ignoreToolFailures,
-        maxRetryAttempts: options.maxRetryAttempts ? parseInt(options.maxRetryAttempts.toString(), 10) : undefined
+        maxRetryAttempts: options.maxRetryAttempts !== undefined && options.maxRetryAttempts !== 0 && !isNaN(options.maxRetryAttempts) ? parseInt(options.maxRetryAttempts.toString(), 10) : undefined
       });
 
       await agent.initialize();
 
       // Determine what to execute
-      if (options.all) {
+      if (options.all === true) {
         // Execute all pending tasks
         const tasks = await agent.listTasks('pending');
         
@@ -112,7 +112,7 @@ const runCommand = new Command('run')
         if (failureCount > 0) {
           process.exit(1);
         }
-      } else if (taskId) {
+      } else if (taskId !== undefined && taskId !== '') {
         // Execute specific task
         Logger.info(`▶️  Executing task: ${taskId}`);
         
@@ -120,7 +120,7 @@ const runCommand = new Command('run')
         
         if (result.success) {
           Logger.success('✅ Task completed successfully');
-          if (result.output) {
+          if (result.output !== undefined && result.output !== '') {
             Logger.info(`\n📝 Output:\n${result.output}`);
           }
         } else {
@@ -146,7 +146,7 @@ const runCommand = new Command('run')
       }
     } catch (error) {
       Logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-      if (options?.debug) {
+      if (options?.debug === true) {
         console.error(error);
       }
       process.exit(1);

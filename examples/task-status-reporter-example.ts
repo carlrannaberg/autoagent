@@ -5,8 +5,8 @@
  * task execution results with user-friendly feedback.
  */
 
-import { TaskStatusReporter } from '../src/utils/status-reporter';
-import { ExecutionResult } from '../src/types';
+import { TaskStatusReporter } from '../src/utils/status-reporter.js';
+import { ExecutionResult } from '../src/types/index.js';
 
 // Create reporter instance
 const reporter = new TaskStatusReporter();
@@ -15,8 +15,8 @@ const reporter = new TaskStatusReporter();
 console.log('=== Example 1: Successful Task ===');
 const successResult: ExecutionResult = {
   success: true,
-  issueNumber: 42,
-  issueTitle: 'Implement user authentication',
+  taskId: '42',
+  taskTitle: 'Implement user authentication',
   duration: 45000,
   provider: 'claude',
   filesChanged: ['src/auth.ts', 'src/middleware/auth.ts', 'test/auth.test.ts'],
@@ -33,8 +33,8 @@ reporter.reportCompletion(successResult);
 console.log('\n=== Example 2: Partial Completion ===');
 const partialResult: ExecutionResult = {
   success: true,
-  issueNumber: 15,
-  issueTitle: 'Refactor database layer',
+  taskId: '15',
+  taskTitle: 'Refactor database layer',
   duration: 120000,
   provider: 'gemini',
   filesChanged: ['src/db/connection.ts', 'src/db/models.ts'],
@@ -68,8 +68,8 @@ reporter.reportCompletion(partialResult);
 console.log('\n=== Example 3: Failed Task ===');
 const failedResult: ExecutionResult = {
   success: false,
-  issueNumber: 99,
-  issueTitle: 'Deploy to production',
+  taskId: '99',
+  taskTitle: 'Deploy to production',
   duration: 5000,
   error: 'TypeScript compilation failed: Cannot find module \'@types/node\'. Please run npm install.',
   provider: 'claude',
@@ -114,7 +114,7 @@ console.log(reporter.formatDetailedReport(failedResult));
 console.log('\n=== Example 5: Simple Success ===');
 const simpleResult: ExecutionResult = {
   success: true,
-  issueNumber: 7,
+  taskId: '7',
   duration: 1500
 };
 reporter.reportCompletion(simpleResult);

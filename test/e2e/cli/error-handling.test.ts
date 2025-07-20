@@ -15,18 +15,18 @@ describe('Error Handling E2E', () => {
       expect(result.stderr).toContain('autoagent --help');
     });
 
-    it('should handle run command without issues present', async () => {
+    it('should handle run command without tasks present', async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
+      await context.workspace.initializeSTM();
 
-      const result = await context.cli.execute(['run']); // No issues exist yet
+      const result = await context.cli.execute(['run']); // No tasks exist yet
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('No pending issues to execute');
+      expect(result.stdout).toContain('No tasks found. Create tasks using the "create" command.');
     });
 
     it('should handle invalid option values', async () => {
-      const result = await context.cli.execute(['list', 'issues', '--status', 'invalid-status']);
+      const result = await context.cli.execute(['list', 'tasks', '--status', 'invalid-status']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('Invalid status');
@@ -71,27 +71,37 @@ describe('Error Handling E2E', () => {
       await fs.chmod(configPath, 0o644);
     });
 
-    it('should handle missing issue files', async () => {
+    it('should handle missing task IDs', async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
+      await context.workspace.initializeSTM();
 
-      const result = await context.cli.execute(['run', 'non-existent-issue']);
+      const result = await context.cli.execute(['run', 'non-existent-task']);
 
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('Issue not found');
+      expect(result.stderr).toContain('Task non-existent-task not found');
     });
   });
 
   describe('Network and Provider Errors', () => {
     it('should handle provider timeout', async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for timeout testing\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes');
+      await context.workspace.initializeSTM();
+      
+      // Create a task using CLI
+      await context.cli.execute([
+        'create',
+        '--title',
+        'Test Task',
+        '--description',
+        'Test task for timeout testing',
+        '--acceptance',
+        'Test passes'
+      ]);
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_TIMEOUT', 'true');
 
-      const result = await context.cli.execute(['run', '1-test-issue'], { timeout: 5000 });
+      const result = await context.cli.execute(['run', '1'], { timeout: 5000 });
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('timeout');
@@ -99,13 +109,23 @@ describe('Error Handling E2E', () => {
 
     it('should handle provider rate limit', async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for rate limit testing\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes');
+      await context.workspace.initializeSTM();
+      
+      // Create a task using CLI
+      await context.cli.execute([
+        'create',
+        '--title',
+        'Rate Limit Test Task',
+        '--description',
+        'Test task for rate limit testing',
+        '--acceptance',
+        'Test passes'
+      ]);
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_RATE_LIMIT', 'true');
 
-      const result = await context.cli.execute(['run', '1-test-issue']);
+      const result = await context.cli.execute(['run', '1']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr.toLowerCase()).toContain('rate limit');
@@ -113,13 +133,23 @@ describe('Error Handling E2E', () => {
 
     it('should handle provider authentication failure', async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for auth testing\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes');
+      await context.workspace.initializeSTM();
+      
+      // Create a task using CLI
+      await context.cli.execute([
+        'create',
+        '--title',
+        'Auth Test Task',
+        '--description',
+        'Test task for auth testing',
+        '--acceptance',
+        'Test passes'
+      ]);
 
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_AUTH_FAIL', 'true');
 
-      const result = await context.cli.execute(['run', '1-test-issue']);
+      const result = await context.cli.execute(['run', '1']);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr.toLowerCase()).toContain('authentication');
@@ -127,81 +157,79 @@ describe('Error Handling E2E', () => {
   });
 
   describe('Invalid Input Handling', () => {
-    it('should handle malformed issue files', async () => {
+    it('should handle invalid task IDs gracefully', async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-malformed.md', 'Not a valid issue format');
+      await context.workspace.initializeSTM();
 
-      const result = await context.cli.execute(['run', '1-malformed']);
+      const result = await context.cli.execute(['run', '999']);
 
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('Invalid issue header');
+      expect(result.stderr).toContain('Task 999 not found');
     });
 
-    it('should handle empty issue files', async () => {
+    it('should handle empty task list gracefully', async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-empty.md', '');
+      await context.workspace.initializeSTM();
 
-      const result = await context.cli.execute(['list', 'issues']);
+      const result = await context.cli.execute(['list', 'tasks']);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('Invalid format');
+      expect(result.stdout).toContain('No tasks found');
     });
 
-    // Skip this test - cyclic dependency detection is only implemented in mock provider
-    // and validation prevents the test from reaching that code
-    it.skip('should handle cyclic dependencies in issues', async () => {
+    it('should handle invalid task search queries', async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
-
-      await context.workspace.createFile('issues/1-issue-a.md', '# Issue #1: Issue A\n\n## Description\nFirst issue with circular dependency\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes\n\n## Dependencies\n- 2-issue-b');
-      await context.workspace.createFile('issues/2-issue-b.md', '# Issue #2: Issue B\n\n## Description\nSecond issue with circular dependency\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes\n\n## Dependencies\n- 1-issue-a');
-
-      context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
-      const result = await context.cli.execute(['run', '--no-validate', '--all']);
-
+      await context.workspace.initializeSTM();
+      
+      // Create a valid task
+      await context.cli.execute([
+        'create',
+        '--title',
+        'Valid Task',
+        '--description',
+        'A valid task for testing'
+      ]);
+      
+      const result = await context.cli.execute(['run', 'Non-existent Task']);
+      
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('Cyclic dependency');
-    }, 45000);
+      expect(result.stderr).toContain('Task Non-existent Task not found');
+    });
   });
 
   describe('Recovery Scenarios', () => {
-    it('should recover from partial execution', async () => {
+    it('should handle task execution failure gracefully', async () => {
       await context.workspace.initGit();
-      await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for partial recovery\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes');
+      await context.workspace.initializeSTM();
+      
+      // Create a task
+      await context.cli.execute([
+        'create',
+        '--title',
+        'Failing Task',
+        '--description',
+        'This task will fail during execution'
+      ]);
 
-      // Simulate partial execution
-      await context.workspace.createFile('.autoagent/status.json', JSON.stringify({
-        '1-test-issue': {
-          status: 'running',
-          startedAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-        },
-      }));
-
-      const result = await context.cli.execute(['status', '1-test-issue']);
-
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('running');
-      expect(result.stdout).toContain('1 hour ago');
-    });
-
-    it('should clean up after failed execution', async () => {
-      await context.workspace.initGit();
-      await context.cli.execute(['init']);
-      await context.workspace.createFile('issues/1-test-issue.md', '# Issue #1: Test Issue\n\n## Description\nTest issue for cleanup testing\n\n## Requirements\nTest requirement\n\n## Acceptance Criteria\n- [ ] Test passes');
-
+      // Use mock provider but set it to fail
       context.cli.setEnv('AUTOAGENT_MOCK_PROVIDER', 'true');
       context.cli.setEnv('AUTOAGENT_MOCK_FAIL', 'true');
-
-      const result = await context.cli.execute(['run', '1-test-issue']);
-
+      
+      const result = await context.cli.execute(['run', '1'], { timeout: 10000 });
+      
       expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('Mock execution failed');
+    });
 
-      // Verify status was updated
-      const statusResult = await context.cli.execute(['status', '1-test-issue']);
-      expect(statusResult.stdout).toContain('failed');
+    it('should handle empty task execution gracefully', async () => {
+      await context.workspace.initGit();
+      await context.workspace.initializeSTM();
+      
+      // No tasks created
+      const result = await context.cli.execute(['run', '--all']);
+      
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('No pending tasks to execute');
     });
   });
 });

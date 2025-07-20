@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import { ExecutionResult, ProviderName } from '../../../src/types';
 
 export interface TestProviderConfig {
   name: string;
@@ -36,74 +35,35 @@ export class TestProvider extends EventEmitter {
     return `${task}${context !== null && context !== undefined && context !== '' ? `\n\nContext:\n${context}` : ''}`;
   }
 
-  // For the standard Provider interface (with file paths)
+  // For the standard Provider interface
   async execute(
-    issueFile: string,
-    planFile: string,
-    _contextFiles?: string[],
-    _signal?: AbortSignal,
-    _additionalDirectories?: string[]
-  ): Promise<ExecutionResult> {
+    prompt: string,
+    workspace: string,
+    additionalDirectories?: string[],
+    signal?: AbortSignal
+  ): Promise<string> {
     // Increment execution count first
     this.executionCount++;
     
     // Check if we should fail
     if (this.failAfter >= 0 && this.executionCount > this.failAfter) {
-      return {
-        success: false,
-        error: this.failureMessage,
-        output: '',
-        provider: this.name as ProviderName,
-        issueNumber: 0,
-        duration: 0,
-        filesModified: []
-      };
+      throw new Error(this.failureMessage);
     }
     
-    // Handle prompt-based calls (bootstrap/createIssue)
-    if (typeof issueFile === 'string' && !issueFile.includes('.md') && planFile === '') {
-      // This is a prompt-based call
-      let response = this.defaultResponse;
-      
-      // Look for matching response based on prompt content
-      for (const [key, value] of Array.from(this.responses.entries())) {
-        if (issueFile.includes(key)) {
-          response = value;
-          break;
-        }
+    // Look for matching response based on prompt content
+    let response = this.defaultResponse;
+    for (const [key, value] of Array.from(this.responses.entries())) {
+      if (prompt.includes(key)) {
+        response = value;
+        break;
       }
-      
-      return {
-        success: true,
-        issueNumber: 1,
-        duration: 0,
-        output: response || 'Success',
-        filesChanged: [],
-        provider: this.name as any
-      };
     }
 
     if (this.responseDelay > 0) {
       await new Promise(resolve => setTimeout(resolve, this.responseDelay));
     }
 
-    // Find a matching response or use default
-    let response = this.defaultResponse;
-    for (const [key, value] of Array.from(this.responses.entries())) {
-      if (issueFile.includes(key) || planFile.includes(key)) {
-        response = value;
-        break;
-      }
-    }
-
-    return {
-      success: true,
-      output: response,
-      provider: this.name as ProviderName,
-      issueNumber: parseInt(issueFile.match(/(\d+)/)?.[1] ?? '1'),
-      duration: this.responseDelay,
-      filesModified: []
-    };
+    return response;
   }
 
   checkRateLimit(): { isLimited: boolean; resetTime?: number } {
@@ -128,5 +88,9 @@ export class TestProvider extends EventEmitter {
 
   getExecutionCount(): number {
     return this.executionCount;
+  }
+
+  getName(): string {
+    return this.name;
   }
 }

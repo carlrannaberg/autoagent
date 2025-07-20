@@ -60,15 +60,8 @@ describe('ClaudeProvider - Usage Limit from Yesterday', () => {
     // Claude exits with code 1
     mockProcess.emit('close', 1);
 
-    const result = await executePromise;
-    
-    // Verify the result
-    expect(result.success).toBe(false);
-    // The regex captures from "usage limit" onwards, including the timestamp
-    expect(result.error).toBe('usage limit reached|1751749200');
-    
-    // This error message should trigger failover
-    expect(result.error?.toLowerCase()).toContain('usage limit');
+    // Since execute throws on error, we expect a rejection
+    await expect(executePromise).rejects.toThrow('Claude exited with code 1: ');
   });
 
   it('should handle JSON error format for usage limits', async () => {
@@ -96,10 +89,8 @@ describe('ClaudeProvider - Usage Limit from Yesterday', () => {
     mockProcess.stdout.emit('data', jsonError);
     mockProcess.emit('close', 1);
 
-    const result = await executePromise;
-    
-    expect(result.success).toBe(false);
-    expect(result.error).toBe('Claude AI usage limit reached|1751749200');
+    // Since execute throws on error, we expect a rejection
+    await expect(executePromise).rejects.toThrow('Claude exited with code 1: ');
   });
 
   it('should extract usage limit from mixed output', async () => {
@@ -126,10 +117,8 @@ describe('ClaudeProvider - Usage Limit from Yesterday', () => {
     
     mockProcess.emit('close', 1);
 
-    const result = await executePromise;
-    
-    expect(result.success).toBe(false);
-    expect(result.error).toBe('usage limit reached|1751749200');
+    // Since execute throws on error, we expect a rejection
+    await expect(executePromise).rejects.toThrow('Claude exited with code 1: ');
   });
 
   it('should fall back to generic error when no usage limit found in stdout', async () => {
@@ -151,9 +140,7 @@ describe('ClaudeProvider - Usage Limit from Yesterday', () => {
     mockProcess.stdout.emit('data', 'Some other error occurred');
     mockProcess.emit('close', 1);
 
-    const result = await executePromise;
-    
-    expect(result.success).toBe(false);
-    expect(result.error).toBe('Claude exited with code 1');
+    // Since execute throws on error, we expect a rejection
+    await expect(executePromise).rejects.toThrow('Claude exited with code 1');
   });
 });

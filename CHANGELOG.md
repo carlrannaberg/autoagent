@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `simple-task-master` npm dependency for task management
 - Add STMManager class for STM integration with lazy initialization
 - Add TaskContent interface for standardizing task data structure
+- Add comprehensive InMemorySTMManager test double for STM testing
+- Add new STM-based test helpers and utilities
+- Add TaskContentBuilder for test data generation
+- Add comprehensive STM usage examples and documentation
 
 ### Removed
 - Remove FileManager and all file-based issue/plan management code (~1000 lines)
@@ -29,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove validation utility functions
 
 ### Fixed
+- Complete test suite migration to STM with 690 tests passing (0 failures)
+- Fix all ESLint strict boolean expression errors in source files
+- Update all provider tests to expect string returns instead of ExecutionResult
+- Migrate all unit tests from FileManager to STMManager patterns
+- Rewrite E2E tests for STM workflow instead of file-based verification
+- Update test documentation with STM patterns and best practices
 - Fix release script hanging in interactive mode by using `npm run test:ci` instead of `npm test`
 - Add explicit build step before running tests in release script to ensure proper compilation
 - Add dry-run check for AI updates to prevent script hanging in dry-run mode

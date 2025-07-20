@@ -332,6 +332,96 @@ describe('AutonomousAgent', () => {
 - Test edge cases
 - Mock external dependencies
 
+### STM Testing Patterns
+
+#### Creating Test Tasks
+
+```typescript
+// Minimal task
+const taskId = await stmManager.createTask('Fix Bug', {
+  description: 'Fix the issue in module X'
+});
+
+// Detailed task with all fields
+const taskId = await stmManager.createTask('New Feature', {
+  description: 'Add user authentication',
+  technicalDetails: 'Use JWT tokens with refresh rotation',
+  implementationPlan: '1. Create auth middleware\n2. Add endpoints',
+  acceptanceCriteria: [
+    'Users can log in',
+    'Sessions persist',
+    'Logout works'
+  ],
+  testingStrategy: 'Unit and integration tests',
+  verificationSteps: 'Run: npm run test:auth',
+  tags: ['security', 'backend']
+});
+```
+
+#### Testing Task Lifecycle
+
+```typescript
+it('should manage task status transitions', async () => {
+  const taskId = await stmManager.createTask('Task', {
+    description: 'Test task lifecycle'
+  });
+  
+  // Check initial status
+  let task = await stmManager.getTask(taskId);
+  expect(task?.status).toBe('pending');
+  
+  // Start work
+  await stmManager.markTaskInProgress(taskId);
+  task = await stmManager.getTask(taskId);
+  expect(task?.status).toBe('in-progress');
+  
+  // Complete
+  await stmManager.markTaskComplete(taskId);
+  task = await stmManager.getTask(taskId);
+  expect(task?.status).toBe('done');
+});
+```
+
+#### Mocking STM in Tests
+
+```typescript
+// Option 1: Shared instance (recommended for integration tests)
+const sharedSTMManager = new InMemorySTMManager();
+vi.mock('../src/utils/stm-manager', () => ({
+  STMManager: vi.fn(() => sharedSTMManager)
+}));
+
+// Option 2: Isolated instance (for unit tests)
+beforeEach(() => {
+  const isolatedSTM = new InMemorySTMManager();
+  vi.mocked(STMManager).mockImplementation(() => isolatedSTM);
+});
+
+// Option 3: Direct injection (for testing STM itself)
+const agent = new AutonomousAgent(config, stmManager);
+```
+
+### STM Test Helpers
+
+The `InMemorySTMManager` provides these test-specific methods:
+
+```typescript
+// Reset all data
+stmManager.reset();
+
+// Get all tasks for assertions
+const allTasks = stmManager.getAllTasks();
+
+// Set predictable task IDs
+stmManager.setNextId(100);
+
+// Simulate STM failures
+stmManager.setInitializationError(new Error('STM down'));
+
+// Direct task access (bypasses string parsing)
+const task = stmManager.getTaskById(42);
+```
+
 ### Running Tests
 
 ```bash
@@ -342,10 +432,13 @@ npm test
 npm run test:coverage
 
 # Run specific test file
-npm test src/core/autonomous-agent.test.ts
+npm test test/unit/core/autonomous-agent.test.ts
 
 # Run in watch mode
 npm run test:watch
+
+# Run only STM-related tests
+npm test -- stm
 ```
 
 ## Documentation

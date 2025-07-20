@@ -16,14 +16,19 @@ This directory contains examples demonstrating various features and usage patter
 - **[batch-execution.js](batch-execution.js)** - Execute multiple issues with progress tracking
 - **[provider-failover.js](provider-failover.js)** - Automatic failover between AI providers
 
+### 📋 STM (Simple Task Master) Integration
+
+- **[stm-usage.ts](stm-usage.ts)** - Complete STM workflow demonstration with task creation and management
+- **[plan-creation.ts](plan-creation.ts)** - Creating and managing STM tasks (updated from legacy plans)
+- **[task-status-reporter-example.ts](task-status-reporter-example.ts)** - Task execution reporting and status display
+
 ### 🎨 Advanced Usage
 
 - **[custom-integration.js](custom-integration.js)** - Extend AutoAgent with custom functionality
 
 ## Running the Examples
 
-All examples can be run directly with Node.js:
-
+### JavaScript Examples (Node.js)
 ```bash
 # Basic usage
 node examples/basic-usage.js
@@ -42,6 +47,21 @@ node examples/configuration.js
 
 # Advanced integrations
 node examples/custom-integration.js
+```
+
+### TypeScript Examples (with ts-node or compilation)
+```bash
+# STM workflow demonstration
+npx ts-node examples/stm-usage.ts
+
+# STM task creation (updated from plan creation)
+npx ts-node examples/plan-creation.ts
+
+# Task status reporting
+npx ts-node examples/task-status-reporter-example.ts
+
+# Alternative: Compile and run
+npx tsc examples/stm-usage.ts && node examples/stm-usage.js
 ```
 
 ## Prerequisites
@@ -66,32 +86,64 @@ Each example is self-contained and includes:
 
 ## Common Patterns
 
-### 1. Basic Setup
-```javascript
-const { AutonomousAgent, FileManager, ConfigManager } = require('autoagent-cli');
+### 1. STM Task Management Setup
+```typescript
+import { STMManager } from 'autoagent-cli/utils/stm-manager';
+import { TaskContent } from 'autoagent-cli/types/stm-types';
 
-const fileManager = new FileManager(process.cwd());
-const configManager = new ConfigManager(process.cwd());
-const agent = new AutonomousAgent(fileManager, configManager);
+const stmManager = new STMManager();
+
+const taskContent: TaskContent = {
+  description: 'What needs to be done',
+  technicalDetails: 'How to implement it',
+  implementationPlan: 'Step-by-step plan',
+  acceptanceCriteria: ['Criterion 1', 'Criterion 2']
+};
+
+const taskId = await stmManager.createTask('Task Title', taskContent);
 ```
 
-### 2. Progress Tracking
-```javascript
-agent.on('progress', (data) => {
-  console.log(`[${data.phase}] ${data.message} - ${data.percentage}%`);
+### 2. Task Status Management
+```typescript
+// Mark task as in progress
+await stmManager.markTaskInProgress(taskId);
+
+// Complete a task
+await stmManager.markTaskComplete(taskId);
+
+// Search and filter tasks
+const tasks = await stmManager.searchTasks('API', {
+  status: 'pending',
+  tags: ['backend']
 });
 ```
 
-### 3. Error Handling
-```javascript
+### 3. Error Handling with STM
+```typescript
+import { STMError } from 'autoagent-cli/utils/stm-manager';
+
 try {
-  const result = await agent.executeNext();
-  if (!result.success) {
-    console.error('Execution failed:', result.error);
-  }
+  const task = await stmManager.getTask('invalid-id');
 } catch (error) {
-  console.error('Unexpected error:', error);
+  if (error instanceof STMError) {
+    console.error(`STM Error: ${error.message} (${error.operation})`);
+  }
 }
+```
+
+### 4. Task Execution Status Reporting
+```typescript
+import { TaskStatusReporter } from 'autoagent-cli/utils/status-reporter';
+
+const reporter = new TaskStatusReporter();
+const result: ExecutionResult = {
+  success: true,
+  taskId: '123',
+  duration: 5000,
+  // ... other result data
+};
+
+reporter.reportCompletion(result);
 ```
 
 ## Need Help?

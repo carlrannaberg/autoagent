@@ -197,15 +197,15 @@ export async function createTestTaskFromInput(
  * Helper to extract sections from STM markdown content.
  */
 function extractSectionFromMarkdown(content: string | undefined, sectionName: string): string | undefined {
-  if (!content) return undefined;
+  if (!content) {return undefined;}
   
   const lines = content.split('\n');
   let inSection = false;
-  let sectionContent: string[] = [];
+  const sectionContent: string[] = [];
   
   for (const line of lines) {
     if (line.startsWith('## ')) {
-      if (inSection) break; // End of current section
+      if (inSection) {break;} // End of current section
       inSection = line.substring(3).trim() === sectionName;
     } else if (inSection && !line.startsWith('###')) {
       sectionContent.push(line);
@@ -219,11 +219,11 @@ function extractSectionFromMarkdown(content: string | undefined, sectionName: st
  * Helper to extract acceptance criteria from markdown content.
  */
 function extractAcceptanceCriteria(content: string | undefined): string[] | undefined {
-  if (!content) return undefined;
+  if (!content) {return undefined;}
   
   const lines = content.split('\n');
   let inCriteriaSection = false;
-  let criteria: string[] = [];
+  const criteria: string[] = [];
   
   for (const line of lines) {
     if (line.startsWith('### Acceptance Criteria')) {
@@ -503,17 +503,17 @@ export const stmTestUtils = {
       }
 
       // Validate required fields
-      if (!task.title) errors.push('Task title is missing');
-      if (!task.status) errors.push('Task status is missing');
-      if (!task.created) errors.push('Task created timestamp is missing');
-      if (!task.updated) errors.push('Task updated timestamp is missing');
-      if (!Array.isArray(task.tags)) errors.push('Task tags must be an array');
-      if (!Array.isArray(task.dependencies)) errors.push('Task dependencies must be an array');
+      if (!task.title) {errors.push('Task title is missing');}
+      if (!task.status) {errors.push('Task status is missing');}
+      if (!task.created) {errors.push('Task created timestamp is missing');}
+      if (!task.updated) {errors.push('Task updated timestamp is missing');}
+      if (!Array.isArray(task.tags)) {errors.push('Task tags must be an array');}
+      if (!Array.isArray(task.dependencies)) {errors.push('Task dependencies must be an array');}
       
       // Validate sections
       const sections = await stmManager.getTaskSections(taskId);
-      if (!sections.description) warnings.push('Task description section is empty');
-      if (!sections.details) warnings.push('Task details section is empty');
+      if (!sections.description) {warnings.push('Task description section is empty');}
+      if (!sections.details) {warnings.push('Task details section is empty');}
       
       // Validate acceptance criteria
       const acceptanceCriteria = await stmManager.getAcceptanceCriteria(taskId);

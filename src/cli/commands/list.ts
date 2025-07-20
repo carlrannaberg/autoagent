@@ -54,7 +54,7 @@ async function listTasks(options: { status?: string; json?: boolean; workspace?:
     if (options.json === true) {
       console.log('[]');
     } else {
-      Logger.info(options.status ? `No tasks found with status: ${options.status}` : 'No tasks found');
+      Logger.info(options.status !== undefined && options.status !== '' ? `No tasks found with status: ${options.status}` : 'No tasks found');
     }
     return;
   }

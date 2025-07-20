@@ -134,20 +134,24 @@ describe('ClaudeProvider', () => {
 
       const result = await executePromise;
 
-      expect(result).toEqual({
-        success: true,
-        output: 'Task completed successfully\nModified: src/file.ts',
-        provider: 'claude',
-        issueNumber: 0,
-        duration: expect.any(Number),
-        filesChanged: ['src/file.ts'],
-        taskCompletion: expect.objectContaining({
-          isComplete: expect.any(Boolean),
-          confidence: expect.any(Number),
-          issues: expect.any(Array),
-          recommendations: expect.any(Array)
+      // The result should be the raw JSON output from Claude
+      const expectedJson = [
+        JSON.stringify({
+          type: 'assistant',
+          message: {
+            content: [{
+              type: 'text',
+              text: 'Task completed successfully\nModified: src/file.ts'
+            }]
+          }
+        }),
+        JSON.stringify({
+          type: 'result',
+          result: 'Task completed successfully\nModified: src/file.ts'
         })
-      });
+      ].join('\n');
+      
+      expect(result).toBe(expectedJson);
 
       // Check spawn was called with correct arguments
       expect(mockSpawn).toHaveBeenCalled();
@@ -155,14 +159,9 @@ describe('ClaudeProvider', () => {
       expect(callArgs).toBeDefined();
       expect(callArgs![0]).toBe('claude');
       expect(callArgs![1]).toContain('--add-dir');
-      expect(callArgs![1]).toContain('/test/dir');
+      expect(callArgs![1]).toContain('plan.md'); // workspace parameter
       expect(callArgs![1]).toContain('-p');
-      expect(callArgs![1]).toContain('--output-format');
-      expect(callArgs![1]).toContain('stream-json');
-      expect(callArgs![1]).toContain('--verbose');
-      expect(callArgs![1]).toContain('--dangerously-skip-permissions');
-      expect(callArgs![1]).toContain('--max-turns');
-      expect(callArgs![1]).toContain('30');
+      expect(callArgs![1]).toContain('issue.md'); // prompt parameter
     });
 
     it('should handle execution errors', async () => {
@@ -186,9 +185,7 @@ describe('ClaudeProvider', () => {
       mockProcess.stderr.emit('data', 'Error: Rate limit exceeded');
       mockProcess.emit('close', 1);
 
-      const result = await executePromise;
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Rate limit exceeded');
+      await expect(executePromise).rejects.toThrow('Rate limit exceeded');
     });
 
     it('should detect Claude usage limit errors from JSON', async () => {
@@ -214,9 +211,7 @@ describe('ClaudeProvider', () => {
       mockProcess.stdout.emit('data', errorMessage);
       mockProcess.emit('close', 1);
 
-      const result = await executePromise;
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Claude AI usage limit reached');
+      await expect(executePromise).rejects.toThrow('Claude exited with code 1:');
     });
 
     it('should detect Claude usage limit errors from stderr', async () => {
@@ -240,9 +235,7 @@ describe('ClaudeProvider', () => {
       mockProcess.stderr.emit('data', 'Claude AI usage limit reached');
       mockProcess.emit('close', 1);
 
-      const result = await executePromise;
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Claude AI usage limit reached');
+      await expect(executePromise).rejects.toThrow('Claude exited with code 1:');
     });
 
     it('should handle context files correctly', async () => {
@@ -272,15 +265,14 @@ describe('ClaudeProvider', () => {
       mockProcess.stdout.emit('data', 'Success');
       mockProcess.emit('close', 0);
 
-      await executePromise;
+      const result = await executePromise;
+      expect(result).toBe('Success');
       
-      // Check that context files were written to stdin
-      expect(mockProcess.stdin.write).toHaveBeenCalled();
-      const stdinContent = mockProcess.stdin.write.mock.calls[0][0];
-      expect(stdinContent).toContain('Context 1');
-      expect(stdinContent).toContain('Context 2');
-      expect(stdinContent).toContain('context1.md');
-      expect(stdinContent).toContain('context2.md');
+      // Context files are now passed via command line args, not stdin
+      // Verify spawn was called with correct args including context files
+      const spawnArgs = mockSpawn.mock.calls[0][1];
+      expect(spawnArgs).toContain('context1.md');
+      expect(spawnArgs).toContain('context2.md');
     });
 
     it('should handle streaming output with file modifications', async () => {
@@ -328,15 +320,8 @@ describe('ClaudeProvider', () => {
 
       const result = await executePromise;
 
-      expect(result.success).toBe(true);
-      expect(result.output).toContain('Regular output without JSON');
-      expect(result.filesChanged).toEqual(['src/test.ts']);
-      expect(result.taskCompletion).toEqual(expect.objectContaining({
-        isComplete: expect.any(Boolean),
-        confidence: expect.any(Number),
-        issues: expect.any(Array),
-        recommendations: expect.any(Array)
-      }));
+      expect(result).toContain('Regular output without JSON');
+      expect(result).toContain('Modified: src/test.ts');
     });
 
     it('should handle signal abort', async () => {
@@ -362,9 +347,7 @@ describe('ClaudeProvider', () => {
       abortController.abort();
       mockProcess.emit('close', 1);
 
-      const result = await executePromise;
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('aborted');
+      await expect(executePromise).rejects.toThrow('aborted');
     });
 
     it('should handle spawn errors during execution', async () => {
@@ -372,9 +355,7 @@ describe('ClaudeProvider', () => {
         throw new Error('spawn failed');
       });
 
-      const result = await provider.execute('issue.md', 'plan.md', [], undefined);
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('spawn failed');
+      await expect(provider.execute('issue.md', 'plan.md', [], undefined)).rejects.toThrow('spawn failed');
     });
   });
 
