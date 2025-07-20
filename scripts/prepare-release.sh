@@ -278,31 +278,42 @@ pre_compute_release_data() {
             grep -E '\.(ts|js|json|yml|yaml|sh|py|css|scss|html|vue|jsx|tsx|mjs|cjs|toml|env|gitignore|nvmrc|dockerignore)$|^(package\.json|tsconfig|vitest\.config|eslint|prettier|babel|webpack|rollup|vite\.config|jest\.config|Dockerfile|Makefile|\.eslintrc|\.prettierrc)' || echo "")
 
         if [ -n "$CODE_CHANGED_FILES" ]; then
-            # Create filtered diff
-            FILTERED_DIFF=""
-            for file in $CODE_CHANGED_FILES; do
-                if [ -f "$file" ]; then
-                    FILTERED_DIFF="$FILTERED_DIFF$(git diff ${LAST_TAG}..HEAD -- "$file" 2>/dev/null || echo "")"
-                fi
-            done
-
-            if [ -n "$FILTERED_DIFF" ]; then
-                DIFF_LINES=$(echo "$FILTERED_DIFF" | wc -l)
-                DIFF_CHARS=$(echo "$FILTERED_DIFF" | wc -c)
-                echo "Filtered diff (code files only): $DIFF_LINES lines, $DIFF_CHARS characters"
-
-                # Check if diff is too large
-                if [ "$DIFF_LINES" -gt 3000 ] || [ "$DIFF_CHARS" -gt 80000 ]; then
-                    echo "Even filtered diff is large - providing file list only"
-                    DIFF_FULL="[DIFF TOO LARGE - Code files changed: $(echo "$CODE_CHANGED_FILES" | tr '\n' ' ')]"
-                    INCLUDE_DIFF_INSTRUCTION="Use 'git diff ${LAST_TAG}..HEAD -- [filename]' to check individual files: $(echo "$CODE_CHANGED_FILES" | head -10 | tr '\n' ' ')"
-                else
-                    DIFF_FULL="$FILTERED_DIFF"
-                    INCLUDE_DIFF_INSTRUCTION=""
-                fi
+            # Count files and estimate diff size first
+            FILE_COUNT=$(echo "$CODE_CHANGED_FILES" | wc -l)
+            echo "Code files to analyze: $FILE_COUNT"
+            
+            # If too many files, skip diff generation entirely
+            if [ "$FILE_COUNT" -gt 50 ]; then
+                echo "Too many code files changed ($FILE_COUNT) - providing file list only"
+                DIFF_FULL="[DIFF TOO LARGE - $FILE_COUNT code files changed: $(echo "$CODE_CHANGED_FILES" | head -20 | tr '\n' ' ')...]"
+                INCLUDE_DIFF_INSTRUCTION="Use 'git diff ${LAST_TAG}..HEAD -- [filename]' to check individual files: $(echo "$CODE_CHANGED_FILES" | head -10 | tr '\n' ' ')"
             else
-                DIFF_FULL="[NO CODE CHANGES - Only documentation/planning files changed]"
-                INCLUDE_DIFF_INSTRUCTION="No source code changes found. This release contains only documentation updates."
+                # Create filtered diff for smaller changesets
+                FILTERED_DIFF=""
+                for file in $CODE_CHANGED_FILES; do
+                    if [ -f "$file" ]; then
+                        FILTERED_DIFF="$FILTERED_DIFF$(git diff ${LAST_TAG}..HEAD -- "$file" 2>/dev/null || echo "")"
+                    fi
+                done
+
+                if [ -n "$FILTERED_DIFF" ]; then
+                    DIFF_LINES=$(echo "$FILTERED_DIFF" | wc -l)
+                    DIFF_CHARS=$(echo "$FILTERED_DIFF" | wc -c)
+                    echo "Filtered diff (code files only): $DIFF_LINES lines, $DIFF_CHARS characters"
+
+                    # Check if diff is too large
+                    if [ "$DIFF_LINES" -gt 3000 ] || [ "$DIFF_CHARS" -gt 80000 ]; then
+                        echo "Even filtered diff is large - providing file list only"
+                        DIFF_FULL="[DIFF TOO LARGE - Code files changed: $(echo "$CODE_CHANGED_FILES" | tr '\n' ' ')]"
+                        INCLUDE_DIFF_INSTRUCTION="Use 'git diff ${LAST_TAG}..HEAD -- [filename]' to check individual files: $(echo "$CODE_CHANGED_FILES" | head -10 | tr '\n' ' ')"
+                    else
+                        DIFF_FULL="$FILTERED_DIFF"
+                        INCLUDE_DIFF_INSTRUCTION=""
+                    fi
+                else
+                    DIFF_FULL="[NO CODE CHANGES - Only documentation/planning files changed]"
+                    INCLUDE_DIFF_INSTRUCTION="No source code changes found. This release contains only documentation updates."
+                fi
             fi
         else
             DIFF_FULL="[NO CODE CHANGES - Only documentation/planning files changed]"
