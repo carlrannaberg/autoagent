@@ -628,6 +628,30 @@ Every test failure is considered critical and must be resolved before any releas
    - ❌ Don't rely solely on parsed option values for conflicting flags
    - ✅ Track actual flag presence in argv during parsing
 
+6. **STM Test Task Pollution**
+   - ❌ Don't use real `STMManager` in unit tests without cleanup
+   - ❌ Don't automatically tag tasks in production code
+   - ✅ Use `InMemorySTMManager` for unit tests
+   - ✅ For integration tests, explicitly tag with 'autoagent-test-only' and clean up
+   
+   ```typescript
+   import { cleanupTestTasks, addTestTags } from '../helpers/stm-test-cleanup';
+   
+   describe('Integration Test', () => {
+     afterAll(() => {
+       cleanupTestTasks(); // Safe cleanup of test-only tasks
+     });
+   
+     it('should create test task', async () => {
+       const stm = new STMManager();
+       await stm.createTask('Test', {
+         description: 'Test task',
+         tags: addTestTags(['feature']) // Always tag test tasks!
+       });
+     });
+   });
+   ```
+
 ## Security Considerations
 - No credentials stored in code
 - Rely on external CLI tools for authentication
