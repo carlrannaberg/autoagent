@@ -74,20 +74,26 @@ export class E2EWorkspace {
     const stmTasksDir = path.join(this.getPath(), '.autoagent', 'stm-tasks');
     await fs.mkdir(stmTasksDir, { recursive: true });
     
-    // Also initialize a proper STM repository in the workspace for compatibility
-    const { execFile } = require('child_process');
-    const { promisify } = require('util');
-    const execFileAsync = promisify(execFile);
-    
+    // Initialize STM in the isolated test workspace
     try {
-      // Run STM init to create proper STM repository structure
+      // Run STM init to create proper STM repository structure in the test workspace
       await execFileAsync('npx', ['simple-task-master', 'init'], { 
         cwd: this.getPath(),
-        stdio: 'ignore'
+        stdio: 'ignore',
+        env: { ...process.env, STM_WORKSPACE: this.getPath() }
       });
     } catch (error) {
-      // If STM init fails, at least ensure our custom directory exists
-      console.warn('STM init failed, using manual directory creation:', error instanceof Error ? error.message : String(error));
+      // If STM init fails, create minimal directory structure manually
+      const stmDir = path.join(this.getPath(), '.simple-task-master');
+      const stmTasksDir = path.join(stmDir, 'tasks');
+      await fs.mkdir(stmTasksDir, { recursive: true });
+      
+      // Create a basic config file
+      const config = {
+        version: "1.0.0",
+        created: new Date().toISOString()
+      };
+      await fs.writeFile(path.join(stmDir, 'config.json'), JSON.stringify(config, null, 2));
     }
   }
 

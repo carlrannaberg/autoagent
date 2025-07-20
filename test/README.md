@@ -501,6 +501,35 @@ it('should handle initialization errors', async () => {
 
 ### 5. Troubleshooting
 
+#### STM Task Cleanup
+
+**CRITICAL**: Always use `InMemorySTMManager` for unit tests, never the real `STMManager` class. The real STMManager creates actual STM tasks that persist between test runs and can accumulate over time.
+
+If you accidentally create real STM tasks during development:
+
+```bash
+# Check how many tasks exist
+stm list | wc -l
+
+# Remove all STM tasks (WARNING: This removes ALL tasks)
+rm -rf .simple-task-master
+
+# Check for task files accidentally created in project root
+ls [0-9]*-*.md 2>/dev/null | wc -l
+
+# Remove any task files from project root
+rm -f [0-9]*-*.md
+```
+
+#### Test Isolation Rules
+
+1. **Unit Tests**: Always use `InMemorySTMManager` - never import real `STMManager`
+2. **E2E Tests**: Use isolated workspace directories with `initializeSTM()`
+3. **Integration Tests**: Mock STM dependencies completely
+4. **Examples**: Should not create persistent tasks
+
+#### Common Problems
+
 **Common Issues:**
 
 1. **Tasks not persisting between tests**

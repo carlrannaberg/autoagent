@@ -97,5 +97,6 @@ temp/
 CLAUDE.md
 GEMINI.md
 # Simple Task Master - User tasks are git-ignored
-.simple-task-master/tasks/
-.simple-task-master/lock
+.simple-task-master/
+# Ignore any STM task files that accidentally get created in root
+[0-9]*-*.md
