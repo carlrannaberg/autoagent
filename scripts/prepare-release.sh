@@ -267,11 +267,15 @@ pre_compute_release_data() {
         echo "Found $COMMIT_COUNT commits since $LAST_TAG"
 
         # Get recent commits
+        echo "DEBUG: Getting recent commits..."
         RECENT_COMMITS=$(git log ${LAST_TAG}..HEAD --oneline | head -20)
 
         # Get file changes with smart filtering
+        echo "DEBUG: Getting diff stats..."
         DIFF_STAT=$(git diff ${LAST_TAG}..HEAD --stat)
+        echo "DEBUG: Getting changed files list..."
         ALL_CHANGED_FILES=$(git diff ${LAST_TAG}..HEAD --name-only)
+        echo "DEBUG: Got file list, starting filtering..."
 
         # Smart filtering: Include code files, exclude documentation/planning
         # First check if we have too many files to process efficiently
