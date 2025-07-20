@@ -1,6 +1,7 @@
 export * from './hooks.js';
 export * from './session.js';
 export * from './completion.js';
+export * from './stm-types.js';
 
 import { HookData, HookResult } from './hooks.js';
 import { CompletionValidationResult, ToolFailure } from './completion.js';
@@ -55,51 +56,8 @@ export interface Hook {
   branch?: string;
 }
 
-/**
- * Core data structure for tracking issues in the autonomous agent system.
- */
-export interface Issue {
-  /** Unique issue number */
-  number: number;
-  /** Descriptive title of the issue */
-  title: string;
-  /** File path where the issue details are stored */
-  file: string;
-  /** Description of what needs to be done */
-  requirements: string;
-  /** List of criteria that must be met for issue completion */
-  acceptanceCriteria: string[];
-  /** Additional technical implementation details */
-  technicalDetails?: string;
-  /** References to documentation or external resources */
-  resources?: string[];
-}
-
-/**
- * Implementation plan for resolving an issue.
- */
-export interface Plan {
-  /** Reference to the associated issue number */
-  issueNumber: number;
-  /** File path where the plan is stored */
-  file: string;
-  /** List of implementation phases */
-  phases: Phase[];
-  /** Description of the technical approach */
-  technicalApproach?: string;
-  /** Potential challenges and considerations */
-  challenges?: string[];
-}
-
-/**
- * A phase within an implementation plan.
- */
-export interface Phase {
-  /** Name or title of the phase */
-  name: string;
-  /** List of tasks to complete in this phase */
-  tasks: string[];
-}
+// Legacy Issue and Plan interfaces removed in favor of STM tasks
+// See TaskContent interface in stm-types.ts for the new task structure
 
 /**
  * Result of executing an autonomous agent task.
@@ -107,8 +65,8 @@ export interface Phase {
 export interface ExecutionResult {
   /** Whether the execution completed successfully */
   success: boolean;
-  /** Issue number that was executed */
-  issueNumber: number;
+  /** Task ID that was executed */
+  taskId: string;
   /** Duration of execution in milliseconds */
   duration: number;
   /** Output from the execution */
@@ -121,8 +79,8 @@ export interface ExecutionResult {
   filesChanged?: string[];
   /** Data needed for potential rollback */
   rollbackData?: RollbackData;
-  /** Title of the issue for display purposes */
-  issueTitle?: string;
+  /** Title of the task for display purposes */
+  taskTitle?: string;
   /** List of files that were modified (full paths) */
   filesModified?: string[];
   /** Task completion validation result */
@@ -246,14 +204,14 @@ export type AgentEvent =
  * Current status of the autonomous agent system.
  */
 export interface Status {
-  /** Total number of issues in the system */
-  totalIssues: number;
-  /** Number of completed issues */
-  completedIssues: number;
-  /** Number of pending issues */
-  pendingIssues: number;
-  /** Currently executing issue */
-  currentIssue?: Issue;
+  /** Total number of tasks in the system */
+  totalTasks: number;
+  /** Number of completed tasks */
+  completedTasks: number;
+  /** Number of pending tasks */
+  pendingTasks: number;
+  /** Currently executing task ID */
+  currentTaskId?: string;
   /** List of available AI providers */
   availableProviders?: string[];
   /** List of rate-limited providers */

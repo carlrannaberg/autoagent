@@ -1,5 +1,4 @@
 import { spawn, ChildProcess } from 'child_process';
-import { ExecutionResult } from '../types';
 import { StreamFormatter } from '../utils/stream-formatter';
 import { ProviderInterface, ChatOptions } from './types';
 
@@ -14,6 +13,14 @@ export abstract class Provider implements ProviderInterface {
   abstract get name(): string;
 
   /**
+   * Get the name of this provider (method form for backward compatibility).
+   * @returns The provider name
+   */
+  getName(): string {
+    return this.name;
+  }
+
+  /**
    * Check if this provider is available on the system.
    * @returns Promise resolving to true if provider is available
    */
@@ -21,20 +28,18 @@ export abstract class Provider implements ProviderInterface {
 
   /**
    * Execute a task with this provider.
-   * @param issueFile - Path to the issue file to execute
-   * @param planFile - Path to the plan file to execute
-   * @param contextFiles - Optional array of context file paths
-   * @param signal - Optional abort signal for cancellation
+   * @param prompt - The task prompt/context to execute
+   * @param workspace - Working directory for the task
    * @param additionalDirectories - Optional array of additional directories to give AI access to
-   * @returns Promise resolving to execution result
+   * @param signal - Optional abort signal for cancellation
+   * @returns Promise resolving to the task output string
    */
   abstract execute(
-    issueFile: string,
-    planFile: string,
-    contextFiles?: string[],
-    signal?: AbortSignal,
-    additionalDirectories?: string[]
-  ): Promise<ExecutionResult>;
+    prompt: string,
+    workspace: string,
+    additionalDirectories?: string[],
+    signal?: AbortSignal
+  ): Promise<string>;
 
   /**
    * Send a chat message to the provider and get a response.

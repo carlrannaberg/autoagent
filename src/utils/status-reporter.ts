@@ -51,7 +51,7 @@ export class TaskStatusReporter {
     lines.push(chalk.gray('─'.repeat(50)));
     
     // Basic info
-    lines.push(`${chalk.bold('Issue:')} #${result.issueNumber}${result.issueTitle !== undefined && result.issueTitle !== null && result.issueTitle !== '' ? ` - ${result.issueTitle}` : ''}`);
+    lines.push(`${chalk.bold('Task:')} ${result.taskId}${result.taskTitle !== undefined && result.taskTitle !== null && result.taskTitle !== '' ? ` - ${result.taskTitle}` : ''}`);
     lines.push(`${chalk.bold('Duration:')} ${this.formatDuration(result.duration)}`);
     if (result.provider !== undefined && result.provider !== null) {
       lines.push(`${chalk.bold('Provider:')} ${result.provider}`);
@@ -127,8 +127,8 @@ export class TaskStatusReporter {
   }
 
   private reportFullSuccess(result: ExecutionResult): void {
-    const title = result.issueTitle !== undefined && result.issueTitle !== null && result.issueTitle !== '' ? `: ${result.issueTitle}` : '';
-    console.log(chalk.green(`\n✅ Successfully completed issue #${result.issueNumber}${title}`));
+    const title = result.taskTitle !== undefined && result.taskTitle !== null && result.taskTitle !== '' ? `: ${result.taskTitle}` : '';
+    console.log(chalk.green(`\n✅ Successfully completed task ${result.taskId}${title}`));
     
     if (result.filesChanged && result.filesChanged.length > 0) {
       console.log(chalk.gray(`   Modified ${result.filesChanged.length} file${result.filesChanged.length === 1 ? '' : 's'}`));
@@ -138,8 +138,8 @@ export class TaskStatusReporter {
   }
 
   private reportPartialCompletion(result: ExecutionResult): void {
-    const title = result.issueTitle !== undefined && result.issueTitle !== null && result.issueTitle !== '' ? `: ${result.issueTitle}` : '';
-    console.log(chalk.yellow(`\n⚠️  Partially completed issue #${result.issueNumber}${title}`));
+    const title = result.taskTitle !== undefined && result.taskTitle !== null && result.taskTitle !== '' ? `: ${result.taskTitle}` : '';
+    console.log(chalk.yellow(`\n⚠️  Partially completed task ${result.taskId}${title}`));
     
     if (result.taskCompletion) {
       console.log(chalk.yellow(`   Task appears incomplete (${result.taskCompletion.confidence}% confidence)`));
@@ -159,8 +159,8 @@ export class TaskStatusReporter {
   }
 
   private reportFailure(result: ExecutionResult): void {
-    const title = result.issueTitle !== undefined && result.issueTitle !== null && result.issueTitle !== '' ? `: ${result.issueTitle}` : '';
-    console.log(chalk.red(`\n❌ Failed to complete issue #${result.issueNumber}${title}`));
+    const title = result.taskTitle !== undefined && result.taskTitle !== null && result.taskTitle !== '' ? `: ${result.taskTitle}` : '';
+    console.log(chalk.red(`\n❌ Failed to complete task ${result.taskId}${title}`));
     
     if (result.error !== undefined && result.error !== null && result.error !== '') {
       const errorPreview = result.error.slice(0, 100);

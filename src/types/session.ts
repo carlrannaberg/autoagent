@@ -4,8 +4,9 @@
  * - active: Session is currently running
  * - completed: Session finished successfully
  * - failed: Session terminated with an error
+ * - interrupted: Session was interrupted by user or signal
  */
-export type SessionStatus = 'active' | 'completed' | 'failed';
+export type SessionStatus = 'active' | 'completed' | 'failed' | 'interrupted';
 
 /**
  * Session data structure for tracking AutoAgent executions.

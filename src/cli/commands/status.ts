@@ -126,12 +126,12 @@ export function registerStatusCommand(program: Command): void {
         const status = await agent.getStatus();
 
         Logger.info('\n📊 Project Status\n');
-        Logger.info(`Total Issues:     ${status.totalIssues}`);
-        Logger.info(`Completed:        ${status.completedIssues}`);
-        Logger.info(`Pending:          ${status.pendingIssues}`);
+        Logger.info(`Total Tasks:      ${status.totalTasks}`);
+        Logger.info(`Completed:        ${status.completedTasks}`);
+        Logger.info(`Pending:          ${status.pendingTasks}`);
 
-        if (status.currentIssue !== null && status.currentIssue !== undefined) {
-          Logger.info(`\nNext Issue:       #${status.currentIssue.number}: ${status.currentIssue.title}`);
+        if (status.currentTaskId !== null && status.currentTaskId !== undefined) {
+          Logger.info(`\nCurrent Task:     ${status.currentTaskId}`);
         }
 
         if (status.availableProviders !== undefined && status.availableProviders.length > 0) {

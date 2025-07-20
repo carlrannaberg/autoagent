@@ -1,4 +1,4 @@
-export { FileManager } from './file-manager';
+// FileManager removed in favor of STMManager
 export { Logger, LogLevel, LoggerOptions } from './logger';
 export { 
   retry, 
@@ -27,10 +27,5 @@ export {
   GitCommitResult
 } from './git';
 export { TaskStatusReporter } from './status-reporter';
-export { 
-  ToolFailureDetector,
-  TaskObjectiveValidator,
-  hasCriticalFailures,
-  groupFailuresByType,
-  formatFailuresForDisplay
-} from './validation';
+// Validation utils removed as part of STM migration
+export { STMManager, STMError, STMManagerConfig } from './stm-manager';

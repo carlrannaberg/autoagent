@@ -1,26 +1,12 @@
 import { Provider } from './Provider';
-import { ExecutionResult } from '../types';
 import { ChatOptions } from './types';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { ProviderRateLimiter } from '../core/provider-rate-limiter';
-import { RateLimitMonitor, RateLimitDetectedError } from '../core/rate-limit-monitor';
-import { Logger } from '../utils/logger';
+import { spawn } from 'child_process';
 
 /**
  * Gemini provider implementation.
  * Uses the Gemini CLI tool to execute autonomous agent tasks.
  */
 export class GeminiProvider extends Provider {
-  private rateLimiter: ProviderRateLimiter;
-  private monitor: RateLimitMonitor;
-
-  constructor() {
-    super();
-    this.rateLimiter = new ProviderRateLimiter();
-    this.monitor = new RateLimitMonitor(this.rateLimiter);
-  }
-
   /**
    * Get the name of this provider.
    */
@@ -34,208 +20,94 @@ export class GeminiProvider extends Provider {
    */
   async checkAvailability(): Promise<boolean> {
     try {
-      const { code } = await this.spawnProcess('gemini', ['--version']);
-      return code === 0;
+      const { stdout, code } = await this.spawnProcess('gemini', ['--version']);
+      return code === 0 && stdout.toLowerCase().includes('gemini');
     } catch (error) {
       return false;
     }
   }
 
   /**
-   * Execute a task with Gemini using enhanced rate limiting.
-   * @param issueFile - Path to the issue file to execute
-   * @param planFile - Path to the plan file to execute
-   * @param contextFiles - Optional array of context file paths
-   * @param signal - Optional abort signal for cancellation
+   * Execute a task with Gemini.
+   * @param prompt - The task prompt/context to execute
+   * @param workspace - Working directory for the task
    * @param additionalDirectories - Optional array of additional directories to give AI access to
-   * @returns Promise resolving to execution result
+   * @param signal - Optional abort signal for cancellation
+   * @returns Promise resolving to the task output string
    */
   async execute(
-    issueFile: string,
-    planFile: string,
-    contextFiles?: string[],
-    signal?: AbortSignal,
-    additionalDirectories?: string[]
-  ): Promise<ExecutionResult> {
-    const startTime = Date.now();
-    const issueNumber = this.extractIssueNumber(issueFile);
+    prompt: string,
+    workspace: string,
+    _additionalDirectories?: string[],
+    signal?: AbortSignal
+  ): Promise<string> {
+    // Gemini CLI expects prompt as a positional argument
+    const args = [prompt];
 
-    try {
-      // Note: Removed pre-check for rate limiting to allow model fallback behavior
-      // The RateLimitMonitor will handle pro→flash fallback automatically
+    // Add sandbox mode for code execution
+    args.push('--sandbox');
 
-      // Read issue and plan files
-      const issueContent = await fs.readFile(issueFile, 'utf-8');
-      const planContent = await fs.readFile(planFile, 'utf-8');
-      
-      // Build the prompt
-      let prompt = `You are an autonomous AI agent tasked with completing the following issue and plan.
-
-## Issue
-
-${issueContent}
-
-## Plan
-
-${planContent}
-
-Please execute the plan to complete the issue. Make all necessary code changes, create files as needed, and ensure all acceptance criteria are met.
-
-When you make changes to files, please clearly indicate which files were modified.`;
-      
-      // Add context files if provided
-      if (contextFiles && contextFiles.length > 0) {
-        prompt += '\n\n## Additional Context Files\n';
-        for (const file of contextFiles) {
-          try {
-            const content = await fs.readFile(file, 'utf-8');
-            const filename = path.basename(file);
-            prompt += `\n### ${filename}\n\n${content}\n`;
-          } catch (err) {
-            // Skip files that can't be read
-          }
-        }
-      }
-
-      // For additional directories, add a note since Gemini uses --all_files for directory access
-      if (additionalDirectories && additionalDirectories.length > 0) {
-        prompt += '\n\n## Additional Directory Access Required\n';
-        prompt += 'The following directories should be accessible for this task:\n';
-        for (const dir of additionalDirectories) {
-          prompt += `- ${dir}\n`;
-        }
-        prompt += '\nNote: Please ensure you have access to files in these directories as needed.\n';
-      }
-      
-      // Build command arguments
-      const args: string[] = [];
-      
-      // Add all_files flag to give access to current directory
-      args.push('--all_files');
-      
-      // Enable YOLO mode for autonomous operation (auto-approve all tool calls)
-      args.push('--yolo');
-      
-      // Execute with rate limit monitoring and automatic model fallback
-      const result = await this.monitor.executeGeminiWithFallback(args, {
-        signal,
-        stdinContent: prompt,
-        enableStreaming: true
+    // Execute Gemini
+    return new Promise((resolve, reject) => {
+      const child = spawn('gemini', args, {
+        cwd: workspace,
+        env: { ...process.env }
       });
 
-      if (result.exitCode !== 0) {
-        throw new Error(`Gemini execution failed with code ${result.exitCode}: ${result.stderr}`);
+      let output = '';
+      let error = '';
+
+      child.stdout.on('data', (data: Buffer) => {
+        const text = data.toString();
+        output += text;
+        // In the future, we could add real-time output formatting here
+      });
+
+      child.stderr.on('data', (data: Buffer) => {
+        error += data.toString();
+      });
+
+      child.on('close', (code: number | null) => {
+        if (code === 0) {
+          resolve(output);
+        } else {
+          reject(new Error(`Gemini exited with code ${code}: ${error}`));
+        }
+      });
+
+      child.on('error', (err: Error) => {
+        reject(err);
+      });
+
+      // Handle abort signal
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          child.kill('SIGTERM');
+          reject(new Error('Process aborted'));
+        });
       }
-
-      // Parse output for success indicators and file changes
-      const filesChanged = this.extractFilesChanged(result.stdout);
-      const success = this.determineSuccess(result.stdout, result.stderr, result.exitCode);
-
-      return {
-        success,
-        issueNumber,
-        duration: Date.now() - startTime,
-        output: result.stdout,
-        error: success ? undefined : result.stderr,
-        provider: 'gemini',
-        filesChanged: filesChanged.length > 0 ? filesChanged : undefined
-      };
-    } catch (error) {
-      // Handle rate limit errors specifically
-      if (error instanceof RateLimitDetectedError) {
-        Logger.error(`Rate limit detected for Gemini: ${error.message}`);
-        return {
-          success: false,
-          issueNumber,
-          duration: Date.now() - startTime,
-          error: `Rate limit detected: ${error.message}`,
-          provider: 'gemini'
-        };
-      }
-
-      return {
-        success: false,
-        issueNumber,
-        duration: Date.now() - startTime,
-        error: this.formatError(error),
-        provider: 'gemini'
-      };
-    }
+    });
   }
 
   /**
-   * Extract issue number from file path.
-   * @param filePath - Path to issue file
-   * @returns Issue number or 0 if not found
-   */
-  private extractIssueNumber(filePath: string): number {
-    const match = filePath.match(/(\d+)-/);
-    return (match !== null && match[1] !== undefined) ? parseInt(match[1], 10) : 0;
-  }
-
-  /**
-   * Determine if execution was successful based on output.
-   * @param stdout - Standard output
-   * @param stderr - Standard error
-   * @param code - Exit code
-   * @returns True if successful
-   */
-  private determineSuccess(stdout: string, stderr: string, code: number): boolean {
-    // Exit code 0 is success
-    if (code !== 0) {
-      return false;
-    }
-    
-    // Check for error indicators in output
-    const errorIndicators = ['error:', 'failed:', 'exception:', 'traceback:'];
-    const outputLower = (stdout + stderr).toLowerCase();
-    
-    return !errorIndicators.some(indicator => outputLower.includes(indicator));
-  }
-
-  /**
-   * Send a chat message to Gemini and get a response with enhanced rate limiting.
-   * Used for reflection and other interactive AI operations.
-   * @param prompt - The prompt to send to Gemini
-   * @param options - Optional configuration for the chat request
+   * Send a chat message to Gemini and get a response.
+   * @param prompt - The message to send to Gemini
+   * @param options - Optional chat configuration
    * @returns Promise resolving to Gemini's response
    */
   async chat(prompt: string, options?: ChatOptions): Promise<string> {
+    const args = [prompt];
+
+    if (options?.systemPrompt) {
+      // Prepend system prompt to the user prompt
+      args[0] = `${options.systemPrompt}\n\n${prompt}`;
+    }
+
     try {
-      // Note: Removed pre-check for rate limiting to allow model fallback behavior
-      // The RateLimitMonitor will handle pro→flash fallback automatically
-      
-      // Build the full prompt with optional system prompt
-      let fullPrompt = prompt;
-      if (options?.systemPrompt !== undefined) {
-        fullPrompt = `${options.systemPrompt}\n\n${prompt}`;
-      }
-
-      // Execute with rate limit monitoring
-      const result = await this.monitor.executeGeminiWithFallback([fullPrompt], {
-        signal: options?.signal,
-        enableStreaming: false
-      });
-
-      if (result.exitCode !== 0) {
-        throw new Error(result.stderr || `Gemini exited with code ${result.exitCode}`);
-      }
-
-      // Extract the response text
-      const responseText = result.stdout.trim();
-      
-      if (!responseText) {
-        throw new Error('No response text received from Gemini');
-      }
-
-      return responseText;
+      const { stdout } = await this.spawnProcess('gemini', args, options?.signal);
+      return stdout.trim();
     } catch (error) {
-      // Handle rate limit errors specifically
-      if (error instanceof RateLimitDetectedError) {
-        throw new Error(`Gemini rate limit detected: ${error.message}`);
-      }
-      
-      throw new Error(`Gemini chat error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Gemini chat failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

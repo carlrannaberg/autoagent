@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING**: Migrate from file-based issues/plans to Simple Task Master (STM) for task management
+  - Replace ~1000 lines of FileManager with lightweight STMManager wrapper
+  - Unify issues and plans into single STM task format
+  - Store tasks in `.autoagent/stm-tasks` subdirectory
+  - Use STM's description, details, and validation sections for content
+  - Direct API integration via npm dependency (not CLI subprocess)
+- Update all CLI commands to work with STM tasks instead of file-based issues
+- Simplify provider interface to return strings instead of ExecutionResult objects
+
+### Added
+- Add `simple-task-master` npm dependency for task management
+- Add STMManager class for STM integration with lazy initialization
+- Add TaskContent interface for standardizing task data structure
+
+### Removed
+- Remove FileManager and all file-based issue/plan management code (~1000 lines)
+- Remove validators directory and all validation infrastructure
+- Remove ImprovementApplier and ProviderLearning features (temporarily)
+- Remove validation utility functions
+
 ### Fixed
 - Fix release script hanging in interactive mode by using `npm run test:ci` instead of `npm test`
 - Add explicit build step before running tests in release script to ensure proper compilation
@@ -14,8 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ensure `--yes` flag properly enables non-interactive mode throughout the script
 - Add `--allowedTools` flag to Claude CLI invocation to prevent interactive tool permission prompts
 - Add `--yolo` flag to Gemini CLI invocation for non-interactive tool approval
-
-### Changed
 - Update release script to use Claude Sonnet 4 model (claude-sonnet-4)
 - Update release script to use Gemini Flash 2.5 model (gemini-2.5-flash-exp)
 

@@ -1,16 +1,10 @@
 export { ConfigManager } from './config-manager';
 export { AutonomousAgent } from './autonomous-agent';
-export { ProviderLearning } from './provider-learning';
+// ProviderLearning removed as part of STM migration
 export { 
   DEFAULT_REFLECTION_CONFIG, 
   validateReflectionConfig, 
   mergeReflectionConfig 
 } from './reflection-defaults';
-export { 
-  DefaultImprovementApplier, 
-  applyImprovements,
-  type ImprovementApplier,
-  type ApplicationResult,
-  type BackupInfo
-} from './improvement-applier';
+// ImprovementApplier removed as part of STM migration
 export { HookManager } from './hook-manager';
