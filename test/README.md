@@ -501,31 +501,54 @@ it('should handle initialization errors', async () => {
 
 ### 5. Troubleshooting
 
-#### STM Task Cleanup
+#### Preventing STM Task Pollution
 
-**CRITICAL**: Always use `InMemorySTMManager` for unit tests, never the real `STMManager` class. The real STMManager creates actual STM tasks that persist between test runs and can accumulate over time.
+**CRITICAL**: Always use `InMemorySTMManager` for unit tests, never the real `STMManager` class. The real STMManager would interfere with the project's actual STM tasks used for development.
 
-If you accidentally create real STM tasks during development:
+**DO NOT** delete STM tasks manually - the project uses STM for its own task management!
+
+If tests accidentally create STM tasks:
 
 ```bash
-# Check how many tasks exist
-stm list | wc -l
-
-# Method 1: Use STM commands to delete tasks (safest)
-stm list -f json | jq -r '.[].id' | xargs -I {} stm delete {}
-
-# Method 2: Remove only task files (preserves STM config)
-rm -rf .simple-task-master/tasks/
-
-# Method 3: Complete STM reset (removes config and tasks)
-rm -rf .simple-task-master
-
-# Check for task files accidentally created in project root
+# Check for task files accidentally created in project root (these can be safely removed)
 ls [0-9]*-*.md 2>/dev/null | wc -l
 
-# Remove any task files from project root
+# Remove any task files from project root only
 rm -f [0-9]*-*.md
 ```
+
+**Prevention is the only solution**:
+- Tests MUST use `InMemorySTMManager` exclusively
+- Tests MUST NOT import or instantiate real `STMManager`
+- E2E tests MUST use isolated temporary directories
+- The project's `.simple-task-master/` directory is for real project tasks only
+
+#### Test Cleanup Best Practices
+
+**Tests must clean up after themselves**:
+
+1. **InMemorySTMManager** - Automatically cleans up (in-memory only)
+   ```typescript
+   beforeEach(() => {
+     stmManager = new InMemorySTMManager();
+   });
+   
+   afterEach(() => {
+     stmManager.reset(); // Clear all in-memory tasks
+   });
+   ```
+
+2. **E2E Tests** - Use temporary directories that auto-cleanup
+   ```typescript
+   const context = setupE2ETest(); // Creates temp directory
+   // Test runs in isolated directory
+   // Automatically cleaned up in afterEach
+   ```
+
+3. **Never use real STMManager** in tests - it would:
+   - Interfere with project's actual STM tasks
+   - Create persistent tasks that can't be safely cleaned
+   - Break test isolation
 
 #### Test Isolation Rules
 
