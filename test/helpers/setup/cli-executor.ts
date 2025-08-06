@@ -1,10 +1,19 @@
-import { execFile } from 'child_process';
+import { execFile, ExecFileException } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 
 const execFileAsync = promisify(execFile);
+
+interface ExecError extends ExecFileException {
+  stdout?: string;
+  stderr?: string;
+  status?: number;
+  signal?: string;
+  exitCode?: number;
+  killed?: boolean;
+}
 
 export interface ExecuteResult {
   stdout: string;
@@ -46,7 +55,7 @@ export class CliExecutor {
   }
 
   async execute(args: string[], options: { timeout?: number; cwd?: string } = {}): Promise<ExecuteResult> {
-    const { timeout = 120000, cwd = this.workingDir } = options;
+    const { timeout = 10000, cwd = this.workingDir } = options;
 
     try {
       const { stdout, stderr } = await execFileAsync('node', [this.cliPath, ...args], {
@@ -61,7 +70,7 @@ export class CliExecutor {
         exitCode: 0,
       };
     } catch (error) {
-      const execError = error as any;
+      const execError = error as ExecError;
       // execFileAsync throws when exit code is non-zero
       // The actual exit code is stored differently depending on the error type
       let exitCode = 1; // Default to 1 if we can't determine the actual code
