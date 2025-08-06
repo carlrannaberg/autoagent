@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754513244957,
+  "lastUpdate": 1754516617086,
   "repoUrl": "https://github.com/carlrannaberg/autoagent",
   "entries": {
     "TypeScript Benchmarks": [
@@ -18063,6 +18063,294 @@ window.BENCHMARK_DATA = {
               "p99": 0.0008310000000619766,
               "p995": 0.0012430000000449581,
               "p999": 0.002054000000043743
+            }
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "test@example.com",
+            "name": "Test User"
+          },
+          "committer": {
+            "email": "test@example.com",
+            "name": "Test User"
+          },
+          "distinct": true,
+          "id": "9f8da85e3b2bb7a67a96d4aeaa29688e58d427ef",
+          "message": "docs: add general test scope principle to prevent testing external dependencies\n\nAdded clear principle that tests should only validate AutoAgent's own\nfunctionality, not the behavior of external tools or libraries it depends on.\n\nThis is a general testing best practice that prevents:\n- Redundant testing of third-party functionality\n- Slow and fragile integration tests\n- Test failures due to external tool changes\n- Wasted effort maintaining unnecessary tests",
+          "timestamp": "2025-08-07T00:40:41+03:00",
+          "tree_id": "ae570bf0a0f2e29cbfaf8c7d5be82bb84e188425",
+          "url": "https://github.com/carlrannaberg/autoagent/commit/9f8da85e3b2bb7a67a96d4aeaa29688e58d427ef"
+        },
+        "date": 1754516616256,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "test/performance/benchmarks/core/config.bench.ts > load config from file",
+            "value": 4294.471425840688,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.23285752793296077,
+              "min": 0.1733520000000226,
+              "max": 1.0957119999999918,
+              "p75": 0.25738699999999426,
+              "p99": 0.3149240000000191,
+              "p995": 0.42539899999997033,
+              "p999": 0.7894550000000322
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/core/config.bench.ts > load config with defaults",
+            "value": 9835.190583485546,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.10167571146807454,
+              "min": 0.07720300000005409,
+              "max": 0.44463500000006206,
+              "p75": 0.12098400000013498,
+              "p99": 0.15235299999994822,
+              "p995": 0.1570209999999861,
+              "p999": 0.3544769999998607
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/core/config.bench.ts > load large config",
+            "value": 4557.17234842251,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.21943431662095364,
+              "min": 0.14530999999988126,
+              "max": 2.6879039999998895,
+              "p75": 0.23795100000006641,
+              "p99": 0.2787469999998393,
+              "p995": 0.3166569999998501,
+              "p999": 0.693297000000257
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/core/config.bench.ts > load rate limits",
+            "value": 9841.208806177272,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.10161353342816032,
+              "min": 0.07649200000014389,
+              "max": 0.450825999999779,
+              "p75": 0.11002499999995052,
+              "p99": 0.15237299999989773,
+              "p995": 0.157622000000174,
+              "p999": 0.35271400000010544
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/example-enhanced.bench.ts > Array operations comparison",
+            "value": 13.688887736832097,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 73.0519542,
+              "min": 71.24645600000008,
+              "max": 76.97731500000009,
+              "p75": 73.629459,
+              "p99": 76.97731500000009,
+              "p995": 76.97731500000009,
+              "p999": 76.97731500000009
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/example-enhanced.bench.ts > Performance trend analysis",
+            "value": 1769.3072277549431,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.5651929661017043,
+              "min": 0.33895799999982046,
+              "max": 4.077784999999949,
+              "p75": 0.6297079999999369,
+              "p99": 1.458784999999807,
+              "p995": 1.5785780000001068,
+              "p999": 4.077784999999949
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/example-enhanced.bench.ts > Statistical analysis demonstration",
+            "value": 693.5056830192617,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 1.4419492507204523,
+              "min": 0.9365369999998165,
+              "max": 5.304675999999972,
+              "p75": 1.6004280000001927,
+              "p99": 2.6065239999998084,
+              "p995": 3.783110000000079,
+              "p999": 5.304675999999972
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/git.bench.ts > extract file names",
+            "value": 876991.8912528523,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0011402613980517208,
+              "min": 0.0010220000001481822,
+              "max": 0.24598599999990256,
+              "p75": 0.0011219999998957064,
+              "p99": 0.0020930000000589644,
+              "p995": 0.0022139999998671556,
+              "p999": 0.009917999999970561
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/git.bench.ts > normalize file paths",
+            "value": 534607.8706249333,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0018705298873191742,
+              "min": 0.0017029999999067513,
+              "max": 0.3332510000000184,
+              "p75": 0.0018130000000837754,
+              "p99": 0.003446000000053573,
+              "p995": 0.0037869999999884385,
+              "p999": 0.011321000000009462
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > calculate backoff delays",
+            "value": 1861951.9627715696,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0005370707837765433,
+              "min": 0.0004999999946448952,
+              "max": 2.5367560000013327,
+              "p75": 0.0005210000090301037,
+              "p99": 0.0007409999961964786,
+              "p995": 0.0008519999973941594,
+              "p999": 0.0010420000035082921
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > calculate jittered delays",
+            "value": 1388148.8089664038,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0007203838619755659,
+              "min": 0.0006709999870508909,
+              "max": 0.2997659999964526,
+              "p75": 0.0006920000014360994,
+              "p99": 0.0008320000051753595,
+              "p995": 0.0009509999945294112,
+              "p999": 0.0013730000064242631
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > check rate limit error (negative)",
+            "value": 291885.78867448156,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.003425997560693938,
+              "min": 0.003205999993951991,
+              "max": 0.3788239999994403,
+              "p75": 0.0033970000004046597,
+              "p99": 0.003916999994544312,
+              "p995": 0.006531999999424443,
+              "p999": 0.012933999998494983
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > check rate limit error (positive)",
+            "value": 296611.12796295836,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0033714176769688927,
+              "min": 0.003165999994962476,
+              "max": 0.19044399999984307,
+              "p75": 0.0033170000024256296,
+              "p99": 0.005189000003156252,
+              "p995": 0.006583000002137851,
+              "p999": 0.014005999997607432
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > check various error types",
+            "value": 42197.58587282144,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.023698038153506754,
+              "min": 0.02258199999050703,
+              "max": 2.387174999996205,
+              "p75": 0.023202999989734963,
+              "p99": 0.039332999993348494,
+              "p995": 0.04171799999312498,
+              "p999": 0.04995299999427516
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > error checking 1000 times",
+            "value": 11090.113631532484,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.09017040160496673,
+              "min": 0.08716200001072139,
+              "max": 0.5266549999942072,
+              "p75": 0.0883940000057919,
+              "p99": 0.14372600000933744,
+              "p995": 0.16898300001048483,
+              "p999": 0.28568000000086613
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > operation with 1 retry",
+            "value": 0.9985833624090934,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 1001.4186473,
+              "min": 1000.1801869999999,
+              "max": 1001.9904729999998,
+              "p75": 1001.8193810000012,
+              "p99": 1001.9904729999998,
+              "p995": 1001.9904729999998,
+              "p999": 1001.9904729999998
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > operation with 2 retries",
+            "value": 0.332849214657554,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 3004.363405300001,
+              "min": 3003.5925519999946,
+              "max": 3005.429372999999,
+              "p75": 3004.505100000002,
+              "p99": 3005.429372999999,
+              "p995": 3005.429372999999,
+              "p999": 3005.429372999999
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > retry with jitter (100 operations)",
+            "value": 10.200684061370595,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 98.03264114285655,
+              "min": 95.81409399999393,
+              "max": 99.43966999999975,
+              "p75": 98.94227700000192,
+              "p99": 99.43966999999975,
+              "p995": 99.43966999999975,
+              "p999": 99.43966999999975
+            }
+          },
+          {
+            "name": "test/performance/benchmarks/utils/retry.bench.ts > successful operation (no retry)",
+            "value": 2570563.8920359374,
+            "unit": "ops/s",
+            "extra": {
+              "mean": 0.0003890197022910721,
+              "min": 0.0003199999998741987,
+              "max": 4.049127999999996,
+              "p75": 0.0003609999999980573,
+              "p99": 0.0007420000000593063,
+              "p995": 0.001161999999908403,
+              "p999": 0.0020339999999805514
             }
           }
         ]
