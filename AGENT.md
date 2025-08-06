@@ -443,8 +443,7 @@ autoagent/
 ├── dist/           # Compiled JavaScript (gitignored)
 ├── examples/       # Usage examples
 ├── .claude/        # Claude Code configuration (shared)
-│   ├── settings.json          # Hook configurations
-│   └── hooks/                 # Development hooks
+│   └── settings.json          # Hook configurations
 ├── specs/          # Specification documents for features
 └── temp/           # Temporary files and test scripts (gitignored)
 ```
@@ -455,12 +454,20 @@ autoagent/
 
 The `.claude/` directory contains shared configurations for Claude Code that enhance the development experience:
 
-1. **`.claude/settings.json`** - Configures hooks that run during Claude Code sessions
-2. **`.claude/hooks/`** - Contains hook scripts that automate development workflows
+**`.claude/settings.json`** - Configures hooks that run during Claude Code sessions, using the `claudekit-hooks` executable
 
-#### Current Hooks:
+#### Current Hooks (via claudekit-hooks):
 
-- **`validate-todo-completion.sh`** - Prevents Claude from stopping when there are incomplete todos in the TodoWrite list. This ensures all tasks are completed before ending a session.
+The project now uses `claudekit-hooks` for development automation:
+- **lint-changed** - Lints only modified files after edits
+- **typecheck-changed** - Type-checks modified TypeScript files
+- **test-changed** - Runs tests for modified code
+- **check-any-changed** - Validates any type files for errors
+- **typecheck-project** - Full project type checking on stop
+- **lint-project** - Full project linting on stop
+- **test-project** - Full test suite on stop
+- **check-todos** - Validates todo completion status
+- **create-checkpoint** - Creates a git checkpoint for recovery
 
 ### Specification Documents
 
