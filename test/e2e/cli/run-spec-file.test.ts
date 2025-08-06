@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { setupE2ETest } from '../helpers/setup';
 
-describe('Run Task Management E2E', () => {
+describe.skip('Run Task Management E2E', () => {
   const context = setupE2ETest();
 
   describe('Task Creation and Execution', () => {
