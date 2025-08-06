@@ -613,6 +613,24 @@ Every test failure is considered critical and must be resolved before any releas
 - Use descriptive test names that explain what is being tested
 - **Zero tolerance for failing tests** - all tests must pass consistently
 
+### Test Scope and Boundaries
+
+**IMPORTANT: Only test AutoAgent's own functionality, not external dependencies**
+
+Tests should focus on:
+- ✅ AutoAgent's integration points with external tools
+- ✅ Proper command invocation and argument passing
+- ✅ Correct handling of tool output and errors
+- ✅ AutoAgent's business logic and workflows
+
+Tests should NOT include:
+- ❌ Testing external tools' internal functionality
+- ❌ Testing third-party libraries' core features
+- ❌ End-to-end tests that primarily validate external tool behavior
+- ❌ Validating that external dependencies work correctly
+
+**Principle**: Test that AutoAgent correctly invokes external commands with proper arguments and handles their responses, but don't test that the external tools themselves work correctly - that's their responsibility.
+
 ### Common Test Pitfalls to Avoid
 
 1. **Incorrect Promisify Mocking**
@@ -640,6 +658,12 @@ Every test failure is considered critical and must be resolved before any releas
    - ❌ Don't automatically tag tasks in production code
    - ✅ Use `InMemorySTMManager` for unit tests
    - ✅ For integration tests, explicitly tag with 'autoagent-test-only' and clean up
+
+7. **Testing External Tool Functionality**
+   - ❌ Don't test STM's ability to manage tasks
+   - ❌ Don't test git's ability to track changes
+   - ✅ Test AutoAgent's integration with these tools
+   - ✅ Mock external tool responses appropriately
    
    ```typescript
    import { cleanupTestTasks, addTestTags } from '../helpers/stm-test-cleanup';
