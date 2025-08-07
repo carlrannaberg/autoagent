@@ -72,7 +72,7 @@
     "LICENSE"
   ],
   "dependencies": {
-    "chalk": "^4.1.2",
+    "chalk": "^5.5.0",
     "commander": "^12.1.0",
     "simple-task-master": "^0.1.1"
   },
