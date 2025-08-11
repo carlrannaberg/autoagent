@@ -136,7 +136,7 @@ jobs:
         fetch-depth: 0
     
     - name: Download benchmark results
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: benchmark-results-${{ github.sha }}
         path: benchmark-results/
