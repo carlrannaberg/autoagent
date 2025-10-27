@@ -43,7 +43,7 @@ jobs:
       run: node scripts/transform-benchmark-results.js bench-results.json bench-results-transformed.json
     
     - name: Upload benchmark results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: benchmark-results
         path: |
